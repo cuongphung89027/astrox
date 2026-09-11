@@ -6,7 +6,7 @@
 <title>AstroX — Tử Vi · Cung Hoàng Đạo · Kinh Dịch</title>
 <meta name="theme-color" content="#12897C">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Cormorant+Garamond:wght@500;600;700&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
 <style>
 /* ==========================================================================
    ASTROX v2 — DESIGN TOKENS
@@ -32,12 +32,22 @@
   --rose:#B85347;       --rose-tint:#F3DEDA;
   --sage:#5E8C6A;       --sage-tint:#DCEBDF;
 
+  --batu:#8A6D3B;       --batu-dark:#5C4726;   --batu-tint:#F1E8D2;   /* Bat Tu */
+
+  /* Ngu Hanh (Five Elements) — dung cho chu Can/Chi, khong phai accent module */
+  --wx-kim:#8D8570;     --wx-kim-tint:#EDEAE0;
+  --wx-moc:#3F7D52;     --wx-moc-tint:#DEEBE2;
+  --wx-thuy:#2E5C86;    --wx-thuy-tint:#DEE7F0;
+  --wx-hoa:#B8483B;     --wx-hoa-tint:#F3DFDA;
+  --wx-tho:#A47C3B;     --wx-tho-tint:#F1E7D3;
+
   --r-xl:24px; --r-lg:18px; --r-md:13px; --r-sm:9px; --r-pill:999px;
   --shadow-1:0 1px 2px rgba(28,22,10,.04);
   --shadow-2:0 12px 28px -18px rgba(28,22,10,.18);
   --shadow-3:0 20px 45px -24px rgba(11,60,53,.22);
 
   --font:'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+  --font-han:'Noto Serif SC', 'Be Vietnam Pro', serif;
   --font-display:'Cormorant Garamond', 'Be Vietnam Pro', serif;
 
   --sidebar-w:264px;
@@ -45,6 +55,7 @@
 [data-accent="tuvi"]{ --accent:var(--teal); --accent-dark:var(--teal-dark); --accent-tint:var(--teal-tint); }
 [data-accent="zodiac"]{ --accent:var(--violet); --accent-dark:var(--violet-dark); --accent-tint:var(--violet-tint); }
 [data-accent="kinhdich"]{ --accent:var(--vermil); --accent-dark:var(--vermil-dark); --accent-tint:var(--vermil-tint); }
+[data-accent="batu"]{ --accent:var(--batu); --accent-dark:var(--batu-dark); --accent-tint:var(--batu-tint); }
 
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
@@ -273,7 +284,7 @@ img{max-width:100%; display:block;}
 .hero-band .btn-ghost{ border-color:#C9D9D2; color:var(--ink); background:rgba(255,255,255,.55); }
 .hero-band .btn-ghost:hover{ border-color:var(--teal); background:#fff; }
 
-.module-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.module-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
 .module-card{
   border-radius:22px; padding:24px; cursor:pointer; position:relative; overflow:hidden;
   border:1px solid var(--line); transition:.25s; min-height:210px; display:flex; flex-direction:column;
@@ -293,6 +304,48 @@ img{max-width:100%; display:block;}
 .module-card.mc-kinhdich{ background:#F7EDE8; }
 .module-card.mc-kinhdich .mc-icon{ background:var(--vermil); color:#fff; }
 .module-card.mc-kinhdich .mc-cta{ color:var(--vermil-dark); }
+.module-card.mc-batu{ background:var(--batu-tint); }
+.module-card.mc-batu .mc-icon{ background:var(--batu); color:#fff; font-family:var(--font-han); }
+.module-card.mc-batu .mc-cta{ color:var(--batu-dark); }
+
+/* ==========================================================================
+   BAT TU (Four Pillars)
+   ========================================================================== */
+.batu-empty{ text-align:center; padding:40px 20px; }
+.batu-pillars{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+@media(max-width:700px){ .batu-pillars{ grid-template-columns:repeat(2,1fr); } }
+.batu-pillar{ background:var(--surface-tint); border-radius:18px; padding:16px 10px; text-align:center; border:1px solid var(--line); }
+.batu-pillar .bp-label{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+.batu-pillar .bp-han{ font-family:var(--font-han); font-size:34px; font-weight:700; line-height:1.25; margin-top:8px; color:var(--ink); }
+.batu-pillar .bp-han .bp-gan{ display:block; }
+.batu-pillar .bp-han .bp-zhi{ display:block; }
+.batu-pillar .bp-viet{ font-size:12px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
+.batu-pillar .bp-wx{ display:flex; justify-content:center; gap:4px; margin-top:8px; }
+.batu-pillar .bp-animal{ margin-top:10px; display:flex; justify-content:center; }
+.batu-pillar .bp-animal svg{ width:34px; height:34px; }
+.wx-chip{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:20px; }
+.wx-chip.wx-kim{ background:var(--wx-kim-tint); color:var(--wx-kim); }
+.wx-chip.wx-moc{ background:var(--wx-moc-tint); color:var(--wx-moc); }
+.wx-chip.wx-thuy{ background:var(--wx-thuy-tint); color:var(--wx-thuy); }
+.wx-chip.wx-hoa{ background:var(--wx-hoa-tint); color:var(--wx-hoa); }
+.wx-chip.wx-tho{ background:var(--wx-tho-tint); color:var(--wx-tho); }
+.batu-shishen-row{ display:flex; justify-content:center; gap:4px; margin-top:6px; flex-wrap:wrap; }
+.batu-shishen-tag{ font-size:10px; color:var(--ink-faint); background:var(--surface); border:1px solid var(--line); padding:1px 6px; border-radius:10px; }
+.wx-ratio-bar{ display:flex; height:14px; border-radius:8px; overflow:hidden; background:var(--surface-tint); }
+.wx-ratio-bar span{ height:100%; }
+.wx-ratio-legend{ display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; font-size:12px; }
+.wx-ratio-legend .item{ display:flex; align-items:center; gap:5px; }
+.wx-ratio-legend .dot{ width:9px; height:9px; border-radius:50%; }
+.batu-rel-grid{ display:flex; flex-wrap:wrap; gap:8px; }
+.batu-rel-tag{ font-size:12px; font-weight:700; padding:5px 11px; border-radius:20px; background:var(--batu-tint); color:var(--batu-dark); }
+.batu-rel-tag.rel-xung{ background:#F3DFDA; color:var(--wx-hoa); }
+.batu-rel-tag.rel-hai{ background:#EDE6DC; color:#8A6D3B; }
+.batu-dayun-strip{ display:flex; overflow-x:auto; gap:10px; padding-bottom:6px; }
+.batu-dayun-item{ flex:0 0 auto; min-width:96px; background:var(--surface-tint); border-radius:14px; padding:12px 10px; text-align:center; border:1px solid var(--line); }
+.batu-dayun-item.current{ border-color:var(--batu); background:var(--batu-tint); }
+.batu-dayun-item .dy-age{ font-size:11px; color:var(--ink-faint); }
+.batu-dayun-item .dy-han{ font-family:var(--font-han); font-size:20px; font-weight:700; margin-top:4px; }
+.batu-dayun-item .dy-year{ font-size:10.5px; color:var(--ink-faint); margin-top:4px; }
 
 /* ==========================================================================
    ZODIAC WHEEL (SVG star map)
@@ -437,6 +490,9 @@ img{max-width:100%; display:block;}
 @media (min-width: 961px){
   .mobile-topbar{ display:none; }
 }
+@media (min-width: 961px) and (max-width: 1240px){
+  .module-grid{ grid-template-columns:repeat(2,1fr); }
+}
 @media (max-width: 960px){
   body{ overflow:auto; }
   #sidebar{ display:none; }
@@ -514,6 +570,10 @@ img{max-width:100%; display:block;}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="2.2" rx="1" fill="currentColor"/><rect x="4" y="10.9" width="7" height="2.2" rx="1" fill="currentColor"/><rect x="13" y="10.9" width="7" height="2.2" rx="1" fill="currentColor"/><rect x="4" y="16.8" width="16" height="2.2" rx="1" fill="currentColor"/></svg>
         Kinh Dịch
       </button>
+      <button class="side-item" data-goto="batu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/></svg>
+        Bát Tự
+      </button>
       <div class="side-divider"></div>
       <button class="side-item" data-goto="compat">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 4.5 2.4C11.3 5.2 12.8 4 15 4c4 0 5.5 4 4 7.7C17 16.4 12 21 12 21Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -578,6 +638,12 @@ img{max-width:100%; display:block;}
             <div class="mc-title">Kinh Dịch</div>
             <div class="mc-desc">Nhập câu hỏi, gieo 3 số và nhận quẻ cùng quan hệ Thể–Dụng đã tính sẵn.</div>
             <div class="mc-cta">Gieo quẻ →</div>
+          </div>
+          <div class="module-card mc-batu" data-goto="batu">
+            <div class="mc-icon">柱</div>
+            <div class="mc-title">Bát Tự</div>
+            <div class="mc-desc">Lập lá số Tứ Trụ (Năm–Tháng–Ngày–Giờ), xem Thập Thần, Đại Vận và tỷ lệ Ngũ Hành.</div>
+            <div class="mc-cta">Lập lá số →</div>
           </div>
         </div>
         <div class="card-flat section-gap hidden" id="home-ai-progress" aria-live="polite">
@@ -851,6 +917,83 @@ img{max-width:100%; display:block;}
       </div>
     </section>
 
+    <!-- ===================== BAT TU VIEW ===================== -->
+    <section class="view" data-view="batu" data-accent="batu">
+      <div class="view-inner">
+        <div class="view-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+          <div>
+            <p class="view-eyebrow">Bát Tự</p>
+            <h1 class="view-title serif">Bát Tự — Tứ Trụ Mệnh Lý</h1>
+            <p class="view-sub">Lá số 4 trụ Năm–Tháng–Ngày–Giờ tính trực tiếp từ ngày giờ sinh dương lịch, cùng Đại Vận và tỷ lệ Ngũ Hành.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-ghost btn-sm" id="btn-batu-editprofile">Sửa thông tin</button>
+          </div>
+        </div>
+
+        <div id="batu-empty" class="card batu-empty hidden">
+          <p style="font-weight:700; font-size:15px;">Chưa có hồ sơ</p>
+          <p class="body-txt" style="margin-top:8px; color:var(--ink-soft);">Thiết lập ngày giờ sinh để lập lá số Bát Tự.</p>
+          <button class="btn btn-accent section-gap" id="btn-batu-setup" style="--accent:var(--batu);">Thiết lập hồ sơ</button>
+        </div>
+
+        <div id="batu-content" class="hidden">
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <p style="font-weight:700; font-size:14.5px;">Tứ Trụ</p>
+              <span class="badge" id="batu-lunar-badge">—</span>
+            </div>
+            <div class="batu-pillars section-gap" id="batu-pillars"></div>
+          </div>
+
+          <div class="two-col section-gap">
+            <div class="card">
+              <p style="font-weight:700; font-size:14.5px;">Tỷ lệ Ngũ Hành (đếm Thiên Can + Địa Chi)</p>
+              <div class="wx-ratio-bar section-gap" id="batu-wx-bar"></div>
+              <div class="wx-ratio-legend" id="batu-wx-legend"></div>
+            </div>
+            <div class="card">
+              <p style="font-weight:700; font-size:14.5px;">Xung — Hợp — Hình — Hại giữa các trụ</p>
+              <div class="batu-rel-grid section-gap" id="batu-relations"></div>
+              <p style="font-size:11px; color:var(--ink-faint); margin-top:10px; line-height:1.6;">Quan hệ giữa 4 Địa Chi (Năm, Tháng, Ngày, Giờ) theo các bộ Lục Hợp / Lục Xung / Tam Hợp / Lục Hại / Tương Hình cổ điển.</p>
+            </div>
+          </div>
+
+          <div class="card section-gap">
+            <p style="font-weight:700; font-size:14.5px;">Đại Vận</p>
+            <div class="batu-dayun-strip section-gap" id="batu-dayun"></div>
+          </div>
+
+          <div class="section-gap">
+            <h3 style="font-size:16px; font-weight:800; margin-bottom:14px;">Luận giải theo chủ đề</h3>
+            <div class="topic-grid" id="batu-topic-grid"></div>
+          </div>
+
+          <div class="card-flat section-gap">
+            <p style="font-size:12.5px; color:var(--ink-faint); line-height:1.6;">Nội dung tham khảo văn hoá truyền thống, không phải lời khuyên y tế / tài chính / pháp lý tuyệt đối. Ở hình 12 con giáp, chi Mão dùng biểu tượng Mèo theo văn hoá dân gian Việt Nam (thay vì Thỏ).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== BAT TU: TOPIC DETAIL ===================== -->
+    <section class="view" data-view="batu-detail" data-accent="batu">
+      <div class="view-inner" style="max-width:820px;">
+        <button class="btn btn-text" data-goto="batu" style="padding-left:0;">← Quay lại Bát Tự</button>
+        <div class="view-header" style="margin-top:6px;">
+          <p class="view-eyebrow" id="bd-eyebrow">Chủ đề</p>
+          <h1 class="view-title serif" id="bd-title">—</h1>
+        </div>
+        <div class="card">
+          <div id="bd-content" class="content-md">
+            <div class="skel" style="height:14px; width:95%; margin-bottom:10px;"></div>
+            <div class="skel" style="height:14px; width:85%; margin-bottom:10px;"></div>
+            <div class="skel" style="height:14px; width:70%;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== COMPATIBILITY VIEW ===================== -->
     <section class="view" data-view="compat" data-accent="tuvi">
       <div class="view-inner" style="max-width:760px;">
@@ -1025,6 +1168,16 @@ img{max-width:100%; display:block;}
   window.supabaseClient = createClient(window.__SUPABASE_URL__, window.__SUPABASE_ANON_KEY__);
   window.dispatchEvent(new Event("supabase-ready"));
 </script>
+<script type="module">
+  /* Thư viện lịch/can-chi dùng riêng cho module Bát Tự (tách biệt hoàn toàn với
+     iztro — thư viện Tử Vi đã dùng sẵn). Nạp độc lập, lỗi ở đây không ảnh hưởng
+     các module khác vì mọi nơi gọi tới đều qua waitForLunarKit() có timeout. */
+  try{
+    const mod = await import("https://cdn.jsdelivr.net/npm/lunar-typescript@1.8.6/dist/index.mjs");
+    window.LunarKit = { Solar: mod.Solar, Lunar: mod.Lunar };
+  }catch(_){ window.LunarKit = null; }
+  window.dispatchEvent(new Event("lunarkit-ready"));
+</script>
 <script>
 /* ============================================================================
    ASTROX v2 — APP LOGIC
@@ -1039,7 +1192,7 @@ const AI_MODELS = [{id:DEFAULT_MODEL,label:"Muse Spark 1.3"}];
 --------------------------------------------------------------------------- */
 const PROMPT_VERSION = "2026-09-content-fix-v5";
 function emptyAiProfileCache(){
-  return {tuviTopics:{}, tuviPeriod:{today:{},week:{},month:{}}, zodiacTopics:{}, zodiacPeriod:{today:{},week:{},month:{}}, kinhDich:{}, compatibility:{}};
+  return {tuviTopics:{}, tuviPeriod:{today:{},week:{},month:{}}, zodiacTopics:{}, zodiacPeriod:{today:{},week:{},month:{}}, kinhDich:{}, compatibility:{}, batuTopics:{}};
 }
 function defaultState(){
   return {profile:null,chartImageBase64:null,chartImageMime:"image/jpeg",ziweiChart:null,natalChart:null,apiKey:null,model:DEFAULT_MODEL,onboarded:false,aiCache:{version:2,profiles:{},legacy:{}}};
@@ -1085,7 +1238,7 @@ function writeAiCache(group,key,text,meta={}){
   saveState();scheduleUserDataSync();
 }
 function mergeCacheObject(local,remote){const out=Object.assign({},local||{});Object.entries(remote||{}).forEach(([k,v])=>{const lt=typeof out[k]==="object"?out[k].updatedAt||0:0,rt=typeof v==="object"?v.updatedAt||0:Date.now();if(!out[k]||rt>=lt)out[k]=v;});return out;}
-function mergeAiCaches(local,remote){const out={version:2,profiles:{},legacy:mergeCacheObject(local?.legacy,remote?.legacy)};const fps=new Set([...Object.keys(local?.profiles||{}),...Object.keys(remote?.profiles||{})]);fps.forEach(fp=>{const a=Object.assign(emptyAiProfileCache(),local?.profiles?.[fp]||{}),b=remote?.profiles?.[fp]||{};["tuviTopics","zodiacTopics","kinhDich","compatibility"].forEach(k=>a[k]=mergeCacheObject(a[k],b[k]));["today","week","month"].forEach(p=>{a.tuviPeriod[p]=mergeCacheObject(a.tuviPeriod?.[p],b.tuviPeriod?.[p]);a.zodiacPeriod[p]=mergeCacheObject(a.zodiacPeriod?.[p],b.zodiacPeriod?.[p]);});out.profiles[fp]=a;});return out;}
+function mergeAiCaches(local,remote){const out={version:2,profiles:{},legacy:mergeCacheObject(local?.legacy,remote?.legacy)};const fps=new Set([...Object.keys(local?.profiles||{}),...Object.keys(remote?.profiles||{})]);fps.forEach(fp=>{const a=Object.assign(emptyAiProfileCache(),local?.profiles?.[fp]||{}),b=remote?.profiles?.[fp]||{};["tuviTopics","zodiacTopics","kinhDich","compatibility","batuTopics"].forEach(k=>a[k]=mergeCacheObject(a[k],b[k]));["today","week","month"].forEach(p=>{a.tuviPeriod[p]=mergeCacheObject(a.tuviPeriod?.[p],b.tuviPeriod?.[p]);a.zodiacPeriod[p]=mergeCacheObject(a.zodiacPeriod?.[p],b.zodiacPeriod?.[p]);});out.profiles[fp]=a;});return out;}
 let syncTimer=null,syncInFlight=false,syncQueued=false,syncErrorShown=false,supabaseUser=null,homeErrorModule=null,preloadGeneration=0;
 const aiGateErrors={tuvi:"",zodiac:""};
 /* Chờ xác định trạng thái đăng nhập (và đồng bộ tài khoản nếu có) trước khi
@@ -1310,6 +1463,7 @@ window.addEventListener("popstate", async (e)=>{
   if(shown){
     if(name === "tuvi") refreshTuviMini();
     if(name === "zodiac") refreshZodiacSign();
+    if(name === "batu") refreshBatuMini();
   }
 });
 try{ history.replaceState({view:"home"}, "", location.href.startsWith("http") ? location.href : location.href); }catch(_){}
@@ -1321,6 +1475,7 @@ document.querySelectorAll("[data-goto]").forEach(el=>{
     if(!shown) return;
     if(target === "tuvi") refreshTuviMini();
     if(target === "zodiac") refreshZodiacSign();
+    if(target === "batu") refreshBatuMini();
   });
 });
 
@@ -2807,6 +2962,7 @@ function applyProfileToUi(){
   STATE.natalChart=buildNatalChart(STATE.profile);
   refreshTuviMini();
   refreshZodiacSign();
+  refreshBatuMini();
   startBackgroundPreload();
 }
 
@@ -2828,10 +2984,240 @@ document.getElementById("im-close").addEventListener("click", ()=> document.getE
 document.getElementById("info-modal").addEventListener("click",(e)=>{ if(e.target.id==="info-modal") document.getElementById("info-modal").classList.remove("show"); });
 
 /* ============================================================================
+   MODULE — BAT TU (Tu Tru). Module doc lap: dung thu vien rieng (lunar-typescript
+   qua window.LunarKit), khong dung chung bien/ham voi Tu Vi (iztro) hay Cung
+   Hoang Dao. Khong dua vao ensureModuleAiReady/aiGateRuns — theo dung pattern
+   khong-gate da dung o Kinh Dich, de loi/cham o module nay khong lam hong cac
+   module khac.
+   ============================================================================ */
+const BATU_STEM_VI = {
+  "甲":{vi:"Giáp",wxKey:"moc",yy:"Dương"}, "乙":{vi:"Ất",wxKey:"moc",yy:"Âm"},
+  "丙":{vi:"Bính",wxKey:"hoa",yy:"Dương"}, "丁":{vi:"Đinh",wxKey:"hoa",yy:"Âm"},
+  "戊":{vi:"Mậu",wxKey:"tho",yy:"Dương"}, "己":{vi:"Kỷ",wxKey:"tho",yy:"Âm"},
+  "庚":{vi:"Canh",wxKey:"kim",yy:"Dương"}, "辛":{vi:"Tân",wxKey:"kim",yy:"Âm"},
+  "壬":{vi:"Nhâm",wxKey:"thuy",yy:"Dương"}, "癸":{vi:"Quý",wxKey:"thuy",yy:"Âm"}
+};
+const BATU_BRANCH_VI = {
+  "子":{vi:"Tý",wxKey:"thuy",animal:"Chuột"}, "丑":{vi:"Sửu",wxKey:"tho",animal:"Trâu"},
+  "寅":{vi:"Dần",wxKey:"moc",animal:"Hổ"}, "卯":{vi:"Mão",wxKey:"moc",animal:"Mèo"},
+  "辰":{vi:"Thìn",wxKey:"tho",animal:"Rồng"}, "巳":{vi:"Tỵ",wxKey:"hoa",animal:"Rắn"},
+  "午":{vi:"Ngọ",wxKey:"hoa",animal:"Ngựa"}, "未":{vi:"Mùi",wxKey:"tho",animal:"Dê"},
+  "申":{vi:"Thân",wxKey:"kim",animal:"Khỉ"}, "酉":{vi:"Dậu",wxKey:"kim",animal:"Gà"},
+  "戌":{vi:"Tuất",wxKey:"tho",animal:"Chó"}, "亥":{vi:"Hợi",wxKey:"thuy",animal:"Lợn"}
+};
+/* Thap Than (10 vai tro) — thu vien tra ve Han gian the (dinh danh chuan, khong
+   phai dich may): 比肩/劫财/食神/伤官/偏财/正财/七杀(hoac偏官)/正官/偏印/正印;
+   ngay Tru Ngay thu vien tra co dinh "日主" (Nhat Chu — chinh no, khong co Thap
+   Than voi ban than). */
+const BATU_SHISHEN_VI = {
+  "比肩":"Tỷ Kiên", "劫财":"Kiếp Tài", "食神":"Thực Thần", "伤官":"Thương Quan",
+  "偏财":"Thiên Tài", "正财":"Chính Tài", "七杀":"Thất Sát", "偏官":"Thất Sát",
+  "正官":"Chính Quan", "偏印":"Thiên Ấn", "正印":"Chính Ấn", "日主":"Nhật Chủ (bản thân)"
+};
+const BATU_WX_LABEL = {moc:"Mộc",hoa:"Hoả",tho:"Thổ",kim:"Kim",thuy:"Thuỷ"};
+/* 12 hinh ve con vat — toi gian, flat, 1 mau (currentColor), dung hinh khoi co
+   ban (circle/path) thay vi icon Unicode. Chi Mao dung Meo theo van hoa dan
+   gian Viet Nam (khong dung Tho). */
+const BATU_ANIMAL_SVG = {
+  "Chuột":'<circle cx="12" cy="14" r="6" fill="currentColor"/><circle cx="7.5" cy="8.5" r="2" fill="currentColor"/><circle cx="16.5" cy="8.5" r="2" fill="currentColor"/><circle cx="12" cy="19.4" r="1.4" fill="currentColor"/><path d="M18 16q5-1 3.5 5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/>',
+  "Trâu":'<circle cx="12" cy="14.5" r="6" fill="currentColor"/><path d="M8 9Q4 4 8.5 3.5M16 9Q20 4 15.5 3.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="12" cy="19" rx="2.6" ry="1.6" fill="currentColor"/>',
+  "Hổ":'<circle cx="12" cy="14" r="6.2" fill="currentColor"/><path d="M7.5 9l-1.5-4 3.5 2.3z" fill="currentColor"/><path d="M16.5 9l1.5-4-3.5 2.3z" fill="currentColor"/><path d="M6.3 15h-3M6.6 17.4h-3M17.7 15h3M17.4 17.4h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>',
+  "Mèo":'<circle cx="12" cy="14.5" r="6" fill="currentColor"/><path d="M7 9l-1-4.5 4 3z" fill="currentColor"/><path d="M17 9l1-4.5-4 3z" fill="currentColor"/><path d="M6.5 15.2h-3M6.7 17.5h-3M17.5 15.2h3M17.3 17.5h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>',
+  "Rồng":'<path d="M3 17c2-3 3-7 6-8 2-.7 2 1.4 4 1 2.3-.5 2.6-3.4 5-3.6 2-.2 4 1 3.5 3.2" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round"/><path d="M18 6l2.4-1.6-.6 2.8z" fill="currentColor"/><circle cx="6.3" cy="17.6" r="1.1" fill="currentColor"/>',
+  "Rắn":'<path d="M4 8c3 0 3 4 6 4s3-4 6-4 3 4 6 4" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M20.5 11.3l2.3.7-1.6 1.8z" fill="currentColor"/>',
+  "Ngựa":'<circle cx="12" cy="15" r="5.4" fill="currentColor"/><path d="M9 10 6 5l3.6 1.4M12 9.3V4.3" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/><path d="M15.5 10.5q3-2.5 4.3.3" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>',
+  "Dê":'<circle cx="12" cy="15" r="5.6" fill="currentColor"/><path d="M8.5 10Q5 6 8 3M15.5 10Q19 6 16 3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M12 20.3v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  "Khỉ":'<circle cx="12" cy="14.5" r="6" fill="currentColor"/><circle cx="6.3" cy="12" r="2.6" fill="currentColor"/><circle cx="17.7" cy="12" r="2.6" fill="currentColor"/><circle cx="12" cy="16.2" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/>',
+  "Gà":'<circle cx="11.5" cy="15" r="5.2" fill="currentColor"/><path d="M9 9.3c-1-2.2 1-3 .3-4.6 1.6.3 2 1.8 1.6 3z" fill="currentColor"/><path d="M12.4 8.6c.2-2 2-2.7 1.6-4.3 1.6.7 1.6 2.3.8 3.3z" fill="currentColor"/><path d="M17 15.5l3.2-1-1 3.2z" fill="currentColor"/>',
+  "Chó":'<circle cx="12" cy="15" r="5.8" fill="currentColor"/><path d="M6.6 11.5Q3 12 4 17M17.4 11.5Q21 12 20 17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="12" cy="19.6" rx="2.2" ry="1.3" fill="currentColor"/>',
+  "Lợn":'<circle cx="12" cy="14.5" r="6" fill="currentColor"/><circle cx="7" cy="10" r="1.8" fill="currentColor"/><circle cx="17" cy="10" r="1.8" fill="currentColor"/><circle cx="12" cy="17" r="2.3" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="17" r=".5" fill="currentColor"/><circle cx="13" cy="17" r=".5" fill="currentColor"/>'
+};
+function batuGenderNum(g){ return g==="Nam" ? 1 : 0; }
+/* Bang quan he Dia Chi — hoi ky ve mat kinh dien, khong doc lai duoc tren web
+   phien nay (nguon chan qua robots.txt); dung theo kien thuc huan luyen tieu
+   chuan, dung o muc "tham khao" chu khong tuyet doi hoa dung/sai. */
+const BATU_REL_HOP=[["Tý","Sửu"],["Dần","Hợi"],["Mão","Tuất"],["Thìn","Dậu"],["Tỵ","Thân"],["Ngọ","Mùi"]];
+const BATU_REL_XUNG=[["Tý","Ngọ"],["Sửu","Mùi"],["Dần","Thân"],["Mão","Dậu"],["Thìn","Tuất"],["Tỵ","Hợi"]];
+const BATU_REL_HAI=[["Tý","Mùi"],["Sửu","Ngọ"],["Dần","Tỵ"],["Mão","Thìn"],["Thân","Hợi"],["Dậu","Tuất"]];
+const BATU_REL_TAMHOP=[["Thân","Tý","Thìn"],["Hợi","Mão","Mùi"],["Dần","Ngọ","Tuất"],["Tỵ","Dậu","Sửu"]];
+const BATU_REL_HINH_PAIR=[["Dần","Tỵ"],["Tỵ","Thân"],["Dần","Thân"],["Sửu","Tuất"],["Tuất","Mùi"],["Sửu","Mùi"],["Tý","Mão"]];
+const BATU_REL_TUHINH=["Thìn","Ngọ","Dậu","Hợi"];
+function batuPairIn(list,a,b){ return list.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)); }
+function detectBatuRelations(items){
+  const out=[];
+  for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
+    const a=items[i], b=items[j];
+    if(batuPairIn(BATU_REL_HOP,a.zhi,b.zhi)) out.push({type:"hop",text:`Lục Hợp: ${a.label}–${b.label} (${a.zhi}·${b.zhi})`});
+    if(batuPairIn(BATU_REL_XUNG,a.zhi,b.zhi)) out.push({type:"xung",text:`Lục Xung: ${a.label}–${b.label} (${a.zhi}·${b.zhi})`});
+    if(batuPairIn(BATU_REL_HAI,a.zhi,b.zhi)) out.push({type:"hai",text:`Lục Hại: ${a.label}–${b.label} (${a.zhi}·${b.zhi})`});
+    if(batuPairIn(BATU_REL_HINH_PAIR,a.zhi,b.zhi)) out.push({type:"hinh",text:`Tương Hình: ${a.label}–${b.label} (${a.zhi}·${b.zhi})`});
+    if(a.zhi===b.zhi && BATU_REL_TUHINH.includes(a.zhi)) out.push({type:"hinh",text:`Tự Hình: ${a.label}–${b.label} (${a.zhi})`});
+  }
+  BATU_REL_TAMHOP.forEach(trio=>{
+    const found=trio.map(z=>items.find(p=>p.zhi===z)).filter(Boolean);
+    if(found.length===3) out.push({type:"hop",text:`Tam Hợp: ${found.map(f=>f.label).join('–')} (${trio.join('·')})`});
+  });
+  if(out.length===0) out.push({type:"none",text:"Không có quan hệ Xung/Hợp/Hình/Hại nổi bật giữa 4 Địa Chi."});
+  return out;
+}
+/* buildEightChar: tinh Tu Tru bang lunar-typescript. Gio sinh dung diem giua
+   chi gio (tu natalTime co san), hieu chinh gio Mat Troi that theo kinh do
+   (VN_COORDS) so voi kinh tuyen chuan 105°E (~4 phut/do) — cong don vao offset
+   +07:00 dan su truoc khi doc lai truong Y/M/D/H/Min de tranh phu thuoc muy
+   gio he thong cua may chay. */
+function buildEightChar(profile){
+  if(!window.LunarKit || !window.LunarKit.Solar) throw new Error("Thư viện tính Bát Tự chưa sẵn sàng.");
+  if(!profile || !profile.dob || !profile.hourChi) throw new Error("Thiếu ngày giờ sinh.");
+  const instant = natalTime(profile).getTime();
+  const [lat,lon] = VN_COORDS[profile.place] || VN_COORDS["Hà Nội"];
+  const offsetMin = 420 + (lon-105)*4;
+  const wd = new Date(instant + offsetMin*60000);
+  const y=wd.getUTCFullYear(), mo=wd.getUTCMonth()+1, da=wd.getUTCDate(), hh=wd.getUTCHours(), mi=wd.getUTCMinutes();
+  const solar = window.LunarKit.Solar.fromYmdHms(y,mo,da,hh,mi,0);
+  const lunar = solar.getLunar();
+  const ec = lunar.getEightChar();
+  const mkPillar=(label,gan,zhi,ssGan,ssZhi)=>{
+    const g=BATU_STEM_VI[gan]||{vi:gan,wxKey:"",yy:""};
+    const z=BATU_BRANCH_VI[zhi]||{vi:zhi,wxKey:"",animal:""};
+    return {label,hanGan:gan,hanZhi:zhi,viGan:g.vi,viZhi:z.vi,wxKeyGan:g.wxKey,wxKeyZhi:z.wxKey,yinYang:g.yy,animal:z.animal,
+      shishenGan: BATU_SHISHEN_VI[ssGan]||ssGan||"",
+      shishenZhi:(ssZhi||[]).map(s=>BATU_SHISHEN_VI[s]||s)};
+  };
+  const pillars = {
+    year: mkPillar("Năm", ec.getYearGan(), ec.getYearZhi(), ec.getYearShiShenGan(), ec.getYearShiShenZhi()),
+    month: mkPillar("Tháng", ec.getMonthGan(), ec.getMonthZhi(), ec.getMonthShiShenGan(), ec.getMonthShiShenZhi()),
+    day: mkPillar("Ngày", ec.getDayGan(), ec.getDayZhi(), ec.getDayShiShenGan(), ec.getDayShiShenZhi()),
+    time: mkPillar("Giờ", ec.getTimeGan(), ec.getTimeZhi(), ec.getTimeShiShenGan(), ec.getTimeShiShenZhi())
+  };
+  const wxCount={moc:0,hoa:0,tho:0,kim:0,thuy:0};
+  Object.values(pillars).forEach(p=>{ if(wxCount[p.wxKeyGan]!==undefined) wxCount[p.wxKeyGan]++; if(wxCount[p.wxKeyZhi]!==undefined) wxCount[p.wxKeyZhi]++; });
+  const relations = detectBatuRelations([
+    {label:"Năm",zhi:pillars.year.viZhi},{label:"Tháng",zhi:pillars.month.viZhi},
+    {label:"Ngày",zhi:pillars.day.viZhi},{label:"Giờ",zhi:pillars.time.viZhi}
+  ]);
+  let dayun=[];
+  try{
+    const yun = ec.getYun(batuGenderNum(profile.gender));
+    dayun = yun.getDaYun(9).filter(d=>d.getIndex()>=1).map(d=>{
+      const gz=d.getGanZhi(), gan=gz.charAt(0), zhi=gz.charAt(1);
+      const g=BATU_STEM_VI[gan]||{vi:gan}, z=BATU_BRANCH_VI[zhi]||{vi:zhi};
+      return {startAge:d.getStartAge(), endAge:d.getEndAge(), startYear:d.getStartYear(), endYear:d.getEndYear(), hanGanZhi:gz, viGanZhi:g.vi+" "+z.vi};
+    });
+  }catch(_){ dayun=[]; }
+  const lunarText = `Ngày ${lunar.getDay()} tháng ${Math.abs(lunar.getMonth())}${lunar.getMonth()<0?" (nhuận)":""} âm lịch, năm ${pillars.year.viGan} ${pillars.year.viZhi}`;
+  return {pillars, wuxing:wxCount, relations, dayun, lunarText};
+}
+function batuWxChip(key){ if(!key) return ""; return `<span class="wx-chip wx-${key}">${BATU_WX_LABEL[key]||key}</span>`; }
+function renderBatuView(chart){
+  document.getElementById("batu-lunar-badge").textContent = chart.lunarText;
+  const order=["year","month","day","time"];
+  document.getElementById("batu-pillars").innerHTML = order.map(key=>{
+    const p=chart.pillars[key], animalSvg=BATU_ANIMAL_SVG[p.animal]||"";
+    return `<div class="batu-pillar">
+      <div class="bp-label">${escapeHtml(p.label)}</div>
+      <div class="bp-han"><span class="bp-gan">${p.hanGan}</span><span class="bp-zhi">${p.hanZhi}</span></div>
+      <div class="bp-viet">${escapeHtml(p.viGan)} ${escapeHtml(p.viZhi)}</div>
+      <div class="bp-wx">${batuWxChip(p.wxKeyGan)}${batuWxChip(p.wxKeyZhi)}</div>
+      <div class="bp-animal"><svg viewBox="0 0 24 24" fill="none">${animalSvg}</svg></div>
+      <div class="batu-shishen-row">${p.shishenGan?`<span class="batu-shishen-tag">${escapeHtml(p.shishenGan)}</span>`:""}${p.shishenZhi.map(s=>`<span class="batu-shishen-tag">${escapeHtml(s)}</span>`).join("")}</div>
+    </div>`;
+  }).join("");
+
+  const wxOrder=["moc","hoa","tho","kim","thuy"], total=Object.values(chart.wuxing).reduce((a,b)=>a+b,0)||1;
+  document.getElementById("batu-wx-bar").innerHTML = wxOrder.map(k=>chart.wuxing[k]>0?`<span style="width:${(chart.wuxing[k]/total*100).toFixed(1)}%;background:var(--wx-${k})"></span>`:"").join("");
+  document.getElementById("batu-wx-legend").innerHTML = wxOrder.map(k=>`<span class="item"><span class="dot" style="background:var(--wx-${k})"></span>${BATU_WX_LABEL[k]}: ${chart.wuxing[k]}</span>`).join("");
+
+  document.getElementById("batu-relations").innerHTML = chart.relations.map(r=>`<span class="batu-rel-tag rel-${r.type}">${escapeHtml(r.text)}</span>`).join("");
+
+  const nowYear=new Date().getFullYear();
+  document.getElementById("batu-dayun").innerHTML = chart.dayun.length ? chart.dayun.map(d=>`
+    <div class="batu-dayun-item ${nowYear>=d.startYear&&nowYear<=d.endYear?'current':''}">
+      <div class="dy-age">${d.startAge}–${d.endAge} tuổi</div>
+      <div class="dy-han">${d.hanGanZhi}</div>
+      <div class="dy-year">${escapeHtml(d.viGanZhi)}</div>
+      <div class="dy-year">${d.startYear}–${d.endYear}</div>
+    </div>`).join("") : `<p style="color:var(--ink-faint);font-size:13px;">Không tính được Đại Vận.</p>`;
+}
+let batuKitWaiting=false;
+function refreshBatuMini(){
+  const emptyEl=document.getElementById("batu-empty"), contentEl=document.getElementById("batu-content");
+  if(!emptyEl || !contentEl) return;
+  if(!STATE.profile){ emptyEl.classList.remove("hidden"); contentEl.classList.add("hidden"); return; }
+  emptyEl.classList.add("hidden"); contentEl.classList.remove("hidden");
+  if(window.LunarKit===undefined){
+    if(!batuKitWaiting){ batuKitWaiting=true; window.addEventListener("lunarkit-ready", ()=>{ batuKitWaiting=false; refreshBatuMini(); }, {once:true}); }
+    document.getElementById("batu-pillars").innerHTML = `<p style="grid-column:1/-1;color:var(--ink-faint);font-size:13px;">Đang tải thư viện tính Bát Tự…</p>`;
+    return;
+  }
+  if(window.LunarKit===null){
+    document.getElementById("batu-pillars").innerHTML = `<p style="grid-column:1/-1;color:var(--rose);font-size:13px;">Không tải được thư viện tính Bát Tự (có thể do mạng chặn CDN). Vui lòng tải lại trang.</p>`;
+    return;
+  }
+  try{
+    const chart = buildEightChar(STATE.profile);
+    STATE.batuChart = chart; saveState();
+    renderBatuView(chart);
+  }catch(e){
+    document.getElementById("batu-pillars").innerHTML = `<p style="grid-column:1/-1;color:var(--rose);font-size:13px;">Không lập được lá số: ${escapeHtml(e.message)}</p>`;
+  }
+}
+function refreshBatuChart(){ try{ if(!window.LunarKit) return; STATE.batuChart = buildEightChar(STATE.profile); saveState(); }catch(_){} }
+function batuContextText(){ return STATE.batuChart ? `DỮ LIỆU LÁ SỐ BÁT TỰ ĐÃ TÍNH (đầy đủ, AI phải dùng trực tiếp — không được nói thiếu dữ liệu): ${JSON.stringify(STATE.batuChart)}` : ""; }
+function batuPromptBody(taskText){
+  if(!STATE.batuChart) refreshBatuChart();
+  const chartLine=batuContextText();
+  return `${profileContextText()}\n${chartLine}\n\nQUY TẮC PHÂN TÍCH BÁT TỰ: bắt đầu ngay từ dữ liệu Tứ Trụ, Thập Thần và tỷ lệ Ngũ Hành đã cho — không được nói "thiếu dữ liệu" hay yêu cầu bổ sung ngày giờ sinh. Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó và phân tích phần còn lại.\n\n${taskText}`;
+}
+const BATU_TOPICS = [
+  { id:"tinh-cach", icon:"☯", title:"Tính cách", desc:"Tính cách, khí chất qua Nhật Chủ, Ngũ Hành và Thập Thần.",
+    prompt:"Phân tích tính cách, khí chất qua Thiên Can Nhật Chủ (trụ Ngày), tỷ lệ Ngũ Hành và các Thập Thần xuất hiện trong lá số Bát Tự. Chia đoạn có tiêu đề in đậm: **Điểm mạnh**, **Điểm cần lưu ý**, **Lời khuyên rèn luyện**. ~260-440 từ." },
+  { id:"su-nghiep-tien-tai", icon:"⌂", title:"Sự nghiệp & tiền tài", desc:"Xu hướng sự nghiệp, tài lộc qua trụ Tháng và Thập Thần Tài/Quan.",
+    prompt:"Phân tích sự nghiệp và tiền tài dựa trên trụ Tháng và các Thập Thần Tài/Quan/Ấn xuất hiện trong lá số Bát Tự. ~260-440 từ." },
+  { id:"tinh-duyen", icon:"❤", title:"Tình duyên", desc:"Tình duyên, hôn nhân qua trụ Ngày và Thập Thần liên quan.",
+    prompt:"Phân tích tình duyên và hôn nhân dựa trên Địa Chi trụ Ngày (cung Phối ngẫu) và các Thập Thần Tài/Quan/Sát trong lá số Bát Tự. ~240-410 từ." },
+  { id:"suc-khoe", icon:"✚", title:"Sức khoẻ", desc:"Xu hướng sức khoẻ qua sự cân bằng Ngũ Hành trong lá số.",
+    prompt:"Phân tích xu hướng sức khoẻ dựa trên sự dư/thiếu cân bằng Ngũ Hành trong lá số Bát Tự (hành nào vượng, hành nào thiếu) theo quan niệm Ngũ Hành tương ứng ngũ tạng trong văn hoá truyền thống. Nói rõ đây là góc nhìn văn hoá tham khảo, không thay thế chẩn đoán y khoa. ~220-370 từ." }
+];
+function renderBatuTopicGrid(){
+  const grid=document.getElementById("batu-topic-grid"); if(!grid) return;
+  grid.innerHTML = BATU_TOPICS.map(t=>`<div class="topic-card" data-batu-topic="${t.id}"><div class="tc-icon">${t.icon}</div><div class="tc-title">${t.title}</div><div class="tc-desc">${t.desc}</div></div>`).join("");
+  grid.querySelectorAll("[data-batu-topic]").forEach(card=> card.addEventListener("click", ()=>openBatuTopic(card.dataset.batuTopic)));
+}
+let currentBatuTopic=null;
+async function openBatuTopic(topicId){
+  if(!STATE.profile){ openProfileModal(false); return; }
+  const topic=BATU_TOPICS.find(t=>t.id===topicId); if(!topic) return;
+  currentBatuTopic=topic;
+  document.getElementById("bd-eyebrow").textContent="Bát Tự · "+topic.title;
+  document.getElementById("bd-title").textContent=topic.title;
+  await showView("batu-detail",{bypassGate:true});
+  loadBatuTopicContent();
+}
+async function loadBatuTopicContent(){
+  const topic=currentBatuTopic, contentEl=document.getElementById("bd-content");
+  if(!topic || !contentEl) return;
+  const cached=readAiCache("batuTopics",topic.id);
+  if(cached){ contentEl.innerHTML=mdToHtml(cached); return; }
+  if(!STATE.profile){ contentEl.innerHTML=`<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AI.</p>`; return; }
+  contentEl.innerHTML=`<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:80%;"></div>`;
+  await aiAcquireSlot();
+  try{
+    const q=batuPromptBody(topic.prompt);
+    const result=await runAiPrompt(q,{});
+    writeAiCache("batuTopics",topic.id,result,{module:"batu",topic:topic.id});
+    contentEl.innerHTML=mdToHtml(result);
+  }catch(e){ contentEl.innerHTML=`<p style="color:var(--rose);">Không lấy được phân tích: ${escapeHtml(e.message)}</p>`; }
+  finally{ aiReleaseSlot(); }
+}
+document.getElementById("btn-batu-editprofile")?.addEventListener("click", ()=> openProfileModal(!!STATE.profile));
+document.getElementById("btn-batu-setup")?.addEventListener("click", ()=> openProfileModal(false));
+
+/* ============================================================================
    BOOT
    ============================================================================ */
 renderTuviTopicGrid();
 renderZodiacTopicGrid();
+renderBatuTopicGrid();
 renderZodiacWheel(null);
 applyProfileToUi();
 if(!STATE.onboarded){

@@ -1199,6 +1199,17 @@ document.getElementById("pm-login").addEventListener("click", ()=> loginWithGoog
 async function logout(){
   try{ const supa=await waitForSupabaseClient(); if(supa) await supa.auth.signOut(); }catch(_){}
   supabaseUser=null; updateAuthUi();
+  if(!STATE.profile){
+    // Không có hồ sơ đã lưu khi thoát tài khoản giữa phiên: huỷ mọi tiến trình
+    // gọi AI (preload nền / gate đang chạy) để tránh gọi AI khi chưa đủ điều
+    // kiện, đưa trạng thái AI về ban đầu.
+    preloadGeneration++;
+    aiGateRuns.tuvi=null; aiGateRuns.zodiac=null;
+    aiGateErrors.tuvi=""; aiGateErrors.zodiac=""; homeErrorModule=null;
+    preloadQueue=[]; preloadChain=null;
+    closeAiGate();
+    const errRow=document.getElementById("home-ai-error-row"); if(errRow) errRow.classList.add("hidden");
+  }
   showToast("Đã đăng xuất.");
 }
 document.getElementById("pm-logout").addEventListener("click", ()=>{
@@ -1490,6 +1501,7 @@ async function callAiText(opts){
 async function runAiPrompt(userQuestion, opts){
   opts = opts || {};
   if(!AI_BASE) throw new Error("Máy chủ AI chưa sẵn sàng.");
+  if(!STATE.profile) throw new Error("Chưa có hồ sơ. Vui lòng lưu hồ sơ trước khi dùng AI.");
   const parts = [{text:userQuestion}];
   if(opts.withChartImage && STATE.chartImageBase64) parts.push({inline_data:{mime_type:STATE.chartImageMime||"image/jpeg", data:STATE.chartImageBase64}});
   return callAiText({model:STATE.model, parts, compact:opts.compact===true, temperature:opts.temperature===undefined?0.7:opts.temperature});
@@ -2488,6 +2500,10 @@ async function performCast(s1, s2, s3){
   document.getElementById("kd-result").scrollIntoView({behavior:"smooth", block:"start"});
 
   const interpEl = document.getElementById("kd-interpretation");
+  if(!STATE.profile){
+    interpEl.innerHTML = `<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AI.</p>`;
+    return;
+  }
   interpEl.innerHTML=`<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:85%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:70%;"></div>`;
   const question=document.getElementById("kd-question").value.trim()||"(không có câu hỏi cụ thể — luận giải tổng quát)";
   const prompt = `Luận giải quẻ Kinh Dịch theo phương pháp Mai Hoa Dịch Số (Số Pháp), dùng 3 số ngẫu nhiên ${result.s1}, ${result.s2}, ${result.s3}.

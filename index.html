@@ -33,6 +33,7 @@
   --sage:#5E8C6A;       --sage-tint:#DCEBDF;
 
   --batu:#8A6D3B;       --batu-dark:#5C4726;   --batu-tint:#F1E8D2;   /* Bat Tu */
+  --numer:#3E5BA0;      --numer-dark:#28407A;  --numer-tint:#E9EDF7;  /* Than So Hoc */
 
   /* Ngu Hanh (Five Elements) — dung cho chu Can/Chi, khong phai accent module */
   --wx-kim:#8D8570;     --wx-kim-tint:#EDEAE0;
@@ -56,6 +57,7 @@
 [data-accent="zodiac"]{ --accent:var(--violet); --accent-dark:var(--violet-dark); --accent-tint:var(--violet-tint); }
 [data-accent="kinhdich"]{ --accent:var(--vermil); --accent-dark:var(--vermil-dark); --accent-tint:var(--vermil-tint); }
 [data-accent="batu"]{ --accent:var(--batu); --accent-dark:var(--batu-dark); --accent-tint:var(--batu-tint); }
+[data-accent="numer"]{ --accent:var(--numer); --accent-dark:var(--numer-dark); --accent-tint:var(--numer-tint); }
 
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
@@ -241,9 +243,12 @@ img{max-width:100%; display:block;}
 .ai-gate-progress > span{ display:block; width:0; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--teal),var(--gold)); transition:width .3s ease; }
 .ai-gate-count{ display:flex; justify-content:space-between; gap:12px; color:var(--ink-soft); font-size:12px; margin-top:9px; }
 .ai-gate-current{ min-height:42px; padding:12px 14px; border-radius:14px; background:var(--surface-tint); color:var(--ink); font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
-.home-ai-row{ display:grid; grid-template-columns:125px 1fr 38px; align-items:center; gap:9px; margin-top:9px; font-size:12px; color:var(--ink-soft); }
-.home-ai-row .ai-gate-progress{ height:7px; }
-.home-ai-row b{ text-align:right; color:var(--ink); font-size:11px; }
+.home-ai-line{ display:grid; grid-template-columns:100px 1fr 64px; align-items:center; gap:9px; padding:5px 4px; margin:0 -4px; border-radius:9px; font-size:12px; color:var(--ink-soft); cursor:pointer; }
+.home-ai-line:hover{ background:var(--surface-tint); }
+.home-ai-line .ai-gate-progress{ height:6px; }
+.home-ai-line .hal-state{ text-align:right; color:var(--ink-soft); font-size:11px; font-weight:600; }
+.home-ai-line.done .hal-state{ color:var(--sage); }
+.home-ai-line.err .hal-state{ color:var(--rose); }
 .ai-gate-error{ color:var(--rose); font-size:12.5px; line-height:1.55; overflow-wrap:anywhere; }
 @media(max-width:600px){ .ai-gate-count{font-size:11px;} }
 
@@ -307,6 +312,9 @@ img{max-width:100%; display:block;}
 .module-card.mc-batu{ background:var(--batu-tint); }
 .module-card.mc-batu .mc-icon{ background:var(--batu); color:#fff; font-family:var(--font-han); }
 .module-card.mc-batu .mc-cta{ color:var(--batu-dark); }
+.module-card.mc-numer{ background:var(--numer-tint); }
+.module-card.mc-numer .mc-icon{ background:var(--numer); color:#fff; }
+.module-card.mc-numer .mc-cta{ color:var(--numer-dark); }
 
 /* ==========================================================================
    BAT TU (Four Pillars)
@@ -346,6 +354,28 @@ img{max-width:100%; display:block;}
 .batu-dayun-item .dy-age{ font-size:11px; color:var(--ink-faint); }
 .batu-dayun-item .dy-han{ font-family:var(--font-han); font-size:20px; font-weight:700; margin-top:4px; }
 .batu-dayun-item .dy-year{ font-size:10.5px; color:var(--ink-faint); margin-top:4px; }
+
+/* ==========================================================================
+   NUMEROLOGY (Than So Hoc)
+   ========================================================================== */
+.num-tile-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px,1fr)); gap:12px; }
+.num-tile{ background:var(--surface-tint); border:1px solid var(--line); border-radius:16px; padding:16px 14px; text-align:center; }
+.num-tile .nt-value{ font-family:var(--font-display); font-size:34px; font-weight:700; color:var(--numer-dark); line-height:1; }
+.num-tile .nt-label{ font-size:11.5px; color:var(--ink-faint); margin-top:8px; line-height:1.4; }
+.num-grid3{ display:grid; grid-template-columns:repeat(3,56px); grid-template-rows:repeat(3,56px); gap:6px; }
+.num-grid3 .ng-cell{ display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:12px; background:var(--surface-tint); }
+.num-grid3 .ng-cell.has{ background:var(--numer-tint); border-color:var(--numer); }
+.num-grid3 .ng-cell .ng-n{ font-family:var(--font-mono, monospace); font-weight:700; font-size:15px; color:var(--ink-faint); }
+.num-grid3 .ng-cell.has .ng-n{ color:var(--numer-dark); }
+.num-grid3 .ng-cell .ng-c{ font-size:9.5px; color:var(--ink-faint); margin-top:1px; }
+.num-missing-row{ display:flex; flex-wrap:wrap; gap:6px; }
+.num-missing-chip{ font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:20px; background:var(--rose-tint); color:var(--rose); }
+.num-cycle-strip{ display:flex; overflow-x:auto; gap:10px; padding-bottom:6px; }
+.num-cycle-item{ flex:0 0 auto; min-width:104px; background:var(--surface-tint); border-radius:14px; padding:12px 10px; text-align:center; border:1px solid var(--line); }
+.num-cycle-item.current{ border-color:var(--numer); background:var(--numer-tint); }
+.num-cycle-item .nc-age{ font-size:11px; color:var(--ink-faint); }
+.num-cycle-item .nc-val{ font-family:var(--font-display); font-size:22px; font-weight:700; margin-top:4px; color:var(--numer-dark); }
+.num-cycle-item .nc-label{ font-size:10.5px; color:var(--ink-faint); margin-top:4px; }
 
 /* ==========================================================================
    ZODIAC WHEEL (SVG star map)
@@ -574,6 +604,10 @@ img{max-width:100%; display:block;}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/></svg>
         Bát Tự
       </button>
+      <button class="side-item" data-goto="numerology">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 3.5v17M14.5 3.5v17" stroke="currentColor" stroke-width="1.2" opacity=".55"/></svg>
+        Thần Số Học
+      </button>
       <div class="side-divider"></div>
       <button class="side-item" data-goto="compat">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 4.5 2.4C11.3 5.2 12.8 4 15 4c4 0 5.5 4 4 7.7C17 16.4 12 21 12 21Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -645,12 +679,16 @@ img{max-width:100%; display:block;}
             <div class="mc-desc">Lập lá số Tứ Trụ (Năm–Tháng–Ngày–Giờ), xem Thập Thần, Đại Vận và tỷ lệ Ngũ Hành.</div>
             <div class="mc-cta">Lập lá số →</div>
           </div>
+          <div class="module-card mc-numer" data-goto="numerology">
+            <div class="mc-icon">#</div>
+            <div class="mc-title">Thần Số Học</div>
+            <div class="mc-desc">Tính Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách và biểu đồ ngày sinh từ tên và ngày sinh.</div>
+            <div class="mc-cta">Xem chỉ số →</div>
+          </div>
         </div>
         <div class="card-flat section-gap hidden" id="home-ai-progress" aria-live="polite">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;"><strong style="font-size:13px;">Đang chuẩn bị báo cáo</strong><span style="font-size:12px;color:var(--ink-soft);" id="home-ai-progress-status">Đang kiểm tra…</span><button class="btn btn-ghost btn-sm hidden" id="home-ai-open" style="padding:4px 10px;font-size:11.5px;">Mở tiến trình →</button></div>
-          <div class="home-ai-row"><span>Tử Vi</span><div class="ai-gate-progress"><span id="home-ai-tuvi-bar"></span></div><b id="home-ai-tuvi-pct">0%</b></div>
-          <div class="home-ai-row"><span>Cung Hoàng Đạo</span><div class="ai-gate-progress"><span id="home-ai-zodiac-bar"></span></div><b id="home-ai-zodiac-pct">0%</b></div>
-          <div style="margin-top:10px;" id="home-ai-error-row" class="hidden"><p class="ai-gate-error" id="home-ai-error-text"></p><button class="btn btn-accent btn-sm" id="home-ai-retry" style="margin-top:6px;">Thử lại</button></div>
+          <div id="home-ai-rows"></div>
+          <div style="margin-top:8px;" id="home-ai-error-row" class="hidden"><p class="ai-gate-error" id="home-ai-error-text"></p><button class="btn btn-accent btn-sm" id="home-ai-retry" style="margin-top:6px;">Thử lại</button></div>
         </div>
 
         <div class="card section-gap" id="home-status-card">
@@ -994,6 +1032,96 @@ img{max-width:100%; display:block;}
       </div>
     </section>
 
+    <!-- ===================== NUMEROLOGY VIEW ===================== -->
+    <section class="view" data-view="numerology" data-accent="numer">
+      <div class="view-inner">
+        <div class="view-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+          <div>
+            <p class="view-eyebrow">Thần Số Học</p>
+            <h1 class="view-title serif">Thần Số Học — Pythagoras</h1>
+            <p class="view-sub">Các chỉ số tính từ họ tên và ngày sinh dương lịch theo hệ Pythagoras.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-ghost btn-sm" id="btn-numer-editprofile">Sửa thông tin</button>
+          </div>
+        </div>
+
+        <div id="numer-empty" class="card batu-empty hidden">
+          <p style="font-weight:700; font-size:15px;">Chưa có hồ sơ</p>
+          <p class="body-txt" style="margin-top:8px; color:var(--ink-soft);">Thiết lập họ tên và ngày sinh để tính Thần Số Học.</p>
+          <button class="btn btn-accent section-gap" id="btn-numer-setup" style="--accent:var(--numer);">Thiết lập hồ sơ</button>
+        </div>
+
+        <div id="numer-content" class="hidden">
+          <div class="card">
+            <p style="font-weight:700; font-size:14.5px;">4 Chỉ số cốt lõi</p>
+            <div class="num-tile-grid section-gap" id="numer-core-tiles"></div>
+          </div>
+
+          <div class="two-col section-gap">
+            <div class="card">
+              <p style="font-weight:700; font-size:14.5px;">Số Ngày Sinh · Thái Độ · Trưởng Thành</p>
+              <div class="num-tile-grid section-gap" id="numer-extra-tiles"></div>
+            </div>
+            <div class="card">
+              <p style="font-weight:700; font-size:14.5px;">Năm · Tháng · Ngày cá nhân (<span id="numer-current-year"></span>)</p>
+              <div class="num-tile-grid section-gap" id="numer-personal-tiles"></div>
+            </div>
+          </div>
+
+          <div class="two-col section-gap">
+            <div class="card">
+              <p style="font-weight:700; font-size:14.5px;">Biểu đồ ngày sinh</p>
+              <div style="display:flex; gap:22px; flex-wrap:wrap; margin-top:14px;">
+                <div class="num-grid3" id="numer-grid3"></div>
+                <div style="flex:1; min-width:160px;">
+                  <p style="font-size:11.5px; color:var(--ink-faint); margin-bottom:8px;">Số khuyết</p>
+                  <div class="num-missing-row" id="numer-missing"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <p style="font-weight:700; font-size:14.5px;">Số Nợ Nghiệp</p>
+              <p style="font-size:11.5px; color:var(--ink-faint); margin-top:4px; margin-bottom:10px; line-height:1.5;">Tham khảo — quy tắc phát hiện chưa thống nhất tuyệt đối giữa các nguồn thần số học.</p>
+              <div class="num-missing-row" id="numer-karmic"></div>
+            </div>
+          </div>
+
+          <div class="card section-gap">
+            <p style="font-weight:700; font-size:14.5px;">4 Đỉnh Cao &amp; 4 Thử Thách</p>
+            <div class="num-cycle-strip section-gap" id="numer-pinnacles"></div>
+          </div>
+
+          <div class="section-gap">
+            <h3 style="font-size:16px; font-weight:800; margin-bottom:14px;">Luận giải theo chủ đề</h3>
+            <div class="topic-grid" id="numerology-topic-grid"></div>
+          </div>
+
+          <div class="card-flat section-gap">
+            <p style="font-size:12.5px; color:var(--ink-faint); line-height:1.6;">Nội dung tham khảo văn hoá, không phải lời khuyên y tế / tài chính / pháp lý. Tên dùng để tính: họ tên khai sinh đầy đủ nếu đã điền trong hồ sơ, ngược lại dùng tên thường gọi.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== NUMEROLOGY: TOPIC DETAIL ===================== -->
+    <section class="view" data-view="numerology-detail" data-accent="numer">
+      <div class="view-inner" style="max-width:820px;">
+        <button class="btn btn-text" data-goto="numerology" style="padding-left:0;">← Quay lại Thần Số Học</button>
+        <div class="view-header" style="margin-top:6px;">
+          <p class="view-eyebrow" id="nd-eyebrow">Chủ đề</p>
+          <h1 class="view-title serif" id="nd-title">—</h1>
+        </div>
+        <div class="card">
+          <div id="nd-content" class="content-md">
+            <div class="skel" style="height:14px; width:95%; margin-bottom:10px;"></div>
+            <div class="skel" style="height:14px; width:85%; margin-bottom:10px;"></div>
+            <div class="skel" style="height:14px; width:70%;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== COMPATIBILITY VIEW ===================== -->
     <section class="view" data-view="compat" data-accent="tuvi">
       <div class="view-inner" style="max-width:760px;">
@@ -1067,7 +1195,7 @@ img{max-width:100%; display:block;}
       <div class="modal-body">
         <div class="step-dots" id="pm-dots">
           <span class="step-dot on"></span><span class="step-dot"></span><span class="step-dot"></span>
-          <span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span>
+          <span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot"></span>
         </div>
 
         <div class="pm-step" data-step="0">
@@ -1084,18 +1212,24 @@ img{max-width:100%; display:block;}
         </div>
 
         <div class="pm-step hidden" data-step="2">
+          <p style="font-weight:700; font-size:15px; margin-bottom:8px;">Họ tên đầy đủ trên giấy khai sinh</p>
+          <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px;">Dùng riêng để tính Thần Số Học cho chính xác — chỉ cần điền nếu khác với tên thường gọi ở bước trước. Có thể để trống.</p>
+          <input class="input" id="pm-fullname" placeholder="Ví dụ: Nguyễn Văn An (để trống nếu giống tên ở trên)">
+        </div>
+
+        <div class="pm-step hidden" data-step="3">
           <p style="font-weight:700; font-size:15px; margin-bottom:14px;">Ngày sinh &amp; nơi sinh</p>
           <div class="field"><label>Ngày sinh dương lịch</label><input class="input" id="pm-dob" type="date" min="1920-01-01" max="2026-12-31"></div>
           <div class="field"><label>Nơi sinh</label><input class="input" id="pm-place" list="vn-places" placeholder="Ví dụ: Hà Nội"><datalist id="vn-places"></datalist></div>
         </div>
 
-        <div class="pm-step hidden" data-step="3">
+        <div class="pm-step hidden" data-step="4">
           <p style="font-weight:700; font-size:15px; margin-bottom:14px;">Giờ sinh</p>
           <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px;">Không chắc giờ chính xác? Chọn khung gần nhất — quan trọng để an Mệnh, Thân trong Tử Vi.</p>
           <div class="hour-grid" id="pm-hour-grid"></div>
         </div>
 
-        <div class="pm-step hidden" data-step="4">
+        <div class="pm-step hidden" data-step="5">
           <p style="font-weight:700; font-size:15px; margin-bottom:8px;">Đã có lá số Tử Vi sẵn?</p>
           <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px;">Thêm ảnh lá số có sẵn để đối chiếu. Dữ liệu tính tự động trong AstroX vẫn là nguồn chính.</p>
           <div class="upload-box" id="pm-upload-box">
@@ -1108,7 +1242,7 @@ img{max-width:100%; display:block;}
           </div>
         </div>
 
-        <div class="pm-step hidden" data-step="5">
+        <div class="pm-step hidden" data-step="6">
           <p style="font-weight:700; font-size:15px; margin-bottom:8px;">Sẵn sàng lập hồ sơ</p>
           <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px; line-height:1.6;">AstroX đã cấu hình máy chủ AI an toàn. Bạn không cần nhập hoặc quản lý thông tin kỹ thuật. Sau khi hoàn tất, hãy đăng nhập Google để đồng bộ hồ sơ trên các thiết bị.</p>
         </div>
@@ -1192,7 +1326,7 @@ const AI_MODELS = [{id:DEFAULT_MODEL,label:"Muse Spark 1.3"}];
 --------------------------------------------------------------------------- */
 const PROMPT_VERSION = "2026-09-content-fix-v5";
 function emptyAiProfileCache(){
-  return {tuviTopics:{}, tuviPeriod:{today:{},week:{},month:{}}, zodiacTopics:{}, zodiacPeriod:{today:{},week:{},month:{}}, kinhDich:{}, compatibility:{}, batuTopics:{}};
+  return {tuviTopics:{}, tuviPeriod:{today:{},week:{},month:{}}, zodiacTopics:{}, zodiacPeriod:{today:{},week:{},month:{}}, kinhDich:{}, compatibility:{}, batuTopics:{}, numerologyTopics:{}};
 }
 function defaultState(){
   return {profile:null,chartImageBase64:null,chartImageMime:"image/jpeg",ziweiChart:null,natalChart:null,apiKey:null,model:DEFAULT_MODEL,onboarded:false,aiCache:{version:2,profiles:{},legacy:{}}};
@@ -1238,7 +1372,7 @@ function writeAiCache(group,key,text,meta={}){
   saveState();scheduleUserDataSync();
 }
 function mergeCacheObject(local,remote){const out=Object.assign({},local||{});Object.entries(remote||{}).forEach(([k,v])=>{const lt=typeof out[k]==="object"?out[k].updatedAt||0:0,rt=typeof v==="object"?v.updatedAt||0:Date.now();if(!out[k]||rt>=lt)out[k]=v;});return out;}
-function mergeAiCaches(local,remote){const out={version:2,profiles:{},legacy:mergeCacheObject(local?.legacy,remote?.legacy)};const fps=new Set([...Object.keys(local?.profiles||{}),...Object.keys(remote?.profiles||{})]);fps.forEach(fp=>{const a=Object.assign(emptyAiProfileCache(),local?.profiles?.[fp]||{}),b=remote?.profiles?.[fp]||{};["tuviTopics","zodiacTopics","kinhDich","compatibility","batuTopics"].forEach(k=>a[k]=mergeCacheObject(a[k],b[k]));["today","week","month"].forEach(p=>{a.tuviPeriod[p]=mergeCacheObject(a.tuviPeriod?.[p],b.tuviPeriod?.[p]);a.zodiacPeriod[p]=mergeCacheObject(a.zodiacPeriod?.[p],b.zodiacPeriod?.[p]);});out.profiles[fp]=a;});return out;}
+function mergeAiCaches(local,remote){const out={version:2,profiles:{},legacy:mergeCacheObject(local?.legacy,remote?.legacy)};const fps=new Set([...Object.keys(local?.profiles||{}),...Object.keys(remote?.profiles||{})]);fps.forEach(fp=>{const a=Object.assign(emptyAiProfileCache(),local?.profiles?.[fp]||{}),b=remote?.profiles?.[fp]||{};["tuviTopics","zodiacTopics","kinhDich","compatibility","batuTopics","numerologyTopics"].forEach(k=>a[k]=mergeCacheObject(a[k],b[k]));["today","week","month"].forEach(p=>{a.tuviPeriod[p]=mergeCacheObject(a.tuviPeriod?.[p],b.tuviPeriod?.[p]);a.zodiacPeriod[p]=mergeCacheObject(a.zodiacPeriod?.[p],b.zodiacPeriod?.[p]);});out.profiles[fp]=a;});return out;}
 let syncTimer=null,syncInFlight=false,syncQueued=false,syncErrorShown=false,supabaseUser=null,homeErrorModule=null,preloadGeneration=0;
 const aiGateErrors={tuvi:"",zodiac:""};
 /* Chờ xác định trạng thái đăng nhập (và đồng bộ tài khoản nếu có) trước khi
@@ -1310,6 +1444,65 @@ function updateAuthUi(){
     if (mobileAvatar) mobileAvatar.textContent = "?";
   }
 }
+/* ============================================================================
+   CƠ CHẾ CAPTIVE ĐĂNG NHẬP ↔ HỒ SƠ
+   - Đã đăng nhập + chưa có hồ sơ  -> bắt buộc mở modal hồ sơ, không cho đóng.
+   - Đã đăng nhập + đã có hồ sơ    -> đẩy ngay hồ sơ lên tài khoản.
+   - Đăng xuất (mọi nguyên nhân, kể cả hết phiên) -> huỷ mọi tiến trình AI
+     đang chạy/đang xếp hàng, đưa thanh tiến trình về 0, xoá hồ sơ + dữ liệu
+     dẫn xuất khỏi thiết bị (tránh tồn dữ liệu của tài khoản cũ), rồi quay lại
+     kiểm tra captive từ đầu. AI chỉ được gọi khi STATE.profile tồn tại
+     (runAiPrompt tự chặn ở đầu và sau khi có kết quả — xem định nghĩa hàm đó).
+   ============================================================================ */
+function resetAiProgressUi(){
+  ["tuvi","zodiac"].forEach(m=>{ if(typeof homeAiState!=="undefined" && homeAiState[m]){ homeAiState[m].started=false; homeAiState[m].pct=0; homeAiState[m].err=""; } });
+  const gateBar=document.getElementById("ai-gate-progress-bar"); if(gateBar) gateBar.style.width="0%";
+  const gateCount=document.getElementById("ai-gate-count"); if(gateCount) gateCount.textContent="0 / 0 phần";
+  const gatePercent=document.getElementById("ai-gate-percent"); if(gatePercent) gatePercent.textContent="0%";
+  const gateCurrent=document.getElementById("ai-gate-current"); if(gateCurrent) gateCurrent.textContent="";
+  const gateErr=document.getElementById("ai-gate-error"); if(gateErr) gateErr.classList.add("hidden");
+  const rows=document.getElementById("home-ai-rows"); if(rows) rows.innerHTML="";
+  const errHome=document.getElementById("home-ai-error-row"); if(errHome) errHome.classList.add("hidden");
+  const home=document.getElementById("home-ai-progress"); if(home) home.classList.add("hidden");
+}
+function haltAiAndReset(){
+  // Vô hiệu hoá mọi vòng lặp AI đang chạy (kiểm tra preloadGeneration bên
+  // trong ensureModuleAiRun sẽ thấy lệch thế hệ và tự dừng, không ghi cache),
+  // xoá hàng đợi preload và đưa UI tiến trình về 0.
+  preloadGeneration++;
+  aiGateRuns.tuvi=null; aiGateRuns.zodiac=null;
+  aiGateErrors.tuvi=""; aiGateErrors.zodiac=""; homeErrorModule=null;
+  preloadQueue=[]; preloadChain=null;
+  closeAiGate();
+  resetAiProgressUi();
+}
+function resetProfileUi(){
+  const nm=document.getElementById("side-name"); if(nm) nm.textContent="Thiết lập hồ sơ";
+  const hs=document.getElementById("home-status-body"); if(hs) hs.innerHTML="Chưa có hồ sơ. Thiết lập thông tin sinh để bắt đầu luận giải.";
+}
+function runCaptiveCheck(){
+  if(supabaseUser && !STATE.profile){
+    // Bước (1): đã đăng nhập nhưng chưa có hồ sơ -> yêu cầu cập nhật ngay.
+    openProfileModal(false, true);
+  } else if(supabaseUser && STATE.profile){
+    // Đã đăng nhập và có hồ sơ -> đảm bảo hồ sơ được lưu vào tài khoản.
+    syncUserData("PUT").catch(()=>{});
+  }
+}
+let signOutResetInFlight=false;
+function handleSignedOut(){
+  if(signOutResetInFlight) return; signOutResetInFlight=true;
+  try{
+    supabaseUser=null; updateAuthUi();
+    haltAiAndReset();
+    STATE.profile=null; STATE.chartImageBase64=null; STATE.ziweiChart=null; STATE.natalChart=null; STATE.batuChart=null;
+    saveState();
+    resetProfileUi();
+    applyProfileToUi();
+    goHome();
+    runCaptiveCheck();
+  } finally { signOutResetInFlight=false; }
+}
 /* Script module nạp Supabase client chạy SAU các script cổ điển trong trang
    (quy tắc của trình duyệt: <script type="module"> luôn hoãn tới khi HTML
    phân tích xong), nên không thể cậy vào thứ tự khai báo — phải đợi sự kiện
@@ -1331,12 +1524,13 @@ async function initSupabaseAuth(){
     if(supabaseUser) await syncUserData().catch(()=>{});
   }catch(_){ /* coi như chưa đăng nhập */ }
   resolveIdentityInit();
+  runCaptiveCheck();
   supa.auth.onAuthStateChange((event, session)=>{
     if(event==="SIGNED_IN"){
       supabaseUser=session?.user||null; updateAuthUi();
-      syncUserData().catch(()=>{});
+      syncUserData().catch(()=>{}).then(()=>runCaptiveCheck());
     } else if(event==="SIGNED_OUT"){
-      supabaseUser=null; updateAuthUi();
+      handleSignedOut();
     } else if(event==="TOKEN_REFRESHED"||event==="USER_UPDATED"){
       supabaseUser=session?.user||supabaseUser;
     }
@@ -1351,22 +1545,11 @@ async function loginWithGoogle(){
 document.getElementById("pm-login").addEventListener("click", ()=> loginWithGoogle());
 async function logout(){
   try{ const supa=await waitForSupabaseClient(); if(supa) await supa.auth.signOut(); }catch(_){}
-  supabaseUser=null; updateAuthUi();
-  if(!STATE.profile){
-    // Không có hồ sơ đã lưu khi thoát tài khoản giữa phiên: huỷ mọi tiến trình
-    // gọi AI (preload nền / gate đang chạy) để tránh gọi AI khi chưa đủ điều
-    // kiện, đưa trạng thái AI về ban đầu.
-    preloadGeneration++;
-    aiGateRuns.tuvi=null; aiGateRuns.zodiac=null;
-    aiGateErrors.tuvi=""; aiGateErrors.zodiac=""; homeErrorModule=null;
-    preloadQueue=[]; preloadChain=null;
-    closeAiGate();
-    const errRow=document.getElementById("home-ai-error-row"); if(errRow) errRow.classList.add("hidden");
-  }
+  handleSignedOut();
   showToast("Đã đăng xuất.");
 }
 document.getElementById("pm-logout").addEventListener("click", ()=>{
-  logout(); closeProfileModal();
+  pmForced=false; logout(); closeProfileModal();
 });
 document.getElementById("mobile-login-btn").addEventListener("click", ()=> loginWithGoogle());
 
@@ -1464,6 +1647,7 @@ window.addEventListener("popstate", async (e)=>{
     if(name === "tuvi") refreshTuviMini();
     if(name === "zodiac") refreshZodiacSign();
     if(name === "batu") refreshBatuMini();
+    if(name === "numerology") refreshNumerologyMini();
   }
 });
 try{ history.replaceState({view:"home"}, "", location.href.startsWith("http") ? location.href : location.href); }catch(_){}
@@ -1476,6 +1660,7 @@ document.querySelectorAll("[data-goto]").forEach(el=>{
     if(target === "tuvi") refreshTuviMini();
     if(target === "zodiac") refreshZodiacSign();
     if(target === "batu") refreshBatuMini();
+    if(target === "numerology") refreshNumerologyMini();
   });
 });
 
@@ -1659,7 +1844,11 @@ async function runAiPrompt(userQuestion, opts){
   if(!STATE.profile) throw new Error("Chưa có hồ sơ. Vui lòng lưu hồ sơ trước khi dùng AI.");
   const parts = [{text:userQuestion}];
   if(opts.withChartImage && STATE.chartImageBase64) parts.push({inline_data:{mime_type:STATE.chartImageMime||"image/jpeg", data:STATE.chartImageBase64}});
-  return callAiText({model:STATE.model, parts, compact:opts.compact===true, temperature:opts.temperature===undefined?0.7:opts.temperature});
+  const result = await callAiText({model:STATE.model, parts, compact:opts.compact===true, temperature:opts.temperature===undefined?0.7:opts.temperature});
+  // Cơ chế captive: nếu hồ sơ bị xoá (đăng xuất) trong lúc đang chờ AI trả
+  // lời, huỷ kết quả ngay, không ghi vào cache/trạng thái.
+  if(!STATE.profile) throw new Error("Hồ sơ đã bị xoá trong khi xử lý — đã huỷ kết quả.");
+  return result;
 }
 
 function profileContextText(){
@@ -1975,15 +2164,42 @@ function buildModuleAiTasks(module){
   }
   return [];
 }
+/* Trạng thái gọn cho thanh tiến trình ở trang chủ — chỉ hiện dòng của module
+   đã thực sự được bấm vào (không còn preload nền), tự ẩn sau khi xong. */
+const homeAiState = { tuvi:{started:false,pct:0,err:""}, zodiac:{started:false,pct:0,err:""} };
+let homeAiHideTimer=null;
+function renderHomeAiRows(){
+  const wrap=document.getElementById("home-ai-progress"), rows=document.getElementById("home-ai-rows"),
+        errHome=document.getElementById("home-ai-error-row"), errHomeText=document.getElementById("home-ai-error-text");
+  if(!wrap||!rows) return;
+  const active=["tuvi","zodiac"].filter(m=>homeAiState[m].started);
+  clearTimeout(homeAiHideTimer);
+  if(!active.length){ wrap.classList.add("hidden"); if(errHome)errHome.classList.add("hidden"); return; }
+  wrap.classList.remove("hidden");
+  rows.innerHTML = active.map(m=>{
+    const st=homeAiState[m], name=m==="tuvi"?"Tử Vi":"Cung Hoàng Đạo", done=st.pct>=100;
+    const stateText = st.err ? "Lỗi" : (done ? "Xong ✓" : "Đang tải…");
+    return `<div class="home-ai-line ${done?'done':''} ${st.err?'err':''}" data-open="${m}">
+      <span>${name}</span>
+      <span class="ai-gate-progress"><span style="width:${st.pct}%"></span></span>
+      <span class="hal-state">${stateText}</span>
+    </div>`;
+  }).join("");
+  rows.querySelectorAll("[data-open]").forEach(el=> el.addEventListener("click", ()=> openAiGate(el.dataset.open)));
+  if(homeErrorModule){ if(errHomeText)errHomeText.textContent=aiGateErrors[homeErrorModule]||""; if(errHome)errHome.classList.remove("hidden"); }
+  else if(errHome) errHome.classList.add("hidden");
+  const allSettled = active.every(m=> homeAiState[m].pct>=100 && !homeAiState[m].err);
+  if(allSettled){
+    homeAiHideTimer=setTimeout(()=>{
+      wrap.classList.add("hidden");
+      active.forEach(m=>homeAiState[m].started=false);
+    }, 3000);
+  }
+}
 function updateAiGate(module,done,total,current,error="",finalError=false){
   const title=document.getElementById("ai-gate-title"),sub=document.getElementById("ai-gate-subtitle"),currentEl=document.getElementById("ai-gate-current"),bar=document.getElementById("ai-gate-progress-bar"),count=document.getElementById("ai-gate-count"),percent=document.getElementById("ai-gate-percent"),err=document.getElementById("ai-gate-error"),retry=document.getElementById("ai-gate-retry"),finish=document.getElementById("ai-gate-finish");
   const pct=total?Math.round(done/total*100):100;
-  const home=document.getElementById("home-ai-progress"),barHome=document.getElementById(`home-ai-${module}-bar`),pctHome=document.getElementById(`home-ai-${module}-pct`),statusHome=document.getElementById("home-ai-progress-status"),errHome=document.getElementById("home-ai-error-row"),errHomeText=document.getElementById("home-ai-error-text"),homeOpen=document.getElementById("home-ai-open");
   const moduleName=module==="tuvi"?"Tử Vi":"Cung Hoàng Đạo";
-  if(home) home.classList.remove("hidden");
-  if(barHome) barHome.style.width=pct+"%";
-  if(pctHome) pctHome.textContent=pct+"%";
-  if(statusHome) statusHome.textContent=pct>=100?`Đã chuẩn bị xong ${moduleName}`:(finalError?"Cần thử lại":`Đang tải ${moduleName}…`);
   if(pct>=100||!finalError){
     title.textContent=`Đang chuẩn bị ${moduleName}`;
     sub.textContent="AstroX đang luận giải các phần của tử vi và cung hoàng đạo. Báo cáo sẽ sẵn sàng sau khi tải xong.";
@@ -1992,15 +2208,14 @@ function updateAiGate(module,done,total,current,error="",finalError=false){
   }
   err.textContent=error;err.classList.toggle("hidden",!error);
   retry.classList.toggle("hidden",!error);finish.classList.toggle("hidden",!error&&pct<100);
-  if(finalError){aiGateErrors[module]=error;homeErrorModule=module;if(errHomeText)errHomeText.textContent=error;if(errHome)errHome.classList.remove("hidden");}
-  else if(pct>=100){aiGateErrors[module]="";if(homeErrorModule===module)homeErrorModule=null;if(errHome)errHome.classList.add("hidden");}
-  else if(!finalError){if(errHome)errHome.classList.add("hidden");}
-  // Update home-open button visibility
-  const tuviPct=parseInt(document.getElementById("home-ai-tuvi-pct")?.textContent||"0")||0;
-  const zodiacPct=parseInt(document.getElementById("home-ai-zodiac-pct")?.textContent||"0")||0;
-  const anyRunning=!!(aiGateRuns.tuvi||aiGateRuns.zodiac);
-  const anyLoading=!(tuviPct>=100 && zodiacPct>=100) && (anyRunning||!homeErrorModule);
-  if(homeOpen){homeOpen.classList.toggle("hidden", !anyLoading);}
+  if(finalError){aiGateErrors[module]=error;homeErrorModule=module;}
+  else if(pct>=100){aiGateErrors[module]="";if(homeErrorModule===module)homeErrorModule=null;}
+  if(homeAiState[module]){
+    homeAiState[module].started=true;
+    homeAiState[module].pct=pct;
+    homeAiState[module].err=finalError?error:"";
+  }
+  renderHomeAiRows();
 }
 function openAiGate(module){
   const modal=document.getElementById("ai-gate-modal");
@@ -2012,17 +2227,15 @@ function aiPumpSlots(){while(aiInFlight<AI_MAX_PARALLEL&&aiSlotQueue.length){aiI
 function aiAcquireSlot(){return new Promise(resolve=>{aiSlotQueue.push(resolve);aiPumpSlots();});}
 function aiReleaseSlot(){aiInFlight=Math.max(0,aiInFlight-1);aiPumpSlots();}
 function startModulePreload(module){return ensureModuleAiRun(module,{background:true});}
+/* Chỉ tải AI của ĐÚNG module người dùng vừa bấm vào — không còn tự động tải
+   nền module còn lại, để tránh gọi AI hàng loạt khi chưa cần (per yêu cầu
+   "bấm module nào mới gọi AI của module đó"). */
 let preloadPriority="tuvi", preloadQueue=[], preloadChain=null;
 function requestModuleFirst(module){
   if(!module) return;
   preloadPriority=module;
-  const other=module==="tuvi"?"zodiac":"tuvi";
-  preloadQueue=[module,other].filter((m,i,a)=>a.indexOf(m)===i);
+  preloadQueue=[module];
   pumpPreloadQueue();
-}
-function setPreloadPriority(module){
-  if(!module) return;
-  requestModuleFirst(module);
 }
 function pumpPreloadQueue(){
   if(preloadChain||!STATE.profile) return;
@@ -2037,14 +2250,6 @@ function moduleCacheComplete(module){
     const tasks=buildModuleAiTasks(module);
     return tasks.length>0&&tasks.every(task=>readAiCache(task.group,task.key,false,task.period));
   }catch(_){ return false; }
-}
-let bootPreloadArmed=false;
-function startBackgroundPreload(){
-  if(!STATE.profile)return;
-  preloadGeneration++;
-  const kick=()=>setTimeout(()=>{requestModuleFirst(preloadPriority);},250);
-  if(!bootPreloadArmed){ bootPreloadArmed=true; identityInitPromise.then(kick); }
-  else kick();
 }
 let backgroundWakeLock=null;
 async function requestBackgroundWakeLock(){
@@ -2194,15 +2399,7 @@ document.getElementById("home-ai-retry").addEventListener("click",()=>{
   failed.forEach(m=>aiGateErrors[m]="");
   homeErrorModule=null;
   const row=document.getElementById("home-ai-error-row");if(row)row.classList.add("hidden");
-  if(failed.length) failed.forEach(m=>ensureModuleAiReady(m));
-  else startBackgroundPreload();
-});
-document.getElementById("home-ai-open").addEventListener("click",()=>{
-  const modal=document.getElementById("ai-gate-modal");
-  if(modal.classList.contains("show")){closeAiGate();return;}
-  const module=modal.dataset.module||"tuvi";
-  if(aiGateErrors[module]) openAiGate(module);
-  else openAiGate(module);
+  failed.forEach(m=>ensureModuleAiReady(m));
 });
 
 document.getElementById("btn-tuvi-viewchart").addEventListener("click", async ()=>{ if(await ensureModuleAiReady("tuvi")){ await showView("tuvi-chart",{bypassGate:true}); renderChartView(); } });
@@ -2837,18 +3034,22 @@ Trả lời DUY NHẤT bằng JSON hợp lệ, không thêm chữ nào khác:
   });
 })();
 
-let pmDraft = { gender:null, name:null, dob:null, place:null, hourChi:null };
+let pmDraft = { gender:null, name:null, fullName:null, dob:null, place:null, hourChi:null };
 let pmChartBase64 = null;
 let pmStep = 0;
-const PM_STEP_COUNT = 6;
+const PM_STEP_COUNT = 7;
+let pmForced = false;
 
-function openProfileModal(editMode){
-  pmDraft = STATE.profile ? Object.assign({}, STATE.profile) : { gender:null, name:null, dob:null, place:null, hourChi:null };
+function openProfileModal(editMode, forced){
+  pmForced = !!forced;
+  pmDraft = STATE.profile ? Object.assign({}, STATE.profile) : { gender:null, name:null, fullName:null, dob:null, place:null, hourChi:null };
   pmChartBase64 = STATE.chartImageBase64;
   pmStep = 0;
-  document.getElementById("pm-title").textContent = editMode ? "Sửa thông tin" : "Thiết lập hồ sơ";
+  document.getElementById("pm-title").textContent = pmForced ? "Cần cập nhật hồ sơ để tiếp tục" : (editMode ? "Sửa thông tin" : "Thiết lập hồ sơ");
+  document.getElementById("pm-close")?.classList.toggle("hidden", pmForced);
   // Preload fields
   document.getElementById("pm-name").value = pmDraft.name || "";
+  document.getElementById("pm-fullname").value = pmDraft.fullName || "";
   document.getElementById("pm-dob").value = pmDraft.dob || "";
   document.getElementById("pm-place").value = pmDraft.place || "";
   STATE.model=DEFAULT_MODEL;
@@ -2868,7 +3069,7 @@ function openProfileModal(editMode){
   renderPmStep();
   document.getElementById("profile-modal").classList.add("show");
 }
-function closeProfileModal(){ document.getElementById("profile-modal").classList.remove("show"); }
+function closeProfileModal(){ if(pmForced) return; document.getElementById("profile-modal").classList.remove("show"); }
 document.getElementById("pm-close").addEventListener("click", closeProfileModal);
 document.getElementById("profile-modal").addEventListener("click", (e)=>{ if(e.target.id==="profile-modal") closeProfileModal(); });
 document.getElementById("btn-home-setup").addEventListener("click", ()=> openProfileModal(!!STATE.profile));
@@ -2910,14 +3111,15 @@ document.getElementById("pm-chart-file").addEventListener("change", async ()=>{
 function validatePmStep(){
   if(pmStep===0) return !!pmDraft.gender;
   if(pmStep===1){ pmDraft.name = document.getElementById("pm-name").value.trim(); return pmDraft.name.length>=2; }
-  if(pmStep===2){
+  if(pmStep===2){ pmDraft.fullName = document.getElementById("pm-fullname").value.trim(); return true; } // tuỳ chọn — dùng cho Thần Số Học
+  if(pmStep===3){
     pmDraft.dob = document.getElementById("pm-dob").value;
     pmDraft.place = document.getElementById("pm-place").value.trim();
     return !!pmDraft.dob && pmDraft.place.length>=2;
   }
-  if(pmStep===3) return !!pmDraft.hourChi;
-  if(pmStep===4) return true; // optional
-  if(pmStep===5) return true; // optional (can skip key)
+  if(pmStep===4) return !!pmDraft.hourChi;
+  if(pmStep===5) return true; // optional
+  if(pmStep===6) return true; // optional (can skip key)
   return true;
 }
 document.getElementById("pm-next").addEventListener("click", async ()=>{
@@ -2930,9 +3132,12 @@ document.getElementById("pm-next").addEventListener("click", async ()=>{
   STATE.onboarded = true;
   refreshZiweiChart();
   saveState();
+  pmForced=false;
   closeProfileModal();
   applyProfileToUi();
-  scheduleUserDataSync();
+  // Đã đăng nhập + vừa có hồ sơ -> lưu ngay vào tài khoản (không chờ debounce).
+  if(supabaseUser) syncUserData("PUT").catch(()=>{});
+  else scheduleUserDataSync();
   showToast("Đã lưu hồ sơ.");
 });
 document.getElementById("pm-back").addEventListener("click", ()=>{ if(pmStep>0){ pmStep--; renderPmStep(); } });
@@ -2963,7 +3168,9 @@ function applyProfileToUi(){
   refreshTuviMini();
   refreshZodiacSign();
   refreshBatuMini();
-  startBackgroundPreload();
+  refreshNumerologyMini();
+  // Không còn tự động tải AI nền ở đây — Tử Vi/Cung Hoàng Đạo giờ chỉ gọi AI
+  // khi người dùng thực sự mở module đó (qua showView -> ensureModuleAiReady).
 }
 
 document.getElementById("btn-home-learn").addEventListener("click", ()=>{
@@ -3213,11 +3420,205 @@ document.getElementById("btn-batu-editprofile")?.addEventListener("click", ()=> 
 document.getElementById("btn-batu-setup")?.addEventListener("click", ()=> openProfileModal(false));
 
 /* ============================================================================
+   MODULE 6 — THAN SO HOC (NUMEROLOGY, he Pythagoras)
+   Toàn bộ công thức đã đối chiếu nhiều nguồn độc lập trước khi cài đặt — xem
+   trang kế hoạch đã gửi người dùng. Vài quy tắc (Số Nợ Nghiệp, tên các "đường"
+   trong biểu đồ ngày sinh) không có sự thống nhất tuyệt đối giữa các nguồn —
+   đã xử lý theo quyết định của người dùng: Nợ Nghiệp triển khai theo quy tắc
+   phổ biến nhất (có ghi chú "tham khảo"), biểu đồ ngày sinh để AI tự luận giải
+   từ dữ liệu thô thay vì gán cứng tên "đường".
+   ============================================================================ */
+const NUM_LETTER_VAL = (()=>{ const m={}, L="ABCDEFGHIJKLMNOPQRSTUVWXYZ"; for(let i=0;i<L.length;i++) m[L[i]]=(i%9)+1; return m; })();
+function numStripVN(str){
+  return String(str||"").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D");
+}
+function numLettersOnly(text){ return numStripVN(text).toUpperCase().replace(/[^A-Z]/g,""); }
+function numDigitSumOnce(n){ return String(Math.abs(Math.trunc(n))).split("").reduce((a,c)=>a+Number(c),0); }
+function numFullyReduce(n, keepMaster=true){
+  let v=Math.abs(Math.trunc(n));
+  while(v>9 && !(keepMaster && (v===11||v===22||v===33))) v=numDigitSumOnce(v);
+  return v;
+}
+function numHardReduce(n){ let v=Math.abs(Math.trunc(n)); while(v>9) v=numDigitSumOnce(v); return v; }
+function numReduceChain(n){ const chain=[Math.abs(Math.trunc(n))]; let v=chain[0]; while(v>9){ v=numDigitSumOnce(v); chain.push(v); } return chain; }
+function numHasKarmicDebt(n){ return numReduceChain(n).some(v=>v===13||v===14||v===16||v===19); }
+const NUM_VOWELS = new Set(["A","E","I","O","U"]);
+function numSumAllLetters(clean){ let s=0; for(const ch of clean) s+=NUM_LETTER_VAL[ch]||0; return s; }
+function numSumVowels(clean){ let s=0; for(const ch of clean) if(NUM_VOWELS.has(ch)) s+=NUM_LETTER_VAL[ch]||0; return s; }
+function numSumConsonants(clean){ let s=0; for(const ch of clean) if(!NUM_VOWELS.has(ch)) s+=NUM_LETTER_VAL[ch]||0; return s; }
+function numDigitGrid(y,m,d){
+  const str = String(d).padStart(2,"0")+String(m).padStart(2,"0")+String(y);
+  const counts={1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0};
+  for(const ch of str){ const n=Number(ch); if(n>=1&&n<=9) counts[n]++; }
+  const missing=Object.keys(counts).map(Number).filter(n=>counts[n]===0);
+  return {counts, missing};
+}
+function buildNumerologyChart(profile, nowDate){
+  if(!profile || !profile.dob) throw new Error("Thiếu ngày sinh.");
+  const fullName = (profile.fullName && profile.fullName.trim()) ? profile.fullName.trim() : (profile.name||"").trim();
+  if(!fullName) throw new Error("Thiếu họ tên.");
+  const clean = numLettersOnly(fullName);
+  if(!clean) throw new Error("Họ tên không có ký tự chữ cái hợp lệ.");
+  const [y,m,d] = profile.dob.split("-").map(Number);
+  if(!y||!m||!d) throw new Error("Ngày sinh không hợp lệ.");
+  const now = nowDate || new Date();
+  const curY=now.getFullYear(), curM=now.getMonth()+1, curD=now.getDate();
+
+  // Số Chủ Đạo: tổng RÚT GỌN MỘT LẦN của ngày/tháng/năm, cộng lại rồi mới rút
+  // gọn toàn phần — KHÔNG rút gọn ngày/tháng/năm trước khi cộng (vd 19 -> 10,
+  // không rút thành 1), đã đối chiếu ví dụ mẫu từ nguồn tham khảo.
+  const lifePathRaw = numDigitSumOnce(d)+numDigitSumOnce(m)+numDigitSumOnce(y);
+  const lifePath = numFullyReduce(lifePathRaw);
+  const destinyRaw = numSumAllLetters(clean);
+  const destiny = numFullyReduce(destinyRaw);
+  const soulRaw = numSumVowels(clean);
+  const soulUrge = numFullyReduce(soulRaw);
+  const personality = numFullyReduce(numSumConsonants(clean));
+  const birthday = numFullyReduce(d);
+  const attitude = numFullyReduce(numDigitSumOnce(d)+numDigitSumOnce(m));
+  const maturity = numFullyReduce(lifePath+destiny);
+
+  const personalYear = numFullyReduce(m+d+curY, false);
+  const personalMonth = numFullyReduce(personalYear+curM, false);
+  const personalDay = numFullyReduce(personalMonth+curD, false);
+
+  // 4 Đỉnh Cao: rút gọn TOÀN PHẦN (giữ số chủ) từng phần tháng/ngày/năm trước,
+  // rồi cộng cặp và rút gọn lại — khác cách tính Số Chủ Đạo ở trên.
+  const rm=numFullyReduce(m), rd=numFullyReduce(d), ry=numFullyReduce(y);
+  const p1=numFullyReduce(rm+rd), p2=numFullyReduce(rd+ry), p3=numFullyReduce(p1+p2), p4=numFullyReduce(rm+ry);
+  // 4 Thử Thách: rút gọn CỨNG (không giữ số chủ) rồi lấy hiệu tuyệt đối.
+  const hm=numHardReduce(m), hd=numHardReduce(d), hy=numHardReduce(y);
+  const c1=Math.abs(hm-hd), c2=Math.abs(hd-hy), c3=Math.abs(c1-c2), c4=Math.abs(hm-hy);
+  const end1=Math.max(1,36-lifePath);
+  const periods=[
+    {startAge:0,endAge:end1,pinnacle:p1,challenge:c1},
+    {startAge:end1,endAge:end1+9,pinnacle:p2,challenge:c2},
+    {startAge:end1+9,endAge:end1+18,pinnacle:p3,challenge:c3},
+    {startAge:end1+18,endAge:999,pinnacle:p4,challenge:c4}
+  ];
+
+  const karmicDebts=[];
+  if(numHasKarmicDebt(lifePathRaw)) karmicDebts.push({label:"Số Chủ Đạo",raw:lifePathRaw});
+  if(numHasKarmicDebt(destinyRaw)) karmicDebts.push({label:"Số Sứ Mệnh",raw:destinyRaw});
+  if(numHasKarmicDebt(soulRaw)) karmicDebts.push({label:"Số Linh Hồn",raw:soulRaw});
+  if([13,14,16,19].includes(d)) karmicDebts.push({label:"Số Ngày Sinh",raw:d});
+
+  const age = curY - y - ((curM<m || (curM===m && curD<d)) ? 1 : 0);
+  return {
+    name:fullName, lifePath, destiny, soulUrge, personality, birthday, attitude, maturity,
+    personalYear, personalMonth, personalDay,
+    pinnacles:periods, karmicDebts, grid:numDigitGrid(y,m,d),
+    now:{year:curY,month:curM,day:curD,age:Math.max(0,age)}
+  };
+}
+function refreshNumerologyChart(){ try{ STATE.numerologyChart = buildNumerologyChart(STATE.profile); saveState(); }catch(_){} }
+function numTile(value,label){ return `<div class="num-tile"><div class="nt-value">${escapeHtml(String(value))}</div><div class="nt-label">${escapeHtml(label)}</div></div>`; }
+function renderNumerologyView(c){
+  document.getElementById("numer-core-tiles").innerHTML = [
+    numTile(c.lifePath,"Số Chủ Đạo"), numTile(c.destiny,"Số Sứ Mệnh"),
+    numTile(c.soulUrge,"Số Linh Hồn"), numTile(c.personality,"Số Nhân Cách")
+  ].join("");
+  document.getElementById("numer-extra-tiles").innerHTML = [
+    numTile(c.birthday,"Ngày Sinh"), numTile(c.attitude,"Thái Độ"), numTile(c.maturity,"Trưởng Thành")
+  ].join("");
+  document.getElementById("numer-current-year").textContent = c.now.year;
+  document.getElementById("numer-personal-tiles").innerHTML = [
+    numTile(c.personalYear,"Năm cá nhân"), numTile(c.personalMonth,"Tháng cá nhân"), numTile(c.personalDay,"Ngày cá nhân")
+  ].join("");
+  const gridOrder=[3,6,9,2,5,8,1,4,7];
+  document.getElementById("numer-grid3").innerHTML = gridOrder.map(n=>{
+    const cnt=c.grid.counts[n]||0;
+    return `<div class="ng-cell ${cnt>0?'has':''}"><span class="ng-n">${n}</span>${cnt>0?`<span class="ng-c">×${cnt}</span>`:""}</div>`;
+  }).join("");
+  document.getElementById("numer-missing").innerHTML = c.grid.missing.length
+    ? c.grid.missing.map(n=>`<span class="num-missing-chip">${n}</span>`).join("")
+    : `<span style="font-size:12.5px;color:var(--ink-faint);">Không thiếu số nào</span>`;
+  document.getElementById("numer-karmic").innerHTML = c.karmicDebts.length
+    ? c.karmicDebts.map(k=>`<span class="num-missing-chip">${escapeHtml(k.label)} (${k.raw})</span>`).join("")
+    : `<span style="font-size:12.5px;color:var(--sage);font-weight:600;">Không có số nợ nghiệp</span>`;
+  document.getElementById("numer-pinnacles").innerHTML = c.pinnacles.map((p,i)=>{
+    const current = c.now.age>=p.startAge && c.now.age<p.endAge;
+    return `<div class="num-cycle-item ${current?'current':''}">
+      <div class="nc-age">${p.startAge}–${p.endAge===999?'…':p.endAge} tuổi</div>
+      <div class="nc-val">${p.pinnacle}</div>
+      <div class="nc-label">Đỉnh Cao ${i+1} · Thử Thách ${p.challenge}</div>
+    </div>`;
+  }).join("");
+}
+function refreshNumerologyMini(){
+  const emptyEl=document.getElementById("numer-empty"), contentEl=document.getElementById("numer-content");
+  if(!emptyEl || !contentEl) return;
+  if(!STATE.profile){ emptyEl.classList.remove("hidden"); contentEl.classList.add("hidden"); return; }
+  emptyEl.classList.add("hidden"); contentEl.classList.remove("hidden");
+  try{
+    const chart = buildNumerologyChart(STATE.profile);
+    STATE.numerologyChart = chart; saveState();
+    renderNumerologyView(chart);
+  }catch(e){
+    document.getElementById("numer-core-tiles").innerHTML = `<p style="grid-column:1/-1;color:var(--rose);font-size:13px;">Không tính được: ${escapeHtml(e.message)}</p>`;
+  }
+}
+function numerologyContextText(){ return STATE.numerologyChart ? `DỮ LIỆU THẦN SỐ HỌC ĐÃ TÍNH (đầy đủ, AI phải dùng trực tiếp — không được nói thiếu dữ liệu): ${JSON.stringify(STATE.numerologyChart)}` : ""; }
+function numerologyPromptBody(taskText){
+  if(!STATE.numerologyChart) refreshNumerologyChart();
+  const line=numerologyContextText();
+  return `${profileContextText()}\n${line}\n\nQUY TẮC PHÂN TÍCH THẦN SỐ HỌC: bắt đầu ngay từ dữ liệu các chỉ số đã tính (Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách, biểu đồ ngày sinh, chu kỳ Đỉnh Cao/Thử Thách, năm cá nhân) — không được nói "thiếu dữ liệu" hay yêu cầu bổ sung thông tin. Với phần "grid" (biểu đồ ngày sinh): tự luận giải ý nghĩa số khuyết/số lặp và các hàng/cột/đường chéo nếu đủ 3 số liên tiếp cùng xuất hiện trong lưới 3x3 (hàng trên 3-6-9, hàng giữa 2-5-8, hàng dưới 1-4-7, cùng các cột và đường chéo tương ứng) — không cần dùng tên gọi cố định cho từng đường vì tên gọi khác nhau giữa các trường phái, chỉ mô tả ý nghĩa dựa trên các con số cụ thể có mặt. Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó.\n\n${taskText}`;
+}
+const NUMEROLOGY_TOPICS = [
+  { id:"life-path", icon:"①", title:"Số Chủ Đạo — hành trình cuộc đời", desc:"Bài học lớn nhất và hướng đi tự nhiên của cả đời người.",
+    prompt:"Phân tích ý nghĩa Số Chủ Đạo (Life Path) — bài học cốt lõi, xu hướng tự nhiên và hướng đi phù hợp của cả cuộc đời. Chia đoạn có tiêu đề in đậm: **Bản chất cốt lõi**, **Bài học cuộc đời**, **Lời khuyên**. ~260-440 từ." },
+  { id:"destiny", icon:"②", title:"Sứ Mệnh & tài năng bẩm sinh", desc:"Điều cần hoàn thành và năng lực trời phú thể hiện qua tên gọi.",
+    prompt:"Phân tích Số Sứ Mệnh (Destiny/Expression) — điều mệnh chủ được sinh ra để hoàn thành và tài năng bẩm sinh thể hiện qua họ tên. ~240-410 từ." },
+  { id:"inner-self", icon:"③", title:"Con người nội tâm", desc:"Linh Hồn (khao khát thật sự) đối chiếu Nhân Cách (hình ảnh bên ngoài).",
+    prompt:"So sánh và phân tích Số Linh Hồn (khao khát nội tâm thật sự) với Số Nhân Cách (hình ảnh mà người khác nhìn thấy ở mệnh chủ) — chỉ ra điểm tương đồng hoặc mâu thuẫn giữa hai mặt này. ~240-410 từ." },
+  { id:"birth-grid", icon:"④", title:"Biểu đồ ngày sinh", desc:"Điểm mạnh từ số lặp, khoảng trống cần bù đắp từ số khuyết.",
+    prompt:"Phân tích biểu đồ ngày sinh (ma trận Pythagoras): ý nghĩa các số lặp (điểm mạnh nổi bật), số khuyết (khoảng trống cần bù đắp), và bất kỳ hàng/cột/đường chéo nào có đủ 3 số liên tiếp cùng xuất hiện. ~260-440 từ." },
+  { id:"cycles", icon:"⑤", title:"Chu kỳ đỉnh cao & thử thách", desc:"4 giai đoạn lớn của cuộc đời và rào cản đặc trưng mỗi giai đoạn.",
+    prompt:"Phân tích 4 giai đoạn Đỉnh Cao (Pinnacles) và Thử Thách (Challenges) tương ứng theo độ tuổi đã tính — mỗi giai đoạn nêu cơ hội chính (từ số Đỉnh Cao) và rào cản cần vượt qua (từ số Thử Thách). ~280-480 từ." },
+  { id:"personal-year", icon:"⑥", title:"Năm cá nhân hiện tại", desc:"Chủ đề vận hành của năm nay theo chu kỳ 9 năm cá nhân.",
+    prompt:"Phân tích Năm Cá Nhân hiện tại trong chu kỳ 9 năm — chủ đề chính của năm nay và gợi ý cách tận dụng. ~220-370 từ." }
+];
+function renderNumerologyTopicGrid(){
+  const grid=document.getElementById("numerology-topic-grid"); if(!grid) return;
+  grid.innerHTML = NUMEROLOGY_TOPICS.map(t=>`<div class="topic-card" data-numer-topic="${t.id}"><div class="tc-icon">${t.icon}</div><div class="tc-title">${t.title}</div><div class="tc-desc">${t.desc}</div></div>`).join("");
+  grid.querySelectorAll("[data-numer-topic]").forEach(card=> card.addEventListener("click", ()=>openNumerologyTopic(card.dataset.numerTopic)));
+}
+let currentNumerologyTopic=null;
+async function openNumerologyTopic(topicId){
+  if(!STATE.profile){ openProfileModal(false); return; }
+  const topic=NUMEROLOGY_TOPICS.find(t=>t.id===topicId); if(!topic) return;
+  currentNumerologyTopic=topic;
+  document.getElementById("nd-eyebrow").textContent="Thần Số Học · "+topic.title;
+  document.getElementById("nd-title").textContent=topic.title;
+  await showView("numerology-detail",{bypassGate:true});
+  loadNumerologyTopicContent();
+}
+async function loadNumerologyTopicContent(){
+  const topic=currentNumerologyTopic, contentEl=document.getElementById("nd-content");
+  if(!topic || !contentEl) return;
+  const cached=readAiCache("numerologyTopics",topic.id);
+  if(cached){ contentEl.innerHTML=mdToHtml(cached); return; }
+  if(!STATE.profile){ contentEl.innerHTML=`<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AI.</p>`; return; }
+  contentEl.innerHTML=`<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:80%;"></div>`;
+  await aiAcquireSlot();
+  try{
+    const q=numerologyPromptBody(topic.prompt);
+    const result=await runAiPrompt(q,{});
+    writeAiCache("numerologyTopics",topic.id,result,{module:"numerology",topic:topic.id});
+    contentEl.innerHTML=mdToHtml(result);
+  }catch(e){ contentEl.innerHTML=`<p style="color:var(--rose);">Không lấy được phân tích: ${escapeHtml(e.message)}</p>`; }
+  finally{ aiReleaseSlot(); }
+}
+document.getElementById("btn-numer-editprofile")?.addEventListener("click", ()=> openProfileModal(!!STATE.profile));
+document.getElementById("btn-numer-setup")?.addEventListener("click", ()=> openProfileModal(false));
+
+/* ============================================================================
    BOOT
    ============================================================================ */
 renderTuviTopicGrid();
 renderZodiacTopicGrid();
 renderBatuTopicGrid();
+renderNumerologyTopicGrid();
 renderZodiacWheel(null);
 applyProfileToUi();
 if(!STATE.onboarded){

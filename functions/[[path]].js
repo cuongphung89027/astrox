@@ -90,8 +90,12 @@ export async function onRequest(context) {
     return env.ASSETS.fetch(request);
   }
 
+  // Lưu ý: phải fetch "/" (không phải "/index.html") — ASSETS.fetch coi
+  // "/index.html" là một request tới file .html và trả về redirect 308 sang
+  // "/" (chuẩn hoá clean-URL), khiến các route như /tuvi bị lặp redirect vô
+  // hạn. Fetch thẳng "/" thì ASSETS trả về nội dung index.html không redirect.
   const indexUrl = new URL(request.url);
-  indexUrl.pathname = "/index.html";
+  indexUrl.pathname = "/";
   const assetRes = await env.ASSETS.fetch(new Request(indexUrl.toString(), request));
 
   const meta = ROUTE_META[pathname];

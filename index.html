@@ -663,32 +663,60 @@ img{max-width:100%; display:block;}
 .tarot-shuffle-label{ font-size:13px; font-weight:700; letter-spacing:.02em; }
 .tarot-shuffle-sub{ font-size:11.5px; color:#C9BEDD; margin-top:6px; }
 
-.tarot-board{ display:grid; gap:14px; justify-content:center; }
-.tarot-board.layout-1{ grid-template-columns:repeat(1,minmax(0,140px)); }
-.tarot-board.layout-3{ grid-template-columns:repeat(3,minmax(0,140px)); }
-.tarot-board.layout-5rel,.tarot-board.layout-5cross{ grid-template-columns:repeat(3,minmax(0,130px)); }
-@media(max-width:560px){ .tarot-board.layout-3{ grid-template-columns:repeat(3,minmax(0,30vw)); } .tarot-board.layout-5rel,.tarot-board.layout-5cross{ grid-template-columns:repeat(3,minmax(0,30vw)); } }
-.tarot-celtic{ display:grid; gap:22px; align-items:start; grid-template-columns:minmax(0,290px) minmax(0,130px); justify-content:center; }
-.tarot-celtic-cross{ position:relative; width:290px; height:290px; margin:0 auto; }
-.tarot-celtic-staff{ display:grid; grid-template-columns:repeat(2,minmax(0,60px)); gap:10px; justify-content:center; }
-@media(max-width:700px){ .tarot-celtic{ grid-template-columns:1fr; } .tarot-celtic-staff{ grid-template-columns:repeat(4,minmax(0,70px)); margin-top:14px; } }
+/* ---- Result board: meaningful, robust, grid-based (never clips, always same card size) ---- */
+.tarot-board-frame{ position:relative; background:linear-gradient(160deg,var(--tarot-tint) 0%, var(--surface) 55%); border-radius:var(--r-xl); padding:30px 20px; border:1px solid rgba(124,92,166,.28); box-shadow:var(--shadow-2); overflow:visible; }
+.tarot-board-frame::before{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background-image:
+    radial-gradient(circle at 10% 15%, rgba(196,164,97,.5) 0 2px, transparent 3px),
+    radial-gradient(circle at 88% 10%, rgba(196,164,97,.4) 0 2px, transparent 3px),
+    radial-gradient(circle at 92% 82%, rgba(196,164,97,.45) 0 2px, transparent 3px),
+    radial-gradient(circle at 6% 86%, rgba(196,164,97,.4) 0 2px, transparent 3px); }
+
+.tarot-board-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:clamp(10px,3vw,22px); position:relative; z-index:1; }
+.tarot-board-row .tarot-card-slot{ width:clamp(84px,26%,150px); }
+
+.tarot-cross-grid{ display:grid; grid-template-columns:repeat(3,1fr); grid-template-areas:". top ." "left center right" ". bottom ."; gap:22px 16px; max-width:460px; margin:0 auto; position:relative; z-index:1; }
+.tarot-cross-grid .g-top{ grid-area:top; } .tarot-cross-grid .g-left{ grid-area:left; }
+.tarot-cross-grid .g-center{ grid-area:center; position:relative; z-index:1; }
+.tarot-cross-grid .g-right{ grid-area:right; } .tarot-cross-grid .g-bottom{ grid-area:bottom; }
+.tarot-cross-grid .g-cross{ grid-area:center; position:relative; z-index:2; align-self:center; }
+
+.tarot-cross5-grid{ display:grid; grid-template-columns:1fr 1fr; grid-template-areas:"top top" "cur out" "bottom bottom"; gap:20px 16px; max-width:340px; margin:0 auto; position:relative; z-index:1; }
+.tarot-cross5-grid .g5-top{ grid-area:top; width:calc(50% - 8px); margin:0 auto; }
+.tarot-cross5-grid .g5-bottom{ grid-area:bottom; width:calc(50% - 8px); margin:0 auto; }
+.tarot-cross5-grid .g5-cur{ grid-area:cur; position:relative; z-index:1; }
+.tarot-cross5-grid .g5-cross{ grid-area:cur; position:relative; z-index:2; align-self:center; }
+.tarot-cross5-grid .g5-out{ grid-area:out; }
+
+.tarot-rel-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px 14px; max-width:460px; margin:0 auto; position:relative; z-index:1;
+  grid-template-areas:". potential ." "you . partner" ". challenge ." ". found ."; }
+.tarot-rel-grid .g-potential{ grid-area:potential; } .tarot-rel-grid .g-you{ grid-area:you; }
+.tarot-rel-grid .g-partner{ grid-area:partner; } .tarot-rel-grid .g-challenge{ grid-area:challenge; }
+.tarot-rel-grid .g-found{ grid-area:found; }
+
+.tarot-celtic-wrap{ display:flex; flex-wrap:wrap; gap:26px; justify-content:center; align-items:flex-start; position:relative; z-index:1; }
+.tarot-celtic-staff-row{ display:flex; flex-wrap:wrap; justify-content:center; gap:12px; max-width:300px; }
+.tarot-celtic-staff-row .tarot-card-slot{ width:clamp(64px,21%,88px); }
+
 .tarot-card-slot{ text-align:center; }
 .tarot-card-slot .tcs-pos{ font-size:9.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--tarot-dark); margin-bottom:6px; overflow-wrap:anywhere; }
-.tarot-card-frame{ position:relative; width:100%; aspect-ratio:7/12.25; border-radius:9px; overflow:hidden; box-shadow:0 8px 20px rgba(72,50,93,.22); background:var(--tarot-tint); }
+.tarot-card-frame{ position:relative; width:100%; aspect-ratio:7/12.25; border-radius:10px; overflow:hidden;
+  box-shadow:0 8px 20px rgba(72,50,93,.24), 0 0 0 1px rgba(196,164,97,.35) inset; background:var(--tarot-tint); transform-origin:center; }
 .tarot-card-frame img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .5s; }
 .tarot-card-frame img.reversed{ transform:rotate(180deg); }
 .tarot-card-frame.flip{ animation:tarotFlipIn .5s ease both; }
 @keyframes tarotFlipIn{ from{ transform:rotateY(90deg); opacity:.2; } to{ transform:rotateY(0deg); opacity:1; } }
+.tarot-card-frame.crossed{ transform:rotate(-9deg); box-shadow:0 14px 28px rgba(72,50,93,.4), 0 0 0 2px var(--gold) inset; }
 .tarot-card-name{ font-size:10.5px; font-weight:700; margin-top:6px; color:var(--ink); overflow-wrap:anywhere; }
 .tarot-card-rev-tag{ font-size:9px; color:var(--tarot-dark); font-weight:800; }
-.tarot-celtic-cross .tarot-card-slot{ position:absolute; width:78px; }
-.tarot-celtic-cross .tcs-1{ left:50%; top:50%; transform:translate(-50%,-50%); z-index:1; }
-.tarot-celtic-cross .tcs-2{ left:50%; top:50%; transform:translate(-50%,-50%) rotate(90deg); z-index:2; }
-.tarot-celtic-cross .tcs-3{ left:50%; bottom:0; transform:translateX(-50%); }
-.tarot-celtic-cross .tcs-4{ left:0; top:50%; transform:translateY(-50%); }
-.tarot-celtic-cross .tcs-5{ left:50%; top:0; transform:translateX(-50%); }
-.tarot-celtic-cross .tcs-6{ right:0; top:50%; transform:translateY(-50%); }
+.tccaption{ position:absolute; left:0; right:0; bottom:0; padding:5px 6px 4px; background:linear-gradient(to top, rgba(20,10,30,.85), rgba(20,10,30,0) 90%);
+  color:#fff; text-align:center; line-height:1.25; transform:rotate(9deg); }
+.tccaption .tccap-pos{ display:block; font-size:7.3px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; opacity:.85; }
+.tccaption b{ font-size:8.8px; display:block; font-weight:700; }
+.tccaption .tccap-rev{ display:block; font-size:7.3px; opacity:.85; }
 .tarot-interp-card{ margin-top:18px; }
+.tarot-spread-card{ position:relative; }
+.tsc-icon{ width:34px; height:34px; margin-bottom:8px; }
 </style>
 </head>
 <body>
@@ -726,7 +754,7 @@ img{max-width:100%; display:block;}
         Thần Số Học
       </button>
       <button class="side-item" id="side-tarot">
-        <span class="si-icon">🔮</span>
+        <span class="si-icon">☀</span>
         Tarot
       </button>
       <div class="side-divider"></div>
@@ -812,7 +840,7 @@ img{max-width:100%; display:block;}
             <div class="mc-cta">Xem chỉ số →</div>
           </div>
           <div class="module-card mc-tarot" id="mc-tarot" data-module="tarot">
-            <div class="mc-icon">🔮</div>
+            <div class="mc-icon">☀</div>
             <div class="mc-title">Tarot</div>
             <div class="mc-desc">Chọn bộ bài, trải bài theo nhiều kiểu phổ biến và xem luận giải cùng AstroX.</div>
             <div class="mc-cta">Trải bài →</div>
@@ -1272,13 +1300,13 @@ img{max-width:100%; display:block;}
             <button class="btn btn-text" id="btn-tarot-changedeck" style="padding:0;">Đổi bộ bài</button>
           </div>
           <div class="card">
+            <label for="tarot-question" style="font-size:12.5px; font-weight:700; display:block;">Câu hỏi bạn đang băn khoăn <span style="font-weight:500; color:var(--ink-faint);">(không bắt buộc)</span></label>
+            <textarea class="input section-gap" id="tarot-question" rows="2" placeholder="Ví dụ: Mối quan hệ này nên tiếp tục theo hướng nào?" style="resize:vertical;"></textarea>
+          </div>
+          <div class="card section-gap">
             <p style="font-weight:700; font-size:14.5px;">Chọn kiểu trải bài</p>
             <div class="tarot-spread-grid section-gap" id="tarot-spread-grid"></div>
             <div class="tarot-frame-chips hidden" id="tarot-frame-chips"></div>
-            <div class="section-gap">
-              <label for="tarot-question" style="font-size:12.5px; font-weight:700;">Câu hỏi bạn đang băn khoăn (không bắt buộc)</label>
-              <textarea class="input section-gap" id="tarot-question" rows="2" placeholder="Ví dụ: Mối quan hệ này nên tiếp tục theo hướng nào?" style="resize:vertical;"></textarea>
-            </div>
             <button class="btn btn-accent btn-block section-gap" id="btn-tarot-draw" style="--accent:var(--tarot);">Xáo bài & rút bài</button>
           </div>
         </div>
@@ -1291,9 +1319,9 @@ img{max-width:100%; display:block;}
               <button class="btn btn-text" id="btn-tarot-changedeck-2" style="padding:0 6px;">Đổi bộ bài</button>
             </div>
           </div>
-          <div class="card center-col">
-            <p class="serif" style="font-size:20px; font-weight:700;" id="tarot-result-title">—</p>
-            <div class="section-gap" id="tarot-board-wrap" style="width:100%; display:flex; justify-content:center;"></div>
+          <div class="tarot-board-frame center-col">
+            <p class="serif" style="font-size:20px; font-weight:700; position:relative; z-index:1;" id="tarot-result-title">—</p>
+            <div class="section-gap" id="tarot-board-wrap" style="width:100%; display:flex; justify-content:center; position:relative; z-index:1;"></div>
           </div>
           <div class="card tarot-interp-card">
             <p style="font-weight:700; font-size:14.5px;">Luận giải bằng trí tuệ nhân tạo</p>
@@ -2454,6 +2482,13 @@ function zodiacPeriodPrompt(sign,period,key){
   };
   return `${base}\n\n${guide[period]||guide.today}`;
 }
+/* ---------------------------------------------------------------------------
+   LƯU NIÊN / LƯU NGUYỆT / LƯU NHẬT — dùng đúng thuật toán Tử Vi thật (thư
+   viện iztro đã nạp sẵn cho lá số) để tính cung nào đang được "Lưu Mệnh"
+   (Lưu Nhật/Lưu Nguyệt/Lưu Niên) nhập vào và Tứ Hóa (Lộc/Quyền/Khoa/Kỵ) của
+   kỳ đó rơi vào sao nào — thay vì chỉ đổi nhãn ngày/tuần/tháng như trước
+   (khiến AI không có dữ kiện thật để phân biệt các ngày).
+--------------------------------------------------------------------------- */
 const ZIWEI_MUTAGEN_LABELS=["Hóa Lộc","Hóa Quyền","Hóa Khoa","Hóa Kỵ"];
 function ziweiRawAstrolabe(){
   const profile=STATE.profile;
@@ -2514,7 +2549,6 @@ function tuviPeriodPromptText(label,ptext,period){
   };
   return guide[period]||guide.today;
 }
-const AI_GATE_PERIODS=[];
 const PERIOD_LABELS={today:"hôm nay",week:"tuần này",month:"tháng này"};
 
 const aiGateRuns = {tuvi:null,zodiac:null};
@@ -2531,13 +2565,8 @@ function buildModuleAiTasks(module){
       tuviPromptBody(sub.prompt),
       {module:"tuvi",topic:topic.id}
     ))));
-    AI_GATE_PERIODS.forEach(period=>{
-      const key=periodCacheKey(period),label=periodLabel(period,key);
-      tasks.push(gateTask("tuviPeriod",key,`Tử Vi · ${label}`,
-        tuviPromptBody(tuviPeriodPromptText(label,PERIOD_LABELS[period])),
-        {module:"tuvi",period,compact:true}
-      ));
-    });
+    // Dự báo hôm nay/tuần này/tháng này KHÔNG nằm trong hàng đợi tự động tải —
+    // người dùng phải tự bấm "Xem luận giải" (xem loadTuviPeriod).
     return tasks;
   }
   if(module === "zodiac"){
@@ -2556,13 +2585,8 @@ function buildModuleAiTasks(module){
         ));
       });
     });
-    AI_GATE_PERIODS.forEach(period=>{
-      const key=periodCacheKey(period);
-      tasks.push(gateTask("zodiacPeriod",key+"::"+sign.id,`Cung Hoàng Đạo · ${periodLabel(period,key)}`,
-        zodiacPeriodPrompt(sign,period,key),
-        {module:"zodiac",period,compact:true}
-      ));
-    });
+    // Dự báo hôm nay/tuần này/tháng này KHÔNG nằm trong hàng đợi tự động tải —
+    // người dùng phải tự bấm "Xem luận giải" (xem loadZodiacPeriod).
     return tasks;
   }
   if(module === "batu"){
@@ -2849,6 +2873,8 @@ async function forceReloadModule(module){
 }
 document.getElementById("btn-tuvi-refresh").addEventListener("click", ()=> forceReloadModule("tuvi"));
 
+/* Khung "Xem luận giải": mặc định KHÔNG tự gọi AI — chỉ hiện nút, người dùng
+   tự bấm mới tạo luận giải. Dùng chung cho cả Tử Vi và Cung Hoàng Đạo. */
 function renderPeriodPrompt(el, periodText, onClick, errorMsg){
   el.innerHTML = `${errorMsg?`<p style="color:var(--rose); font-size:13px; margin:0 0 10px;">${escapeHtml(errorMsg)}</p>`:""}<div class="period-cta"><p style="color:var(--ink-soft); font-size:13.5px; margin:0 0 12px;">Chưa xem luận giải ${escapeHtml(periodText)}.</p><button type="button" class="btn btn-accent btn-sm period-view-btn">${errorMsg?"Thử lại":"Xem luận giải"}</button></div>`;
   const btn=el.querySelector(".period-view-btn");
@@ -3756,10 +3782,18 @@ function showTarotSpreadPanel(deck){
   renderTarotSpreadGrid();
 }
 
+const TAROT_SPREAD_ICONS = {
+  one: `<svg class="tsc-icon" viewBox="0 0 40 40" fill="none"><rect x="15" y="6" width="10" height="17" rx="2" stroke="var(--tarot)" stroke-width="1.6"/></svg>`,
+  three: `<svg class="tsc-icon" viewBox="0 0 40 40" fill="none"><rect x="4" y="9" width="9" height="15" rx="1.6" stroke="var(--tarot)" stroke-width="1.3" opacity=".6"/><rect x="15.5" y="6" width="9" height="15" rx="1.6" stroke="var(--tarot)" stroke-width="1.6"/><rect x="27" y="9" width="9" height="15" rx="1.6" stroke="var(--tarot)" stroke-width="1.3" opacity=".6"/></svg>`,
+  cross5: `<svg class="tsc-icon" viewBox="0 0 40 40" fill="none"><rect x="16" y="13" width="8" height="13" rx="1.4" stroke="var(--tarot)" stroke-width="1.6"/><rect x="12" y="17" width="16" height="6" rx="1.2" stroke="var(--gold)" stroke-width="1.3" transform="rotate(90 20 20)"/><circle cx="20" cy="34" r="2" fill="var(--tarot)"/><circle cx="20" cy="6" r="2" fill="var(--tarot)"/><circle cx="34" cy="20" r="2" fill="var(--tarot)"/></svg>`,
+  relationship5: `<svg class="tsc-icon" viewBox="0 0 40 40" fill="none"><rect x="4" y="13" width="8" height="13" rx="1.4" stroke="var(--tarot)" stroke-width="1.4"/><rect x="28" y="13" width="8" height="13" rx="1.4" stroke="var(--tarot)" stroke-width="1.4"/><circle cx="20" cy="8" r="2" fill="var(--gold)"/><circle cx="20" cy="20" r="1.8" fill="var(--tarot)"/><circle cx="20" cy="33" r="2" fill="var(--tarot)"/></svg>`,
+  celtic10: `<svg class="tsc-icon" viewBox="0 0 40 40" fill="none"><circle cx="16" cy="18" r="11" stroke="var(--tarot)" stroke-width="1.4"/><rect x="13" y="12" width="6" height="12" rx="1.1" stroke="var(--tarot)" stroke-width="1.1"/><rect x="30" y="6" width="6" height="24" rx="1.2" stroke="var(--gold)" stroke-width="1.2"/></svg>`
+};
 function renderTarotSpreadGrid(){
   const wrap=document.getElementById("tarot-spread-grid");
   if(!wrap) return;
   wrap.innerHTML = TAROT_SPREADS.map(s=>`<button type="button" class="tarot-spread-card${tarotFlow.spreadId===s.id?" active":""}" data-spread="${s.id}">
+    ${TAROT_SPREAD_ICONS[s.id]||""}
     <div class="tarot-spread-name">${escapeHtml(s.name)}</div>
     <div class="tarot-spread-count">${s.count} lá</div>
     <div class="tarot-spread-desc">${escapeHtml(s.desc)}</div>
@@ -3812,12 +3846,20 @@ function drawAndShowTarotSpread(){
   }).catch(()=>{ showToast("Không tải được dữ liệu lá bài — thử lại sau.","error"); });
 }
 
-function tarotCardSlotHtml(posLabel, cardEntry, extraClass){
+function tarotCardSlotHtml(posLabel, cardEntry, gClass, crossed){
   const card=tarotCardById(cardEntry.id);
   const deck=tarotDeckById(tarotFlow.deckId);
   const img=`${deck.base}${cardEntry.id}${deck.ext}`;
-  const name=card?card.nameVi:cardEntry.id;
-  return `<div class="tarot-card-slot ${extraClass||""}">
+  const name=card?card.nameEn:cardEntry.id;
+  if(crossed){
+    return `<div class="tarot-card-slot ${gClass||""}">
+      <div class="tarot-card-frame flip crossed">
+        <img src="${img}" alt="${escapeHtml(name)}" class="${cardEntry.reversed?"reversed":""}">
+        <div class="tccaption"><span class="tccap-pos">${escapeHtml(posLabel)}</span><b>${escapeHtml(name)}</b>${cardEntry.reversed?'<span class="tccap-rev">Ngược</span>':""}</div>
+      </div>
+    </div>`;
+  }
+  return `<div class="tarot-card-slot ${gClass||""}">
     <div class="tcs-pos">${escapeHtml(posLabel)}</div>
     <div class="tarot-card-frame flip"><img src="${img}" alt="${escapeHtml(name)}" class="${cardEntry.reversed?"reversed":""}"></div>
     <div class="tarot-card-name">${escapeHtml(name)}</div>
@@ -3836,13 +3878,37 @@ function renderTarotResult(){
   const tag2=document.getElementById("tarot-result-deck-tag");
   if(tag2) tag2.innerHTML=`<img src="${deck.back}" alt="">Bộ bài: <b>${escapeHtml(deck.name)}</b>`;
   const wrap=document.getElementById("tarot-board-wrap");
+  const C=tarotFlow.cards;
   if(spread.layout==="celtic"){
-    wrap.innerHTML = `<div class="tarot-celtic">
-      <div class="tarot-celtic-cross">${positions.slice(0,6).map((p,i)=>tarotCardSlotHtml(p.label,tarotFlow.cards[i],"tcs-"+(i+1))).join("")}</div>
-      <div class="tarot-celtic-staff">${positions.slice(6,10).map((p,i)=>tarotCardSlotHtml(p.label,tarotFlow.cards[i+6])).join("")}</div>
+    wrap.innerHTML = `<div class="tarot-celtic-wrap">
+      <div class="tarot-cross-grid">
+        ${tarotCardSlotHtml(positions[0].label,C[0],"g-center")}
+        ${tarotCardSlotHtml(positions[1].label,C[1],"g-cross",true)}
+        ${tarotCardSlotHtml(positions[2].label,C[2],"g-bottom")}
+        ${tarotCardSlotHtml(positions[3].label,C[3],"g-left")}
+        ${tarotCardSlotHtml(positions[4].label,C[4],"g-top")}
+        ${tarotCardSlotHtml(positions[5].label,C[5],"g-right")}
+      </div>
+      <div class="tarot-celtic-staff-row">${positions.slice(6,10).map((p,i)=>tarotCardSlotHtml(p.label,C[i+6])).join("")}</div>
+    </div>`;
+  }else if(spread.layout==="5cross"){
+    wrap.innerHTML = `<div class="tarot-cross5-grid">
+      ${tarotCardSlotHtml(positions[3].label,C[3],"g5-top")}
+      ${tarotCardSlotHtml(positions[0].label,C[0],"g5-cur")}
+      ${tarotCardSlotHtml(positions[1].label,C[1],"g5-cross",true)}
+      ${tarotCardSlotHtml(positions[4].label,C[4],"g5-out")}
+      ${tarotCardSlotHtml(positions[2].label,C[2],"g5-bottom")}
+    </div>`;
+  }else if(spread.layout==="5rel"){
+    wrap.innerHTML = `<div class="tarot-rel-grid">
+      ${tarotCardSlotHtml(positions[4].label,C[4],"g-potential")}
+      ${tarotCardSlotHtml(positions[0].label,C[0],"g-you")}
+      ${tarotCardSlotHtml(positions[1].label,C[1],"g-partner")}
+      ${tarotCardSlotHtml(positions[3].label,C[3],"g-challenge")}
+      ${tarotCardSlotHtml(positions[2].label,C[2],"g-found")}
     </div>`;
   }else{
-    wrap.innerHTML = `<div class="tarot-board layout-${spread.layout}">${positions.map((p,i)=>tarotCardSlotHtml(p.label,tarotFlow.cards[i])).join("")}</div>`;
+    wrap.innerHTML = `<div class="tarot-board-row">${positions.map((p,i)=>tarotCardSlotHtml(p.label,C[i])).join("")}</div>`;
   }
   document.getElementById("tarot-interpretation").innerHTML =
     `<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:85%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:70%;"></div>`;
@@ -3943,10 +4009,12 @@ const BATU_SHISHEN_VI = {
   "正官":"Chính Quan", "偏印":"Thiên Ấn", "正印":"Chính Ấn", "日主":"Nhật Chủ (bản thân)"
 };
 const BATU_WX_LABEL = {moc:"Mộc",hoa:"Hoả",tho:"Thổ",kim:"Kim",thuy:"Thuỷ"};
+/* 12 hinh ve con vat — toi gian, flat, 1 mau (currentColor), dung hinh khoi co
+   ban (circle/path) thay vi icon Unicode. Chi Mao dung Meo theo van hoa dan
+   gian Viet Nam (khong dung Tho). */
 /* Biểu tượng con giáp cho từng trụ Bát Tự dùng chung asset 12 con giáp
    (assets/zodiac/*.png) và hàm chiAnimalBg() đã có sẵn cho Tử Vi, thay vì
-   vẽ SVG riêng — đảm bảo đồng nhất hình ảnh trong toàn app. Chi Mão dùng
-   Mèo theo văn hoá dân gian Việt Nam (không dùng Thỏ). */
+   vẽ SVG riêng — đảm bảo đồng nhất hình ảnh trong toàn app. */
 function batuGenderNum(g){ return g==="Nam" ? 1 : 0; }
 /* Bang quan he Dia Chi — hoi ky ve mat kinh dien, khong doc lai duoc tren web
    phien nay (nguon chan qua robots.txt); dung theo kien thuc huan luyen tieu

@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>AstroX — Tử Vi · Cung Hoàng Đạo · Kinh Dịch</title>
+<meta name="description" content="AstroX — Xem Tử Vi Đẩu Số, Cung Hoàng Đạo, Kinh Dịch, Bát Tự và Thần Số Học cá nhân hoá, luận giải bằng AI theo ngày, tuần, tháng.">
+<link rel="canonical" href="https://theastrox.space/trangchu">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AstroX">
+<meta property="og:title" content="AstroX — Tử Vi · Cung Hoàng Đạo · Kinh Dịch">
+<meta property="og:description" content="Xem Tử Vi Đẩu Số, Cung Hoàng Đạo, Kinh Dịch, Bát Tự và Thần Số Học cá nhân hoá, luận giải bằng AI theo ngày, tuần, tháng.">
+<meta property="og:url" content="https://theastrox.space/trangchu">
+<meta property="og:image" content="https://theastrox.space/assets/og/trangchu.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AstroX — Tử Vi · Cung Hoàng Đạo · Kinh Dịch">
+<meta name="twitter:description" content="Xem Tử Vi Đẩu Số, Cung Hoàng Đạo, Kinh Dịch, Bát Tự và Thần Số Học cá nhân hoá, luận giải bằng AI theo ngày, tuần, tháng.">
+<meta name="twitter:image" content="https://theastrox.space/assets/og/trangchu.png">
 <meta name="theme-color" content="#12897C">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Cormorant+Garamond:wght@500;600;700&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
@@ -1657,6 +1670,52 @@ function moduleForView(name){
   if(name === "numerology" || name === "numerology-detail") return "numerology";
   return "";
 }
+/* Đường dẫn URL rõ nghĩa cho từng module (thay cho kiểu #tenview cũ), phục
+   vụ SEO và chia sẻ liên kết. Các view con (chi tiết/biểu đồ) vẫn dùng
+   đường dẫn của module cha kèm hash riêng, VD: /tuvi#tuvi-detail. */
+const ROUTE_MAP={home:"/trangchu",tuvi:"/tuvi",zodiac:"/hoangdao",kinhdich:"/kinhdich",batu:"/battu",numerology:"/thanso",tarot:"/tarot"};
+const ROUTE_MAP_REV=Object.fromEntries(Object.entries(ROUTE_MAP).map(([k,v])=>[v,k]));
+function pathForView(name){
+  if(ROUTE_MAP[name]) return ROUTE_MAP[name];
+  const parent=moduleForView(name);
+  const base=(parent && ROUTE_MAP[parent]) ? ROUTE_MAP[parent] : ROUTE_MAP.home;
+  return base+"#"+name;
+}
+function viewForPath(pathname, hash){
+  const h=(hash||"").replace(/^#/,"");
+  if(h) return h;
+  let path=pathname||"/";
+  if(path.length>1) path=path.replace(/\/+$/,"");
+  if(ROUTE_MAP_REV[path]) return ROUTE_MAP_REV[path];
+  if(path==="/"||path==="") return "home";
+  return null;
+}
+/* Title/description theo từng module cho SPA — bổ sung cho phần rewrite
+   phía edge (functions/[[path]].js) vốn phục vụ crawler ở lần tải trang
+   đầu tiên; đoạn này cập nhật lại khi người dùng điều hướng bằng JS. */
+const ROUTE_SEO={
+  home:{title:"AstroX — Tử Vi · Cung Hoàng Đạo · Kinh Dịch", description:"Xem Tử Vi Đẩu Số, Cung Hoàng Đạo, Kinh Dịch, Bát Tự và Thần Số Học cá nhân hoá, luận giải bằng AI theo ngày, tuần, tháng."},
+  tuvi:{title:"Tử Vi Đẩu Số — Luận giải lá số bằng AI | AstroX", description:"Lập lá số Tử Vi Đẩu Số, xem vận hạn theo ngày, tuần, tháng dựa trên Lưu Niên, Lưu Nguyệt, Lưu Nhật thật, luận giải bằng AI."},
+  zodiac:{title:"Cung Hoàng Đạo — Tử vi phương Tây mỗi ngày | AstroX", description:"Xem tử vi 12 cung hoàng đạo theo ngày, tuần, tháng dựa trên vị trí thiên thể thật, luận giải bằng AI."},
+  kinhdich:{title:"Kinh Dịch — Gieo quẻ và luận giải bằng AI | AstroX", description:"Gieo quẻ Kinh Dịch, xem hào từ và luận giải quẻ theo tình huống của bạn bằng AI."},
+  batu:{title:"Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AI | AstroX", description:"Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AI."},
+  numerology:{title:"Thần Số Học — Giải mã con số cuộc đời | AstroX", description:"Tính Số Chủ Đạo, Số Đường Đời và các chỉ số Thần Số Học, luận giải ý nghĩa bằng AI."},
+  tarot:{title:"Tarot — Sắp ra mắt | AstroX", description:"Trải bài Tarot và luận giải bằng AI, sắp ra mắt tại AstroX."}
+};
+function applyRouteSeo(name){
+  const seo=ROUTE_SEO[name]||ROUTE_SEO.home;
+  try{
+    document.title=seo.title;
+    const setMeta=(sel,attr,val)=>{ const el=document.querySelector(sel); if(el) el.setAttribute(attr,val); };
+    setMeta('meta[name="description"]',"content",seo.description);
+    setMeta('meta[property="og:title"]',"content",seo.title);
+    setMeta('meta[property="og:description"]',"content",seo.description);
+    setMeta('meta[name="twitter:title"]',"content",seo.title);
+    setMeta('meta[name="twitter:description"]',"content",seo.description);
+    const canon=document.querySelector('link[rel="canonical"]');
+    if(canon) canon.setAttribute("href","https://theastrox.space"+pathForView(ROUTE_MAP[name]?name:"home"));
+  }catch(_){}
+}
 /* Ánh xạ RỘNG HƠN moduleForView — dùng riêng cho kiểm tra quyền truy cập
    module (admin dashboard), bao gồm cả Kinh Dịch (module này không có
    AI-gate riêng nên không nằm trong moduleForView). */
@@ -1724,10 +1783,11 @@ async function showView(name, options={}){
   document.querySelectorAll(".nav-btn[data-goto]").forEach(b => b.classList.toggle("active", b.dataset.goto === name));
   document.getElementById("main").scrollTop = 0;
   window.scrollTo(0,0);
+  applyRouteSeo(ROUTE_MAP[name] ? name : (moduleForView(name) || "home"));
   if(!options.fromHistory){
     try{
       const currentState = history.state && history.state.view ? history.state.view : "home";
-      if(currentState !== name) history.pushState({view:name}, "", location.href.startsWith("http") ? "#"+name : location.href);
+      if(currentState !== name) history.pushState({view:name}, "", location.href.startsWith("http") ? pathForView(name) : location.href);
     }catch(_){}
   }
   return true;
@@ -1742,7 +1802,18 @@ window.addEventListener("popstate", async (e)=>{
     if(name === "numerology") refreshNumerologyMini();
   }
 });
-try{ history.replaceState({view:"home"}, "", location.href.startsWith("http") ? location.href : location.href); }catch(_){}
+let __initialRouteView = "home";
+try{
+  let resolved = viewForPath(location.pathname, location.hash);
+  if(!resolved){
+    // Hỗ trợ liên kết cũ dùng hash trên domain gốc (VD: /#tuvi) từ trước khi
+    // đổi sang đường dẫn rõ nghĩa, để không phá link đã chia sẻ trước đây.
+    const legacyHash=(location.hash||"").replace(/^#/,"");
+    if(legacyHash && (ROUTE_MAP[legacyHash] || moduleForView(legacyHash) || legacyHash==="kinhdich" || legacyHash==="compat")) resolved=legacyHash;
+  }
+  if(resolved) __initialRouteView = resolved;
+  history.replaceState({view:__initialRouteView}, "", location.href.startsWith("http") ? pathForView(__initialRouteView) : location.href);
+}catch(_){}
 document.querySelectorAll("[data-goto]").forEach(el=>{
   el.addEventListener("click", async ()=>{
     const target = el.dataset.goto;
@@ -1755,6 +1826,16 @@ document.querySelectorAll("[data-goto]").forEach(el=>{
     if(target === "numerology") refreshNumerologyMini();
   });
 });
+if(__initialRouteView && __initialRouteView !== "home"){
+  showView(__initialRouteView).then(shown=>{
+    if(shown){
+      if(__initialRouteView === "tuvi") refreshTuviMini();
+      if(__initialRouteView === "zodiac") refreshZodiacSign();
+      if(__initialRouteView === "batu") refreshBatuMini();
+      if(__initialRouteView === "numerology") refreshNumerologyMini();
+    }
+  });
+}
 
 let toastTimer;
 function showToast(msg, type){
@@ -2212,8 +2293,65 @@ function zodiacPeriodPrompt(sign,period,key){
   };
   return `${base}\n\n${guide[period]||guide.today}`;
 }
-function tuviPeriodPromptText(label,ptext){
-  return `Hôm nay là ${label} (${ptext}). Dựa trên lá số trên, viết 3 gạch đầu dòng ngắn về sắc thái ${ptext}: 1 câu công việc, 1 câu tình cảm/quan hệ, 1 câu lời khuyên. Diễn giải theo các sao, cung và tiểu vận đã cho.`;
+const ZIWEI_MUTAGEN_LABELS=["Hóa Lộc","Hóa Quyền","Hóa Khoa","Hóa Kỵ"];
+function ziweiRawAstrolabe(){
+  const profile=STATE.profile;
+  if(!profile||!profile.dob||!profile.hourChi||!window.iztro) return null;
+  try{
+    const [y,m,d]=profile.dob.split("-").map(Number);
+    const gender=profile.gender==="Nữ"?"女":"男";
+    const hour=ZIWEI_HOUR_INDEX[profile.hourChi];
+    return iztro.astro.bySolar(`${y}-${m}-${d}`,hour,gender,true,"vi-VN");
+  }catch(_){ return null; }
+}
+function ziweiFindStarPalaceName(rawPalaces,starName){
+  const p=(rawPalaces||[]).find(p=>["majorStars","minorStars","adjectiveStars"].some(k=>palaceStars(p,k).includes(starName)));
+  return p?safeText(p.name):null;
+}
+function ziweiFmtDate(dt){ return `${dt.getFullYear()}-${dt.getMonth()+1}-${dt.getDate()}`; }
+function ziweiScopeText(raw,dateStr,scope){
+  let h;
+  try{ h=raw.horoscope(dateStr,0); }catch(_){ return ""; }
+  const t=h&&h[scope];
+  if(!t) return "";
+  const natalAtIdx=raw.palaces[t.index];
+  if(!natalAtIdx) return "";
+  const mutagenParts=(t.mutagen||[]).map((star,i)=>{
+    const hostName=ziweiFindStarPalaceName(raw.palaces,star);
+    return `${ZIWEI_MUTAGEN_LABELS[i]||"Hóa?"} tại ${star}${hostName?` (cung ${hostName} trong lá số gốc)`:""}`;
+  }).join("; ");
+  const stars=palaceStars(natalAtIdx,"majorStars").join(", ")||"không có chính tinh";
+  return `${t.name} (${t.heavenlyStem} ${t.earthlyBranch}) nhập cung ${safeText(natalAtIdx.name)} trong lá số gốc (chính tinh tại đây: ${stars}). Tứ Hóa của kỳ này: ${mutagenParts||"không xác định"}.`;
+}
+function ziweiPeriodSkyText(period){
+  const raw=ziweiRawAstrolabe();
+  if(!raw) return "";
+  const now=new Date();
+  if(period==="today") return ziweiScopeText(raw,ziweiFmtDate(now),"daily");
+  if(period==="week"){
+    return [0,2,4,6].map(d=>{
+      const dt=new Date(now.getTime()+d*86400000);
+      const label=d===0?"hôm nay":`+${d} ngày (${String(dt.getDate()).padStart(2,"0")}/${String(dt.getMonth()+1).padStart(2,"0")})`;
+      return `${label}: ${ziweiScopeText(raw,ziweiFmtDate(dt),"daily")}`;
+    }).filter(Boolean).join("\n");
+  }
+  const monthly=ziweiScopeText(raw,ziweiFmtDate(now),"monthly");
+  const samples=[0,10,20].map(d=>{
+    const dt=new Date(now.getTime()+d*86400000);
+    const label=d===0?"đầu tháng (hôm nay)":`ngày +${d}`;
+    return `${label}: ${ziweiScopeText(raw,ziweiFmtDate(dt),"daily")}`;
+  }).filter(Boolean).join("\n");
+  return `${monthly}\nMột vài mốc Lưu Nhật trong tháng:\n${samples}`;
+}
+function tuviPeriodPromptText(label,ptext,period){
+  const sky=ziweiPeriodSkyText(period);
+  if(!sky) return `Hôm nay là ${label} (${ptext}). Dựa trên lá số trên, viết 3 gạch đầu dòng ngắn về sắc thái ${ptext}: 1 câu công việc, 1 câu tình cảm/quan hệ, 1 câu lời khuyên. Diễn giải theo các sao, cung và tiểu vận đã cho.`;
+  const guide={
+    today:`DỮ LIỆU LƯU CHUYỂN HÔM NAY là ${label} (tính bằng thuật toán Tử Vi thật — Lưu Nhật, Tứ Hóa):\n${sky}\n\nNhiệm vụ: dựa trên Lưu Nhật và Tứ Hóa hôm nay ở trên, viết đúng 3 gạch đầu dòng cho HÔM NAY: 1 câu công việc, 1 câu tình cảm, 1 câu lời khuyên. Mỗi ý phải nhắc cụ thể tới cung hoặc sao lưu chuyển đã cho (tên cung Lưu Nhật Mệnh nhập, hoặc sao Hóa Lộc/Hóa Kỵ...). Cấm viết chung chung dùng được cho mọi ngày.`,
+    week:`DỮ LIỆU LƯU CHUYỂN TUẦN NÀY là ${label} (mẫu Lưu Nhật các ngày trong tuần, tính bằng thuật toán Tử Vi thật):\n${sky}\n\nNhiệm vụ: dựa trên diễn biến Lưu Nhật cả tuần ở trên, viết đúng 3 gạch đầu dòng cho CẢ TUẦN: 1 câu công việc (ngày nào thuận/kỵ dựa trên cung Lưu Nhật Mệnh nhập), 1 câu tình cảm, 1 câu lời khuyên theo nhịp tuần. Phải nêu khác biệt giữa các ngày mẫu, cấm viết nội dung dùng được cho một ngày đơn lẻ.`,
+    month:`DỮ LIỆU LƯU CHUYỂN THÁNG NÀY là ${label} (Lưu Nguyệt + mẫu Lưu Nhật trong tháng, tính bằng thuật toán Tử Vi thật):\n${sky}\n\nNhiệm vụ: dựa trên Lưu Nguyệt và Tứ Hóa tháng ở trên, viết đúng 3 gạch đầu dòng cho CẢ THÁNG: 1 câu công việc (giai đoạn nào bứt phá/giữ nhịp), 1 câu tình cảm, 1 câu lời khuyên chiến lược tháng. Tầm nhìn tháng, cấm viết nội dung của riêng một ngày.`
+  };
+  return guide[period]||guide.today;
 }
 const AI_GATE_PERIODS=[];
 const PERIOD_LABELS={today:"hôm nay",week:"tuần này",month:"tháng này"};
@@ -2569,7 +2707,7 @@ async function loadTuviPeriod(period, force){
   const label = periodLabel(period,key);
   await aiAcquireSlot();
   try{
-    const q = tuviPromptBody(tuviPeriodPromptText(label,PERIOD_LABELS[period]));
+    const q = tuviPromptBody(tuviPeriodPromptText(label,PERIOD_LABELS[period],period));
     const result = await runAiPrompt(q, { withChartImage:true, compact:true });
     writeAiCache("tuviPeriod",key,result,{module:"tuvi",period});
     el.innerHTML=mdToHtml(result);

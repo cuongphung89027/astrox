@@ -17,47 +17,45 @@
  * file tĩnh có phần mở rộng (.js, .css, .png, .svg, ...) — những request đó
  * được chuyển thẳng cho ASSETS.fetch như bình thường.
  *
- * Ảnh og:image tạm dùng /assets/logo.png cho tới khi thumbnail riêng từng
- * module được duyệt (xem trao đổi ngày 2026-09-12) — lúc đó chỉ cần đổi
- * field "image" bên dưới sang /assets/og/<slug>.png sau khi ảnh đã có trong
- * repo, không cần sửa gì khác.
+ * Ảnh og:image dùng thumbnail riêng từng module tại /assets/og/<slug>.png
+ * (đã duyệt và upload ngày 2026-09-12).
  */
 
 const ROUTE_META = {
   "/trangchu": {
-    title: "AstroX — Tử Vi · Cung Hoàng Đạo · Kinh Dịch",
-    description: "Xem Tử Vi Đẩu Số, Cung Hoàng Đạo, Kinh Dịch, Bát Tự và Thần Số Học cá nhân hoá, luận giải bằng AI theo ngày, tuần, tháng.",
-    image: "/assets/logo.png"
+    title: "Khám phá thế giới của bạn cùng AstroX",
+    description: "Khám phá thế giới của bạn cùng AstroX.",
+    image: "/assets/og/trangchu.png"
   },
   "/tuvi": {
     title: "Tử Vi Đẩu Số — Luận giải lá số bằng AI | AstroX",
     description: "Lập lá số Tử Vi Đẩu Số, xem vận hạn theo ngày, tuần, tháng dựa trên Lưu Niên, Lưu Nguyệt, Lưu Nhật thật, luận giải bằng AI.",
-    image: "/assets/logo.png"
+    image: "/assets/og/tuvi.png"
   },
   "/hoangdao": {
     title: "Cung Hoàng Đạo — Tử vi phương Tây mỗi ngày | AstroX",
     description: "Xem tử vi 12 cung hoàng đạo theo ngày, tuần, tháng dựa trên vị trí thiên thể thật, luận giải bằng AI.",
-    image: "/assets/logo.png"
+    image: "/assets/og/hoangdao.png"
   },
   "/kinhdich": {
     title: "Kinh Dịch — Gieo quẻ và luận giải bằng AI | AstroX",
     description: "Gieo quẻ Kinh Dịch, xem hào từ và luận giải quẻ theo tình huống của bạn bằng AI.",
-    image: "/assets/logo.png"
+    image: "/assets/og/kinhdich.png"
   },
   "/battu": {
     title: "Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AI | AstroX",
     description: "Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AI.",
-    image: "/assets/logo.png"
+    image: "/assets/og/battu.png"
   },
   "/thanso": {
     title: "Thần Số Học — Giải mã con số cuộc đời | AstroX",
     description: "Tính Số Chủ Đạo, Số Đường Đời và các chỉ số Thần Số Học, luận giải ý nghĩa bằng AI.",
-    image: "/assets/logo.png"
+    image: "/assets/og/thanso.png"
   },
   "/tarot": {
     title: "Tarot — Sắp ra mắt | AstroX",
     description: "Trải bài Tarot và luận giải bằng AI, sắp ra mắt tại AstroX.",
-    image: "/assets/logo.png"
+    image: "/assets/og/tarot.png"
   }
 };
 ROUTE_META["/"] = ROUTE_META["/trangchu"];

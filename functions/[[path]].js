@@ -1,0 +1,105 @@
+/*
+ * Cloudflare Pages Function — bắt toàn bộ đường dẫn không khớp file tĩnh
+ * hay /api/* cụ thể nào, phục vụ hai việc:
+ *
+ *  1) SPA fallback: các route sạch mới (VD: /tuvi, /hoangdao, /kinhdich,
+ *     /battu, /thanso, /tarot, /trangchu) đều trả về index.html để router
+ *     phía client (xem showView/pathForView/viewForPath trong index.html)
+ *     tự nhận diện qua location.pathname, thay vì bị 404.
+ *
+ *  2) SEO: chèn lại <title>/<meta description>/<og:*>/<twitter:*>/<link
+ *     canonical> theo đúng module của route đó ngay trong HTML trả về, để
+ *     công cụ tìm kiếm và trình quét liên kết mạng xã hội (không chạy JS)
+ *     đọc được nội dung đúng cho từng module thay vì luôn thấy metadata
+ *     mặc định của trang chủ.
+ *
+ * Không đụng tới /api/* (đã có handler riêng trong functions/api/) hay các
+ * file tĩnh có phần mở rộng (.js, .css, .png, .svg, ...) — những request đó
+ * được chuyển thẳng cho ASSETS.fetch như bình thường.
+ *
+ * Ảnh og:image tạm dùng /assets/logo.png cho tới khi thumbnail riêng từng
+ * module được duyệt (xem trao đổi ngày 2026-09-12) — lúc đó chỉ cần đổi
+ * field "image" bên dưới sang /assets/og/<slug>.png sau khi ảnh đã có trong
+ * repo, không cần sửa gì khác.
+ */
+
+const ROUTE_META = {
+  "/trangchu": {
+    title: "AstroX — Tử Vi · Cung Hoàng Đạo · Kinh Dịch",
+    description: "Xem Tử Vi Đẩu Số, Cung Hoàng Đạo, Kinh Dịch, Bát Tự và Thần Số Học cá nhân hoá, luận giải bằng AI theo ngày, tuần, tháng.",
+    image: "/assets/logo.png"
+  },
+  "/tuvi": {
+    title: "Tử Vi Đẩu Số — Luận giải lá số bằng AI | AstroX",
+    description: "Lập lá số Tử Vi Đẩu Số, xem vận hạn theo ngày, tuần, tháng dựa trên Lưu Niên, Lưu Nguyệt, Lưu Nhật thật, luận giải bằng AI.",
+    image: "/assets/logo.png"
+  },
+  "/hoangdao": {
+    title: "Cung Hoàng Đạo — Tử vi phương Tây mỗi ngày | AstroX",
+    description: "Xem tử vi 12 cung hoàng đạo theo ngày, tuần, tháng dựa trên vị trí thiên thể thật, luận giải bằng AI.",
+    image: "/assets/logo.png"
+  },
+  "/kinhdich": {
+    title: "Kinh Dịch — Gieo quẻ và luận giải bằng AI | AstroX",
+    description: "Gieo quẻ Kinh Dịch, xem hào từ và luận giải quẻ theo tình huống của bạn bằng AI.",
+    image: "/assets/logo.png"
+  },
+  "/battu": {
+    title: "Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AI | AstroX",
+    description: "Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AI.",
+    image: "/assets/logo.png"
+  },
+  "/thanso": {
+    title: "Thần Số Học — Giải mã con số cuộc đời | AstroX",
+    description: "Tính Số Chủ Đạo, Số Đường Đời và các chỉ số Thần Số Học, luận giải ý nghĩa bằng AI.",
+    image: "/assets/logo.png"
+  },
+  "/tarot": {
+    title: "Tarot — Sắp ra mắt | AstroX",
+    description: "Trải bài Tarot và luận giải bằng AI, sắp ra mắt tại AstroX.",
+    image: "/assets/logo.png"
+  }
+};
+ROUTE_META["/"] = ROUTE_META["/trangchu"];
+
+function rewriteMeta(response, meta, canonicalUrl) {
+  const attr = (value) => ({ element(el) { el.setAttribute("content", value); } });
+  const imageUrl = new URL(meta.image, canonicalUrl).toString();
+  return new HTMLRewriter()
+    .on("title", { element(el) { el.setInnerContent(meta.title); } })
+    .on('meta[name="description"]', attr(meta.description))
+    .on('meta[property="og:title"]', attr(meta.title))
+    .on('meta[property="og:description"]', attr(meta.description))
+    .on('meta[property="og:url"]', attr(canonicalUrl))
+    .on('meta[property="og:image"]', attr(imageUrl))
+    .on('meta[name="twitter:title"]', attr(meta.title))
+    .on('meta[name="twitter:description"]', attr(meta.description))
+    .on('meta[name="twitter:image"]', attr(imageUrl))
+    .on('link[rel="canonical"]', { element(el) { el.setAttribute("href", canonicalUrl); } })
+    .transform(response);
+}
+
+export async function onRequest(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  let pathname = url.pathname;
+  if (pathname.length > 1) pathname = pathname.replace(/\/+$/, "");
+
+  // Không can thiệp /api/* hay file tĩnh có phần mở rộng (css/js/png/svg/...)
+  if (pathname.startsWith("/api/") || /\.[a-zA-Z0-9]+$/.test(pathname)) {
+    return env.ASSETS.fetch(request);
+  }
+
+  const indexUrl = new URL(request.url);
+  indexUrl.pathname = "/index.html";
+  const assetRes = await env.ASSETS.fetch(new Request(indexUrl.toString(), request));
+
+  const meta = ROUTE_META[pathname];
+  if (!meta) {
+    // Route lạ (không khớp module nào) — vẫn trả index.html để client-side
+    // router tự xử lý (mặc định về trang chủ), giữ nguyên metadata gốc.
+    return new Response(assetRes.body, assetRes);
+  }
+  const canonicalUrl = `${url.origin}${pathname === "/" ? "/trangchu" : pathname}`;
+  return rewriteMeta(assetRes, meta, canonicalUrl);
+}

@@ -2110,7 +2110,7 @@ async function loadTuviSubContent(){
 --------------------------------------------------------------------------- */
 function periodCacheKey(period){
   const now=new Date();
-  if(period==="today") return now.toISOString().slice(0,10);
+  if(period==="today") return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   if(period==="week"){ const j=new Date(now.getFullYear(),0,1); const w=Math.ceil((((now-j)/86400000)+j.getDay()+1)/7); return `${now.getFullYear()}-W${w}`; }
   return `${now.getFullYear()}-${now.getMonth()+1}`;
 }
@@ -2215,7 +2215,7 @@ function zodiacPeriodPrompt(sign,period,key){
 function tuviPeriodPromptText(label,ptext){
   return `Hôm nay là ${label} (${ptext}). Dựa trên lá số trên, viết 3 gạch đầu dòng ngắn về sắc thái ${ptext}: 1 câu công việc, 1 câu tình cảm/quan hệ, 1 câu lời khuyên. Diễn giải theo các sao, cung và tiểu vận đã cho.`;
 }
-const AI_GATE_PERIODS=["today","week","month"];
+const AI_GATE_PERIODS=[];
 const PERIOD_LABELS={today:"hôm nay",week:"tuần này",month:"tháng này"};
 
 const aiGateRuns = {tuvi:null,zodiac:null};
@@ -2550,6 +2550,11 @@ async function forceReloadModule(module){
 }
 document.getElementById("btn-tuvi-refresh").addEventListener("click", ()=> forceReloadModule("tuvi"));
 
+function renderPeriodPrompt(el, periodText, onClick, errorMsg){
+  el.innerHTML = `${errorMsg?`<p style="color:var(--rose); font-size:13px; margin:0 0 10px;">${escapeHtml(errorMsg)}</p>`:""}<div class="period-cta"><p style="color:var(--ink-soft); font-size:13.5px; margin:0 0 12px;">Chưa xem luận giải ${escapeHtml(periodText)}.</p><button type="button" class="btn btn-accent btn-sm period-view-btn">${errorMsg?"Thử lại":"Xem luận giải"}</button></div>`;
+  const btn=el.querySelector(".period-view-btn");
+  if(btn) btn.addEventListener("click", onClick, {once:true});
+}
 async function loadTuviPeriod(period, force){
   const key = periodCacheKey(period);
   const badgeEl=document.getElementById("tuvi-period-badge");
@@ -2557,8 +2562,9 @@ async function loadTuviPeriod(period, force){
   const el=document.getElementById("tuvi-period-content");
   if(!el) return;
   if(!STATE.profile){ el.innerHTML = `<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để thêm.</p>`; return; }
-  const cached=readAiCache("tuviPeriod",key,force,period);
+  const cached=readAiCache("tuviPeriod",key,false,period);
   if(cached){ el.innerHTML=mdToHtml(cached); return; }
+  if(!force){ renderPeriodPrompt(el, PERIOD_LABELS[period], ()=>loadTuviPeriod(period,true)); return; }
   el.innerHTML=`<div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div><div class="skel" style="height:14px;width:70%;"></div>`;
   const label = periodLabel(period,key);
   await aiAcquireSlot();
@@ -2567,7 +2573,7 @@ async function loadTuviPeriod(period, force){
     const result = await runAiPrompt(q, { withChartImage:true, compact:true });
     writeAiCache("tuviPeriod",key,result,{module:"tuvi",period});
     el.innerHTML=mdToHtml(result);
-  }catch(e){ el.innerHTML = `<p style="color:var(--rose);">${escapeHtml(e.message)}</p>`; }
+  }catch(e){ renderPeriodPrompt(el, PERIOD_LABELS[period], ()=>loadTuviPeriod(period,true), e.message); }
   finally{ aiReleaseSlot(); }
 }
 document.querySelectorAll("#tuvi-period-tabs .tabchip").forEach(chip=>{
@@ -2773,8 +2779,9 @@ async function loadZodiacPeriod(period, force){
   const el = document.getElementById("zodiac-period-content");
   if(!el) return;
   if(!sign){ el.innerHTML = `<p>Chưa có ngày sinh trong hồ sơ.</p>`; return; }
-  const cacheKey=key+"::"+sign.id, cached=readAiCache("zodiacPeriod",cacheKey,force,period);
+  const cacheKey=key+"::"+sign.id, cached=readAiCache("zodiacPeriod",cacheKey,false,period);
   if(cached){ el.innerHTML=mdToHtml(cached); return; }
+  if(!force){ renderPeriodPrompt(el, PERIOD_LABELS[period], ()=>loadZodiacPeriod(period,true)); return; }
   el.innerHTML=`<div class="skel" style="height:14px;width:90%;margin-bottom:8px;"></div><div class="skel" style="height:14px;width:70%;"></div>`;
   await aiAcquireSlot();
   try{
@@ -2782,7 +2789,7 @@ async function loadZodiacPeriod(period, force){
     const result = await runAiPrompt(q, { withChartImage:false, compact:true });
     writeAiCache("zodiacPeriod",cacheKey,result,{module:"zodiac",period});
     el.innerHTML=mdToHtml(result);
-  }catch(e){ el.innerHTML = `<p style="color:var(--rose);">${escapeHtml(e.message)}</p>`; }
+  }catch(e){ renderPeriodPrompt(el, PERIOD_LABELS[period], ()=>loadZodiacPeriod(period,true), e.message); }
   finally{ aiReleaseSlot(); }
 }
 document.querySelectorAll("#zodiac-period-tabs .tabchip").forEach(chip=>{

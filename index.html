@@ -34,6 +34,7 @@
 
   --batu:#8A6D3B;       --batu-dark:#5C4726;   --batu-tint:#F1E8D2;   /* Bat Tu */
   --numer:#3E5BA0;      --numer-dark:#28407A;  --numer-tint:#E9EDF7;  /* Than So Hoc */
+  --tarot:#6B4C8A;      --tarot-dark:#48325D;  --tarot-tint:#EFE7F4;  /* Tarot (sap ra mat) */
 
   /* Ngu Hanh (Five Elements) — dung cho chu Can/Chi, khong phai accent module */
   --wx-kim:#8D8570;     --wx-kim-tint:#EDEAE0;
@@ -58,6 +59,7 @@
 [data-accent="kinhdich"]{ --accent:var(--vermil); --accent-dark:var(--vermil-dark); --accent-tint:var(--vermil-tint); }
 [data-accent="batu"]{ --accent:var(--batu); --accent-dark:var(--batu-dark); --accent-tint:var(--batu-tint); }
 [data-accent="numer"]{ --accent:var(--numer); --accent-dark:var(--numer-dark); --accent-tint:var(--numer-tint); }
+[data-accent="tarot"]{ --accent:var(--tarot); --accent-dark:var(--tarot-dark); --accent-tint:var(--tarot-tint); }
 
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
@@ -98,9 +100,12 @@ img{max-width:100%; display:block;}
   width:100%; text-align:left; transition:.15s;
 }
 .side-item svg{ flex-shrink:0; opacity:.75; }
+.side-item .si-icon{ width:20px; height:20px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:1; opacity:.8; }
+.side-item .si-icon.si-han{ font-family:var(--font-han); }
 .side-item:hover{ background:var(--bg-soft); color:var(--ink); }
 .side-item.active{ background:var(--ink-cta); color:var(--ink-cta-text); }
 .side-item.active svg{ opacity:1; }
+.side-item.active .si-icon{ opacity:1; }
 .side-divider{ height:1px; background:var(--line); margin:16px 6px; }
 .side-foot{ margin-top:auto; }
 .side-profile-card{
@@ -282,7 +287,7 @@ img{max-width:100%; display:block;}
 }
 .hero-band::before{ content:""; position:absolute; width:280px; height:280px; right:-55px; top:-85px; opacity:.7; border:1px solid rgba(20,125,115,.2); border-radius:50%; box-shadow:0 0 0 18px rgba(20,125,115,.05), 0 0 0 42px rgba(200,149,59,.08); }
 .hero-band .hb-content{ position:relative; max-width:520px; }
-.hero-band .hb-eyebrow{ font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--teal-dark); }
+.hero-band .hb-eyebrow{ font-size:16.5px; font-weight:800; letter-spacing:.04em; color:var(--teal-dark); }
 .hero-band h1{ font-size:38px; font-weight:800; line-height:1.08; margin-top:10px; letter-spacing:-.04em; max-width:600px; }
 .hero-band p{ font-size:14.5px; color:var(--ink-soft); margin-top:14px; line-height:1.65; max-width:560px; }
 .hero-band .hb-actions{ display:flex; gap:12px; margin-top:24px; }
@@ -315,6 +320,11 @@ img{max-width:100%; display:block;}
 .module-card.mc-numer{ background:var(--numer-tint); }
 .module-card.mc-numer .mc-icon{ background:var(--numer); color:#fff; }
 .module-card.mc-numer .mc-cta{ color:var(--numer-dark); }
+.module-card.mc-tarot{ background:var(--tarot-tint); }
+.module-card.mc-tarot .mc-icon{ background:var(--tarot); color:#fff; }
+.module-card.mc-tarot .mc-cta{ color:var(--tarot-dark); }
+.module-card .mc-badge{ position:absolute; top:18px; right:18px; font-size:10.5px; font-weight:800; letter-spacing:.04em; padding:4px 10px; border-radius:var(--r-pill); background:rgba(255,255,255,.7); color:var(--tarot-dark); }
+.module-card.mc-locked{ opacity:.6; }
 
 /* ==========================================================================
    BAT TU (Four Pillars)
@@ -539,7 +549,13 @@ img{max-width:100%; display:block;}
   .hero-band h1{ font-size:28px; }
   .hero-band .hb-actions{ flex-direction:column; align-items:stretch; }
   .hero-band .hb-actions .btn{ width:100%; }
-  .module-grid{ grid-template-columns:1fr; }
+  .module-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .module-card{ padding:16px; min-height:0; border-radius:16px; }
+  .module-card .mc-icon{ width:40px; height:40px; font-size:19px; margin-bottom:12px; border-radius:12px; }
+  .module-card .mc-title{ font-size:14px; letter-spacing:-.015em; }
+  .module-card .mc-desc{ font-size:11.5px; margin-top:6px; line-height:1.45; }
+  .module-card .mc-cta{ font-size:11.5px; padding-top:12px; gap:4px; }
+  .module-card .mc-badge{ top:10px; right:10px; font-size:9px; padding:3px 7px; }
   .two-col{ grid-template-columns:1fr; }
   .form-grid{ grid-template-columns:1fr; }
   .choice-grid{ grid-template-columns:1fr; }
@@ -554,7 +570,11 @@ img{max-width:100%; display:block;}
   .card{ padding:18px; border-radius:18px; }
   .hero-band{ padding:25px 18px; }
   .hero-band h1{ font-size:27px; }
-  .module-card{ min-height:0; padding:20px; }
+  .module-card{ min-height:0; padding:13px; }
+  .module-card .mc-icon{ width:34px; height:34px; font-size:16px; margin-bottom:9px; border-radius:10px; }
+  .module-card .mc-title{ font-size:12.5px; }
+  .module-card .mc-desc{ font-size:10.5px; }
+  .module-card .mc-cta{ font-size:10.5px; padding-top:9px; }
   .modal-backdrop{ padding:0; align-items:flex-end; }
   .modal-box{ max-height:94vh; border-radius:22px 22px 0 0; }
   .modal-head{ padding:18px 18px 4px; }
@@ -589,24 +609,28 @@ img{max-width:100%; display:block;}
         Trang chủ
       </button>
       <button class="side-item" data-goto="tuvi">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 12.5A8.5 8.5 0 1 1 11.5 4a6.8 6.8 0 0 0 8.5 8.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="si-icon">☾</span>
         Tử Vi
       </button>
       <button class="side-item" data-goto="zodiac">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.2" opacity=".5"/><circle cx="12" cy="6.5" r="1.3" fill="currentColor"/><circle cx="17.5" cy="12" r="1.3" fill="currentColor"/></svg>
+        <span class="si-icon">✦</span>
         Cung Hoàng Đạo
       </button>
       <button class="side-item" data-goto="kinhdich">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="2.2" rx="1" fill="currentColor"/><rect x="4" y="10.9" width="7" height="2.2" rx="1" fill="currentColor"/><rect x="13" y="10.9" width="7" height="2.2" rx="1" fill="currentColor"/><rect x="4" y="16.8" width="16" height="2.2" rx="1" fill="currentColor"/></svg>
+        <span class="si-icon">☰</span>
         Kinh Dịch
       </button>
       <button class="side-item" data-goto="batu">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="13" y="13" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span class="si-icon si-han">柱</span>
         Bát Tự
       </button>
       <button class="side-item" data-goto="numerology">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 3.5v17M14.5 3.5v17" stroke="currentColor" stroke-width="1.2" opacity=".55"/></svg>
+        <span class="si-icon">#</span>
         Thần Số Học
+      </button>
+      <button class="side-item" id="side-tarot">
+        <span class="si-icon">☀</span>
+        Tarot
       </button>
       <div class="side-divider"></div>
       <button class="side-item" data-goto="compat">
@@ -645,8 +669,8 @@ img{max-width:100%; display:block;}
         <div class="hero-band">
           <div class="hb-content">
             <p class="hb-eyebrow">AstroX</p>
-            <h1 class="serif">Xem Tử Vi, Cung Hoàng Đạo và Kinh Dịch</h1>
-            <p>Nhập thông tin của bạn, AstroX sẽ giúp bạn lập lá số tử vi và bản đồ sao.</p>
+            <h1 class="serif">Khám phá Tử Vi, Cung Hoàng Đạo, Kinh Dịch, Bát Tự và Thần Số Học.</h1>
+            <p id="hb-sub">Nhập thông tin của bạn, AstroX sẽ giúp bạn tìm hiểu thế giới của mình.</p>
             <div class="hb-actions">
               <button class="btn btn-primary" id="btn-home-setup" style="background:#fff; color:var(--teal-dark);">Thiết lập hồ sơ</button>
               <button class="btn btn-ghost" id="btn-home-learn">Cách hoạt động</button>
@@ -654,41 +678,49 @@ img{max-width:100%; display:block;}
           </div>
         </div>
 
-        <div class="module-grid">
-          <div class="module-card mc-tuvi" data-goto="tuvi">
+        <div class="card-flat section-gap hidden" id="home-ai-progress" aria-live="polite">
+          <div id="home-ai-rows"></div>
+          <div style="margin-top:8px;" id="home-ai-error-row" class="hidden"><p class="ai-gate-error" id="home-ai-error-text"></p><button class="btn btn-accent btn-sm" id="home-ai-retry" style="margin-top:6px;">Thử lại</button></div>
+        </div>
+
+        <div class="module-grid section-gap">
+          <div class="module-card mc-tuvi" data-goto="tuvi" data-module="tuvi">
             <div class="mc-icon">☾</div>
             <div class="mc-title">Tử Vi Đẩu Số</div>
             <div class="mc-desc">Lập lá số 12 cung, xem đại vận và các chủ đề về công việc, tình cảm, tiền tài.</div>
             <div class="mc-cta">Khám phá lá số →</div>
           </div>
-          <div class="module-card mc-zodiac" data-goto="zodiac">
+          <div class="module-card mc-zodiac" data-goto="zodiac" data-module="zodiac">
             <div class="mc-icon">✦</div>
             <div class="mc-title">Cung Hoàng Đạo</div>
             <div class="mc-desc">Tính cung Mặt Trời, xem đặc tính và mức độ hợp giữa hai cung.</div>
             <div class="mc-cta">Xem bản đồ sao →</div>
           </div>
-          <div class="module-card mc-kinhdich" data-goto="kinhdich">
+          <div class="module-card mc-kinhdich" data-goto="kinhdich" data-module="kinhdich">
             <div class="mc-icon">☰</div>
             <div class="mc-title">Kinh Dịch</div>
             <div class="mc-desc">Nhập câu hỏi, gieo 3 số và nhận quẻ cùng quan hệ Thể–Dụng đã tính sẵn.</div>
             <div class="mc-cta">Gieo quẻ →</div>
           </div>
-          <div class="module-card mc-batu" data-goto="batu">
+          <div class="module-card mc-batu" data-goto="batu" data-module="batu">
             <div class="mc-icon">柱</div>
             <div class="mc-title">Bát Tự</div>
             <div class="mc-desc">Lập lá số Tứ Trụ (Năm–Tháng–Ngày–Giờ), xem Thập Thần, Đại Vận và tỷ lệ Ngũ Hành.</div>
             <div class="mc-cta">Lập lá số →</div>
           </div>
-          <div class="module-card mc-numer" data-goto="numerology">
+          <div class="module-card mc-numer" data-goto="numerology" data-module="numerology">
             <div class="mc-icon">#</div>
             <div class="mc-title">Thần Số Học</div>
             <div class="mc-desc">Tính Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách và biểu đồ ngày sinh từ tên và ngày sinh.</div>
             <div class="mc-cta">Xem chỉ số →</div>
           </div>
-        </div>
-        <div class="card-flat section-gap hidden" id="home-ai-progress" aria-live="polite">
-          <div id="home-ai-rows"></div>
-          <div style="margin-top:8px;" id="home-ai-error-row" class="hidden"><p class="ai-gate-error" id="home-ai-error-text"></p><button class="btn btn-accent btn-sm" id="home-ai-retry" style="margin-top:6px;">Thử lại</button></div>
+          <div class="module-card mc-tarot" id="mc-tarot">
+            <span class="mc-badge">Sắp ra mắt</span>
+            <div class="mc-icon">☀</div>
+            <div class="mc-title">Tarot</div>
+            <div class="mc-desc">Rút bài Tarot và luận giải cùng AstroX — tính năng đang được phát triển.</div>
+            <div class="mc-cta">Xem trước →</div>
+          </div>
         </div>
 
         <div class="card section-gap" id="home-status-card">
@@ -1374,7 +1406,10 @@ function writeAiCache(group,key,text,meta={}){
 function mergeCacheObject(local,remote){const out=Object.assign({},local||{});Object.entries(remote||{}).forEach(([k,v])=>{const lt=typeof out[k]==="object"?out[k].updatedAt||0:0,rt=typeof v==="object"?v.updatedAt||0:Date.now();if(!out[k]||rt>=lt)out[k]=v;});return out;}
 function mergeAiCaches(local,remote){const out={version:2,profiles:{},legacy:mergeCacheObject(local?.legacy,remote?.legacy)};const fps=new Set([...Object.keys(local?.profiles||{}),...Object.keys(remote?.profiles||{})]);fps.forEach(fp=>{const a=Object.assign(emptyAiProfileCache(),local?.profiles?.[fp]||{}),b=remote?.profiles?.[fp]||{};["tuviTopics","zodiacTopics","kinhDich","compatibility","batuTopics","numerologyTopics"].forEach(k=>a[k]=mergeCacheObject(a[k],b[k]));["today","week","month"].forEach(p=>{a.tuviPeriod[p]=mergeCacheObject(a.tuviPeriod?.[p],b.tuviPeriod?.[p]);a.zodiacPeriod[p]=mergeCacheObject(a.zodiacPeriod?.[p],b.zodiacPeriod?.[p]);});out.profiles[fp]=a;});return out;}
 let syncTimer=null,syncInFlight=false,syncQueued=false,syncErrorShown=false,supabaseUser=null,homeErrorModule=null,preloadGeneration=0;
-const aiGateErrors={tuvi:"",zodiac:""};
+const aiGateErrors={tuvi:"",zodiac:"",batu:"",numerology:""};
+const MODULE_NAMES={tuvi:"Tử Vi",zodiac:"Cung Hoàng Đạo",kinhdich:"Kinh Dịch",batu:"Bát Tự",numerology:"Thần Số Học"};
+const GATED_MODULES=["tuvi","zodiac","batu","numerology"];
+const ALL_MODULES=["tuvi","zodiac","kinhdich","batu","numerology"];
 /* Chờ xác định trạng thái đăng nhập (và đồng bộ tài khoản nếu có) trước khi
    bắt đầu tải AI lần đầu, để tránh gọi lại AI khi tài khoản đã có sẵn báo cáo. */
 let identityInitDone=false, identityInitResolve;
@@ -1455,7 +1490,7 @@ function updateAuthUi(){
      (runAiPrompt tự chặn ở đầu và sau khi có kết quả — xem định nghĩa hàm đó).
    ============================================================================ */
 function resetAiProgressUi(){
-  ["tuvi","zodiac"].forEach(m=>{ if(typeof homeAiState!=="undefined" && homeAiState[m]){ homeAiState[m].started=false; homeAiState[m].pct=0; homeAiState[m].err=""; } });
+  GATED_MODULES.forEach(m=>{ if(typeof homeAiState!=="undefined" && homeAiState[m]){ homeAiState[m].started=false; homeAiState[m].pct=0; homeAiState[m].err=""; } });
   const gateBar=document.getElementById("ai-gate-progress-bar"); if(gateBar) gateBar.style.width="0%";
   const gateCount=document.getElementById("ai-gate-count"); if(gateCount) gateCount.textContent="0 / 0 phần";
   const gatePercent=document.getElementById("ai-gate-percent"); if(gatePercent) gatePercent.textContent="0%";
@@ -1470,8 +1505,9 @@ function haltAiAndReset(){
   // trong ensureModuleAiRun sẽ thấy lệch thế hệ và tự dừng, không ghi cache),
   // xoá hàng đợi preload và đưa UI tiến trình về 0.
   preloadGeneration++;
-  aiGateRuns.tuvi=null; aiGateRuns.zodiac=null;
-  aiGateErrors.tuvi=""; aiGateErrors.zodiac=""; homeErrorModule=null;
+  GATED_MODULES.forEach(m=>{ aiGateRuns[m]=null; aiGateErrors[m]=""; });
+  homeErrorModule=null;
+  moduleAccess={};
   preloadQueue=[]; preloadChain=null;
   closeAiGate();
   resetAiProgressUi();
@@ -1521,13 +1557,14 @@ async function initSupabaseAuth(){
     const {data:{session}}=await supa.auth.getSession();
     supabaseUser=session?.user||null;
     updateAuthUi();
-    if(supabaseUser) await syncUserData().catch(()=>{});
+    if(supabaseUser){ await syncUserData().catch(()=>{}); refreshModuleAccess(); }
   }catch(_){ /* coi như chưa đăng nhập */ }
   resolveIdentityInit();
   runCaptiveCheck();
   supa.auth.onAuthStateChange((event, session)=>{
     if(event==="SIGNED_IN"){
       supabaseUser=session?.user||null; updateAuthUi();
+      refreshModuleAccess();
       syncUserData().catch(()=>{}).then(()=>runCaptiveCheck());
     } else if(event==="SIGNED_OUT"){
       handleSignedOut();
@@ -1613,20 +1650,75 @@ function tuviPromptBody(taskText){
    ROUTER
 --------------------------------------------------------------------------- */
 const views = document.querySelectorAll(".view");
-let gatePendingTarget = null;
 function moduleForView(name){
   if(name === "tuvi" || name === "tuvi-detail" || name === "tuvi-chart") return "tuvi";
   if(name === "zodiac" || name === "zodiac-detail" || name === "natal-detail") return "zodiac";
+  if(name === "batu" || name === "batu-detail") return "batu";
+  if(name === "numerology" || name === "numerology-detail") return "numerology";
   return "";
 }
+/* Ánh xạ RỘNG HƠN moduleForView — dùng riêng cho kiểm tra quyền truy cập
+   module (admin dashboard), bao gồm cả Kinh Dịch (module này không có
+   AI-gate riêng nên không nằm trong moduleForView). */
+function lockModuleForView(name){
+  const m=moduleForView(name);
+  if(m) return m;
+  if(name==="kinhdich") return "kinhdich";
+  return "";
+}
+/* Quyền truy cập module theo tài khoản — mặc định TẤT CẢ được phép; chỉ bị
+   khoá khi admin tắt rõ ràng trong bảng user_module_access (xem dashboard).
+   Khách chưa đăng nhập (không có user_id) luôn được phép — hệ thống phân
+   quyền chỉ áp dụng cho tài khoản đã đăng nhập. */
+let moduleAccess = {};
+function isModuleAllowed(module){
+  if(!supabaseUser) return true;
+  if(moduleAccess[module]===false) return false;
+  return true;
+}
+async function refreshModuleAccess(){
+  moduleAccess = {};
+  if(!supabaseUser){ renderModuleGridLocks(); return; }
+  try{
+    const token=await currentAccessToken();
+    if(!token){ renderModuleGridLocks(); return; }
+    const res=await fetch("/api/module-access",{headers:{"Authorization":`Bearer ${token}`}});
+    if(res.ok){
+      const data=await res.json();
+      if(data && data.access) moduleAccess=data.access;
+    }
+  }catch(_){}
+  renderModuleGridLocks();
+}
+function showModuleLockedNotice(module){
+  const name=MODULE_NAMES[module]||module;
+  document.getElementById("im-title").textContent = "Chưa được cấp quyền";
+  document.getElementById("im-body").innerHTML = `<p>Bạn chưa được cấp quyền truy cập ${escapeHtml(name)}, vui lòng liên hệ AstroX để được cấp quyền.</p>`;
+  document.getElementById("info-modal").classList.add("show");
+}
+function renderModuleGridLocks(){
+  document.querySelectorAll(".module-card[data-module]").forEach(card=>{
+    const m=card.dataset.module, locked=!isModuleAllowed(m);
+    card.classList.toggle("mc-locked", locked);
+  });
+}
 async function showView(name, options={}){
+  const lockModule = lockModuleForView(name);
+  if(lockModule && !options.bypassGate && !isModuleAllowed(lockModule)){
+    showModuleLockedNotice(lockModule);
+    return false;
+  }
   const module = moduleForView(name);
   if(module && !options.bypassGate){
     if(!STATE.profile){ openProfileModal(false); return false; }
-    gatePendingTarget = name;
-    if(!await ensureModuleAiReady(module)) return false;
+    if(!moduleCacheComplete(module)){
+      // Chỉ bấm vào Module mới trigger gọi AI của module đó; popup chỉ để
+      // thông báo tiến trình — không tự động điều hướng người dùng vào
+      // module khi tải xong (người dùng bấm lại để vào sau khi đã sẵn sàng).
+      ensureModuleAiReady(module);
+      return false;
+    }
   }
-  gatePendingTarget = null;
   views.forEach(v => v.classList.toggle("active", v.dataset.view === name));
   document.querySelectorAll(".side-item[data-goto]").forEach(b => b.classList.toggle("active", b.dataset.goto === name));
   document.querySelectorAll(".nav-btn[data-goto]").forEach(b => b.classList.toggle("active", b.dataset.goto === name));
@@ -1676,6 +1768,18 @@ function showToast(msg, type){
 /* ---------------------------------------------------------------------------
    SHARED DATA
 --------------------------------------------------------------------------- */
+/* Ánh xạ Địa Chi -> tên file ảnh 12 con giáp (assets/zodiac/*.png, nền trong
+   suốt). Dùng làm hình nền biểu tượng cho từng Chi ở lưới chọn giờ sinh và
+   từng cung trong lá số Tử Vi. */
+const CHI_ANIMAL_FILE = {
+  "Tý":"chuot", "Sửu":"trau", "Dần":"ho", "Mão":"meo", "Thìn":"rong", "Tỵ":"ran",
+  "Ngọ":"ngua", "Mùi":"de", "Thân":"khi", "Dậu":"ga", "Tuất":"cho", "Hợi":"lon"
+};
+function chiAnimalBg(chi, variant){
+  const file = CHI_ANIMAL_FILE[chi];
+  if(!file) return "";
+  return `background-image:url(assets/zodiac/${file}${variant==="bg"?"-bg":""}.png); background-repeat:no-repeat; background-position:center; background-size:${variant==="bg"?"78% auto":"62% auto"};`;
+}
 const CHI_HOURS = [
   {chi:"Tý", range:"23-1h"}, {chi:"Sửu", range:"1-3h"}, {chi:"Dần", range:"3-5h"},
   {chi:"Mão", range:"5-7h"}, {chi:"Thìn", range:"7-9h"}, {chi:"Tỵ", range:"9-11h"},
@@ -2162,22 +2266,30 @@ function buildModuleAiTasks(module){
     });
     return tasks;
   }
+  if(module === "batu"){
+    if(!STATE.batuChart) refreshBatuChart();
+    return BATU_TOPICS.map(t=>gateTask("batuTopics",t.id,`Bát Tự · ${t.title}`,batuPromptBody(t.prompt),{module:"batu",topic:t.id}));
+  }
+  if(module === "numerology"){
+    if(!STATE.numerologyChart) refreshNumerologyChart();
+    return NUMEROLOGY_TOPICS.map(t=>gateTask("numerologyTopics",t.id,`Thần Số Học · ${t.title}`,numerologyPromptBody(t.prompt),{module:"numerology",topic:t.id}));
+  }
   return [];
 }
 /* Trạng thái gọn cho thanh tiến trình ở trang chủ — chỉ hiện dòng của module
    đã thực sự được bấm vào (không còn preload nền), tự ẩn sau khi xong. */
-const homeAiState = { tuvi:{started:false,pct:0,err:""}, zodiac:{started:false,pct:0,err:""} };
+const homeAiState = { tuvi:{started:false,pct:0,err:""}, zodiac:{started:false,pct:0,err:""}, batu:{started:false,pct:0,err:""}, numerology:{started:false,pct:0,err:""} };
 let homeAiHideTimer=null;
 function renderHomeAiRows(){
   const wrap=document.getElementById("home-ai-progress"), rows=document.getElementById("home-ai-rows"),
         errHome=document.getElementById("home-ai-error-row"), errHomeText=document.getElementById("home-ai-error-text");
   if(!wrap||!rows) return;
-  const active=["tuvi","zodiac"].filter(m=>homeAiState[m].started);
+  const active=GATED_MODULES.filter(m=>homeAiState[m].started);
   clearTimeout(homeAiHideTimer);
   if(!active.length){ wrap.classList.add("hidden"); if(errHome)errHome.classList.add("hidden"); return; }
   wrap.classList.remove("hidden");
   rows.innerHTML = active.map(m=>{
-    const st=homeAiState[m], name=m==="tuvi"?"Tử Vi":"Cung Hoàng Đạo", done=st.pct>=100;
+    const st=homeAiState[m], name=MODULE_NAMES[m]||m, done=st.pct>=100;
     const stateText = st.err ? "Lỗi" : (done ? "Xong ✓" : "Đang tải…");
     return `<div class="home-ai-line ${done?'done':''} ${st.err?'err':''}" data-open="${m}">
       <span>${name}</span>
@@ -2199,10 +2311,16 @@ function renderHomeAiRows(){
 function updateAiGate(module,done,total,current,error="",finalError=false){
   const title=document.getElementById("ai-gate-title"),sub=document.getElementById("ai-gate-subtitle"),currentEl=document.getElementById("ai-gate-current"),bar=document.getElementById("ai-gate-progress-bar"),count=document.getElementById("ai-gate-count"),percent=document.getElementById("ai-gate-percent"),err=document.getElementById("ai-gate-error"),retry=document.getElementById("ai-gate-retry"),finish=document.getElementById("ai-gate-finish");
   const pct=total?Math.round(done/total*100):100;
-  const moduleName=module==="tuvi"?"Tử Vi":"Cung Hoàng Đạo";
+  const moduleName=MODULE_NAMES[module]||module;
+  const isDone=pct>=100&&!finalError;
   if(pct>=100||!finalError){
-    title.textContent=`Đang chuẩn bị ${moduleName}`;
-    sub.textContent="AstroX đang luận giải các phần của tử vi và cung hoàng đạo. Báo cáo sẽ sẵn sàng sau khi tải xong.";
+    if(isDone){
+      title.textContent=`Đã tải xong ${moduleName}`;
+      sub.textContent=`Báo cáo của ${moduleName} đã sẵn sàng.`;
+    }else{
+      title.textContent=`Đang chuẩn bị ${moduleName}`;
+      sub.textContent=`AstroX đang luận giải các phần của ${moduleName}. Báo cáo của ${moduleName} sẽ sẵn sàng khi tải xong. Ghi chú: Bạn có thể đọc báo cáo của các tính năng đã tải xong trong lúc chờ.`;
+    }
     currentEl.textContent=current||"Đang kiểm tra dữ liệu đã lưu…";
     bar.style.width=pct+"%";count.textContent=`${done} / ${total} phần`;percent.textContent=pct+"%";
   }
@@ -2214,6 +2332,13 @@ function updateAiGate(module,done,total,current,error="",finalError=false){
     homeAiState[module].started=true;
     homeAiState[module].pct=pct;
     homeAiState[module].err=finalError?error:"";
+  }
+  // Popup lần 2: khi tải xong hoặc gặp lỗi cuối, tự hiện lại popup (kể cả khi
+  // người dùng đã tắt popup lần 1) để thông báo, rồi tự tắt — không điều
+  // hướng người dùng đi đâu cả.
+  if(isDone||finalError){
+    const modal=document.getElementById("ai-gate-modal");
+    modal.dataset.module=module; modal.classList.add("show");
   }
   renderHomeAiRows();
 }
@@ -2286,7 +2411,7 @@ function ensureModuleAiRun(module,options={}){
   const generation=preloadGeneration;
   let failStreak=0;
   const AI_FAIL_STREAK_LIMIT=5;
-  const moduleName=module==="tuvi"?"Tử Vi":"Cung Hoàng Đạo";
+  const moduleName=MODULE_NAMES[module]||module;
   const run=(async()=>{
     let done=0,missing=[],tasks=[],total=0,lastError="",failedLabel="";
     for(let attempt=0; attempt<AI_FAIL_STREAK_LIMIT; attempt++){
@@ -2374,17 +2499,11 @@ function ensureModuleAiRun(module,options={}){
     return false;
   })();
   aiGateRuns[module]=run;
+  // Không còn tự động điều hướng người dùng vào module khi tải xong — popup
+  // chỉ thông báo (lần 1: đang tải; lần 2: đã xong) rồi tự tắt, giữ nguyên
+  // vị trí hiện tại của người dùng (per yêu cầu).
   const finishUp=(ok)=>{
     aiGateRuns[module]=null;
-    if(ok&&typeof gatePendingTarget==="string"&&gatePendingTarget&&moduleForView(gatePendingTarget)===module){
-      const pendingView=gatePendingTarget;gatePendingTarget=null;
-      showView(pendingView,{bypassGate:true}).then(shown=>{
-        if(shown){
-          if(pendingView==="tuvi") refreshTuviMini();
-          if(pendingView==="zodiac") refreshZodiacSign();
-        }
-      }).catch(()=>{});
-    }
     if(STATE.profile) pumpPreloadQueue();
     return ok;
   };
@@ -2477,7 +2596,8 @@ function renderZiweiNative(){
   const cells=slots.map(i=>{
     const x=c.palaces[i]||{};
     const stars=x.majorStars||[], minors=[...(x.minorStars||[]),...(x.adjectiveStars||[])].slice(0,8);
-    return `<div class="ziwei-palace"><div class="ziwei-palace-head"><span>${escapeHtml(x.earthlyBranch||"—")}</span><span>${escapeHtml(x.decadal||"")}</span></div><div class="ziwei-palace-name">${escapeHtml(x.name||"Cung")}</div><div class="ziwei-stars ziwei-primary">${stars.map(escapeHtml).join(" · ")||"Không có chính tinh"}</div><div>${minors.map(s=>`<span class="ziwei-chip">${escapeHtml(s)}</span>`).join("")}</div></div>`;
+    const bgStyle=chiAnimalBg(x.earthlyBranch,"bg");
+    return `<div class="ziwei-palace" style="${bgStyle}"><div class="ziwei-palace-head"><span>${escapeHtml(x.earthlyBranch||"—")}</span><span>${escapeHtml(x.decadal||"")}</span></div><div class="ziwei-palace-name">${escapeHtml(x.name||"Cung")}</div><div class="ziwei-stars ziwei-primary">${stars.map(escapeHtml).join(" · ")||"Không có chính tinh"}</div><div>${minors.map(s=>`<span class="ziwei-chip">${escapeHtml(s)}</span>`).join("")}</div></div>`;
   });
   const center=`<div class="ziwei-center"><div class="ziwei-center-title">${escapeHtml(p.name||"Lá số của bạn")}</div><div class="ziwei-center-meta">${formatDob(p.dob)} · ${escapeHtml(p.gender)} · Giờ ${escapeHtml(p.hourChi)}<br>${escapeHtml(c.meta.fiveElementsClass||"Chưa rõ Cục")}<br>Mệnh chủ: ${escapeHtml(c.meta.soul||"—")} · Thân chủ: ${escapeHtml(c.meta.body||"—")}</div></div>`;
   const ordered=[cells[0],cells[1],cells[2],cells[3],cells[4],center,cells[5],cells[6],cells[7],cells[8],cells[9],cells[10],cells[11]];
@@ -3025,6 +3145,7 @@ Trả lời DUY NHẤT bằng JSON hợp lệ, không thêm chữ nào khác:
   CHI_HOURS.forEach(h=>{
     const el = document.createElement("div");
     el.className = "hour-chip"; el.dataset.chi = h.chi;
+    el.setAttribute("style", chiAnimalBg(h.chi, "bg"));
     el.innerHTML = `<div class="hc-chi">${h.chi}</div><div class="hc-range">${h.range}</div>`;
     el.addEventListener("click", ()=>{
       grid.querySelectorAll(".hour-chip").forEach(c=>c.classList.remove("selected"));
@@ -3147,7 +3268,8 @@ document.getElementById("pm-back").addEventListener("click", ()=>{ if(pmStep>0){
    ============================================================================ */
 function applyProfileToUi(){
   preloadGeneration++;
-  aiGateErrors.tuvi="";aiGateErrors.zodiac="";homeErrorModule=null;
+  GATED_MODULES.forEach(m=>{ aiGateErrors[m]=""; });
+  homeErrorModule=null;
   const p = STATE.profile;
   if(p){
     const initial=(p.name||"?").trim().charAt(0).toUpperCase();
@@ -3169,8 +3291,18 @@ function applyProfileToUi(){
   refreshZodiacSign();
   refreshBatuMini();
   refreshNumerologyMini();
-  // Không còn tự động tải AI nền ở đây — Tử Vi/Cung Hoàng Đạo giờ chỉ gọi AI
+  updateHomeHero();
+  renderModuleGridLocks();
+  // Không còn tự động tải AI nền ở đây — mỗi module giờ chỉ gọi AI
   // khi người dùng thực sự mở module đó (qua showView -> ensureModuleAiReady).
+}
+function updateHomeHero(){
+  const sub=document.getElementById("hb-sub"); if(!sub) return;
+  if(STATE.profile && STATE.profile.name){
+    sub.textContent = `Xin chào ${STATE.profile.name}, cùng AstroX tìm hiểu thế giới của bạn nhé!`;
+  }else{
+    sub.textContent = "Nhập thông tin của bạn, AstroX sẽ giúp bạn tìm hiểu thế giới của mình.";
+  }
 }
 
 document.getElementById("btn-home-learn").addEventListener("click", ()=>{
@@ -3189,6 +3321,14 @@ document.getElementById("btn-home-learn").addEventListener("click", ()=>{
 });
 document.getElementById("im-close").addEventListener("click", ()=> document.getElementById("info-modal").classList.remove("show"));
 document.getElementById("info-modal").addEventListener("click",(e)=>{ if(e.target.id==="info-modal") document.getElementById("info-modal").classList.remove("show"); });
+
+function openTarotComingSoon(){
+  document.getElementById("im-title").textContent = "AstroX Tarot";
+  document.getElementById("im-body").innerHTML = `<p class="body-txt">AstroX Tarot sắp ra mắt.</p>`;
+  document.getElementById("info-modal").classList.add("show");
+}
+document.getElementById("mc-tarot")?.addEventListener("click", openTarotComingSoon);
+document.getElementById("side-tarot")?.addEventListener("click", openTarotComingSoon);
 
 /* ============================================================================
    MODULE — BAT TU (Tu Tru). Module doc lap: dung thu vien rieng (lunar-typescript

@@ -66,11 +66,31 @@ async function resolveUser(request, env) {
   return user && user.id ? user : null;
 }
 
+/*
+ * Ghi nhận tài khoản đã đăng nhập vào bảng `users` (D1) — KHÔNG cần Supabase
+ * Service Role Key, vì `user` ở đây đã được xác thực bằng chính token của
+ * người dùng (xem resolveUser ở trên). Dùng cho trang quản trị
+ * (dashboard.theastrox.space) để hiển thị danh sách kèm email thật, kể cả
+ * trước khi user lưu hồ sơ. Best-effort — không được làm hỏng request chính.
+ */
+async function recordUserSeen(env, user) {
+  if (!env.DB || !user || !user.id) return;
+  const now = Date.now();
+  const name = (user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || "";
+  try {
+    await env.DB.prepare(
+      `INSERT INTO users (user_id, email, name, first_seen, last_seen) VALUES (?1,?2,?3,?4,?4)
+       ON CONFLICT(user_id) DO UPDATE SET email = excluded.email, name = CASE WHEN excluded.name != '' THEN excluded.name ELSE users.name END, last_seen = excluded.last_seen`
+    ).bind(user.id, user.email || "", name, now).run();
+  } catch { /* best-effort, bo qua loi */ }
+}
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const user = await resolveUser(request, env);
   if (!user) return json(401, { error: "Bạn cần đăng nhập." });
   if (!env.DB) return json(500, { error: "Máy chủ chưa cấu hình D1 database (binding DB)." });
+  context.waitUntil(recordUserSeen(env, user));
 
   try {
     const row = await env.DB.prepare("SELECT payload FROM user_data WHERE user_id = ?1")
@@ -90,6 +110,7 @@ export async function onRequestPut(context) {
   const user = await resolveUser(request, env);
   if (!user) return json(401, { error: "Bạn cần đăng nhập." });
   if (!env.DB) return json(500, { error: "Máy chủ chưa cấu hình D1 database (binding DB)." });
+  context.waitUntil(recordUserSeen(env, user));
 
   const raw = await request.text();
   if (new TextEncoder().encode(raw).byteLength > MAX_BYTES)

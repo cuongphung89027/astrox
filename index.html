@@ -714,7 +714,7 @@ img{max-width:100%; display:block;}
             <div class="mc-desc">Tính Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách và biểu đồ ngày sinh từ tên và ngày sinh.</div>
             <div class="mc-cta">Xem chỉ số →</div>
           </div>
-          <div class="module-card mc-tarot" id="mc-tarot">
+          <div class="module-card mc-tarot" id="mc-tarot" data-module="tarot">
             <span class="mc-badge">Sắp ra mắt</span>
             <div class="mc-icon">☀</div>
             <div class="mc-title">Tarot</div>
@@ -1407,9 +1407,9 @@ function mergeCacheObject(local,remote){const out=Object.assign({},local||{});Ob
 function mergeAiCaches(local,remote){const out={version:2,profiles:{},legacy:mergeCacheObject(local?.legacy,remote?.legacy)};const fps=new Set([...Object.keys(local?.profiles||{}),...Object.keys(remote?.profiles||{})]);fps.forEach(fp=>{const a=Object.assign(emptyAiProfileCache(),local?.profiles?.[fp]||{}),b=remote?.profiles?.[fp]||{};["tuviTopics","zodiacTopics","kinhDich","compatibility","batuTopics","numerologyTopics"].forEach(k=>a[k]=mergeCacheObject(a[k],b[k]));["today","week","month"].forEach(p=>{a.tuviPeriod[p]=mergeCacheObject(a.tuviPeriod?.[p],b.tuviPeriod?.[p]);a.zodiacPeriod[p]=mergeCacheObject(a.zodiacPeriod?.[p],b.zodiacPeriod?.[p]);});out.profiles[fp]=a;});return out;}
 let syncTimer=null,syncInFlight=false,syncQueued=false,syncErrorShown=false,supabaseUser=null,homeErrorModule=null,preloadGeneration=0;
 const aiGateErrors={tuvi:"",zodiac:"",batu:"",numerology:""};
-const MODULE_NAMES={tuvi:"Tử Vi",zodiac:"Cung Hoàng Đạo",kinhdich:"Kinh Dịch",batu:"Bát Tự",numerology:"Thần Số Học"};
+const MODULE_NAMES={tuvi:"Tử Vi",zodiac:"Cung Hoàng Đạo",kinhdich:"Kinh Dịch",batu:"Bát Tự",numerology:"Thần Số Học",tarot:"Tarot"};
 const GATED_MODULES=["tuvi","zodiac","batu","numerology"];
-const ALL_MODULES=["tuvi","zodiac","kinhdich","batu","numerology"];
+const ALL_MODULES=["tuvi","zodiac","kinhdich","batu","numerology","tarot"];
 /* Chờ xác định trạng thái đăng nhập (và đồng bộ tài khoản nếu có) trước khi
    bắt đầu tải AI lần đầu, để tránh gọi lại AI khi tài khoản đã có sẵn báo cáo. */
 let identityInitDone=false, identityInitResolve;
@@ -3327,8 +3327,8 @@ function openTarotComingSoon(){
   document.getElementById("im-body").innerHTML = `<p class="body-txt">AstroX Tarot sắp ra mắt.</p>`;
   document.getElementById("info-modal").classList.add("show");
 }
-document.getElementById("mc-tarot")?.addEventListener("click", openTarotComingSoon);
-document.getElementById("side-tarot")?.addEventListener("click", openTarotComingSoon);
+function openTarotOrLockNotice(){ if(!isModuleAllowed("tarot")){ showModuleLockedNotice("tarot"); return; } openTarotComingSoon(); } document.getElementById("mc-tarot")?.addEventListener("click", openTarotOrLockNotice);
+document.getElementById("side-tarot")?.addEventListener("click", openTarotOrLockNotice);
 
 /* ============================================================================
    MODULE — BAT TU (Tu Tru). Module doc lap: dung thu vien rieng (lunar-typescript

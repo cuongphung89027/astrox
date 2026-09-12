@@ -47,7 +47,7 @@
 
   --batu:#8A6D3B;       --batu-dark:#5C4726;   --batu-tint:#F1E8D2;   /* Bat Tu */
   --numer:#3E5BA0;      --numer-dark:#28407A;  --numer-tint:#E9EDF7;  /* Than So Hoc */
-  --tarot:#6B4C8A;      --tarot-dark:#48325D;  --tarot-tint:#EFE7F4;  /* Tarot (sap ra mat) */
+  --tarot:#6B4C8A;      --tarot-dark:#48325D;  --tarot-tint:#EFE7F4;  /* Tarot */
 
   /* Ngu Hanh (Five Elements) — dung cho chu Can/Chi, khong phai accent module */
   --wx-kim:#8D8570;     --wx-kim-tint:#EDEAE0;
@@ -605,6 +605,90 @@ img{max-width:100%; display:block;}
 .nav-btn{ flex:1; background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 0; color:var(--ink-faint); font-size:10.5px; font-weight:600; }
 .nav-btn.active{ color:var(--ink); }
 .nav-btn.active svg{ color:var(--teal-dark); }
+
+/* ==========================================================================
+   TAROT — chon bo bai, video intro, trai bai & luan giai
+   ========================================================================== */
+.tarot-deck-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+@media(max-width:760px){ .tarot-deck-grid{ grid-template-columns:1fr; } }
+.tarot-deck-card{ position:relative; border-radius:20px; overflow:hidden; border:1px solid var(--line); background:var(--surface-tint); cursor:pointer; text-align:left; padding:0; transition:transform .2s, box-shadow .2s; }
+.tarot-deck-card:hover:not(.locked){ transform:translateY(-3px); box-shadow:0 16px 34px rgba(72,50,93,.18); }
+.tarot-deck-card.locked{ cursor:default; opacity:.82; }
+.tarot-deck-cover{ width:100%; aspect-ratio:4/5; background:linear-gradient(150deg,var(--tarot-tint),#fff); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.tarot-deck-cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+.tarot-deck-cover .tdc-soon{ font-size:34px; color:var(--tarot); opacity:.55; }
+.tarot-deck-body{ padding:14px 14px 16px; }
+.tarot-deck-name{ font-family:var(--font-display); font-weight:700; font-size:15.5px; color:var(--tarot-dark); line-height:1.3; }
+.tarot-deck-namevi{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+.tarot-deck-desc{ font-size:11.5px; color:var(--ink-faint); margin-top:8px; line-height:1.55; }
+.tarot-deck-badge{ position:absolute; top:12px; right:12px; font-size:10px; font-weight:800; letter-spacing:.05em; padding:4px 10px; border-radius:var(--r-pill); background:var(--tarot); color:#fff; }
+.tarot-deck-badge.soon{ background:rgba(20,16,26,.62); }
+.tarot-deck-badge.active{ background:var(--gold); color:#4A3410; }
+
+.tarot-video-overlay{ position:fixed; inset:0; z-index:320; display:none; align-items:center; justify-content:center; padding:18px;
+  background:radial-gradient(120% 120% at 50% 15%, rgba(40,26,54,.72), rgba(12,8,18,.9)); backdrop-filter:blur(4px); }
+.tarot-video-overlay.show{ display:flex; }
+.tarot-video-stage{ position:relative; width:min(360px,88vw); border-radius:22px; overflow:hidden; box-shadow:0 30px 80px rgba(20,10,30,.55); background:#000; }
+.tarot-video-stage video{ display:block; width:100%; height:auto; max-height:82vh; }
+.tarot-video-skip{ position:absolute; top:10px; right:10px; z-index:2; border:0; background:rgba(0,0,0,.45); color:#fff; font-size:12px; font-weight:700; padding:6px 12px; border-radius:var(--r-pill); cursor:pointer; }
+.tarot-video-skip:hover{ background:rgba(0,0,0,.68); }
+
+.tarot-step-bar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.tarot-deck-tag{ display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:var(--tarot-dark); background:var(--tarot-tint); padding:6px 12px; border-radius:var(--r-pill); }
+.tarot-deck-tag img{ width:20px; height:20px; border-radius:50%; object-fit:cover; }
+
+.tarot-spread-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; }
+.tarot-spread-card{ text-align:left; border:1px solid var(--line); border-radius:16px; padding:14px; background:var(--surface-tint); cursor:pointer; transition:.2s; }
+.tarot-spread-card:hover{ border-color:var(--tarot); box-shadow:0 10px 26px rgba(72,50,93,.14); }
+.tarot-spread-card.active{ border-color:var(--tarot); background:var(--tarot-tint); }
+.tarot-spread-name{ font-weight:800; font-size:13.5px; color:var(--ink); }
+.tarot-spread-count{ font-size:10.5px; font-weight:700; color:var(--tarot-dark); margin-top:2px; }
+.tarot-spread-desc{ font-size:11.5px; color:var(--ink-faint); margin-top:6px; line-height:1.5; }
+.tarot-frame-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.tarot-frame-chip{ font-size:11.5px; font-weight:700; padding:6px 12px; border-radius:var(--r-pill); border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
+.tarot-frame-chip.active{ background:var(--tarot); border-color:var(--tarot); color:#fff; }
+
+.tarot-shuffle-overlay{ position:fixed; inset:0; z-index:320; display:none; align-items:center; justify-content:center; padding:18px;
+  background:radial-gradient(120% 120% at 50% 15%, rgba(40,26,54,.72), rgba(12,8,18,.9)); backdrop-filter:blur(4px); }
+.tarot-shuffle-overlay.show{ display:flex; }
+.tarot-shuffle-stage{ width:min(360px,90vw); text-align:center; color:#F3ECFB; }
+.tarot-shuffle-deck{ position:relative; width:112px; height:172px; margin:0 auto 22px; }
+.tarot-shuffle-deck .tsd-card{ position:absolute; inset:0; border-radius:12px; background-size:cover; background-position:center; box-shadow:0 10px 26px rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.25); }
+.tarot-shuffle-deck.shuffling .tsd-card:nth-child(1){ animation:tsdShuffle1 1s ease-in-out infinite; }
+.tarot-shuffle-deck.shuffling .tsd-card:nth-child(2){ animation:tsdShuffle2 1s ease-in-out infinite .15s; }
+.tarot-shuffle-deck.shuffling .tsd-card:nth-child(3){ animation:tsdShuffle3 1s ease-in-out infinite .3s; }
+@keyframes tsdShuffle1{ 0%,100%{transform:translateX(0) rotate(0deg);} 50%{transform:translateX(-16px) rotate(-8deg);} }
+@keyframes tsdShuffle2{ 0%,100%{transform:translateY(0) rotate(0deg);} 50%{transform:translateY(-10px) rotate(3deg);} }
+@keyframes tsdShuffle3{ 0%,100%{transform:translateX(0) rotate(0deg);} 50%{transform:translateX(16px) rotate(8deg);} }
+.tarot-shuffle-label{ font-size:13px; font-weight:700; letter-spacing:.02em; }
+.tarot-shuffle-sub{ font-size:11.5px; color:#C9BEDD; margin-top:6px; }
+
+.tarot-board{ display:grid; gap:14px; justify-content:center; }
+.tarot-board.layout-1{ grid-template-columns:repeat(1,minmax(0,140px)); }
+.tarot-board.layout-3{ grid-template-columns:repeat(3,minmax(0,140px)); }
+.tarot-board.layout-5rel,.tarot-board.layout-5cross{ grid-template-columns:repeat(3,minmax(0,130px)); }
+@media(max-width:560px){ .tarot-board.layout-3{ grid-template-columns:repeat(3,minmax(0,30vw)); } .tarot-board.layout-5rel,.tarot-board.layout-5cross{ grid-template-columns:repeat(3,minmax(0,30vw)); } }
+.tarot-celtic{ display:grid; gap:22px; align-items:start; grid-template-columns:minmax(0,290px) minmax(0,130px); justify-content:center; }
+.tarot-celtic-cross{ position:relative; width:290px; height:290px; margin:0 auto; }
+.tarot-celtic-staff{ display:grid; grid-template-columns:repeat(2,minmax(0,60px)); gap:10px; justify-content:center; }
+@media(max-width:700px){ .tarot-celtic{ grid-template-columns:1fr; } .tarot-celtic-staff{ grid-template-columns:repeat(4,minmax(0,70px)); margin-top:14px; } }
+.tarot-card-slot{ text-align:center; }
+.tarot-card-slot .tcs-pos{ font-size:9.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--tarot-dark); margin-bottom:6px; overflow-wrap:anywhere; }
+.tarot-card-frame{ position:relative; width:100%; aspect-ratio:7/12.25; border-radius:9px; overflow:hidden; box-shadow:0 8px 20px rgba(72,50,93,.22); background:var(--tarot-tint); }
+.tarot-card-frame img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .5s; }
+.tarot-card-frame img.reversed{ transform:rotate(180deg); }
+.tarot-card-frame.flip{ animation:tarotFlipIn .5s ease both; }
+@keyframes tarotFlipIn{ from{ transform:rotateY(90deg); opacity:.2; } to{ transform:rotateY(0deg); opacity:1; } }
+.tarot-card-name{ font-size:10.5px; font-weight:700; margin-top:6px; color:var(--ink); overflow-wrap:anywhere; }
+.tarot-card-rev-tag{ font-size:9px; color:var(--tarot-dark); font-weight:800; }
+.tarot-celtic-cross .tarot-card-slot{ position:absolute; width:78px; }
+.tarot-celtic-cross .tcs-1{ left:50%; top:50%; transform:translate(-50%,-50%); z-index:1; }
+.tarot-celtic-cross .tcs-2{ left:50%; top:50%; transform:translate(-50%,-50%) rotate(90deg); z-index:2; }
+.tarot-celtic-cross .tcs-3{ left:50%; bottom:0; transform:translateX(-50%); }
+.tarot-celtic-cross .tcs-4{ left:0; top:50%; transform:translateY(-50%); }
+.tarot-celtic-cross .tcs-5{ left:50%; top:0; transform:translateX(-50%); }
+.tarot-celtic-cross .tcs-6{ right:0; top:50%; transform:translateY(-50%); }
+.tarot-interp-card{ margin-top:18px; }
 </style>
 </head>
 <body>
@@ -642,7 +726,7 @@ img{max-width:100%; display:block;}
         Thần Số Học
       </button>
       <button class="side-item" id="side-tarot">
-        <span class="si-icon">☀</span>
+        <span class="si-icon">🔮</span>
         Tarot
       </button>
       <div class="side-divider"></div>
@@ -728,11 +812,10 @@ img{max-width:100%; display:block;}
             <div class="mc-cta">Xem chỉ số →</div>
           </div>
           <div class="module-card mc-tarot" id="mc-tarot" data-module="tarot">
-            <span class="mc-badge">Sắp ra mắt</span>
-            <div class="mc-icon">☀</div>
+            <div class="mc-icon">🔮</div>
             <div class="mc-title">Tarot</div>
-            <div class="mc-desc">Rút bài Tarot và luận giải cùng AstroX — tính năng đang được phát triển.</div>
-            <div class="mc-cta">Xem trước →</div>
+            <div class="mc-desc">Chọn bộ bài, trải bài theo nhiều kiểu phổ biến và xem luận giải cùng AstroX.</div>
+            <div class="mc-cta">Trải bài →</div>
           </div>
         </div>
 
@@ -1167,6 +1250,66 @@ img{max-width:100%; display:block;}
       </div>
     </section>
 
+    <!-- ===================== TAROT VIEW ===================== -->
+    <section class="view" data-view="tarot" data-accent="tarot">
+      <div class="view-inner">
+        <div class="view-header">
+          <p class="view-eyebrow">Tarot</p>
+          <h1 class="view-title serif">AstroX Tarot</h1>
+          <p class="view-sub">Chọn bộ bài, chọn kiểu trải và để AI luận giải theo đúng các lá đã rút.</p>
+        </div>
+
+        <div id="tarot-panel-decks">
+          <div class="card">
+            <p style="font-weight:700; font-size:14.5px;">Chọn bộ bài bạn muốn dùng</p>
+            <div class="tarot-deck-grid section-gap" id="tarot-deck-grid"></div>
+          </div>
+        </div>
+
+        <div id="tarot-panel-spreads" class="hidden">
+          <div class="tarot-step-bar">
+            <span class="tarot-deck-tag" id="tarot-deck-tag"></span>
+            <button class="btn btn-text" id="btn-tarot-changedeck" style="padding:0;">Đổi bộ bài</button>
+          </div>
+          <div class="card">
+            <p style="font-weight:700; font-size:14.5px;">Chọn kiểu trải bài</p>
+            <div class="tarot-spread-grid section-gap" id="tarot-spread-grid"></div>
+            <div class="tarot-frame-chips hidden" id="tarot-frame-chips"></div>
+            <div class="section-gap">
+              <label for="tarot-question" style="font-size:12.5px; font-weight:700;">Câu hỏi bạn đang băn khoăn (không bắt buộc)</label>
+              <textarea class="input section-gap" id="tarot-question" rows="2" placeholder="Ví dụ: Mối quan hệ này nên tiếp tục theo hướng nào?" style="resize:vertical;"></textarea>
+            </div>
+            <button class="btn btn-accent btn-block section-gap" id="btn-tarot-draw" style="--accent:var(--tarot);">Xáo bài & rút bài</button>
+          </div>
+        </div>
+
+        <div id="tarot-panel-result" class="hidden">
+          <div class="tarot-step-bar">
+            <span class="tarot-deck-tag" id="tarot-result-deck-tag"></span>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm" id="btn-tarot-reset">Trải bài khác</button>
+              <button class="btn btn-text" id="btn-tarot-changedeck-2" style="padding:0 6px;">Đổi bộ bài</button>
+            </div>
+          </div>
+          <div class="card center-col">
+            <p class="serif" style="font-size:20px; font-weight:700;" id="tarot-result-title">—</p>
+            <div class="section-gap" id="tarot-board-wrap" style="width:100%; display:flex; justify-content:center;"></div>
+          </div>
+          <div class="card tarot-interp-card">
+            <p style="font-weight:700; font-size:14.5px;">Luận giải bằng trí tuệ nhân tạo</p>
+            <div id="tarot-interpretation" class="content-md" style="margin-top:10px;">
+              <div class="skel" style="height:14px; width:95%; margin-bottom:10px;"></div>
+              <div class="skel" style="height:14px; width:85%; margin-bottom:10px;"></div>
+              <div class="skel" style="height:14px; width:70%;"></div>
+            </div>
+          </div>
+          <div class="card-flat section-gap">
+            <p style="font-size:11.5px; color:var(--ink-faint); line-height:1.7;">Không có lá bài tốt hay xấu tuyệt đối — mỗi lá phản ánh một xu hướng năng lượng tại thời điểm rút bài, không phải một định mệnh cố định.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== COMPATIBILITY VIEW ===================== -->
     <section class="view" data-view="compat" data-accent="tuvi">
       <div class="view-inner" style="max-width:760px;">
@@ -1219,6 +1362,23 @@ img{max-width:100%; display:block;}
       </div>
       <div class="kd-shake-count"><span id="kd-count-1">1</span><span id="kd-count-2">2</span><span id="kd-count-3">3</span></div>
       <p class="kd-shake-hint" id="kd-shake-hint">Đang gieo…</p>
+    </div>
+  </div>
+
+  <div class="tarot-video-overlay" id="tarot-video-overlay" role="dialog" aria-modal="true" aria-label="Giới thiệu bộ bài Tarot">
+    <div class="tarot-video-stage">
+      <button class="tarot-video-skip" id="tarot-video-skip" type="button">Bỏ qua</button>
+      <video id="tarot-video-el" playsinline autoplay></video>
+    </div>
+  </div>
+
+  <div class="tarot-shuffle-overlay" id="tarot-shuffle-overlay" role="dialog" aria-modal="true" aria-label="Đang xáo bài Tarot">
+    <div class="tarot-shuffle-stage">
+      <div class="tarot-shuffle-deck" id="tarot-shuffle-deck">
+        <div class="tsd-card"></div><div class="tsd-card"></div><div class="tsd-card"></div>
+      </div>
+      <p class="tarot-shuffle-label">Đang xáo bài…</p>
+      <p class="tarot-shuffle-sub" id="tarot-shuffle-sub">Giữ câu hỏi trong tâm</p>
     </div>
   </div>
 
@@ -1371,7 +1531,7 @@ const AI_MODELS = [{id:DEFAULT_MODEL,label:"Muse Spark 1.3"}];
 --------------------------------------------------------------------------- */
 const PROMPT_VERSION = "2026-09-content-fix-v5";
 function emptyAiProfileCache(){
-  return {tuviTopics:{}, tuviPeriod:{today:{},week:{},month:{}}, zodiacTopics:{}, zodiacPeriod:{today:{},week:{},month:{}}, kinhDich:{}, compatibility:{}, batuTopics:{}, numerologyTopics:{}};
+  return {tuviTopics:{}, tuviPeriod:{today:{},week:{},month:{}}, zodiacTopics:{}, zodiacPeriod:{today:{},week:{},month:{}}, kinhDich:{}, compatibility:{}, batuTopics:{}, numerologyTopics:{}, tarot:{}};
 }
 function defaultState(){
   return {profile:null,chartImageBase64:null,chartImageMime:"image/jpeg",ziweiChart:null,natalChart:null,apiKey:null,model:DEFAULT_MODEL,onboarded:false,aiCache:{version:2,profiles:{},legacy:{}}};
@@ -1417,7 +1577,7 @@ function writeAiCache(group,key,text,meta={}){
   saveState();scheduleUserDataSync();
 }
 function mergeCacheObject(local,remote){const out=Object.assign({},local||{});Object.entries(remote||{}).forEach(([k,v])=>{const lt=typeof out[k]==="object"?out[k].updatedAt||0:0,rt=typeof v==="object"?v.updatedAt||0:Date.now();if(!out[k]||rt>=lt)out[k]=v;});return out;}
-function mergeAiCaches(local,remote){const out={version:2,profiles:{},legacy:mergeCacheObject(local?.legacy,remote?.legacy)};const fps=new Set([...Object.keys(local?.profiles||{}),...Object.keys(remote?.profiles||{})]);fps.forEach(fp=>{const a=Object.assign(emptyAiProfileCache(),local?.profiles?.[fp]||{}),b=remote?.profiles?.[fp]||{};["tuviTopics","zodiacTopics","kinhDich","compatibility","batuTopics","numerologyTopics"].forEach(k=>a[k]=mergeCacheObject(a[k],b[k]));["today","week","month"].forEach(p=>{a.tuviPeriod[p]=mergeCacheObject(a.tuviPeriod?.[p],b.tuviPeriod?.[p]);a.zodiacPeriod[p]=mergeCacheObject(a.zodiacPeriod?.[p],b.zodiacPeriod?.[p]);});out.profiles[fp]=a;});return out;}
+function mergeAiCaches(local,remote){const out={version:2,profiles:{},legacy:mergeCacheObject(local?.legacy,remote?.legacy)};const fps=new Set([...Object.keys(local?.profiles||{}),...Object.keys(remote?.profiles||{})]);fps.forEach(fp=>{const a=Object.assign(emptyAiProfileCache(),local?.profiles?.[fp]||{}),b=remote?.profiles?.[fp]||{};["tuviTopics","zodiacTopics","kinhDich","compatibility","batuTopics","numerologyTopics","tarot"].forEach(k=>a[k]=mergeCacheObject(a[k],b[k]));["today","week","month"].forEach(p=>{a.tuviPeriod[p]=mergeCacheObject(a.tuviPeriod?.[p],b.tuviPeriod?.[p]);a.zodiacPeriod[p]=mergeCacheObject(a.zodiacPeriod?.[p],b.zodiacPeriod?.[p]);});out.profiles[fp]=a;});return out;}
 let syncTimer=null,syncInFlight=false,syncQueued=false,syncErrorShown=false,supabaseUser=null,homeErrorModule=null,preloadGeneration=0;
 const aiGateErrors={tuvi:"",zodiac:"",batu:"",numerology:""};
 const MODULE_NAMES={tuvi:"Tử Vi",zodiac:"Cung Hoàng Đạo",kinhdich:"Kinh Dịch",batu:"Bát Tự",numerology:"Thần Số Học",tarot:"Tarot"};
@@ -1700,7 +1860,7 @@ const ROUTE_SEO={
   kinhdich:{title:"Kinh Dịch — Gieo quẻ và luận giải bằng AI | AstroX", description:"Gieo quẻ Kinh Dịch, xem hào từ và luận giải quẻ theo tình huống của bạn bằng AI."},
   batu:{title:"Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AI | AstroX", description:"Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AI."},
   numerology:{title:"Thần Số Học — Giải mã con số cuộc đời | AstroX", description:"Tính Số Chủ Đạo, Số Đường Đời và các chỉ số Thần Số Học, luận giải ý nghĩa bằng AI."},
-  tarot:{title:"Tarot — Sắp ra mắt | AstroX", description:"Trải bài Tarot và luận giải bằng AI, sắp ra mắt tại AstroX."}
+  tarot:{title:"Tarot — Trải bài và luận giải bằng AI | AstroX", description:"Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AI dựa trên đúng các lá đã rút."}
 };
 function applyRouteSeo(name){
   const seo=ROUTE_SEO[name]||ROUTE_SEO.home;
@@ -1723,6 +1883,7 @@ function lockModuleForView(name){
   const m=moduleForView(name);
   if(m) return m;
   if(name==="kinhdich") return "kinhdich";
+  if(name==="tarot") return "tarot";
   return "";
 }
 /* Quyền truy cập module theo tài khoản — mặc định TẤT CẢ được phép; chỉ bị
@@ -3459,6 +3620,7 @@ document.getElementById("btn-home-learn").addEventListener("click", ()=>{
       <div class="bullet-item"><span class="dot-mark"></span><strong>Tử Vi:</strong> tính trực tiếp từ ngày giờ sinh và giới tính; ảnh tải lên chỉ là tài liệu đối chiếu không bắt buộc.</div>
       <div class="bullet-item"><span class="dot-mark"></span><strong>Cung Hoàng Đạo:</strong> cung Mặt Trời tính chính xác theo ngày sinh dương lịch; bản đồ sao đầy đủ (Mặt Trăng, Cung Mọc) cần dữ liệu thiên văn chi tiết hơn, sẽ bổ sung sau.</div>
       <div class="bullet-item"><span class="dot-mark"></span><strong>Kinh Dịch:</strong> lập quẻ bằng toán pháp Mai Hoa Dịch Số chính xác (Thượng/Hạ quái theo mod 8, hào động theo mod 6, quan hệ Thể-Dụng theo ngũ hành) — AI chỉ đảm nhiệm phần đặt tên quẻ cổ điển và luận giải văn bản.</div>
+      <div class="bullet-item"><span class="dot-mark"></span><strong>Tarot:</strong> lá bài và chiều xuôi/ngược được rút ngẫu nhiên bằng máy tính; AI chỉ luận giải dựa trên đúng các lá đã rút, không tự đổi lá hay chiều bài.</div>
     </div>
     <div class="divider"></div>
     <p class="body-txt">Hồ sơ và kết quả luận giải được lưu cục bộ; khi đăng nhập Google, dữ liệu được đồng bộ riêng theo tài khoản.</p>`;
@@ -3467,12 +3629,286 @@ document.getElementById("btn-home-learn").addEventListener("click", ()=>{
 document.getElementById("im-close").addEventListener("click", ()=> document.getElementById("info-modal").classList.remove("show"));
 document.getElementById("info-modal").addEventListener("click",(e)=>{ if(e.target.id==="info-modal") document.getElementById("info-modal").classList.remove("show"); });
 
-function openTarotComingSoon(){
-  document.getElementById("im-title").textContent = "AstroX Tarot";
-  document.getElementById("im-body").innerHTML = `<p class="body-txt">AstroX Tarot sắp ra mắt.</p>`;
-  document.getElementById("info-modal").classList.add("show");
+/* ============================================================================
+   MODULE — TAROT (chon bo bai -> video intro -> chon kieu trai -> rut bai -> AI)
+   Khong nam trong GATED_MODULES/moduleForView (giong Kinh Dich): khong bat buoc
+   ho so de xem view, chi bat buoc ho so khi goi AI luan giai (runAiPrompt da tu
+   kiem tra STATE.profile). Duoc dua vao lockModuleForView de admin co the khoa.
+   ============================================================================ */
+const TAROT_DECKS = [
+  { id:"raccoon", name:"The Raccoon Tarot", nameVi:"Tarot Gấu Mèo", status:"available",
+    base:"assets/tarot/raccoon/", ext:".webp", back:"assets/tarot/raccoon/back.webp",
+    video:"assets/tarot/raccoon/intro.mp4",
+    desc:"Bộ bài mặc định — chú gấu mèo ấm áp giữa khung cảnh đồng quê mùa thu." },
+  { id:"shiba", name:"The Shiba Tarot", nameVi:"Tarot Chó Shiba", status:"soon",
+    desc:"Sắp ra mắt — bộ bài minh hoạ chú chó Shiba." },
+  { id:"vajrayana", name:"Vajrayana Tarot", nameVi:"Tarot Kim Cương Thừa", status:"soon",
+    desc:"Sắp ra mắt — bộ bài lấy cảm hứng từ Mật Tông Kim Cương Thừa." }
+];
+const TAROT_SPREADS = [
+  { id:"one", name:"Rút 1 lá", count:1, layout:"1",
+    desc:"Trả lời nhanh, rõ ràng cho một câu hỏi cụ thể.",
+    positions:[{label:"Thông điệp"}] },
+  { id:"three", name:"Trải 3 lá", count:3, layout:"3", hasFrame:true,
+    desc:"Trải phổ biến nhất — chọn khung diễn giải bên dưới.",
+    frames:[
+      { id:"ppf", label:"Quá khứ – Hiện tại – Tương lai", positions:["Quá khứ","Hiện tại","Tương lai"] },
+      { id:"sao", label:"Tình huống – Hành động – Kết quả", positions:["Tình huống","Hành động","Kết quả"] },
+      { id:"soa", label:"Bản thân – Trở ngại – Lời khuyên", positions:["Bản thân","Trở ngại","Lời khuyên"] }
+    ] },
+  { id:"cross5", name:"Thánh Giá Đơn Giản", count:5, layout:"5cross",
+    desc:"Tổng quan hiện tại, thách thức, nền tảng và xu hướng kết quả.",
+    positions:[{label:"Hiện tại"},{label:"Thách thức"},{label:"Nền tảng (quá khứ gần)"},{label:"Định hướng (tương lai gần)"},{label:"Kết quả"}] },
+  { id:"relationship5", name:"Tình Yêu & Mối Quan Hệ", count:5, layout:"5rel",
+    desc:"Khám phá động lực giữa bạn và đối phương trong một mối quan hệ.",
+    positions:[{label:"Bạn"},{label:"Đối phương"},{label:"Nền tảng mối quan hệ"},{label:"Thách thức chung"},{label:"Tiềm năng / hướng đi"}] },
+  { id:"celtic10", name:"Celtic Cross", count:10, layout:"celtic",
+    desc:"Trải chuyên sâu 10 lá cho vấn đề phức tạp, nhiều tầng lớp.",
+    positions:[{label:"Hiện tại"},{label:"Thách thức (chéo)"},{label:"Nền tảng / tiềm thức"},{label:"Quá khứ gần"},
+      {label:"Mục tiêu / điều mong muốn"},{label:"Tương lai gần"},{label:"Bản thân / thái độ"},
+      {label:"Ảnh hưởng ngoại cảnh"},{label:"Hy vọng & lo sợ"},{label:"Kết quả cuối cùng"}] }
+];
+let tarotFlow = { deckId:null, spreadId:null, frameId:"ppf", cards:[], question:"" };
+let tarotCardsData=null, tarotCardsPromise=null;
+function ensureTarotCards(){
+  if(tarotCardsData) return Promise.resolve(tarotCardsData);
+  if(tarotCardsPromise) return tarotCardsPromise;
+  tarotCardsPromise = fetch("assets/tarot/cards.json").then(r=>{ if(!r.ok) throw new Error("http "+r.status); return r.json(); })
+    .then(data=>{ tarotCardsData=data; return data; })
+    .catch(e=>{ tarotCardsPromise=null; throw e; });
+  return tarotCardsPromise;
 }
-function openTarotOrLockNotice(){ if(!isModuleAllowed("tarot")){ showModuleLockedNotice("tarot"); return; } openTarotComingSoon(); } document.getElementById("mc-tarot")?.addEventListener("click", openTarotOrLockNotice);
+function tarotDeckById(id){ return TAROT_DECKS.find(d=>d.id===id); }
+function tarotSpreadById(id){ return TAROT_SPREADS.find(s=>s.id===id); }
+function tarotCardById(id){ return (tarotCardsData||[]).find(c=>c.id===id); }
+function tarotPositionsForFlow(spread){
+  if(spread.id==="three"){
+    const frame = spread.frames.find(f=>f.id===tarotFlow.frameId) || spread.frames[0];
+    return frame.positions.map(label=>({label}));
+  }
+  return spread.positions;
+}
+
+function renderTarotDeckGrid(){
+  const wrap=document.getElementById("tarot-deck-grid");
+  if(!wrap) return;
+  wrap.innerHTML = TAROT_DECKS.map(d=>{
+    const locked = d.status!=="available";
+    const cover = !locked ? `<img src="${d.back}" alt="${escapeHtml(d.name)}">` : `<span class="tdc-soon">✦</span>`;
+    return `<button type="button" class="tarot-deck-card${locked?" locked":""}" data-deck="${d.id}"${locked?" disabled":""}>
+      <span class="tarot-deck-badge ${locked?"soon":"active"}">${locked?"Sắp ra mắt":"Mặc định"}</span>
+      <span class="tarot-deck-cover">${cover}</span>
+      <span class="tarot-deck-body" style="display:block;">
+        <span class="tarot-deck-name" style="display:block;">${escapeHtml(d.name)}</span>
+        <span class="tarot-deck-namevi" style="display:block;">${escapeHtml(d.nameVi)}</span>
+        <span class="tarot-deck-desc" style="display:block;">${escapeHtml(d.desc)}</span>
+      </span>
+    </button>`;
+  }).join("");
+  wrap.querySelectorAll(".tarot-deck-card[data-deck]:not(.locked)").forEach(btn=>{
+    btn.addEventListener("click", ()=>selectTarotDeck(btn.dataset.deck));
+  });
+}
+
+function resetTarotFlow(){
+  tarotFlow = { deckId:null, spreadId:null, frameId:"ppf", cards:[], question:"" };
+  document.getElementById("tarot-panel-decks")?.classList.remove("hidden");
+  document.getElementById("tarot-panel-spreads")?.classList.add("hidden");
+  document.getElementById("tarot-panel-result")?.classList.add("hidden");
+  renderTarotDeckGrid();
+}
+
+function selectTarotDeck(deckId){
+  const deck=tarotDeckById(deckId);
+  if(!deck || deck.status!=="available") return;
+  tarotFlow.deckId=deckId;
+  playTarotIntroVideo(deck, ()=>showTarotSpreadPanel(deck));
+}
+
+function playTarotIntroVideo(deck, onDone){
+  if(!deck.video){ onDone(); return; }
+  const overlay=document.getElementById("tarot-video-overlay"), vid=document.getElementById("tarot-video-el"),
+    skipBtn=document.getElementById("tarot-video-skip");
+  let done=false;
+  const finish=()=>{
+    if(done) return; done=true;
+    try{ vid.pause(); }catch(_){}
+    overlay.classList.remove("show");
+    vid.onended=null; vid.onerror=null;
+    vid.removeAttribute("src"); try{ vid.load(); }catch(_){}
+    onDone();
+  };
+  vid.src=deck.video;
+  vid.onended=finish;
+  vid.onerror=finish;
+  skipBtn.onclick=finish;
+  overlay.classList.add("show");
+  try{ vid.currentTime=0; }catch(_){}
+  vid.play().catch(()=>{ /* autoplay có thể bị chặn — người dùng có thể bấm "Bỏ qua" */ });
+}
+
+function showTarotSpreadPanel(deck){
+  document.getElementById("tarot-panel-decks")?.classList.add("hidden");
+  document.getElementById("tarot-panel-result")?.classList.add("hidden");
+  document.getElementById("tarot-panel-spreads")?.classList.remove("hidden");
+  const tagHtml = `<img src="${deck.back}" alt="">Bộ bài: <b>${escapeHtml(deck.name)}</b>`;
+  const tag=document.getElementById("tarot-deck-tag"); if(tag) tag.innerHTML=tagHtml;
+  renderTarotSpreadGrid();
+}
+
+function renderTarotSpreadGrid(){
+  const wrap=document.getElementById("tarot-spread-grid");
+  if(!wrap) return;
+  wrap.innerHTML = TAROT_SPREADS.map(s=>`<button type="button" class="tarot-spread-card${tarotFlow.spreadId===s.id?" active":""}" data-spread="${s.id}">
+    <div class="tarot-spread-name">${escapeHtml(s.name)}</div>
+    <div class="tarot-spread-count">${s.count} lá</div>
+    <div class="tarot-spread-desc">${escapeHtml(s.desc)}</div>
+  </button>`).join("");
+  wrap.querySelectorAll("[data-spread]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ tarotFlow.spreadId=btn.dataset.spread; renderTarotSpreadGrid(); });
+  });
+  const frameWrap=document.getElementById("tarot-frame-chips");
+  const cur=tarotSpreadById(tarotFlow.spreadId);
+  if(cur && cur.hasFrame){
+    frameWrap.classList.remove("hidden");
+    frameWrap.innerHTML = cur.frames.map(f=>`<button type="button" class="tarot-frame-chip${tarotFlow.frameId===f.id?" active":""}" data-frame="${f.id}">${escapeHtml(f.label)}</button>`).join("");
+    frameWrap.querySelectorAll("[data-frame]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{ tarotFlow.frameId=btn.dataset.frame; renderTarotSpreadGrid(); });
+    });
+  } else if(frameWrap){
+    frameWrap.classList.add("hidden"); frameWrap.innerHTML="";
+  }
+}
+
+let tarotShuffleGen=0;
+function startTarotShuffle(){
+  tarotShuffleGen++;
+  const myGen=tarotShuffleGen;
+  const deck=tarotDeckById(tarotFlow.deckId);
+  const overlay=document.getElementById("tarot-shuffle-overlay"),
+    deckEl=document.getElementById("tarot-shuffle-deck"),
+    cards=deckEl.querySelectorAll(".tsd-card");
+  cards.forEach(c=>c.style.backgroundImage=`url("${deck.back}")`);
+  deckEl.classList.add("shuffling");
+  overlay.classList.add("show");
+  document.getElementById("tarot-shuffle-sub").textContent="Đang xáo bài — giữ câu hỏi trong tâm…";
+  setTimeout(()=>{
+    if(myGen!==tarotShuffleGen) return;
+    deckEl.classList.remove("shuffling");
+    overlay.classList.remove("show");
+    drawAndShowTarotSpread();
+  }, 1700);
+}
+
+function drawAndShowTarotSpread(){
+  const spread=tarotSpreadById(tarotFlow.spreadId);
+  const n=spread.count;
+  const idx=Array.from({length:78},(_,i)=>i);
+  for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  ensureTarotCards().then(cardsData=>{
+    tarotFlow.cards = idx.slice(0,n).map(i=>({ id:cardsData[i].id, reversed: Math.random()<0.5 }));
+    renderTarotResult();
+    interpretTarotSpread();
+  }).catch(()=>{ showToast("Không tải được dữ liệu lá bài — thử lại sau.","error"); });
+}
+
+function tarotCardSlotHtml(posLabel, cardEntry, extraClass){
+  const card=tarotCardById(cardEntry.id);
+  const deck=tarotDeckById(tarotFlow.deckId);
+  const img=`${deck.base}${cardEntry.id}${deck.ext}`;
+  const name=card?card.nameVi:cardEntry.id;
+  return `<div class="tarot-card-slot ${extraClass||""}">
+    <div class="tcs-pos">${escapeHtml(posLabel)}</div>
+    <div class="tarot-card-frame flip"><img src="${img}" alt="${escapeHtml(name)}" class="${cardEntry.reversed?"reversed":""}"></div>
+    <div class="tarot-card-name">${escapeHtml(name)}</div>
+    ${cardEntry.reversed?'<div class="tarot-card-rev-tag">Ngược</div>':""}
+  </div>`;
+}
+
+function renderTarotResult(){
+  document.getElementById("tarot-panel-spreads")?.classList.add("hidden");
+  document.getElementById("tarot-panel-result")?.classList.remove("hidden");
+  const deck=tarotDeckById(tarotFlow.deckId), spread=tarotSpreadById(tarotFlow.spreadId);
+  const positions=tarotPositionsForFlow(spread);
+  let title=spread.name;
+  if(spread.id==="three"){ const f=spread.frames.find(x=>x.id===tarotFlow.frameId)||spread.frames[0]; title+=" — "+f.label; }
+  document.getElementById("tarot-result-title").textContent=title;
+  const tag2=document.getElementById("tarot-result-deck-tag");
+  if(tag2) tag2.innerHTML=`<img src="${deck.back}" alt="">Bộ bài: <b>${escapeHtml(deck.name)}</b>`;
+  const wrap=document.getElementById("tarot-board-wrap");
+  if(spread.layout==="celtic"){
+    wrap.innerHTML = `<div class="tarot-celtic">
+      <div class="tarot-celtic-cross">${positions.slice(0,6).map((p,i)=>tarotCardSlotHtml(p.label,tarotFlow.cards[i],"tcs-"+(i+1))).join("")}</div>
+      <div class="tarot-celtic-staff">${positions.slice(6,10).map((p,i)=>tarotCardSlotHtml(p.label,tarotFlow.cards[i+6])).join("")}</div>
+    </div>`;
+  }else{
+    wrap.innerHTML = `<div class="tarot-board layout-${spread.layout}">${positions.map((p,i)=>tarotCardSlotHtml(p.label,tarotFlow.cards[i])).join("")}</div>`;
+  }
+  document.getElementById("tarot-interpretation").innerHTML =
+    `<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:85%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:70%;"></div>`;
+}
+
+async function interpretTarotSpread(){
+  const interpEl=document.getElementById("tarot-interpretation");
+  if(!STATE.profile){
+    interpEl.innerHTML=`<p class="body-txt">Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AI.</p>`;
+    return;
+  }
+  const deck=tarotDeckById(tarotFlow.deckId), spread=tarotSpreadById(tarotFlow.spreadId);
+  const positions=tarotPositionsForFlow(spread);
+  const question=tarotFlow.question||"(không có câu hỏi cụ thể — luận giải tổng quát)";
+  const cardLines=tarotFlow.cards.map((c,i)=>{
+    const card=tarotCardById(c.id);
+    const dir=c.reversed?"NGƯỢC":"XUÔI";
+    const meaning=c.reversed?card.rev:card.up;
+    return `${i+1}. Vị trí "${positions[i].label}": ${card.nameVi} (${card.nameEn}) — ${dir}. Từ khoá: ${meaning.kw.join(", ")}. Ý nghĩa: ${meaning.text}`;
+  }).join("\n");
+  const lengthHint = spread.count<=1 ? "200-350" : spread.count<=5 ? "420-650" : "750-1100";
+  const prompt = `Luận giải trải bài Tarot "${spread.name}" (${spread.count} lá), bộ bài ${deck.name}.
+Câu hỏi của người trải bài: "${question}"
+
+Các lá đã rút (dữ liệu đã xác định sẵn theo đúng thứ tự vị trí — KHÔNG được tự đổi tên lá, đổi chiều xuôi/ngược, hay bịa thêm lá khác ngoài danh sách này):
+${cardLines}
+
+Nhiệm vụ của bạn:
+1. Luận giải từng vị trí theo đúng thứ tự trên — gắn ý nghĩa lá bài (xuôi/ngược, đã cho) với ý nghĩa của vị trí đó và câu hỏi.
+2. Chỉ ra mối liên hệ/tương tác đáng chú ý giữa các lá trong trải bài (ví dụ lặp chất bài, nhiều lá ngược, các lá bổ trợ hay mâu thuẫn nhau).
+3. Kết luận bằng một đoạn tổng hợp và một lời khuyên hành động cụ thể.
+
+Chia đoạn có tiêu đề in đậm cho từng vị trí (đặt tên vị trí + tên lá), và một đoạn **Tổng hợp & lời khuyên** ở cuối. Giữ tinh thần "không có lá bài tốt/xấu tuyệt đối — đây là gợi ý xu hướng, không phải định mệnh cố định". ~${lengthHint} từ.`;
+
+  const cacheKey=stableHash(JSON.stringify({question, deckId:deck.id, spreadId:spread.id, frameId:tarotFlow.frameId, cards:tarotFlow.cards, promptVersion:PROMPT_VERSION}));
+  const cached=readAiCache("tarot",cacheKey);
+  if(cached){ interpEl.innerHTML=mdToHtml(cached); return; }
+  await aiAcquireSlot();
+  try{
+    const result=await runAiPrompt(prompt,{withChartImage:false,temperature:0.8});
+    writeAiCache("tarot",cacheKey,result,{module:"tarot",topic:spread.id});
+    interpEl.innerHTML=mdToHtml(result);
+  }catch(e){ interpEl.innerHTML=`<p style="color:var(--rose);">${escapeHtml(e.message)}</p>`; }
+  finally{ aiReleaseSlot(); }
+}
+
+document.getElementById("btn-tarot-draw")?.addEventListener("click", ()=>{
+  if(!tarotFlow.spreadId){ showToast("Chọn kiểu trải bài trước.","error"); return; }
+  tarotFlow.question=document.getElementById("tarot-question").value.trim();
+  startTarotShuffle();
+});
+document.getElementById("btn-tarot-changedeck")?.addEventListener("click", resetTarotFlow);
+document.getElementById("btn-tarot-changedeck-2")?.addEventListener("click", resetTarotFlow);
+document.getElementById("btn-tarot-reset")?.addEventListener("click", ()=>{
+  const deck=tarotDeckById(tarotFlow.deckId);
+  tarotFlow.cards=[]; tarotFlow.spreadId=null;
+  document.getElementById("tarot-panel-result")?.classList.add("hidden");
+  showTarotSpreadPanel(deck);
+});
+
+function openTarotOrLockNotice(){
+  if(!isModuleAllowed("tarot")){ showModuleLockedNotice("tarot"); return; }
+  resetTarotFlow();
+  showView("tarot");
+}
+document.getElementById("mc-tarot")?.addEventListener("click", openTarotOrLockNotice);
 document.getElementById("side-tarot")?.addEventListener("click", openTarotOrLockNotice);
 
 /* ============================================================================

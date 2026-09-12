@@ -353,7 +353,7 @@ img{max-width:100%; display:block;}
 .batu-pillar .bp-viet{ font-size:12px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
 .batu-pillar .bp-wx{ display:flex; justify-content:center; gap:4px; margin-top:8px; }
 .batu-pillar .bp-animal{ margin-top:10px; display:flex; justify-content:center; }
-.batu-pillar .bp-animal svg{ width:34px; height:34px; }
+.batu-pillar .bp-animal-icon{ width:38px; height:38px; }
 .wx-chip{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:20px; }
 .wx-chip.wx-kim{ background:var(--wx-kim-tint); color:var(--wx-kim); }
 .wx-chip.wx-moc{ background:var(--wx-moc-tint); color:var(--wx-moc); }
@@ -3510,20 +3510,9 @@ const BATU_WX_LABEL = {moc:"Mộc",hoa:"Hoả",tho:"Thổ",kim:"Kim",thuy:"Thu�
 /* 12 hinh ve con vat — toi gian, flat, 1 mau (currentColor), dung hinh khoi co
    ban (circle/path) thay vi icon Unicode. Chi Mao dung Meo theo van hoa dan
    gian Viet Nam (khong dung Tho). */
-const BATU_ANIMAL_SVG = {
-  "Chuột":'<circle cx="12" cy="14" r="6" fill="currentColor"/><circle cx="7.5" cy="8.5" r="2" fill="currentColor"/><circle cx="16.5" cy="8.5" r="2" fill="currentColor"/><circle cx="12" cy="19.4" r="1.4" fill="currentColor"/><path d="M18 16q5-1 3.5 5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/>',
-  "Trâu":'<circle cx="12" cy="14.5" r="6" fill="currentColor"/><path d="M8 9Q4 4 8.5 3.5M16 9Q20 4 15.5 3.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="12" cy="19" rx="2.6" ry="1.6" fill="currentColor"/>',
-  "Hổ":'<circle cx="12" cy="14" r="6.2" fill="currentColor"/><path d="M7.5 9l-1.5-4 3.5 2.3z" fill="currentColor"/><path d="M16.5 9l1.5-4-3.5 2.3z" fill="currentColor"/><path d="M6.3 15h-3M6.6 17.4h-3M17.7 15h3M17.4 17.4h3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>',
-  "Mèo":'<circle cx="12" cy="14.5" r="6" fill="currentColor"/><path d="M7 9l-1-4.5 4 3z" fill="currentColor"/><path d="M17 9l1-4.5-4 3z" fill="currentColor"/><path d="M6.5 15.2h-3M6.7 17.5h-3M17.5 15.2h3M17.3 17.5h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>',
-  "Rồng":'<path d="M3 17c2-3 3-7 6-8 2-.7 2 1.4 4 1 2.3-.5 2.6-3.4 5-3.6 2-.2 4 1 3.5 3.2" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round"/><path d="M18 6l2.4-1.6-.6 2.8z" fill="currentColor"/><circle cx="6.3" cy="17.6" r="1.1" fill="currentColor"/>',
-  "Rắn":'<path d="M4 8c3 0 3 4 6 4s3-4 6-4 3 4 6 4" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M20.5 11.3l2.3.7-1.6 1.8z" fill="currentColor"/>',
-  "Ngựa":'<circle cx="12" cy="15" r="5.4" fill="currentColor"/><path d="M9 10 6 5l3.6 1.4M12 9.3V4.3" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/><path d="M15.5 10.5q3-2.5 4.3.3" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>',
-  "Dê":'<circle cx="12" cy="15" r="5.6" fill="currentColor"/><path d="M8.5 10Q5 6 8 3M15.5 10Q19 6 16 3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M12 20.3v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-  "Khỉ":'<circle cx="12" cy="14.5" r="6" fill="currentColor"/><circle cx="6.3" cy="12" r="2.6" fill="currentColor"/><circle cx="17.7" cy="12" r="2.6" fill="currentColor"/><circle cx="12" cy="16.2" r="2" fill="none" stroke="currentColor" stroke-width="1.3"/>',
-  "Gà":'<circle cx="11.5" cy="15" r="5.2" fill="currentColor"/><path d="M9 9.3c-1-2.2 1-3 .3-4.6 1.6.3 2 1.8 1.6 3z" fill="currentColor"/><path d="M12.4 8.6c.2-2 2-2.7 1.6-4.3 1.6.7 1.6 2.3.8 3.3z" fill="currentColor"/><path d="M17 15.5l3.2-1-1 3.2z" fill="currentColor"/>',
-  "Chó":'<circle cx="12" cy="15" r="5.8" fill="currentColor"/><path d="M6.6 11.5Q3 12 4 17M17.4 11.5Q21 12 20 17" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="12" cy="19.6" rx="2.2" ry="1.3" fill="currentColor"/>',
-  "Lợn":'<circle cx="12" cy="14.5" r="6" fill="currentColor"/><circle cx="7" cy="10" r="1.8" fill="currentColor"/><circle cx="17" cy="10" r="1.8" fill="currentColor"/><circle cx="12" cy="17" r="2.3" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="17" r=".5" fill="currentColor"/><circle cx="13" cy="17" r=".5" fill="currentColor"/>'
-};
+/* Biểu tượng con giáp cho từng trụ Bát Tự dùng chung asset 12 con giáp
+   (assets/zodiac/*.png) và hàm chiAnimalBg() đã có sẵn cho Tử Vi, thay vì
+   vẽ SVG riêng — đảm bảo đồng nhất hình ảnh trong toàn app. */
 function batuGenderNum(g){ return g==="Nam" ? 1 : 0; }
 /* Bang quan he Dia Chi — hoi ky ve mat kinh dien, khong doc lai duoc tren web
    phien nay (nguon chan qua robots.txt); dung theo kien thuc huan luyen tieu
@@ -3604,13 +3593,13 @@ function renderBatuView(chart){
   document.getElementById("batu-lunar-badge").textContent = chart.lunarText;
   const order=["year","month","day","time"];
   document.getElementById("batu-pillars").innerHTML = order.map(key=>{
-    const p=chart.pillars[key], animalSvg=BATU_ANIMAL_SVG[p.animal]||"";
+    const p=chart.pillars[key];
     return `<div class="batu-pillar">
       <div class="bp-label">${escapeHtml(p.label)}</div>
       <div class="bp-han"><span class="bp-gan">${p.hanGan}</span><span class="bp-zhi">${p.hanZhi}</span></div>
       <div class="bp-viet">${escapeHtml(p.viGan)} ${escapeHtml(p.viZhi)}</div>
       <div class="bp-wx">${batuWxChip(p.wxKeyGan)}${batuWxChip(p.wxKeyZhi)}</div>
-      <div class="bp-animal"><svg viewBox="0 0 24 24" fill="none">${animalSvg}</svg></div>
+      <div class="bp-animal"><div class="bp-animal-icon" style="${chiAnimalBg(p.viZhi)}"></div></div>
       <div class="batu-shishen-row">${p.shishenGan?`<span class="batu-shishen-tag">${escapeHtml(p.shishenGan)}</span>`:""}${p.shishenZhi.map(s=>`<span class="batu-shishen-tag">${escapeHtml(s)}</span>`).join("")}</div>
     </div>`;
   }).join("");

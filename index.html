@@ -3507,12 +3507,10 @@ const BATU_SHISHEN_VI = {
   "正官":"Chính Quan", "偏印":"Thiên Ấn", "正印":"Chính Ấn", "日主":"Nhật Chủ (bản thân)"
 };
 const BATU_WX_LABEL = {moc:"Mộc",hoa:"Hoả",tho:"Thổ",kim:"Kim",thuy:"Thuỷ"};
-/* 12 hinh ve con vat — toi gian, flat, 1 mau (currentColor), dung hinh khoi co
-   ban (circle/path) thay vi icon Unicode. Chi Mao dung Meo theo van hoa dan
-   gian Viet Nam (khong dung Tho). */
 /* Biểu tượng con giáp cho từng trụ Bát Tự dùng chung asset 12 con giáp
    (assets/zodiac/*.png) và hàm chiAnimalBg() đã có sẵn cho Tử Vi, thay vì
-   vẽ SVG riêng — đảm bảo đồng nhất hình ảnh trong toàn app. */
+   vẽ SVG riêng — đảm bảo đồng nhất hình ảnh trong toàn app. Chi Mão dùng
+   Mèo theo văn hoá dân gian Việt Nam (không dùng Thỏ). */
 function batuGenderNum(g){ return g==="Nam" ? 1 : 0; }
 /* Bang quan he Dia Chi — hoi ky ve mat kinh dien, khong doc lai duoc tren web
    phien nay (nguon chan qua robots.txt); dung theo kien thuc huan luyen tieu

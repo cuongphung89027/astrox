@@ -53,8 +53,8 @@ const ROUTE_META = {
     image: "/assets/og/thanso.png"
   },
   "/tarot": {
-    title: "Tarot — Sắp ra mắt | AstroX",
-    description: "Trải bài Tarot và luận giải bằng AI, sắp ra mắt tại AstroX.",
+    title: "Tarot — Trải bài và luận giải bằng AI | AstroX",
+    description: "Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AI dựa trên đúng các lá đã rút.",
     image: "/assets/og/tarot.png"
   }
 };

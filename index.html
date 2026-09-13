@@ -658,8 +658,22 @@ img{max-width:100%; display:block;}
 .tarot-frame-chip{ font-size:11.5px; font-weight:700; padding:6px 12px; border-radius:var(--r-pill); border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer; }
 .tarot-frame-chip.active{ background:var(--tarot); border-color:var(--tarot); color:#fff; }
 
+.tarot-confirm-modal{ position:fixed; inset:0; z-index:310; display:none; align-items:center; justify-content:center; padding:20px;
+  background:rgba(20,12,28,.55); }
+.tarot-confirm-modal.show{ display:flex; }
+.tarot-confirm-card{ width:min(360px,100%); background:var(--surface); border-radius:var(--r-xl); padding:22px; box-shadow:var(--shadow-2); border:1px solid rgba(124,92,166,.25); }
+.tarot-confirm-label{ font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--tarot-dark); }
+.tarot-confirm-question{ font-size:14px; font-weight:600; color:var(--ink); margin-top:4px; line-height:1.5; overflow-wrap:anywhere; }
+.tarot-confirm-spread{ font-size:14.5px; font-weight:700; color:var(--tarot-dark); margin-top:4px; }
+.tarot-confirm-actions{ display:flex; gap:10px; margin-top:20px; }
+.tarot-confirm-actions .btn{ flex:1; }
+
+/* Không dùng backdrop-filter ở đây: blur nền liên tục khi có nhiều lá bài đang
+   animate (xoay + bay) rất tốn hiệu năng trên máy yếu/di động, gây giật/lag và
+   khiến hiệu ứng như bị "nhảy khung". Dùng gradient đặc hơn thay cho blur để
+   vẫn giữ chiều sâu thị giác nhưng không tốn chi phí render mỗi khung hình. */
 .tarot-shuffle-overlay{ position:fixed; inset:0; z-index:320; display:none; align-items:center; justify-content:center; padding:18px;
-  background:radial-gradient(120% 120% at 50% 15%, rgba(40,26,54,.72), rgba(12,8,18,.9)); backdrop-filter:blur(4px);
+  background:radial-gradient(120% 120% at 50% 15%, rgba(40,26,54,.9), rgba(10,7,15,.97));
   opacity:1; transition:opacity .6s ease; }
 .tarot-shuffle-overlay.show{ display:flex; }
 .tarot-shuffle-overlay.fading{ opacity:0; }
@@ -682,7 +696,8 @@ img{max-width:100%; display:block;}
 /* lá bài "bay" từ vòng xoay về đúng vị trí của trải bài — clone tạm, gắn vào body với position:fixed
    để có thể di chuyển tự do qua toàn màn hình, xoá đi ngay khi đáp xuống vị trí. */
 .tsc-flying{ position:fixed; z-index:340; border-radius:6px; overflow:hidden; pointer-events:none;
-  box-shadow:0 10px 22px rgba(0,0,0,.38), 0 0 0 1px rgba(255,255,255,.2) inset; will-change:transform; }
+  box-shadow:0 10px 22px rgba(0,0,0,.38), 0 0 0 1px rgba(255,255,255,.2) inset;
+  will-change:transform; contain:layout style paint; backface-visibility:hidden; transform-origin:0 0; }
 .tsc-flying img{ width:100%; height:100%; object-fit:cover; display:block; }
 
 /* ---- Result board: meaningful, robust, grid-based (never clips, always same card size) ---- */
@@ -1329,13 +1344,25 @@ img{max-width:100%; display:block;}
           </div>
           <div class="card">
             <label for="tarot-question" style="font-size:12.5px; font-weight:700; display:block;">Câu hỏi bạn đang băn khoăn <span style="font-weight:500; color:var(--rose);">(bắt buộc)</span></label>
-            <textarea class="input section-gap" id="tarot-question" rows="2" placeholder="Ví dụ: Mối quan hệ này nên tiếp tục theo hướng nào?" style="resize:vertical;"></textarea>
+            <textarea class="input section-gap" id="tarot-question" rows="3" placeholder="Ví dụ: Mối quan hệ này nên tiếp tục theo hướng nào?" style="resize:vertical;"></textarea>
           </div>
           <div class="card section-gap">
             <p style="font-weight:700; font-size:14.5px;">Chọn kiểu trải bài</p>
             <div class="tarot-spread-grid section-gap" id="tarot-spread-grid"></div>
             <div class="tarot-frame-chips hidden" id="tarot-frame-chips"></div>
-            <button class="btn btn-accent btn-block section-gap" id="btn-tarot-draw" style="--accent:var(--tarot);">Xáo bài & rút bài</button>
+          </div>
+        </div>
+
+        <div class="tarot-confirm-modal" id="tarot-confirm-modal" role="dialog" aria-modal="true" aria-label="Xác nhận rút bài">
+          <div class="tarot-confirm-card">
+            <p class="tarot-confirm-label">Câu hỏi của bạn</p>
+            <p class="tarot-confirm-question" id="tarot-confirm-question">—</p>
+            <p class="tarot-confirm-label" style="margin-top:14px;">Kiểu trải bài</p>
+            <p class="tarot-confirm-spread" id="tarot-confirm-spread">—</p>
+            <div class="tarot-confirm-actions">
+              <button class="btn btn-ghost btn-block" id="tarot-confirm-back" type="button">Quay lại</button>
+              <button class="btn btn-accent btn-block" id="tarot-confirm-draw" type="button" style="--accent:var(--tarot);">Rút bài</button>
+            </div>
           </div>
         </div>
 
@@ -3788,8 +3815,26 @@ function resetTarotFlow(){
   tarotFlow = { deckId:null, spreadId:null, frameId:"ppf", cards:[], question:"" };
   document.getElementById("tarot-panel-decks")?.classList.remove("hidden");
   document.getElementById("tarot-panel-spreads")?.classList.add("hidden");
-  document.getElementById("tarot-panel-result")?.classList.add("hidden");
+  const resultPanel=document.getElementById("tarot-panel-result");
+  resultPanel?.classList.add("hidden");
+  if(resultPanel) resultPanel.style.visibility="";
+  hideTarotConfirmModal();
   renderTarotDeckGrid();
+}
+
+function showTarotConfirmModal(){
+  const spread=tarotSpreadById(tarotFlow.spreadId);
+  if(!spread) return;
+  let title=spread.name;
+  if(spread.id==="three"){ const f=spread.frames.find(x=>x.id===tarotFlow.frameId)||spread.frames[0]; title+=" — "+f.label; }
+  const qEl=document.getElementById("tarot-confirm-question");
+  const sEl=document.getElementById("tarot-confirm-spread");
+  if(qEl) qEl.textContent=document.getElementById("tarot-question")?.value.trim()||"";
+  if(sEl) sEl.textContent=title;
+  document.getElementById("tarot-confirm-modal")?.classList.add("show");
+}
+function hideTarotConfirmModal(){
+  document.getElementById("tarot-confirm-modal")?.classList.remove("show");
 }
 
 function selectTarotDeck(deckId){
@@ -3861,6 +3906,7 @@ function renderTarotSpreadGrid(){
         return;
       }
       tarotFlow.spreadId=btn.dataset.spread; renderTarotSpreadGrid();
+      showTarotConfirmModal();
     });
   });
   updateTarotSpreadLockUi();
@@ -3888,10 +3934,56 @@ function cancelTarotShuffleIfActive(){
   document.getElementById("tarot-shuffle-overlay")?.classList.remove("show");
   resetTarotFlow();
 }
-function startTarotShuffle(){
+// Bấm "Rút bài" trong popup xác nhận -> rút bài + dựng bàn trải + cuộn về
+// giữa NGAY (trước khi hiện lớp phủ hiệu ứng), rồi mới chạy hiệu ứng xoay/bay.
+function confirmTarotDraw(){
+  const spread=tarotSpreadById(tarotFlow.spreadId);
+  if(!spread) return;
+  const q=document.getElementById("tarot-question")?.value.trim();
+  if(!q){
+    hideTarotConfirmModal();
+    showToast("Vui lòng nhập câu hỏi trước khi rút bài.","error");
+    document.getElementById("tarot-question")?.focus();
+    return;
+  }
+  tarotFlow.question=q;
+  hideTarotConfirmModal();
+  startTarotDraw();
+}
+
+async function startTarotDraw(){
   tarotShuffleGen++;
   tarotShuffleActive=true;
   const myGen=tarotShuffleGen;
+  const spread=tarotSpreadById(tarotFlow.spreadId);
+  const n=spread.count;
+  const idx=Array.from({length:78},(_,i)=>i);
+  for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  let cardsData;
+  try{ cardsData = await ensureTarotCards(); }
+  catch(e){
+    showToast("Không tải được dữ liệu lá bài — thử lại sau.","error");
+    tarotShuffleActive=false;
+    return;
+  }
+  if(myGen!==tarotShuffleGen) return;
+  tarotFlow.cards = idx.slice(0,n).map(i=>({ id:cardsData[i].id, reversed: Math.random()<0.5 }));
+
+  // dựng bàn trải NGAY (mặt úp, chưa lộ tên/luận giải) rồi cuộn về đúng giữa
+  // khu vực đó TRƯỚC khi hiện lớp phủ hiệu ứng — để layout/scroll đã ổn định
+  // hoàn toàn trước khi các animate() bắt đầu chạy, giúp hiệu ứng bay mượt,
+  // không bị giật do vừa cuộn trang vừa chạy animation.
+  buildTarotBoard();
+  document.getElementById("tarot-board-wrap")?.scrollIntoView({behavior:"auto", block:"center"});
+  // gọi AI ngay từ bây giờ — chạy song song với toàn bộ phần hiệu ứng bên dưới
+  const aiPromise = computeTarotInterpretationHtml();
+  // đợi 2 khung hình để trình duyệt chốt xong việc cuộn/layout trước khi bắt đầu animate
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  if(myGen!==tarotShuffleGen) return;
+  runTarotShuffleOverlay(myGen, aiPromise);
+}
+
+function runTarotShuffleOverlay(myGen, aiPromise){
   const deck=tarotDeckById(tarotFlow.deckId);
   const overlay=document.getElementById("tarot-shuffle-overlay");
   const circleEl=document.getElementById("tarot-shuffle-circle");
@@ -3920,83 +4012,81 @@ function startTarotShuffle(){
     circleEl.appendChild(el);
     cards.push(el);
   }
-  cards.forEach((el,i)=>{
+  const fanAnims=cards.map((el,i)=>{
     const angle=(i/N)*Math.PI*2 - Math.PI/2;
     const dx=Math.cos(angle)*radius, dy=Math.sin(angle)*radius;
     const rot=angle*180/Math.PI + 90;
-    el.animate([
+    return el.animate([
       { transform:"translate(0px,0px) rotate(0deg) scale(.5)", opacity:0 },
       { transform:`translate(${dx}px, ${dy}px) rotate(${rot}deg) scale(1)`, opacity:1 }
     ], { duration:fanDuration, delay:i*fanStagger, easing:"cubic-bezier(.2,.8,.3,1)", fill:"forwards" });
   });
-  const fanTotal=fanDuration + N*fanStagger + 60;
 
-  setTimeout(()=>{
+  // Đợi Promise "finished" của TỪNG animation thay vì dùng setTimeout với thời
+  // lượng cố định — đảm bảo luôn chờ hiệu ứng THỰC SỰ đã chạy/hiển thị xong
+  // (kể cả khi máy chậm/giật khung hình), nên không bao giờ bị "nhảy cóc" qua
+  // đúng lúc người dùng đang nhìn — đây là cách "verify" hiệu ứng đã hiển thị.
+  Promise.all(fanAnims.map(a=>a.finished)).then(()=>{
+    if(myGen!==tarotShuffleGen) return null;
+    const spin=circleEl.animate([{transform:"rotate(0deg)"},{transform:"rotate(360deg)"}], {duration:900, easing:"linear", fill:"forwards"});
+    return spin.finished;
+  }).then(()=>{
     if(myGen!==tarotShuffleGen) return;
-    circleEl.animate([{transform:"rotate(0deg)"},{transform:"rotate(360deg)"}], {duration:900, easing:"linear", fill:"forwards"});
-  }, fanTotal);
-
-  // xoay xong -> chuyển sang giai đoạn bài bay về đúng vị trí của trải bài
-  setTimeout(()=>{
-    if(myGen!==tarotShuffleGen) return;
-    runTarotDealPhase(myGen, deck, cards, overlay, circleEl, sunEl, progressEl, flashEl);
-  }, fanTotal + 900);
+    // xoay xong -> chuyển sang giai đoạn bài bay về đúng vị trí của trải bài
+    runTarotFlyPhase(myGen, deck, cards, overlay, circleEl, sunEl, progressEl, flashEl, aiPromise);
+  }).catch(()=>{});
 }
 
 // Trình tự bắt buộc theo đúng yêu cầu: (1) 12 lá xoay tròn [đã xong ở
-// startTarotShuffle] -> (2) các lá bay về đúng vị trí của trải bài đã chọn
-// (vẫn úp mặt) -> (3) mặt trời AstroX xuất hiện, đổi text loading -> (4) AI
-// xong -> loé sáng -> lớp phủ mở dần -> (5) các lá lật lại + luận giải mở ra.
-// Giai đoạn (2) luôn chạy và hoàn tất trước khi (3) xuất hiện — không chồng lấn.
-async function runTarotDealPhase(myGen, deck, circleCards, overlay, circleEl, sunEl, progressEl, flashEl){
-  const spread=tarotSpreadById(tarotFlow.spreadId);
-  const n=spread.count;
-  const idx=Array.from({length:78},(_,i)=>i);
-  for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
-  let cardsData;
-  try{ cardsData = await ensureTarotCards(); }
-  catch(e){
-    showToast("Không tải được dữ liệu lá bài — thử lại sau.","error");
-    overlay.classList.remove("show");
-    tarotShuffleActive=false;
-    return;
-  }
-  if(myGen!==tarotShuffleGen) return;
-  tarotFlow.cards = idx.slice(0,n).map(i=>({ id:cardsData[i].id, reversed: Math.random()<0.5 }));
-
-  // dựng bàn trải NGAY (mặt úp, chưa lộ tên/luận giải) để có toạ độ thật của
-  // từng vị trí — bàn trải nằm phía sau lớp phủ toàn màn hình nên người dùng
-  // chưa nhìn thấy gì cho tới khi lớp phủ mở dần ở bước sau.
-  buildTarotBoard();
-  // gọi AI song song với hiệu ứng bay (tối ưu thời gian chờ), nhưng mặt trời
-  // và text loading chỉ xuất hiện SAU khi hiệu ứng bay đã chạy xong (bắt buộc).
-  const aiPromise = computeTarotInterpretationHtml();
-
+// runTarotShuffleOverlay] -> (2) các lá bay về đúng vị trí của trải bài đã
+// chọn (vẫn úp mặt, giữ nguyên kích thước — không co giãn) -> (3) mặt trời
+// AstroX xuất hiện, đổi text loading -> (4) AI xong -> loé sáng -> lớp phủ mở
+// dần -> (5) các lá lật lại + luận giải mở ra. Giai đoạn (2) luôn chạy và
+// hoàn tất trước khi (3) xuất hiện — không chồng lấn.
+async function runTarotFlyPhase(myGen, deck, circleCards, overlay, circleEl, sunEl, progressEl, flashEl, aiPromise){
   const slotFrames = Array.from(document.querySelectorAll("#tarot-board-wrap .tarot-card-frame"));
   const flyDuration=650, flyStagger=70;
-  const flyCount=Math.min(n, circleCards.length, slotFrames.length);
+  const flyCount=Math.min(circleCards.length, slotFrames.length);
+  // Kích thước CỐ ĐỊNH đúng bằng lá bài trong vòng tròn (.tsc-card: 36px,
+  // tỉ lệ 7/12.25) — dùng cho mọi lá bay, không lấy theo getBoundingClientRect()
+  // của lá nguồn, vì lá đó đang bị "rotate()" (xoay) từ hiệu ứng xoay tròn nên
+  // bounding box đo được là hộp bao đã xoay (rộng/cao bị đảo hoặc phồng lên) —
+  // đây chính là nguyên nhân khiến lá bay trước đó bị kéo giãn/méo hình.
+  const CARD_W=36, CARD_H=36/(7/12.25);
+
+  // Đọc TOÀN BỘ toạ độ TÂM của nguồn/đích trước (chỉ đọc — tâm hình học không
+  // bị ảnh hưởng bởi góc xoay nên vẫn đúng), rồi mới tạo phần tử/ghi DOM (chỉ
+  // ghi) ở vòng lặp riêng — tránh xen kẽ đọc/ghi DOM ("layout thrashing"),
+  // một nguyên nhân chính gây giật khi có nhiều lá bay cùng lúc.
+  const centers=[];
+  for(let i=0;i<flyCount;i++){
+    const s=circleCards[i].getBoundingClientRect();
+    const t=slotFrames[i].getBoundingClientRect();
+    centers.push({
+      srcX:s.left+s.width/2, srcY:s.top+s.height/2,
+      tgtX:t.left+t.width/2, tgtY:t.top+t.height/2
+    });
+  }
 
   await new Promise(resolve=>{
     if(myGen!==tarotShuffleGen || flyCount<=0){ resolve(); return; }
     let pending=flyCount;
     for(let i=0;i<flyCount;i++){
-      const src=circleCards[i];
-      const target=slotFrames[i];
-      const srcRect=src.getBoundingClientRect();
-      const tgtRect=target.getBoundingClientRect();
+      const c=centers[i];
+      // giữ nguyên kích thước lá bài trong suốt lúc bay (không scale/co giãn)
+      // — chỉ tịnh tiến từ tâm điểm nguồn tới tâm điểm đích, để không bị méo hình.
       const clone=document.createElement("div");
       clone.className="tsc-flying";
       clone.innerHTML=`<img src="${deck.back}" alt="">`;
-      clone.style.left=srcRect.left+"px";
-      clone.style.top=srcRect.top+"px";
-      clone.style.width=srcRect.width+"px";
-      clone.style.height=srcRect.height+"px";
+      clone.style.left=(c.srcX-CARD_W/2)+"px";
+      clone.style.top=(c.srcY-CARD_H/2)+"px";
+      clone.style.width=CARD_W+"px";
+      clone.style.height=CARD_H+"px";
       document.body.appendChild(clone);
-      const dx=tgtRect.left-srcRect.left, dy=tgtRect.top-srcRect.top;
-      const sx=srcRect.width?tgtRect.width/srcRect.width:1, sy=srcRect.height?tgtRect.height/srcRect.height:1;
+      const dx=c.tgtX-c.srcX, dy=c.tgtY-c.srcY;
       const anim=clone.animate([
-        { transform:"translate(0px,0px) scale(1,1)" },
-        { transform:`translate(${dx}px, ${dy}px) scale(${sx},${sy})` }
+        { transform:"translate(0px,0px)" },
+        { transform:`translate(${dx}px, ${dy}px)` }
       ], { duration:flyDuration, delay:i*flyStagger, easing:"cubic-bezier(.3,.6,.25,1)", fill:"forwards" });
       const done=()=>{ clone.remove(); pending--; if(pending<=0) resolve(); };
       anim.finished.then(done).catch(done);
@@ -4009,7 +4099,7 @@ async function runTarotDealPhase(myGen, deck, circleCards, overlay, circleEl, su
   if(myGen!==tarotShuffleGen) return;
   circleEl.classList.add("hidden"); circleEl.innerHTML="";
 
-  // hiệu ứng bay đã load/chạy xong — bắt buộc xong bước này rồi mới tới mặt trời AstroX
+  // hiệu ứng bay đã chạy/hiển thị xong — bắt buộc xong bước này rồi mới tới mặt trời AstroX
   sunEl.classList.remove("hidden");
   progressEl.classList.remove("hidden");
   document.getElementById("tarot-shuffle-label").textContent="Đang luận giải…";
@@ -4023,6 +4113,10 @@ async function runTarotDealPhase(myGen, deck, circleCards, overlay, circleEl, su
   flashEl.classList.remove("pulse"); void flashEl.offsetWidth; flashEl.classList.add("pulse");
   await new Promise(r=>setTimeout(r,260));
   if(myGen!==tarotShuffleGen) return;
+  // cho bàn trải hiện trở lại NGAY lúc lớp phủ bắt đầu mở dần, để việc lộ ra
+  // diễn ra đồng bộ với hiệu ứng mờ dần của lớp phủ phía trên nó
+  const resultPanel=document.getElementById("tarot-panel-result");
+  if(resultPanel) resultPanel.style.visibility="";
   overlay.classList.add("fading");
   await new Promise(r=>setTimeout(r,620));
   if(myGen!==tarotShuffleGen) return;
@@ -4056,7 +4150,15 @@ function tarotCardSlotHtml(posLabel, cardEntry, gClass){
 // và để không lộ tên lá/luận giải trước khi AI xong.
 function buildTarotBoard(){
   document.getElementById("tarot-panel-spreads")?.classList.add("hidden");
-  document.getElementById("tarot-panel-result")?.classList.remove("hidden");
+  const resultPanel=document.getElementById("tarot-panel-result");
+  resultPanel?.classList.remove("hidden");
+  // Bàn trải cần hiện trong DOM (để đo được toạ độ thật cho hiệu ứng bay) NHƯNG
+  // phải thật sự vô hình trên màn hình cho tới lúc lớp phủ mở ra — dùng
+  // visibility:hidden (giữ nguyên layout/toạ độ) thay vì chỉ dựa vào z-index
+  // của lớp phủ, vì hiệu ứng lật 3D (perspective/preserve-3d) trên các lá bài
+  // có thể tạo layer dựng hình riêng khiến bàn trải lộ ra trước lớp phủ trên
+  // một số trình duyệt — visibility:hidden đảm bảo tuyệt đối không lộ ra.
+  if(resultPanel) resultPanel.style.visibility="hidden";
   const deck=tarotDeckById(tarotFlow.deckId), spread=tarotSpreadById(tarotFlow.spreadId);
   const positions=tarotPositionsForFlow(spread);
   let title=spread.name;
@@ -4158,17 +4260,8 @@ Chia đoạn có tiêu đề in đậm cho từng vị trí (đặt tên vị tr
   finally{ aiReleaseSlot(); }
 }
 
-document.getElementById("btn-tarot-draw")?.addEventListener("click", ()=>{
-  if(!tarotFlow.spreadId){ showToast("Chọn kiểu trải bài trước.","error"); return; }
-  const q=document.getElementById("tarot-question").value.trim();
-  if(!q){
-    showToast("Vui lòng nhập câu hỏi trước khi rút bài.","error");
-    document.getElementById("tarot-question")?.focus();
-    return;
-  }
-  tarotFlow.question=q;
-  startTarotShuffle();
-});
+document.getElementById("tarot-confirm-draw")?.addEventListener("click", confirmTarotDraw);
+document.getElementById("tarot-confirm-back")?.addEventListener("click", hideTarotConfirmModal);
 document.getElementById("tarot-question")?.addEventListener("input", updateTarotSpreadLockUi);
 document.getElementById("btn-tarot-changedeck")?.addEventListener("click", resetTarotFlow);
 document.getElementById("btn-tarot-changedeck-2")?.addEventListener("click", resetTarotFlow);

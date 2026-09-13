@@ -1327,7 +1327,7 @@ img{max-width:100%; display:block;}
         <div class="view-header">
           <p class="view-eyebrow">Tarot</p>
           <h1 class="view-title serif">AstroX Tarot</h1>
-          <p class="view-sub">Chọn bộ bài, chọn kiểu trải và để AI luận giải theo đúng các lá đã rút.</p>
+          <p class="view-sub">Chọn bộ bài mà bạn muốn sử dụng, đặt câu hỏi và kiểu trải bài để AstroX giúp bạn tìm ra câu trả lời nhé.</p>
         </div>
 
         <div id="tarot-panel-decks">
@@ -4279,6 +4279,12 @@ function openTarotOrLockNotice(){
 }
 document.getElementById("mc-tarot")?.addEventListener("click", openTarotOrLockNotice);
 document.getElementById("side-tarot")?.addEventListener("click", openTarotOrLockNotice);
+/* Khi tải trang (F5/refresh) mà landing thẳng vào view Tarot (URL /tarot hoặc
+   #tarot), khối router ở script phía trên chỉ toggle class .active chứ không
+   tự render lưới chọn bộ bài (renderTarotDeckGrid nằm trong script này, ở
+   dưới). Gọi lại ở đây để tránh tình trạng vào thẳng /tarot bằng refresh thì
+   phần chọn bộ bài bị trống rỗng. */
+if(typeof __initialRouteView !== "undefined" && __initialRouteView === "tarot") resetTarotFlow();
 
 /* ============================================================================
    MODULE — BAT TU (Tu Tru). Module doc lap: dung thu vien rieng (lunar-typescript

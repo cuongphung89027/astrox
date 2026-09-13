@@ -615,7 +615,7 @@ img{max-width:100%; display:block;}
 .tarot-deck-card:hover:not(.locked){ transform:translateY(-3px); box-shadow:0 16px 34px rgba(72,50,93,.18); }
 .tarot-deck-card.locked{ cursor:default; opacity:.82; }
 .tarot-deck-cover{ width:100%; aspect-ratio:4/5; background:linear-gradient(150deg,var(--tarot-tint),#fff); display:flex; align-items:center; justify-content:center; overflow:hidden; }
-.tarot-deck-cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+.tarot-deck-cover img{ width:100%; height:100%; object-fit:contain; display:block; }
 .tarot-deck-cover .tdc-soon{ font-size:34px; color:var(--tarot); opacity:.55; }
 .tarot-deck-body{ padding:14px 14px 16px; }
 .tarot-deck-name{ font-family:var(--font-display); font-weight:700; font-size:15.5px; color:var(--tarot-dark); line-height:1.3; }
@@ -641,6 +641,7 @@ img{max-width:100%; display:block;}
 @media(max-width:640px){ .tarot-spread-grid{ grid-template-columns:repeat(2,1fr); gap:10px; } }
 @media(max-width:640px){ .tarot-spread-card{ padding:11px; } .tarot-spread-card .tsc-icon{ width:26px; height:26px; margin-bottom:6px; } .tarot-spread-name{ font-size:12.5px; } .tarot-spread-desc{ font-size:10.5px; } }
 .tarot-spread-card{ text-align:left; border:1px solid var(--line); border-radius:16px; padding:14px; background:var(--surface-tint); cursor:pointer; transition:.2s; }
+.tarot-spread-grid.qlocked .tarot-spread-card{ opacity:.45; filter:grayscale(.55); cursor:not-allowed; }
 .tarot-spread-card:hover{ border-color:var(--tarot); box-shadow:0 10px 26px rgba(72,50,93,.14); }
 .tarot-spread-card.active{ border-color:var(--tarot); background:var(--tarot-tint); }
 .tarot-spread-name{ font-weight:800; font-size:13.5px; color:var(--ink); }
@@ -1970,6 +1971,7 @@ async function showView(name, options={}){
       return false;
     }
   }
+  if(name !== "tarot") cancelTarotShuffleIfActive();
   views.forEach(v => v.classList.toggle("active", v.dataset.view === name));
   document.querySelectorAll(".side-item[data-goto]").forEach(b => b.classList.toggle("active", b.dataset.goto === name));
   document.querySelectorAll(".nav-btn[data-goto]").forEach(b => b.classList.toggle("active", b.dataset.goto === name));
@@ -2145,6 +2147,24 @@ function aiHedgeRace(chain, body, opts={}){
     let settled=false, pending=chain.length;
     const currentCeiling=opts.maxTokens||0;
     const controllers=chain.map(()=>new AbortController());
+    const externalSignal=opts.signal;
+    let onExternalAbort=null;
+    const cleanupExternalSignal=()=>{ if(externalSignal && onExternalAbort) externalSignal.removeEventListener("abort", onExternalAbort); };
+    if(externalSignal){
+      if(externalSignal.aborted){
+        settled=true;
+        controllers.forEach(c=>c.abort());
+        reject(new Error("Đã huỷ."));
+        return;
+      }
+      onExternalAbort=()=>{
+        if(settled) return;
+        settled=true;
+        controllers.forEach(c=>c.abort());
+        reject(new Error("Đã huỷ."));
+      };
+      externalSignal.addEventListener("abort", onExternalAbort);
+    }
     chain.forEach((mid,idx)=>{
       setTimeout(async()=>{
         if(settled) return;
@@ -2177,14 +2197,14 @@ function aiHedgeRace(chain, body, opts={}){
           if(content && content.trim()!==""){
             if(finish!=="length"){
               STATE.lastAiModel = data.model || mid;
-              settled=true; resolve(content);
+              settled=true; cleanupExternalSignal(); resolve(content);
               return;
             }
             const ceiling=currentCeiling>0?currentCeiling:2400;
             const ratio=content.length/ceiling;
             if(ratio>=AI_PARTIAL_MIN_RATIO){
               STATE.lastAiModel = data.model || mid;
-              settled=true; resolve(content);
+              settled=true; cleanupExternalSignal(); resolve(content);
               return;
             }
             throw new Error("AI dừng sớm (length).");
@@ -2194,7 +2214,7 @@ function aiHedgeRace(chain, body, opts={}){
           if(controller.signal.aborted) return;
           if(err instanceof Error && /abort/i.test(err.message||"")) return;
           pending--;
-          if(pending<=0){ settled=true; reject(err instanceof Error ? err : new Error(String(err||"Lỗi không xác định từ AI."))); }
+          if(pending<=0){ settled=true; cleanupExternalSignal(); reject(err instanceof Error ? err : new Error(String(err||"Lỗi không xác định từ AI."))); }
         }finally{
           clearTimeout(timer);
         }
@@ -2212,7 +2232,7 @@ async function callAiText(opts){
     {role:"system", content:SYSTEM_PROMPT_BASE+(compact?"\nViết NGẮN GỌN: tổng cộng tối thiểu 150 từ, tối đa 200 từ, đúng nội dung chính, không mở rộng.":"")},
     {role:"user", content:aiParts(opts.parts||[])}
   ], temperature, max_tokens:maxTokens };
-  return await aiHedgeRace(aiModelChain(model), body, {maxTokens});
+  return await aiHedgeRace(aiModelChain(model), body, {maxTokens, signal:opts.signal});
 }
 
 async function runAiPrompt(userQuestion, opts){
@@ -2221,7 +2241,7 @@ async function runAiPrompt(userQuestion, opts){
   if(!STATE.profile) throw new Error("Chưa có hồ sơ. Vui lòng lưu hồ sơ trước khi dùng AI.");
   const parts = [{text:userQuestion}];
   if(opts.withChartImage && STATE.chartImageBase64) parts.push({inline_data:{mime_type:STATE.chartImageMime||"image/jpeg", data:STATE.chartImageBase64}});
-  const result = await callAiText({model:STATE.model, parts, compact:opts.compact===true, temperature:opts.temperature===undefined?0.7:opts.temperature});
+  const result = await callAiText({model:STATE.model, parts, compact:opts.compact===true, temperature:opts.temperature===undefined?0.7:opts.temperature, signal:opts.signal});
   // Cơ chế captive: nếu hồ sơ bị xoá (đăng xuất) trong lúc đang chờ AI trả
   // lời, huỷ kết quả ngay, không ghi vào cache/trạng thái.
   if(!STATE.profile) throw new Error("Hồ sơ đã bị xoá trong khi xử lý — đã huỷ kết quả.");
@@ -3792,6 +3812,12 @@ const TAROT_SPREAD_ICONS = {
   relationship5: `<svg class="tsc-icon" viewBox="0 0 40 40" fill="none"><rect x="4" y="13" width="8" height="13" rx="1.4" stroke="var(--tarot)" stroke-width="1.4"/><rect x="28" y="13" width="8" height="13" rx="1.4" stroke="var(--tarot)" stroke-width="1.4"/><circle cx="20" cy="8" r="2" fill="var(--gold)"/><circle cx="20" cy="20" r="1.8" fill="var(--tarot)"/><circle cx="20" cy="33" r="2" fill="var(--tarot)"/></svg>`,
   celtic10: `<svg class="tsc-icon" viewBox="0 0 40 40" fill="none"><circle cx="16" cy="18" r="11" stroke="var(--tarot)" stroke-width="1.4"/><rect x="13" y="12" width="6" height="12" rx="1.1" stroke="var(--tarot)" stroke-width="1.1"/><rect x="30" y="6" width="6" height="24" rx="1.2" stroke="var(--gold)" stroke-width="1.2"/></svg>`
 };
+function updateTarotSpreadLockUi(){
+  const wrap=document.getElementById("tarot-spread-grid");
+  if(!wrap) return;
+  const q=document.getElementById("tarot-question")?.value.trim();
+  wrap.classList.toggle("qlocked", !q);
+}
 function renderTarotSpreadGrid(){
   const wrap=document.getElementById("tarot-spread-grid");
   if(!wrap) return;
@@ -3812,6 +3838,7 @@ function renderTarotSpreadGrid(){
       tarotFlow.spreadId=btn.dataset.spread; renderTarotSpreadGrid();
     });
   });
+  updateTarotSpreadLockUi();
   const frameWrap=document.getElementById("tarot-frame-chips");
   const cur=tarotSpreadById(tarotFlow.spreadId);
   if(cur && cur.hasFrame){
@@ -3826,8 +3853,19 @@ function renderTarotSpreadGrid(){
 }
 
 let tarotShuffleGen=0;
+let tarotShuffleActive=false;
+let tarotAiAbortController=null;
+function cancelTarotShuffleIfActive(){
+  if(!tarotShuffleActive) return;
+  tarotShuffleActive=false;
+  tarotShuffleGen++; // invalidate any pending shuffle/draw/interpretation continuations
+  if(tarotAiAbortController){ tarotAiAbortController.abort(); tarotAiAbortController=null; }
+  document.getElementById("tarot-shuffle-overlay")?.classList.remove("show");
+  resetTarotFlow();
+}
 function startTarotShuffle(){
   tarotShuffleGen++;
+  tarotShuffleActive=true;
   const myGen=tarotShuffleGen;
   const deck=tarotDeckById(tarotFlow.deckId);
   const overlay=document.getElementById("tarot-shuffle-overlay");
@@ -3886,6 +3924,7 @@ function startTarotShuffle(){
     drawAndShowTarotSpread(myGen).finally(()=>{
       if(myGen!==tarotShuffleGen) return;
       overlay.classList.remove("show");
+      tarotShuffleActive=false;
     });
   }, fanTotal + 900);
 }
@@ -3973,6 +4012,10 @@ function renderTarotResult(interpretationHtml){
     wrap.innerHTML = `<div class="tarot-board-row">${positions.map((p,i)=>tarotCardSlotHtml(p.label,C[i])).join("")}</div>`;
   }
   document.getElementById("tarot-interpretation").innerHTML = interpretationHtml;
+  // sau khi luận giải xong, cuộn về giữa vị trí đang hiển thị trải bài
+  setTimeout(()=>{
+    document.getElementById("tarot-board-wrap")?.scrollIntoView({behavior:"smooth", block:"center"});
+  }, 50);
 }
 
 async function computeTarotInterpretationHtml(){
@@ -4007,10 +4050,15 @@ Chia đoạn có tiêu đề in đậm cho từng vị trí (đặt tên vị tr
   if(cached){ return mdToHtml(cached); }
   await aiAcquireSlot();
   try{
-    const result=await runAiPrompt(prompt,{withChartImage:false,temperature:0.8});
+    tarotAiAbortController = new AbortController();
+    const result=await runAiPrompt(prompt,{withChartImage:false,temperature:0.8,signal:tarotAiAbortController.signal});
+    tarotAiAbortController = null;
     writeAiCache("tarot",cacheKey,result,{module:"tarot",topic:spread.id});
     return mdToHtml(result);
-  }catch(e){ return `<p style="color:var(--rose);">${escapeHtml(e.message)}</p>`; }
+  }catch(e){
+    if(e instanceof Error && /^Đã huỷ/.test(e.message||"")) return ""; // đã bị huỷ do điều hướng rời trang — kết quả sẽ không được dùng
+    return `<p style="color:var(--rose);">${escapeHtml(e.message)}</p>`;
+  }
   finally{ aiReleaseSlot(); }
 }
 
@@ -4025,6 +4073,7 @@ document.getElementById("btn-tarot-draw")?.addEventListener("click", ()=>{
   tarotFlow.question=q;
   startTarotShuffle();
 });
+document.getElementById("tarot-question")?.addEventListener("input", updateTarotSpreadLockUi);
 document.getElementById("btn-tarot-changedeck")?.addEventListener("click", resetTarotFlow);
 document.getElementById("btn-tarot-changedeck-2")?.addEventListener("click", resetTarotFlow);
 document.getElementById("btn-tarot-reset")?.addEventListener("click", ()=>{

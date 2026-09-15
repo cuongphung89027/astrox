@@ -816,10 +816,6 @@ img{max-width:100%; display:block;}
         Tarot
       </button>
       <div class="side-divider"></div>
-      <button class="side-item" data-goto="dashboard" id="side-dashboard">
-        <span class="si-icon">▦</span>
-        Dashboard
-      </button>
       <button class="side-item" data-goto="compat">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 4.5 2.4C11.3 5.2 12.8 4 15 4c4 0 5.5 4 4 7.7C17 16.4 12 21 12 21Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Hợp Tuổi
@@ -851,46 +847,6 @@ img{max-width:100%; display:block;}
     </div>
 
 
-    <!-- ===================== DASHBOARD VIEW ===================== -->
-    <section class="view" data-view="dashboard" data-accent="tuvi">
-      <div class="view-inner">
-        <div class="view-header">
-          <p class="view-eyebrow">Quản trị AstroX</p>
-          <h1 class="view-title serif">Dashboard</h1>
-          <p class="view-sub">Quản lý người dùng, quyền truy cập, AstroX Point và nội dung hiển thị.</p>
-        </div>
-        <div class="dashboard-status"><span>●</span><span>Backend chưa được kết nối. Các thao tác quản trị sẽ chỉ khả dụng sau khi cấu hình Cloudflare Worker và quyền admin.</span></div>
-        <div class="dashboard-shell section-gap">
-          <nav class="dashboard-menu" id="dashboard-menu" aria-label="Menu quản trị">
-            <div class="dm-group">Tổng quan</div>
-            <button class="active" data-dashboard-panel="overview">▦ Tổng quan</button>
-            <div class="dm-group">Quản lý</div>
-            <button data-dashboard-panel="users">♙ Tài khoản user</button>
-            <button data-dashboard-panel="promotions">◇ Promotion code</button>
-            <button data-dashboard-panel="points">◈ AstroX Point</button>
-            <button data-dashboard-panel="modules">◉ Quản lý module</button>
-            <button data-dashboard-panel="parts">⊞ Phần con module</button>
-            <button data-dashboard-panel="popups">▱ Popup thông báo</button>
-            <div class="dm-group">Hệ thống</div>
-            <button data-dashboard-panel="settings">⚙ Quyền truy cập</button>
-          </nav>
-          <div class="dashboard-panel" id="dashboard-panel">
-            <div class="card" data-dashboard-content="overview">
-              <h2 style="font-size:20px;">Tổng quan hệ thống</h2>
-              <div class="dashboard-stat-grid"><div class="dashboard-stat"><span>Người dùng</span><b>—</b></div><div class="dashboard-stat"><span>AstroX Point đã phát hành</span><b>—</b></div><div class="dashboard-stat"><span>Module đang mở</span><b>—</b></div><div class="dashboard-stat"><span>Popup đang hiển thị</span><b>—</b></div></div>
-              <div class="dashboard-placeholder section-gap">Số liệu sẽ được tải từ API sau khi Worker/D1 và phiên đăng nhập admin được cấu hình.</div>
-            </div>
-            <div class="card hidden" data-dashboard-content="users"><h2 style="font-size:20px;">Quản lý tài khoản user</h2><div class="dashboard-placeholder section-gap">Danh sách user, trạng thái tài khoản, vai trò và lịch sử hoạt động sẽ hiển thị tại đây.</div></div>
-            <div class="card hidden" data-dashboard-content="promotions"><h2 style="font-size:20px;">Promotion code</h2><div class="dashboard-placeholder section-gap">Tạo mã, đặt hạn sử dụng, số lượt và quy tắc quy đổi.</div></div>
-            <div class="card hidden" data-dashboard-content="points"><h2 style="font-size:20px;">AstroX Point</h2><div class="dashboard-placeholder section-gap">Theo dõi số dư, ledger cộng/trừ điểm và giao dịch top-up.</div></div>
-            <div class="card hidden" data-dashboard-content="modules"><h2 style="font-size:20px;">Quản lý module</h2><div class="dashboard-placeholder section-gap">Khóa/mở khóa module và đặt giá từng module.</div></div>
-            <div class="card hidden" data-dashboard-content="parts"><h2 style="font-size:20px;">Phần con module</h2><div class="dashboard-placeholder section-gap">Khóa/mở khóa và đặt giá cho từng chức năng bên trong module.</div></div>
-            <div class="card hidden" data-dashboard-content="popups"><h2 style="font-size:20px;">Popup thông báo</h2><div class="dashboard-placeholder section-gap">Soạn, bật/tắt và gắn popup theo module hoặc phần con.</div></div>
-            <div class="card hidden" data-dashboard-content="settings"><h2 style="font-size:20px;">Quyền truy cập</h2><div class="dashboard-placeholder section-gap">Cấu hình public/locked và vai trò quản trị sau khi backend được kết nối.</div></div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- ===================== HOME VIEW ===================== -->
     <section class="view active" data-view="home">
@@ -1780,22 +1736,26 @@ async function syncUserData(method="GET"){
   }finally{if(method==="PUT"){syncInFlight=false;if(syncQueued){syncQueued=false;scheduleUserDataSync();}}}
 }
 function updateAuthUi(){
+  const loggedIn = !!supabaseUser || !!astroxUser;
   const status=document.getElementById("auth-status");
-  if(status) status.textContent = supabaseUser ? `Đã đăng nhập: ${supabaseUser.user_metadata?.full_name||supabaseUser.email||"tài khoản"}` : "Hồ sơ · Chưa đăng nhập";
+  if(status) status.textContent = supabaseUser ? `Đã đăng nhập: ${supabaseUser.user_metadata?.full_name||supabaseUser.email||"tài khoản"}` : (astroxUser ? `Đã đăng nhập: ${astroxUser.display_name||"tài khoản"}` : "Hồ sơ · Chưa đăng nhập");
   const pmLogin = document.getElementById("pm-login");
   const pmLogout = document.getElementById("pm-logout");
   const pmAuthNote = document.getElementById("pm-auth-note");
-  if (pmLogin) pmLogin.classList.toggle("hidden", !!supabaseUser);
-  if (pmLogout) pmLogout.classList.toggle("hidden", !supabaseUser);
-  if (pmAuthNote) pmAuthNote.classList.toggle("hidden", !!supabaseUser);
+  if (pmLogin) pmLogin.classList.toggle("hidden", loggedIn);
+  if (pmLogout) pmLogout.classList.toggle("hidden", !loggedIn);
+  if (pmAuthNote) pmAuthNote.classList.toggle("hidden", loggedIn);
   const mobileLogin = document.getElementById("mobile-login-btn");
-  if (mobileLogin) mobileLogin.classList.toggle("hidden", !!supabaseUser);
+  if (mobileLogin) mobileLogin.classList.toggle("hidden", loggedIn);
   const sideAvatar = document.getElementById("side-avatar");
   const mobileAvatar = document.getElementById("mobile-avatar");
-  if (supabaseUser) {
-    const initial = (supabaseUser.user_metadata?.full_name || supabaseUser.email || "tài khoản")?.charAt(0)?.toUpperCase() || "?";
+  if (loggedIn) {
+    const name = supabaseUser?.user_metadata?.full_name || supabaseUser?.email || astroxUser?.display_name || "tài khoản";
+    const initial = name.charAt(0).toUpperCase() || "?";
     if (sideAvatar) sideAvatar.textContent = initial;
     if (mobileAvatar) mobileAvatar.textContent = initial;
+    const sideName=document.getElementById("side-name");
+    if (sideName && astroxUser && !supabaseUser) sideName.textContent = astroxUser.display_name || "Tài khoản";
   } else {
     if (sideAvatar) sideAvatar.textContent = "?";
     if (mobileAvatar) mobileAvatar.textContent = "?";
@@ -1909,24 +1869,9 @@ async function fetchAstroxUser(){
     return data && data.user ? data.user : null;
   }catch(_){ return null; }
 }
-function updateAstroxAuthUi(){
-  const status=document.getElementById("auth-status");
-  if(status) status.textContent = astroxUser ? `Đã đăng nhập: ${astroxUser.display_name||"tài khoản"}` : (supabaseUser ? status.textContent : "Hồ sơ · Chưa đăng nhập");
-  const pmLogin = document.getElementById("pm-login");
-  if (pmLogin) pmLogin.classList.toggle("hidden", !!astroxUser || !!supabaseUser);
-  const sideAvatar = document.getElementById("side-avatar");
-  const mobileAvatar = document.getElementById("mobile-avatar");
-  if (astroxUser) {
-    const initial = (astroxUser.display_name || "tài khoản").charAt(0).toUpperCase();
-    if (sideAvatar) sideAvatar.textContent = initial;
-    if (mobileAvatar) mobileAvatar.textContent = initial;
-    const sideName=document.getElementById("side-name");
-    if (sideName) sideName.textContent = astroxUser.display_name || "Tài khoản";
-  }
-}
 async function initAstroxAuth(){
   astroxUser = await fetchAstroxUser();
-  updateAstroxAuthUi();
+  updateAuthUi();
 }
 window.addEventListener("DOMContentLoaded", initAstroxAuth);
 async function loginWithZalo(){
@@ -3706,7 +3651,7 @@ function closeProfileModal(){ if(pmForced) return; document.getElementById("prof
 document.getElementById("pm-close").addEventListener("click", closeProfileModal);
 document.getElementById("profile-modal").addEventListener("click", (e)=>{ if(e.target.id==="profile-modal") closeProfileModal(); });
 document.getElementById("btn-home-setup").addEventListener("click", ()=> openProfileModal(!!STATE.profile));
-document.getElementById("side-profile-btn").addEventListener("click", ()=> supabaseUser ? openProfileModal(!!STATE.profile) : loginWithZalo());
+document.getElementById("side-profile-btn").addEventListener("click", ()=> (supabaseUser || astroxUser) ? openProfileModal(!!STATE.profile) : loginWithZalo());
 document.getElementById("mobile-profile-btn").addEventListener("click", ()=> openProfileModal(!!STATE.profile));
 function goHome(){
   showView("home",{bypassGate:true});
@@ -4816,12 +4761,6 @@ if(!STATE.onboarded){
 }
 initSupabaseAuth();
 
-// Dashboard shell: panel switching only; mutations require the authenticated API.
-document.querySelectorAll('[data-dashboard-panel]').forEach(btn=>btn.addEventListener('click',()=>{
-  const key=btn.dataset.dashboardPanel;
-  document.querySelectorAll('[data-dashboard-panel]').forEach(b=>b.classList.toggle('active',b===btn));
-  document.querySelectorAll('[data-dashboard-content]').forEach(panel=>panel.classList.toggle('hidden',panel.dataset.dashboardContent!==key));
-}));
 </script>
 </body>
 </html>

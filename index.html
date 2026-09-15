@@ -760,6 +760,21 @@ img{max-width:100%; display:block;}
 .tarot-interp-card{ margin-top:18px; }
 .tarot-spread-card{ position:relative; }
 .tsc-icon{ width:34px; height:34px; margin-bottom:8px; }
+
+/* ============================== DASHBOARD SHELL ============================== */
+.dashboard-shell{display:grid;grid-template-columns:220px 1fr;gap:22px;align-items:start}
+.dashboard-menu{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px;position:sticky;top:22px}
+.dashboard-menu button{display:flex;width:100%;align-items:center;gap:10px;border:0;background:transparent;border-radius:11px;padding:11px 12px;color:var(--ink-soft);font:600 12.5px var(--font);text-align:left;cursor:pointer}
+.dashboard-menu button:hover,.dashboard-menu button.active{background:var(--bg-soft);color:var(--ink)}
+.dashboard-menu .dm-group{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);padding:14px 12px 6px}
+.dashboard-panel{min-width:0}
+.dashboard-status{display:flex;align-items:center;gap:9px;padding:12px 14px;background:var(--gold-tint);color:var(--gold-dark);border-radius:13px;font-size:12.5px;line-height:1.5}
+.dashboard-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+.dashboard-stat{padding:17px;border:1px solid var(--line);border-radius:15px;background:var(--surface)}
+.dashboard-stat b{display:block;font-size:23px;margin-top:6px}
+.dashboard-stat span{font-size:11px;color:var(--ink-faint)}
+.dashboard-placeholder{padding:28px;border:1px dashed var(--line);border-radius:16px;background:var(--surface-tint);color:var(--ink-soft);font-size:13px;line-height:1.65}
+@media(max-width:760px){.dashboard-shell{grid-template-columns:1fr;gap:14px}.dashboard-menu{position:static;display:flex;overflow-x:auto;gap:5px}.dashboard-menu .dm-group{display:none}.dashboard-menu button{width:auto;flex:0 0 auto;white-space:nowrap}.dashboard-stat-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -801,6 +816,10 @@ img{max-width:100%; display:block;}
         Tarot
       </button>
       <div class="side-divider"></div>
+      <button class="side-item" data-goto="dashboard" id="side-dashboard">
+        <span class="si-icon">▦</span>
+        Dashboard
+      </button>
       <button class="side-item" data-goto="compat">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4 6 4c2.2 0 3.7 1.2 4.5 2.4C11.3 5.2 12.8 4 15 4c4 0 5.5 4 4 7.7C17 16.4 12 21 12 21Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Hợp Tuổi
@@ -830,6 +849,48 @@ img{max-width:100%; display:block;}
         <div class="avatar-ring" id="mobile-avatar" style="width:32px;height:32px;font-size:13px;">?</div>
       </button>
     </div>
+
+
+    <!-- ===================== DASHBOARD VIEW ===================== -->
+    <section class="view" data-view="dashboard" data-accent="tuvi">
+      <div class="view-inner">
+        <div class="view-header">
+          <p class="view-eyebrow">Quản trị AstroX</p>
+          <h1 class="view-title serif">Dashboard</h1>
+          <p class="view-sub">Quản lý người dùng, quyền truy cập, AstroX Point và nội dung hiển thị.</p>
+        </div>
+        <div class="dashboard-status"><span>●</span><span>Backend chưa được kết nối. Các thao tác quản trị sẽ chỉ khả dụng sau khi cấu hình Cloudflare Worker và quyền admin.</span></div>
+        <div class="dashboard-shell section-gap">
+          <nav class="dashboard-menu" id="dashboard-menu" aria-label="Menu quản trị">
+            <div class="dm-group">Tổng quan</div>
+            <button class="active" data-dashboard-panel="overview">▦ Tổng quan</button>
+            <div class="dm-group">Quản lý</div>
+            <button data-dashboard-panel="users">♙ Tài khoản user</button>
+            <button data-dashboard-panel="promotions">◇ Promotion code</button>
+            <button data-dashboard-panel="points">◈ AstroX Point</button>
+            <button data-dashboard-panel="modules">◉ Quản lý module</button>
+            <button data-dashboard-panel="parts">⊞ Phần con module</button>
+            <button data-dashboard-panel="popups">▱ Popup thông báo</button>
+            <div class="dm-group">Hệ thống</div>
+            <button data-dashboard-panel="settings">⚙ Quyền truy cập</button>
+          </nav>
+          <div class="dashboard-panel" id="dashboard-panel">
+            <div class="card" data-dashboard-content="overview">
+              <h2 style="font-size:20px;">Tổng quan hệ thống</h2>
+              <div class="dashboard-stat-grid"><div class="dashboard-stat"><span>Người dùng</span><b>—</b></div><div class="dashboard-stat"><span>AstroX Point đã phát hành</span><b>—</b></div><div class="dashboard-stat"><span>Module đang mở</span><b>—</b></div><div class="dashboard-stat"><span>Popup đang hiển thị</span><b>—</b></div></div>
+              <div class="dashboard-placeholder section-gap">Số liệu sẽ được tải từ API sau khi Worker/D1 và phiên đăng nhập admin được cấu hình.</div>
+            </div>
+            <div class="card hidden" data-dashboard-content="users"><h2 style="font-size:20px;">Quản lý tài khoản user</h2><div class="dashboard-placeholder section-gap">Danh sách user, trạng thái tài khoản, vai trò và lịch sử hoạt động sẽ hiển thị tại đây.</div></div>
+            <div class="card hidden" data-dashboard-content="promotions"><h2 style="font-size:20px;">Promotion code</h2><div class="dashboard-placeholder section-gap">Tạo mã, đặt hạn sử dụng, số lượt và quy tắc quy đổi.</div></div>
+            <div class="card hidden" data-dashboard-content="points"><h2 style="font-size:20px;">AstroX Point</h2><div class="dashboard-placeholder section-gap">Theo dõi số dư, ledger cộng/trừ điểm và giao dịch top-up.</div></div>
+            <div class="card hidden" data-dashboard-content="modules"><h2 style="font-size:20px;">Quản lý module</h2><div class="dashboard-placeholder section-gap">Khóa/mở khóa module và đặt giá từng module.</div></div>
+            <div class="card hidden" data-dashboard-content="parts"><h2 style="font-size:20px;">Phần con module</h2><div class="dashboard-placeholder section-gap">Khóa/mở khóa và đặt giá cho từng chức năng bên trong module.</div></div>
+            <div class="card hidden" data-dashboard-content="popups"><h2 style="font-size:20px;">Popup thông báo</h2><div class="dashboard-placeholder section-gap">Soạn, bật/tắt và gắn popup theo module hoặc phần con.</div></div>
+            <div class="card hidden" data-dashboard-content="settings"><h2 style="font-size:20px;">Quyền truy cập</h2><div class="dashboard-placeholder section-gap">Cấu hình public/locked và vai trò quản trị sau khi backend được kết nối.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- ===================== HOME VIEW ===================== -->
     <section class="view active" data-view="home">
@@ -1533,7 +1594,7 @@ img{max-width:100%; display:block;}
 
         <div class="pm-step hidden" data-step="6">
           <p style="font-weight:700; font-size:15px; margin-bottom:8px;">Sẵn sàng lập hồ sơ</p>
-          <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px; line-height:1.6;">AstroX đã cấu hình máy chủ AI an toàn. Bạn không cần nhập hoặc quản lý thông tin kỹ thuật. Sau khi hoàn tất, hãy đăng nhập Google để đồng bộ hồ sơ trên các thiết bị.</p>
+          <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px; line-height:1.6;">AstroX đã cấu hình máy chủ AI an toàn. Bạn không cần nhập hoặc quản lý thông tin kỹ thuật. Sau khi hoàn tất, hãy đăng nhập Zalo để đồng bộ hồ sơ trên các thiết bị.</p>
         </div>
 
         <div style="display:flex; gap:10px; margin-top:26px;">
@@ -1579,6 +1640,10 @@ img{max-width:100%; display:block;}
   </div>
 
 </div>
+<script>
+/* Backend API cho đăng nhập Zalo / AstroX Point (Cloudflare Worker) */
+window.ASTROX_AUTH_API_BASE = "https://api.theastrox.space";
+</script>
 <script src="https://cdn.jsdelivr.net/npm/iztro@2.6.0/dist/iztro-v2.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.js"></script>
 <script>
@@ -1830,13 +1895,16 @@ async function initSupabaseAuth(){
     }
   });
 }
-async function loginWithGoogle(){
-  const supa=await waitForSupabaseClient();
-  if(!supa){ showToast("Đăng nhập chưa được cấu hình (thiếu Supabase).","error"); return; }
-  const {error}=await supa.auth.signInWithOAuth({ provider:"google" });
-  if(error) showToast("Không mở được đăng nhập Google.","error");
+// Đăng nhập qua Zalo OAuth v4 (Worker trung gian): chuyển hướng đến endpoint
+// /auth/zalo/login của backend, Worker tạo PKCE state rồi đưa về callback.
+const AUTH_API_BASE = (window.ASTROX_AUTH_API_BASE || "").replace(/\/$/,"");
+async function loginWithZalo(){
+  if(!AUTH_API_BASE){ showToast("Đăng nhập Zalo chưa được cấu hình (thiếu API backend).","error"); return; }
+  try{
+    window.location.href = `${AUTH_API_BASE}/auth/zalo/login`;
+  }catch(_){ showToast("Không mở được đăng nhập Zalo.","error"); }
 }
-document.getElementById("pm-login").addEventListener("click", ()=> loginWithGoogle());
+document.getElementById("pm-login").addEventListener("click", ()=> loginWithZalo());
 async function logout(){
   try{ const supa=await waitForSupabaseClient(); if(supa) await supa.auth.signOut(); }catch(_){}
   handleSignedOut();
@@ -1845,7 +1913,7 @@ async function logout(){
 document.getElementById("pm-logout").addEventListener("click", ()=>{
   pmForced=false; logout(); closeProfileModal();
 });
-document.getElementById("mobile-login-btn").addEventListener("click", ()=> loginWithGoogle());
+document.getElementById("mobile-login-btn").addEventListener("click", ()=> loginWithZalo());
 
 const ZIWEI_HOUR_INDEX = Object.fromEntries(["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"].map((chi,i)=>[chi,i]));
 function safeText(v){
@@ -3601,7 +3669,7 @@ function closeProfileModal(){ if(pmForced) return; document.getElementById("prof
 document.getElementById("pm-close").addEventListener("click", closeProfileModal);
 document.getElementById("profile-modal").addEventListener("click", (e)=>{ if(e.target.id==="profile-modal") closeProfileModal(); });
 document.getElementById("btn-home-setup").addEventListener("click", ()=> openProfileModal(!!STATE.profile));
-document.getElementById("side-profile-btn").addEventListener("click", ()=> supabaseUser ? openProfileModal(!!STATE.profile) : loginWithGoogle());
+document.getElementById("side-profile-btn").addEventListener("click", ()=> supabaseUser ? openProfileModal(!!STATE.profile) : loginWithZalo());
 document.getElementById("mobile-profile-btn").addEventListener("click", ()=> openProfileModal(!!STATE.profile));
 function goHome(){
   showView("home",{bypassGate:true});
@@ -3724,7 +3792,7 @@ document.getElementById("btn-home-learn").addEventListener("click", ()=>{
       <div class="bullet-item"><span class="dot-mark"></span><strong>Tarot:</strong> lá bài và chiều xuôi/ngược được rút ngẫu nhiên bằng máy tính; AI chỉ luận giải dựa trên đúng các lá đã rút, không tự đổi lá hay chiều bài.</div>
     </div>
     <div class="divider"></div>
-    <p class="body-txt">Hồ sơ và kết quả luận giải được lưu cục bộ; khi đăng nhập Google, dữ liệu được đồng bộ riêng theo tài khoản.</p>`;
+    <p class="body-txt">Hồ sơ và kết quả luận giải được lưu cục bộ; khi đăng nhập Zalo, dữ liệu được đồng bộ riêng theo tài khoản.</p>`;
   document.getElementById("info-modal").classList.add("show");
 });
 document.getElementById("im-close").addEventListener("click", ()=> document.getElementById("info-modal").classList.remove("show"));
@@ -4710,6 +4778,13 @@ if(!STATE.onboarded){
   setTimeout(()=> openProfileModal(false), 500);
 }
 initSupabaseAuth();
+
+// Dashboard shell: panel switching only; mutations require the authenticated API.
+document.querySelectorAll('[data-dashboard-panel]').forEach(btn=>btn.addEventListener('click',()=>{
+  const key=btn.dataset.dashboardPanel;
+  document.querySelectorAll('[data-dashboard-panel]').forEach(b=>b.classList.toggle('active',b===btn));
+  document.querySelectorAll('[data-dashboard-content]').forEach(panel=>panel.classList.toggle('hidden',panel.dataset.dashboardContent!==key));
+}));
 </script>
 </body>
 </html>

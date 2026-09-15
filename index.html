@@ -1898,6 +1898,37 @@ async function initSupabaseAuth(){
 // Đăng nhập qua Zalo OAuth v4 (Worker trung gian): chuyển hướng đến endpoint
 // /auth/zalo/login của backend, Worker tạo PKCE state rồi đưa về callback.
 const AUTH_API_BASE = (window.ASTROX_AUTH_API_BASE || "").replace(/\/$/,"");
+// Định danh người dùng từ backend AstroX (cookie astrox_session qua Worker).
+let astroxUser = null;
+async function fetchAstroxUser(){
+  if(!AUTH_API_BASE) return null;
+  try{
+    const res = await fetch(`${AUTH_API_BASE}/api/me`, { credentials: "include" });
+    if(!res.ok) return null;
+    const data = await res.json();
+    return data && data.user ? data.user : null;
+  }catch(_){ return null; }
+}
+function updateAstroxAuthUi(){
+  const status=document.getElementById("auth-status");
+  if(status) status.textContent = astroxUser ? `Đã đăng nhập: ${astroxUser.display_name||"tài khoản"}` : (supabaseUser ? status.textContent : "Hồ sơ · Chưa đăng nhập");
+  const pmLogin = document.getElementById("pm-login");
+  if (pmLogin) pmLogin.classList.toggle("hidden", !!astroxUser || !!supabaseUser);
+  const sideAvatar = document.getElementById("side-avatar");
+  const mobileAvatar = document.getElementById("mobile-avatar");
+  if (astroxUser) {
+    const initial = (astroxUser.display_name || "tài khoản").charAt(0).toUpperCase();
+    if (sideAvatar) sideAvatar.textContent = initial;
+    if (mobileAvatar) mobileAvatar.textContent = initial;
+    const sideName=document.getElementById("side-name");
+    if (sideName) sideName.textContent = astroxUser.display_name || "Tài khoản";
+  }
+}
+async function initAstroxAuth(){
+  astroxUser = await fetchAstroxUser();
+  updateAstroxAuthUi();
+}
+window.addEventListener("DOMContentLoaded", initAstroxAuth);
 async function loginWithZalo(){
   if(!AUTH_API_BASE){ showToast("Đăng nhập Zalo chưa được cấu hình (thiếu API backend).","error"); return; }
   try{
@@ -1905,6 +1936,12 @@ async function loginWithZalo(){
   }catch(_){ showToast("Không mở được đăng nhập Zalo.","error"); }
 }
 document.getElementById("pm-login").addEventListener("click", ()=> loginWithZalo());
+document.getElementById("pm-logout").addEventListener("click", async ()=>{
+  // Đăng xuất phiên AstroX (cookie session Worker) — Supabase nếu có cũng đăng xuất.
+  try{ if(AUTH_API_BASE) await fetch(`${AUTH_API_BASE}/auth/logout`, { method:"POST", credentials:"include" }); }catch(_){}
+  astroxUser=null;
+  await logout();
+});
 async function logout(){
   try{ const supa=await waitForSupabaseClient(); if(supa) await supa.auth.signOut(); }catch(_){}
   handleSignedOut();

@@ -1872,6 +1872,7 @@ async function fetchAstroxUser(){
 async function initAstroxAuth(){
   astroxUser = await fetchAstroxUser();
   updateAuthUi();
+  if(astroxUser) refreshModuleAccess();
 }
 window.addEventListener("DOMContentLoaded", initAstroxAuth);
 async function loginWithZalo(){
@@ -2021,17 +2022,25 @@ function lockModuleForView(name){
   return "";
 }
 /* Quyền truy cập module theo tài khoản — mặc định TẤT CẢ được phép; chỉ bị
-   khoá khi admin tắt rõ ràng trong bảng user_module_access (xem dashboard).
-   Khách chưa đăng nhập (không có user_id) luôn được phép — hệ thống phân
-   quyền chỉ áp dụng cho tài khoản đã đăng nhập. */
+   khoá khi admin tắt rõ ràng (Dashboard: khóa toàn cục theo module hoặc theo
+   từng user trong bảng user_module_access). Khách chưa đăng nhập luôn được
+   phép với phân quyền theo user; module tắt toàn cục thì khách vẫn bị khóa. */
 let moduleAccess = {};
 function isModuleAllowed(module){
-  if(!supabaseUser) return true;
+  if(!supabaseUser && !astroxUser) return true;
   if(moduleAccess[module]===false) return false;
   return true;
 }
 async function refreshModuleAccess(){
   moduleAccess = {};
+  // Tài khoản Zalo (cookie astrox_session): hỏi Worker api.theastrox.space.
+  if(!supabaseUser && astroxUser && AUTH_API_BASE){
+    try{
+      const res=await fetch(`${AUTH_API_BASE}/api/module-access`,{credentials:"include"});
+      if(res.ok){ const data=await res.json(); if(data && data.access) moduleAccess=data.access; }
+    }catch(_){}
+    renderModuleGridLocks(); enforceActiveModuleLock(); return;
+  }
   if(!supabaseUser){ renderModuleGridLocks(); return; }
   try{
     const token=await currentAccessToken();
@@ -2043,7 +2052,25 @@ async function refreshModuleAccess(){
     }
   }catch(_){}
   renderModuleGridLocks();
+  enforceActiveModuleLock();
 }
+/* Nếu người dùng đang xem module mà admin vừa khóa -> đưa về trang chủ kèm
+   thông báo. Gọi sau mỗi lần refreshModuleAccess (tải trang, đổi tab, poll). */
+function enforceActiveModuleLock(){
+  const active=document.querySelector(".view.active");
+  if(!active) return;
+  const m=lockModuleForView(active.dataset.view);
+  if(m && !isModuleAllowed(m)){
+    showModuleLockedNotice(m);
+    goHome();
+  }
+}
+/* Đồng bộ quyền theo thời gian thực: admin bật/tắt trong Dashboard thì trang
+   chủ user cập nhật trong <=20s (khi tab đang hiển thị), và ngay khi user
+   chuyển lại tab này (visibilitychange). Endpoint đã có cache-control no-store. */
+setInterval(()=>{
+  if(document.visibilityState==="visible" && (supabaseUser || astroxUser)) refreshModuleAccess();
+}, 20000);
 function showModuleLockedNotice(module){
   const name=MODULE_NAMES[module]||module;
   document.getElementById("im-title").textContent = "Chưa được cấp quyền";
@@ -2835,6 +2862,7 @@ document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="visible"){
     requestBackgroundWakeLock();
     if(STATE.profile) pumpPreloadQueue();
+    if(supabaseUser || astroxUser) refreshModuleAccess();
   }
 });
 async function ensureModuleAiReady(module,options={}){

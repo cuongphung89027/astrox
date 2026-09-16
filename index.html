@@ -999,11 +999,7 @@ img{max-width:100%; display:block;}
         <div class="view-header" style="margin-top:6px;"><h1 class="view-title serif">Lá số Tử Vi</h1><p class="view-sub">Biểu đồ 12 cung được tính từ ngày sinh, giờ sinh và giới tính bằng dữ liệu lá số có cấu trúc.</p></div>
         <div class="card" id="ziwei-chart-card"><div id="ziwei-chart-status" class="badge badge-accent">Chưa lập lá số</div><div id="ziwei-chart" class="ziwei-chart-wrap" style="margin-top:14px;"></div></div>
         <div class="natal-visual-grid section-gap" id="ziwei-visuals"></div>
-        <div class="card-flat center-col section-gap" id="chart-image-wrap">
-          <p style="font-size:13px; color:var(--ink-faint);">Chưa có ảnh lá số đối chiếu.</p>
-          <button class="btn btn-ghost btn-sm section-gap" id="btn-add-chart-img">+ Thêm ảnh đối chiếu</button>
-          <input type="file" id="input-chart-file-2" accept="image/*" class="hidden">
-        </div>
+        <div class="card-flat center-col section-gap" id="chart-image-wrap" hidden></div>
         <div class="section-gap form-grid">
           <div class="field"><label>Ngày sinh dương lịch</label><div class="card-flat" id="info-dob">—</div></div>
           <div class="field"><label>Giờ sinh</label><div class="card-flat" id="info-hour">—</div></div>
@@ -1541,22 +1537,11 @@ img{max-width:100%; display:block;}
           <div class="hour-grid" id="pm-hour-grid"></div>
         </div>
 
-        <div class="pm-step hidden" data-step="5">
-          <p style="font-weight:700; font-size:15px; margin-bottom:8px;">Đã có lá số Tử Vi sẵn?</p>
-          <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px;">Thêm ảnh lá số có sẵn để đối chiếu. Dữ liệu tính tự động trong AstroX vẫn là nguồn chính.</p>
-          <div class="upload-box" id="pm-upload-box">
-            <input type="file" id="pm-chart-file" accept="image/*" class="hidden">
-            <div id="pm-upload-placeholder">
-              <p style="font-weight:700;">+ Thêm ảnh đối chiếu</p>
-              <p style="font-size:11.5px; color:var(--ink-faint); margin-top:4px;">JPG, PNG — có thể bỏ qua bước này</p>
-            </div>
-            <img id="pm-upload-preview" class="hidden">
-          </div>
-        </div>
+        <!-- Bước 5 (upload lá số cũ) đã bỏ theo yêu cầu — chỉ dùng lá số AstroX tính tự động. -->
 
         <div class="pm-step hidden" data-step="6">
           <p style="font-weight:700; font-size:15px; margin-bottom:8px;">Sẵn sàng lập hồ sơ</p>
-          <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px; line-height:1.6;">AstroX đã cấu hình máy chủ AI an toàn. Bạn không cần nhập hoặc quản lý thông tin kỹ thuật. Sau khi hoàn tất, hãy đăng nhập Zalo để đồng bộ hồ sơ trên các thiết bị.</p>
+          <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px; line-height:1.6;">AstroX đã cấu hình máy chủ phân tích an toàn. Bạn không cần nhập hoặc quản lý thông tin kỹ thuật. Sau khi hoàn tất, hãy đăng nhập Zalo để đồng bộ hồ sơ trên các thiết bị.</p>
         </div>
 
         <!-- ==================== TOP-UP: Nạp Point qua PayOS ==================== -->
@@ -1565,7 +1550,7 @@ img{max-width:100%; display:block;}
             <p style="font-weight:700; font-size:15px; margin:0;">AstroX Point</p>
             <span id="topup-balance" style="font-weight:800; font-size:14px; color:var(--teal-dark); background:var(--teal-tint, #E3F1EE); padding:4px 12px; border-radius:999px;">— Point</span>
           </div>
-          <p style="font-size:12.5px; color:var(--ink-faint); margin:8px 0 14px; line-height:1.6;">Nạp tiền qua PayOS (chuyển khoản ngân hàng — VietQR, tự động cộng Point trong vài giây).</p>
+          <p style="font-size:12.5px; color:var(--ink-faint); margin:8px 0 14px; line-height:1.6;">Nạp AstroX Point để sử dụng các tính năng nâng cao.</p>
           <div id="topup-packages" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <p style="grid-column:1/-1; font-size:12.5px; color:var(--ink-faint);">Đang tải gói nạp…</p>
           </div>
@@ -2027,12 +2012,12 @@ function viewForPath(pathname, hash){
    đầu tiên; đoạn này cập nhật lại khi người dùng điều hướng bằng JS. */
 const ROUTE_SEO={
   home:{title:"Khám phá thế giới của bạn cùng AstroX", description:"Khám phá thế giới của bạn cùng AstroX."},
-  tuvi:{title:"Tử Vi Đẩu Số — Luận giải lá số bằng AI | AstroX", description:"Lập lá số Tử Vi Đẩu Số, xem vận hạn theo ngày, tuần, tháng dựa trên Lưu Niên, Lưu Nguyệt, Lưu Nhật thật, luận giải bằng AI."},
-  zodiac:{title:"Cung Hoàng Đạo — Tử vi phương Tây mỗi ngày | AstroX", description:"Xem tử vi 12 cung hoàng đạo theo ngày, tuần, tháng dựa trên vị trí thiên thể thật, luận giải bằng AI."},
-  kinhdich:{title:"Kinh Dịch — Gieo quẻ và luận giải bằng AI | AstroX", description:"Gieo quẻ Kinh Dịch, xem hào từ và luận giải quẻ theo tình huống của bạn bằng AI."},
-  batu:{title:"Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AI | AstroX", description:"Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AI."},
-  numerology:{title:"Thần Số Học — Giải mã con số cuộc đời | AstroX", description:"Tính Số Chủ Đạo, Số Đường Đời và các chỉ số Thần Số Học, luận giải ý nghĩa bằng AI."},
-  tarot:{title:"Tarot — Trải bài và luận giải bằng AI | AstroX", description:"Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AI dựa trên đúng các lá đã rút."}
+  tuvi:{title:"Tử Vi Đẩu Số — Luận giải lá số bằng AstroX | AstroX", description:"Lập lá số Tử Vi Đẩu Số, xem vận hạn theo ngày, tuần, tháng dựa trên Lưu Niên, Lưu Nguyệt, Lưu Nhật thật, luận giải bằng AstroX."},
+  zodiac:{title:"Cung Hoàng Đạo — Tử vi phương Tây mỗi ngày | AstroX", description:"Xem tử vi 12 cung hoàng đạo theo ngày, tuần, tháng dựa trên vị trí thiên thể thật, luận giải bằng AstroX."},
+  kinhdich:{title:"Kinh Dịch — Gieo quẻ và luận giải bằng AstroX | AstroX", description:"Gieo quẻ Kinh Dịch, xem hào từ và luận giải quẻ theo tình huống của bạn bằng AstroX."},
+  batu:{title:"Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AstroX | AstroX", description:"Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AstroX."},
+  numerology:{title:"Thần Số Học — Giải mã con số cuộc đời | AstroX", description:"Tính Số Chủ Đạo, Số Đường Đời và các chỉ số Thần Số Học, luận giải ý nghĩa bằng AstroX."},
+  tarot:{title:"Tarot — Trải bài và luận giải bằng AstroX | AstroX", description:"Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AstroX dựa trên đúng các lá đã rút."}
 };
 function applyRouteSeo(name){
   const seo=ROUTE_SEO[name]||ROUTE_SEO.home;
@@ -2240,7 +2225,7 @@ const VN_PLACES = ["Hà Nội","TP. Hồ Chí Minh","Hải Phòng","Đà Nẵng"
 function formatDob(iso){ if(!iso) return "—"; const p = iso.split("-"); return `${p[2]}-${p[1]}-${p[0]}`; }
 function escapeHtml(str){ return String(str).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=rej; r.readAsDataURL(file); }); }
-function extractJson(raw){ const m = raw.match(/\{[\s\S]*\}/); if(!m) throw new Error("Không đọc được JSON từ AI."); return JSON.parse(m[0]); }
+function extractJson(raw){ const m = raw.match(/\{[\s\S]*\}/); if(!m) throw new Error("Không đọc được dữ liệu từ AstroX."); return JSON.parse(m[0]); }
 function mdToHtml(md){
   let clean=String(md||"");
   clean=clean.replace(/^\s*(Chào\s[^.\n]*[.,]?\s*)/i,"");
@@ -2287,7 +2272,7 @@ function extractAiText(data){
   const text = choice && choice.message && (typeof choice.message.content === "string" ? choice.message.content : "");
   if(!text){
     const reason = choice && (choice.finish_reason || choice.finishReason);
-    throw new Error(reason && reason !== "stop" ? `AI dừng sớm (${reason}). Thử lại hoặc rút ngắn câu hỏi.` : "AI không trả về nội dung.");
+    throw new Error(reason && reason !== "stop" ? `AstroX dừng sớm (${reason}). Thử lại hoặc rút ngắn câu hỏi.` : "AI không trả về nội dung.");
   }
   STATE.lastAiModel = data.model || "";
   return text;
@@ -2344,7 +2329,7 @@ function aiHedgeRace(chain, body, opts={}){
             }catch(err){
               if(settled||controller.signal.aborted) throw err;
               if(attempt<1){ await new Promise(r=>setTimeout(r,800)); continue; }
-              throw new Error("Không kết nối được máy chủ AI. Kiểm tra kết nối mạng và thử lại.");
+              throw new Error("Không kết nối được máy chủ AstroX. Kiểm tra kết nối mạng và thử lại.");
             }
             if((res.status===429 || res.status===500 || res.status===502 || res.status===503 || res.status===504) && attempt<1 && !settled){
               const retryAfter=Number(res.headers.get("Retry-After"));
@@ -2373,14 +2358,14 @@ function aiHedgeRace(chain, body, opts={}){
               settled=true; cleanupExternalSignal(); resolve(content);
               return;
             }
-            throw new Error("AI dừng sớm (length).");
-          }          throw new Error(finish && finish!=="stop" ? `AI dừng sớm (${finish}).` : "AI không trả về nội dung.");
+            throw new Error("AstroX dừng sớm (length).");
+          }          throw new Error(finish && finish!=="stop" ? `AstroX dừng sớm (${finish}).` : "AI không trả về nội dung.");
         }catch(err){
           if(settled) return;
           if(controller.signal.aborted) return;
           if(err instanceof Error && /abort/i.test(err.message||"")) return;
           pending--;
-          if(pending<=0){ settled=true; cleanupExternalSignal(); reject(err instanceof Error ? err : new Error(String(err||"Lỗi không xác định từ AI."))); }
+          if(pending<=0){ settled=true; cleanupExternalSignal(); reject(err instanceof Error ? err : new Error(String(err||"Lỗi không xác định từ AstroX."))); }
         }finally{
           clearTimeout(timer);
         }
@@ -2403,8 +2388,8 @@ async function callAiText(opts){
 
 async function runAiPrompt(userQuestion, opts){
   opts = opts || {};
-  if(!AI_BASE) throw new Error("Máy chủ AI chưa sẵn sàng.");
-  if(!STATE.profile) throw new Error("Chưa có hồ sơ. Vui lòng lưu hồ sơ trước khi dùng AI.");
+  if(!AI_BASE) throw new Error("Máy chủ AstroX chưa sẵn sàng.");
+  if(!STATE.profile) throw new Error("Chưa có hồ sơ. Vui lòng lưu hồ sơ trước khi dùng AstroX.");
   const parts = [{text:userQuestion}];
   if(opts.withChartImage && STATE.chartImageBase64) parts.push({inline_data:{mime_type:STATE.chartImageMime||"image/jpeg", data:STATE.chartImageBase64}});
   const result = await callAiText({model:STATE.model, parts, compact:opts.compact===true, temperature:opts.temperature===undefined?0.7:opts.temperature, signal:opts.signal});
@@ -2554,8 +2539,8 @@ async function loadTuviSubContent(){
   contentEl.innerHTML=`<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:80%;"></div>`;
   await aiAcquireSlot();
   try{
-    const q=tuviPromptBody(`${STATE.chartImageBase64?"Ảnh đối chiếu chỉ là tài liệu bổ sung, không dùng để tự suy đoán dữ liệu chính.\n\n":""}${sub.prompt}`);
-    const result=await runAiPrompt(q,{withChartImage:true});
+    const q=tuviPromptBody(sub.prompt);
+    const result=await runAiPrompt(q,{withChartImage:false});
     writeAiCache("tuviTopics",cacheKey,result,{module:"tuvi",topic:currentTuviTopic.id});
     contentEl.innerHTML=mdToHtml(result);
   }catch(e){contentEl.innerHTML=`<p style="color:var(--rose);">Không lấy được phân tích: ${escapeHtml(e.message)}</p>`;}
@@ -2866,7 +2851,7 @@ function aiReleaseSlot(){aiInFlight=Math.max(0,aiInFlight-1);aiPumpSlots();}
 function startModulePreload(module){return ensureModuleAiRun(module,{background:true});}
 /* Chỉ tải AI của ĐÚNG module người dùng vừa bấm vào — không còn tự động tải
    nền module còn lại, để tránh gọi AI hàng loạt khi chưa cần (per yêu cầu
-   "bấm module nào mới gọi AI của module đó"). */
+   "bấm module nào mới gọi nội dung của module đó"). */
 let preloadPriority="tuvi", preloadQueue=[], preloadChain=null;
 function requestModuleFirst(module){
   if(!module) return;
@@ -3085,7 +3070,7 @@ async function loadTuviPeriod(period, force){
   await aiAcquireSlot();
   try{
     const q = tuviPromptBody(tuviPeriodPromptText(label,PERIOD_LABELS[period],period));
-    const result = await runAiPrompt(q, { withChartImage:true, compact:true });
+    const result = await runAiPrompt(q, { withChartImage:false, compact:true });
     writeAiCache("tuviPeriod",key,result,{module:"tuvi",period});
     el.innerHTML=mdToHtml(result);
   }catch(e){ renderPeriodPrompt(el, PERIOD_LABELS[period], ()=>loadTuviPeriod(period,true), e.message); }
@@ -3145,24 +3130,8 @@ function renderChartView(){
     document.getElementById("info-place").textContent = p.place;
   }
   const wrap = document.getElementById("chart-image-wrap");
-  if(STATE.chartImageBase64){
-    wrap.innerHTML = `<img src="data:${STATE.chartImageMime||"image/jpeg"};base64,${STATE.chartImageBase64}" style="border-radius:16px;">
-      <button class="btn btn-ghost btn-sm section-gap" id="btn-add-chart-img">Đổi ảnh khác</button>
-      <input type="file" id="input-chart-file-2" accept="image/*" class="hidden">`;
-  } else {
-    wrap.innerHTML = `<p style="font-size:13px; color:var(--ink-faint);">Chưa có ảnh lá số đối chiếu.</p>
-      <button class="btn btn-ghost btn-sm section-gap" id="btn-add-chart-img">+ Thêm ảnh đối chiếu</button>
-      <input type="file" id="input-chart-file-2" accept="image/*" class="hidden">`;
-  }
-  const btn = document.getElementById("btn-add-chart-img"), inp = document.getElementById("input-chart-file-2");
-  btn.addEventListener("click", ()=> inp.click());
-  inp.addEventListener("change", async ()=>{
-    const file=inp.files[0]; if(!file) return;
-    if(!file.type.startsWith("image/")||file.size>4*1024*1024){showToast("Ảnh không hợp lệ hoặc vượt quá 4 MB.","error");return;}
-    STATE.chartImageBase64=await fileToBase64(file); STATE.chartImageMime=file.type;
-    saveState(); scheduleUserDataSync(); renderChartView();
-    showToast("Đã cập nhật ảnh lá số. Nhấn 'Phân tích lại' để cập nhật nội dung.");
-  });
+  if(wrap) wrap.hidden = true; // ảnh lá số đối chiếu đã bỏ — chỉ dùng lá số AstroX
+  // Ảnh lá số đối chiếu đã loại bỏ hoàn toàn theo yêu cầu (bỏ cả listener upload).
 }
 
 /* ============================================================================
@@ -3495,7 +3464,7 @@ async function performCast(s1, s2, s3){
 
   const interpEl = document.getElementById("kd-interpretation");
   if(!STATE.profile){
-    interpEl.innerHTML = `<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AI.</p>`;
+    interpEl.innerHTML = `<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AstroX.</p>`;
     return;
   }
   interpEl.innerHTML=`<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:85%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:70%;"></div>`;
@@ -3637,14 +3606,13 @@ document.getElementById("btn-check-compat").addEventListener("click", async ()=>
   const prompt = `So sánh mức độ hợp nhau giữa hai người theo Tử Vi Đẩu Số:
 Người 1 (bạn): ${p.name}, ${p.gender}, sinh ${formatDob(p.dob)}, giờ ${p.hourChi}, tại ${p.place}.
 Người 2: ${name}, ${gender}, sinh ${formatDob(dob)}.
-${STATE.chartImageBase64 ? "Ảnh lá số đính kèm là của Người 1." : ""}
 Trả lời DUY NHẤT bằng JSON hợp lệ, không thêm chữ nào khác:
 {"percent": <số nguyên 0-100>, "strengths": ["...", "...", "..."], "watchouts": ["...", "..."], "advice": "..."}`;
   const cacheKey=stableHash(JSON.stringify({name,gender,dob,promptVersion:PROMPT_VERSION}));
   const cached=readAiCache("compatibility",cacheKey);
   if(!cached) await aiAcquireSlot();
   try{
-    const raw=cached||await runAiPrompt(prompt,{withChartImage:true,temperature:0.6});
+    const raw=cached||await runAiPrompt(prompt,{withChartImage:false,temperature:0.6});
     if(!cached)writeAiCache("compatibility",cacheKey,raw,{module:"compatibility",topic:"pair"});
     const json=extractJson(raw);
     document.getElementById("compat-result").classList.remove("hidden");
@@ -3698,16 +3666,6 @@ function openProfileModal(editMode, forced){
   STATE.model=DEFAULT_MODEL;
   document.querySelectorAll(".choice-card[data-gender]").forEach(c=> c.classList.toggle("selected", c.dataset.gender===pmDraft.gender));
   document.querySelectorAll("#pm-hour-grid .hour-chip").forEach(c=> c.classList.toggle("selected", c.dataset.chi===pmDraft.hourChi));
-  if(pmChartBase64){
-    document.getElementById("pm-upload-preview").src = `data:${pmChartBase64?"image/jpeg":STATE.chartImageMime||"image/jpeg"};base64,${pmChartBase64}`;
-    document.getElementById("pm-upload-preview").classList.remove("hidden");
-    document.getElementById("pm-upload-placeholder").classList.add("hidden");
-    document.getElementById("pm-upload-box").classList.add("has-img");
-  } else {
-    document.getElementById("pm-upload-preview").classList.add("hidden");
-    document.getElementById("pm-upload-placeholder").classList.remove("hidden");
-    document.getElementById("pm-upload-box").classList.remove("has-img");
-  }
   updateAuthUi();
   renderPmStep();
   document.getElementById("profile-modal").classList.add("show");
@@ -3729,7 +3687,9 @@ document.getElementById("brand-home-mobile").addEventListener("click", goHome);
 document.getElementById("brand-home-mobile").addEventListener("keydown", (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); goHome(); } });
 
 function renderPmStep(){
-  // Bước "topup" là màn hình riêng ngoài flow 7 bước hồ sơ (PM_STEP_COUNT bước 0..6).
+  // Bước "topup" là màn hình riêng ngoài flow hồ sơ. Bước 5 (upload lá số)
+  // đã bỏ — bước 4 nhảy thẳng tới 6; renderPmStep tự ánh xạ 5 -> 6 khi cần.
+  if(pmStep === 5) pmStep = 6;
   const isTopup = pmStep === "topup";
   document.querySelectorAll(".pm-step").forEach(s=>{
     const stepVal = s.dataset.step;
@@ -3865,16 +3825,7 @@ document.querySelectorAll(".choice-card[data-gender]").forEach(card=>{
     card.classList.add("selected"); pmDraft.gender = card.dataset.gender;
   });
 });
-document.getElementById("pm-upload-box").addEventListener("click", ()=> document.getElementById("pm-chart-file").click());
-document.getElementById("pm-chart-file").addEventListener("change", async ()=>{
-  const file=document.getElementById("pm-chart-file").files[0];if(!file)return;
-  if(!file.type.startsWith("image/")||file.size>4*1024*1024){showToast("Ảnh không hợp lệ hoặc vượt quá 4 MB.","error");return;}
-  pmChartBase64=await fileToBase64(file);STATE.chartImageMime=file.type;
-  document.getElementById("pm-upload-preview").src=`data:${file.type};base64,${pmChartBase64}`;
-  document.getElementById("pm-upload-preview").classList.remove("hidden");
-  document.getElementById("pm-upload-placeholder").classList.add("hidden");
-  document.getElementById("pm-upload-box").classList.add("has-img");
-});
+// Upload lá số đối chiếu đã bỏ — các listener pm-upload-box/pm-chart-file gỡ theo.
 
 function validatePmStep(){
   if(pmStep===0) return !!pmDraft.gender;
@@ -3886,13 +3837,17 @@ function validatePmStep(){
     return !!pmDraft.dob && pmDraft.place.length>=2;
   }
   if(pmStep===4) return !!pmDraft.hourChi;
-  if(pmStep===5) return true; // optional
+  if(pmStep===5) return true; // bước upload lá số đã bỏ — giữ chỉ mục cho pm-dots
   if(pmStep===6) return true; // optional (can skip key)
   return true;
 }
 document.getElementById("pm-next").addEventListener("click", async ()=>{
   if(!validatePmStep()){ showToast("Vui lòng hoàn thành bước này trước khi tiếp tục.", "error"); return; }
-  if(pmStep < PM_STEP_COUNT-1){ pmStep++; renderPmStep(); return; }
+  if(pmStep < PM_STEP_COUNT-1){
+    // Bước 5 (upload lá số) đã bỏ: từ bước 4 nhảy thẳng tới 6.
+    pmStep = (pmStep === 4) ? 6 : pmStep + 1;
+    renderPmStep(); return;
+  }
   // Final step -> save
   STATE.profile = Object.assign({}, pmDraft);
   STATE.chartImageBase64 = pmChartBase64;
@@ -3908,7 +3863,11 @@ document.getElementById("pm-next").addEventListener("click", async ()=>{
   else scheduleUserDataSync();
   showToast("Đã lưu hồ sơ.");
 });
-document.getElementById("pm-back").addEventListener("click", ()=>{ if(pmStep>0){ pmStep--; renderPmStep(); } });
+document.getElementById("pm-back").addEventListener("click", ()=>{
+  // Bước 5 (upload lá số) đã bỏ: từ bước 6 lùi về thẳng 4.
+  if(pmStep===6) pmStep=4; else if(pmStep>0) pmStep--;
+  renderPmStep();
+});
 
 /* ============================================================================
    GLOBAL PROFILE APPLY / HOME STATUS
@@ -3960,8 +3919,8 @@ document.getElementById("btn-home-learn").addEventListener("click", ()=>{
     <div class="bullet-list">
       <div class="bullet-item"><span class="dot-mark"></span><strong>Tử Vi:</strong> tính trực tiếp từ ngày giờ sinh và giới tính; ảnh tải lên chỉ là tài liệu đối chiếu không bắt buộc.</div>
       <div class="bullet-item"><span class="dot-mark"></span><strong>Cung Hoàng Đạo:</strong> cung Mặt Trời tính chính xác theo ngày sinh dương lịch; bản đồ sao đầy đủ (Mặt Trăng, Cung Mọc) cần dữ liệu thiên văn chi tiết hơn, sẽ bổ sung sau.</div>
-      <div class="bullet-item"><span class="dot-mark"></span><strong>Kinh Dịch:</strong> lập quẻ bằng toán pháp Mai Hoa Dịch Số chính xác (Thượng/Hạ quái theo mod 8, hào động theo mod 6, quan hệ Thể-Dụng theo ngũ hành) — AI chỉ đảm nhiệm phần đặt tên quẻ cổ điển và luận giải văn bản.</div>
-      <div class="bullet-item"><span class="dot-mark"></span><strong>Tarot:</strong> lá bài và chiều xuôi/ngược được rút ngẫu nhiên bằng máy tính; AI chỉ luận giải dựa trên đúng các lá đã rút, không tự đổi lá hay chiều bài.</div>
+      <div class="bullet-item"><span class="dot-mark"></span><strong>Kinh Dịch:</strong> lập quẻ bằng toán pháp Mai Hoa Dịch Số chính xác (Thượng/Hạ quái theo mod 8, hào động theo mod 6, quan hệ Thể-Dụng theo ngũ hành) — AstroX chỉ đảm nhiệm phần đặt tên quẻ cổ điển và luận giải văn bản.</div>
+      <div class="bullet-item"><span class="dot-mark"></span><strong>Tarot:</strong> lá bài và chiều xuôi/ngược được rút ngẫu nhiên bằng máy tính; AstroX chỉ luận giải dựa trên đúng các lá đã rút, không tự đổi lá hay chiều bài.</div>
     </div>
     <div class="divider"></div>
     <p class="body-txt">Hồ sơ và kết quả luận giải được lưu cục bộ; khi đăng nhập Zalo, dữ liệu được đồng bộ riêng theo tài khoản.</p>`;
@@ -4458,7 +4417,7 @@ function revealTarotBoard(interpretationHtml){
 
 async function computeTarotInterpretationHtml(){
   if(!STATE.profile){
-    return `<p class="body-txt">Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AI.</p>`;
+    return `<p class="body-txt">Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AstroX.</p>`;
   }
   const deck=tarotDeckById(tarotFlow.deckId), spread=tarotSpreadById(tarotFlow.spreadId);
   const positions=tarotPositionsForFlow(spread);
@@ -4730,7 +4689,7 @@ async function loadBatuTopicContent(){
   if(!topic || !contentEl) return;
   const cached=readAiCache("batuTopics",topic.id);
   if(cached){ contentEl.innerHTML=mdToHtml(cached); return; }
-  if(!STATE.profile){ contentEl.innerHTML=`<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AI.</p>`; return; }
+  if(!STATE.profile){ contentEl.innerHTML=`<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AstroX.</p>`; return; }
   contentEl.innerHTML=`<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:80%;"></div>`;
   await aiAcquireSlot();
   try{
@@ -4923,7 +4882,7 @@ async function loadNumerologyTopicContent(){
   if(!topic || !contentEl) return;
   const cached=readAiCache("numerologyTopics",topic.id);
   if(cached){ contentEl.innerHTML=mdToHtml(cached); return; }
-  if(!STATE.profile){ contentEl.innerHTML=`<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AI.</p>`; return; }
+  if(!STATE.profile){ contentEl.innerHTML=`<p>Chưa có hồ sơ. Mở <strong>Hồ sơ</strong> để lưu trước khi xem luận giải AstroX.</p>`; return; }
   contentEl.innerHTML=`<div class="skel" style="height:14px;width:95%;margin-bottom:10px;"></div><div class="skel" style="height:14px;width:80%;"></div>`;
   await aiAcquireSlot();
   try{

@@ -10,7 +10,7 @@
  * Binding: DB (D1 database binding), cùng database với user-data.js.
  */
 
-const ALL_MODULES = ["tuvi", "zodiac", "kinhdich", "batu", "numerology"];
+const ALL_MODULES = ["tuvi", "zodiac", "kinhdich", "batu", "numerology", "tarot"];
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {

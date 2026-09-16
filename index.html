@@ -204,6 +204,12 @@ img{max-width:100%; display:block;}
 .choice-card.selected .cc-radio::after{ content:""; position:absolute; inset:3px; border-radius:50%; background:var(--accent, var(--teal)); }
 
 .hour-grid{ display:grid; grid-template-columns:repeat(6,1fr); gap:8px; }
+/* Gói nạp Top-up (PayOS) */
+.topup-pkg{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:14px 10px; border-radius:var(--r-md);
+  border:1.5px solid var(--line); background:var(--surface); cursor:pointer; transition:border-color .15s; -webkit-tap-highlight-color:transparent; }
+.topup-pkg:hover{ border-color:var(--teal); }
+.topup-pkg .tp-pts{ font-weight:800; font-size:15px; color:var(--teal-dark); }
+.topup-pkg .tp-amt{ font-size:11.5px; color:var(--ink-soft); }
 .hour-chip{ padding:10px 4px; border-radius:var(--r-md); border:1.5px solid var(--line); background:var(--surface); text-align:center; cursor:pointer; }
 .hour-chip .hc-chi{ font-weight:700; font-size:13px; }
 .hour-chip .hc-range{ font-size:9.5px; color:var(--ink-faint); }
@@ -1553,16 +1559,44 @@ img{max-width:100%; display:block;}
           <p style="font-size:12.5px; color:var(--ink-faint); margin-bottom:14px; line-height:1.6;">AstroX đã cấu hình máy chủ AI an toàn. Bạn không cần nhập hoặc quản lý thông tin kỹ thuật. Sau khi hoàn tất, hãy đăng nhập Zalo để đồng bộ hồ sơ trên các thiết bị.</p>
         </div>
 
-        <div style="display:flex; gap:10px; margin-top:26px;">
+        <!-- ==================== TOP-UP: Nạp Point qua PayOS ==================== -->
+        <div class="pm-step hidden" data-step="topup">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <p style="font-weight:700; font-size:15px; margin:0;">AstroX Point</p>
+            <span id="topup-balance" style="font-weight:800; font-size:14px; color:var(--teal-dark); background:var(--teal-tint, #E3F1EE); padding:4px 12px; border-radius:999px;">— Point</span>
+          </div>
+          <p style="font-size:12.5px; color:var(--ink-faint); margin:8px 0 14px; line-height:1.6;">Nạp tiền qua PayOS (chuyển khoản ngân hàng — VietQR, tự động cộng Point trong vài giây).</p>
+          <div id="topup-packages" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <p style="grid-column:1/-1; font-size:12.5px; color:var(--ink-faint);">Đang tải gói nạp…</p>
+          </div>
+          <!-- Ô nhập promotion code (tuỳ chọn) — áp bonus Point cho lần nạp này -->
+          <div style="border-top:1px solid var(--line); margin-top:14px; padding-top:12px;">
+            <label for="topup-promo" style="display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;">Mã khuyến mãi (tùy chọn)</label>
+            <div style="display:flex; gap:8px;">
+              <input id="topup-promo" placeholder="VD: TET2026" autocapitalize="characters" style="flex:1; margin:0; text-transform:uppercase;">
+              <button type="button" class="btn btn-ghost" id="topup-promo-apply" style="flex:0 0 auto; width:auto; padding:10px 16px;">Áp dụng</button>
+            </div>
+            <p id="topup-promo-status" style="font-size:12px; margin:6px 0 0; min-height:15px; color:var(--teal-dark);"></p>
+          </div>
+          <div style="border-top:1px solid var(--line); margin-top:16px; padding-top:12px;">
+            <p style="font-weight:700; font-size:13.5px; margin:0 0 8px;">Lịch sử nạp gần đây</p>
+            <div id="topup-history" style="font-size:12.5px; color:var(--ink-soft); display:grid; gap:6px;">Chưa có giao dịch nào.</div>
+          </div>
+          <p id="topup-error" style="font-size:12.5px; color:var(--rose); margin:10px 0 0; min-height:16px;"></p>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:26px;" id="pm-nav-row">
           <button class="btn btn-ghost" id="pm-back" style="flex:0 0 auto;">← Trước</button>
           <button class="btn btn-primary btn-block" id="pm-next">Tiếp tục →</button>
         </div>
         <button class="btn btn-text btn-block" id="pm-skip-final" style="display:none;">Bỏ qua bước này</button>
+        <button class="btn btn-ghost btn-block" id="pm-topup-exit" style="display:none;">← Quay lại hồ sơ</button>
         <div style="margin-top:18px; border-top:1px solid var(--line); padding-top:14px;">
           <div id="pm-auth-row" style="display:flex; gap:10px;">
             <button class="btn btn-primary btn-block hidden" id="pm-login">Đăng nhập / Đăng ký</button>
             <button class="btn btn-ghost btn-block hidden" id="pm-logout">Đăng xuất</button>
           </div>
+          <button class="btn btn-primary btn-block hidden" id="pm-topup-btn" style="margin-top:10px;">◈ Nạp AstroX Point</button>
           <p style="font-size:11.5px; color:var(--ink-faint); margin-top:10px; line-height:1.5;" id="pm-auth-note">Đăng nhập để đồng bộ hồ sơ và kết quả trên các thiết bị.</p>
         </div>
       </div>
@@ -1745,6 +1779,9 @@ function updateAuthUi(){
   if (pmLogin) pmLogin.classList.toggle("hidden", loggedIn);
   if (pmLogout) pmLogout.classList.toggle("hidden", !loggedIn);
   if (pmAuthNote) pmAuthNote.classList.toggle("hidden", loggedIn);
+  // Nút "Nạp Point" chỉ hiện khi đã đăng nhập (flow PayOS cần session).
+  const pmTopup = document.getElementById("pm-topup-btn");
+  if (pmTopup) pmTopup.classList.toggle("hidden", !loggedIn);
   const mobileLogin = document.getElementById("mobile-login-btn");
   if (mobileLogin) mobileLogin.classList.toggle("hidden", loggedIn);
   const sideAvatar = document.getElementById("side-avatar");
@@ -3692,11 +3729,136 @@ document.getElementById("brand-home-mobile").addEventListener("click", goHome);
 document.getElementById("brand-home-mobile").addEventListener("keydown", (e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); goHome(); } });
 
 function renderPmStep(){
-  document.querySelectorAll(".pm-step").forEach(s=> s.classList.toggle("hidden", parseInt(s.dataset.step)!==pmStep));
-  document.querySelectorAll("#pm-dots .step-dot").forEach((d,i)=> d.classList.toggle("on", i===pmStep));
-  document.getElementById("pm-back").style.visibility = pmStep===0 ? "hidden" : "visible";
-  document.getElementById("pm-next").textContent = pmStep===PM_STEP_COUNT-1 ? "Lưu & hoàn tất" : "Tiếp tục →";
+  // Bước "topup" là màn hình riêng ngoài flow 7 bước hồ sơ (PM_STEP_COUNT bước 0..6).
+  const isTopup = pmStep === "topup";
+  document.querySelectorAll(".pm-step").forEach(s=>{
+    const stepVal = s.dataset.step;
+    s.classList.toggle("hidden", isTopup ? stepVal!=="topup" : parseInt(stepVal)!==pmStep);
+  });
+  document.querySelectorAll("#pm-dots .step-dot").forEach((d,i)=> d.classList.toggle("on", !isTopup && i===pmStep));
+  document.getElementById("pm-nav-row").style.display = isTopup ? "none" : "flex";
+  document.getElementById("pm-back").style.visibility = (!isTopup && pmStep===0) ? "hidden" : "visible";
+  document.getElementById("pm-next").textContent = (!isTopup && pmStep===PM_STEP_COUNT-1) ? "Lưu & hoàn tất" : "Tiếp tục →";
+  document.getElementById("pm-topup-exit").style.display = isTopup ? "block" : "none";
+  if(isTopup) initTopupView();
 }
+// Màn hình Top-up: mở trực tiếp từ profile khi đã đăng nhập (nút "Nạp Point").
+function openTopupView(){
+  pmStep = "topup";
+  document.getElementById("pm-title").textContent = "Nạp AstroX Point";
+  document.querySelectorAll("#pm-dots .step-dot").forEach(d=>d.classList.remove("on"));
+  renderPmStep();
+  document.getElementById("profile-modal").classList.add("show");
+}
+let topupLoaded = false;
+async function initTopupView(){
+  if(!astroxUser && !supabaseUser) return;
+  document.getElementById("topup-error").textContent = "";
+  // Số dư hiện tại
+  if(astroxUser && AUTH_API_BASE){
+    try{
+      const res = await fetch(`${AUTH_API_BASE}/api/me`, { credentials:"include" });
+      if(res.ok){ const d = await res.json(); document.getElementById("topup-balance").textContent = `${(d && d.points) || 0} Point`; }
+    }catch(_){}
+    loadTopupPackages();
+    loadTopupHistory();
+  } else {
+    document.getElementById("topup-error").textContent = "Nạp Point hiện dành cho tài khoản đăng nhập bằng Zalo.";
+    document.getElementById("topup-packages").innerHTML = "";
+    document.getElementById("topup-history").textContent = "—";
+  }
+}
+async function loadTopupPackages(){
+  const wrap = document.getElementById("topup-packages");
+  try{
+    const res = await fetch(`${AUTH_API_BASE}/api/topup/packages`);
+    const d = await res.json();
+    if(!res.ok || !d.packages || !d.packages.length){ wrap.innerHTML = '<p style="grid-column:1/-1; font-size:12.5px; color:var(--ink-faint);">Chưa có gói nạp nào.</p>'; return; }
+    wrap.innerHTML = d.packages.map(p=>`
+      <button type="button" class="topup-pkg" data-amount="${p.amount_vnd}" data-points="${p.points}">
+        <span class="tp-pts">${p.points} Point</span>
+        <span class="tp-amt">${p.label || p.amount_vnd.toLocaleString("vi-VN") + "đ"}</span>
+      </button>`).join("");
+    wrap.querySelectorAll(".topup-pkg").forEach(btn=>{
+      btn.addEventListener("click", ()=> buyTopup(btn.dataset.amount, btn));
+    });
+  }catch(_){ wrap.innerHTML = '<p style="grid-column:1/-1; font-size:12.5px; color:var(--rose);">Không tải được gói nạp. Thử lại sau.</p>'; }
+}
+async function loadTopupHistory(){
+  const el = document.getElementById("topup-history");
+  try{
+    const res = await fetch(`${AUTH_API_BASE}/api/topup/history`, { credentials:"include" });
+    if(!res.ok) throw new Error();
+    const d = await res.json();
+    if(!d.orders || !d.orders.length){ el.textContent = "Chưa có giao dịch nào."; return; }
+    el.innerHTML = d.orders.map(o=>`
+      <div style="display:flex; justify-content:space-between; gap:8px; border-bottom:1px solid var(--line); padding-bottom:5px;">
+        <span>${o.points} Point · ${o.amount_vnd.toLocaleString("vi-VN")}đ</span>
+        <span style="color:${o.status==='paid'?'var(--teal-dark)':'var(--ink-faint)'}; font-weight:600;">${o.status==='paid'?'Đã nạp':o.status==='pending'?'Chờ thanh toán':'Đã huỷ'}</span>
+      </div>`).join("");
+  }catch(_){ el.textContent = "Không tải được lịch sử."; }
+}
+async function buyTopup(amountVnd, btn){
+  const err = document.getElementById("topup-error");
+  const promoInput = document.getElementById("topup-promo");
+  const promoCode = promoInput ? promoInput.value.trim().toUpperCase() : "";
+  err.textContent = "";
+  btn.disabled = true; btn.style.opacity = .6;
+  try{
+    const res = await fetch(`${AUTH_API_BASE}/api/topup/create`, {
+      method:"POST", credentials:"include", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ amount_vnd: Number(amountVnd), promo_code: promoCode || undefined })
+    });
+    const d = await res.json().catch(()=>({}));
+    if(!res.ok || !d.checkoutUrl){
+      if(d.error === "invalid_promo" || d.error === "promo_expired" || d.error === "promo_exhausted"){
+        err.textContent = "Mã khuyến mãi không hợp lệ hoặc đã hết hiệu lực.";
+      } else throw new Error(d.error || "create_failed");
+      btn.disabled = false; btn.style.opacity = 1; return;
+    }
+    window.location.href = d.checkoutUrl; // Chuyển sang trang PayOS (VietQR)
+  }catch(e){
+    err.textContent = e.message === "payos_not_configured" ? "Hệ thống thanh toán đang bảo trì." : "Không tạo được lệnh nạp. Thử lại.";
+    btn.disabled = false; btn.style.opacity = 1;
+  }
+}
+// Kiểm tra nhanh promo code khi bấm "Áp dụng" — báo bonus ngay, không tạo đơn.
+document.getElementById("topup-promo-apply").addEventListener("click", async ()=>{
+  const input = document.getElementById("topup-promo");
+  const status = document.getElementById("topup-promo-status");
+  const btn = document.getElementById("topup-promo-apply");
+  const code = input.value.trim().toUpperCase();
+  status.textContent = ""; status.style.color = "var(--teal-dark)";
+  if(!code){ status.textContent = "Nhập mã trước khi áp dụng."; status.style.color = "var(--rose)"; return; }
+  btn.disabled = true;
+  try{
+    const res = await fetch(`${AUTH_API_BASE}/api/topup/promo-check`, {
+      method:"POST", credentials:"include", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ promo_code: code })
+    });
+    const d = await res.json().catch(()=>({}));
+    if(res.ok && d.ok){
+      status.textContent = `✓ ${d.code}: +${d.bonus_points} Point thưởng cho mỗi lần nạp.`;
+    } else {
+      status.style.color = "var(--rose)";
+      status.textContent = d.error === "promo_expired" ? "Mã đã hết hạn." : d.error === "promo_exhausted" ? "Mã đã hết lượt dùng." : "Mã không tồn tại hoặc đã tắt.";
+    }
+  }catch(_){ status.style.color = "var(--rose)"; status.textContent = "Không kiểm tra được mã."; }
+  finally{ btn.disabled = false; }
+});
+document.getElementById("pm-topup-exit").addEventListener("click", ()=>{
+  pmStep = 0;
+  document.getElementById("pm-title").textContent = STATE.profile ? "Sửa thông tin" : "Thiết lập hồ sơ";
+  renderPmStep();
+});
+document.getElementById("pm-topup-btn").addEventListener("click", openTopupView);
+// Sau khi PayOS trả về ?topup=success: refresh số dư + báo người dùng.
+(function handleTopupReturn(){
+  try{
+    const q = new URLSearchParams(location.search);
+    if(q.get("topup") === "success"){ setTimeout(()=>{ showToast("Thanh toán thành công — Point sẽ được cộng trong vài giây."); }, 800); }
+  }catch(_){}
+})();
 document.querySelectorAll(".choice-card[data-gender]").forEach(card=>{
   card.addEventListener("click", ()=>{
     document.querySelectorAll(".choice-card[data-gender]").forEach(c=>c.classList.remove("selected"));

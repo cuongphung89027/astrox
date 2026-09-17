@@ -95,7 +95,7 @@ export function ZodiacClient() {
                   Nhập hồ sơ
                 </Btn>
               )}
-              <Btn variant="gold" size="sm" onClick={() => setMode("natal")}>
+              <Btn variant="gold" size="sm" arrow onClick={() => setMode("natal")}>
                 Bản đồ sao chi tiết
               </Btn>
             </div>

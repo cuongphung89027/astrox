@@ -12,7 +12,7 @@ import { DongSonSun, LyCloudDivider } from "@/components/kit/motifs";
 import { useAuth } from "@/lib/auth";
 import { setState } from "@/lib/state";
 import { useProfile } from "@/lib/use-store";
-import { buildZiweiChart, type ZiweiChart } from "@/lib/tuvi";
+import { buildZiweiChart, TUVI_TOPICS, type ZiweiChart } from "@/lib/tuvi";
 import { HOUR_CHI_OPTIONS } from "@/lib/utils";
 import type { Profile } from "@/lib/types";
 import { useRequireProfile } from "@/components/profile/ProfileModal";
@@ -40,6 +40,39 @@ function NoProfileCta({ onOpen }: { onOpen: () => void }) {
         AstroX cần giới tính, ngày sinh và giờ sinh để lập lá số Tử Vi. Hoàn tất 5 bước hồ sơ ngắn là lá số hiện ngay.
       </p>
       <Btn onClick={onOpen}>Nhập hồ sơ để lập lá số</Btn>
+    </div>
+  );
+}
+
+/** Empty-state cho khối 2/3: panel gợi ý thay vì dòng chữ mỏng — kèm preview chip. */
+function StepHint({
+  text,
+  chips,
+}: {
+  text: string;
+  chips?: { id: string; label: string }[];
+}) {
+  return (
+    <div className="glass rounded-[var(--radius-card)] border-dashed border-muc/25 p-8">
+      <div className="flex items-start gap-4">
+        <DongSonSun size={40} className="mt-0.5 shrink-0 text-muc-2/70" />
+        <div>
+          <p className="text-sm font-semibold text-muc">{text}</p>
+          {chips ? (
+            <ul className="mt-3 flex flex-wrap gap-2" aria-label="Các chủ đề sẽ mở khi có lá số">
+              {chips.slice(0, 8).map((c) => (
+                <li
+                  key={c.id}
+                  className="cursor-default rounded-full bg-white/55 px-3 py-1 text-xs font-medium text-muc-2"
+                >
+                  {c.label}
+                </li>
+              ))}
+              {chips.length > 8 ? <li className="px-1 py-1 text-xs text-muc-2">+{chips.length - 8} nữa</li> : null}
+            </ul>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
@@ -135,7 +168,10 @@ export function TuViClient() {
           {hasProfile && chart ? (
             <TopicsPanel profile={profile} chart={chart} />
           ) : (
-            <p className="text-sm text-muc-2">Hoàn tất hồ sơ và lá số ở trên để mở các chủ đề luận giải.</p>
+            <StepHint
+              text="Hoàn tất hồ sơ và lá số ở Bước 1 để mở 12 chủ đề luận giải theo dữ liệu cung của riêng bạn."
+              chips={TUVI_TOPICS.map((t) => ({ id: t.id, label: t.title }))}
+            />
           )}
         </section>
 
@@ -153,7 +189,7 @@ export function TuViClient() {
           {hasProfile && chart ? (
             <PeriodPanel profile={profile} chart={chart} />
           ) : (
-            <p className="text-sm text-muc-2">Hoàn tất hồ sơ và lá số ở trên để xem vận trình theo kỳ.</p>
+            <StepHint text="Vận trình hôm nay / tuần này / tháng này sẽ mở ngay khi lá số ở Bước 1 sẵn sàng." />
           )}
         </section>
 

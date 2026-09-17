@@ -8,6 +8,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn, GlassCard, SectionTitle } from "@/components/kit";
+import { DongSonSun } from "@/components/kit/motifs";
 import { useToast } from "@/components/motion";
 import { CastRitual } from "./CastRitual";
 import { KdAiPanel } from "./KdAiPanel";
@@ -149,15 +150,24 @@ export function KinhDichClient() {
         <textarea
           id="kd-question"
           rows={3}
+          maxLength={200}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="Ví dụ: Tôi có nên nhận công việc mới trong tháng này không?"
-          className="mt-3 w-full resize-y rounded-xl border border-white/80 bg-white/70 px-3.5 py-2.5 text-[15px] text-muc shadow-inner outline-none transition-colors placeholder:text-muc/40 focus:border-son"
+          className="mt-3 w-full resize-none rounded-xl border border-white/80 bg-white/70 px-3.5 py-2.5 text-[15px] text-muc shadow-inner outline-none transition-colors placeholder:text-muc/40 focus:border-son"
         />
+        <p className="mt-1 text-right text-[11px] font-semibold tabular-nums text-muc-2" aria-live="off">
+          {question.length}/200
+        </p>
 
         {/* Bước 2 — gieo quẻ */}
-        <div className="mt-6 rounded-2xl border border-son/20 bg-gradient-to-br from-son-tint/70 to-white/50 p-4.5 sm:p-5">
-          <div className="flex items-center justify-between gap-3">
+        <div className="relative mt-6 overflow-hidden rounded-2xl border border-son/20 bg-gradient-to-br from-son-tint/70 to-white/50 p-4.5 sm:p-5">
+          {/* Mặt trời Đông Sơn mờ quay chậm — chất nghi thức ngay cả khi đang chờ */}
+          <DongSonSun
+            size={150}
+            className="ax-spin-slow pointer-events-none absolute -right-8 -top-10 text-son/10"
+          />
+          <div className="relative flex items-center justify-between gap-3">
             <p className="text-[13px] font-extrabold text-muc">Ba con số lập quẻ</p>
             <span className="text-[11px] font-extrabold uppercase tracking-[0.1em] text-son-deep">Bước 2</span>
           </div>

@@ -33,7 +33,7 @@ export function SignGrid({ mySignId, selectedId, onSelect }: SignGridProps) {
           <li key={sign.id}>
             <CardTilt max={5} className="h-full">
               <GlassCard
-                className={`h-full ${mine ? "ring-2 ring-son" : active ? "ring-2 ring-kim" : ""}`}
+                className={`h-full ${mine ? "ring-2 ring-son" : active ? "ring-2 ring-kim-deep shadow-[0_0_0_5px_rgba(242,169,18,0.16)]" : ""}`}
               >
                 <button
                   type="button"

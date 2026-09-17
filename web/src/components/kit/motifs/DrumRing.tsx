@@ -18,10 +18,12 @@ interface DrumRingProps {
 export function DrumRing({ size = 96, color, children, className, style, label }: DrumRingProps) {
   const rays = Array.from({ length: 12 }, (_, i) => {
     const rad = ((i * 30 - 90) * Math.PI) / 180;
-    const x1 = 50 + 33.5 * Math.cos(rad);
-    const y1 = 50 + 33.5 * Math.sin(rad);
-    const x2 = 50 + 37.5 * Math.cos(rad);
-    const y2 = 50 + 37.5 * Math.sin(rad);
+    // Làm tròn 2 chữ số: SSR và client phải tuần tự hoá cùng một chuỗi số,
+    // tránh hydration mismatch do sai số float cuối dãy.
+    const x1 = Math.round((50 + 33.5 * Math.cos(rad)) * 100) / 100;
+    const y1 = Math.round((50 + 33.5 * Math.sin(rad)) * 100) / 100;
+    const x2 = Math.round((50 + 37.5 * Math.cos(rad)) * 100) / 100;
+    const y2 = Math.round((50 + 37.5 * Math.sin(rad)) * 100) / 100;
     return { x1, y1, x2, y2, key: i };
   });
 

@@ -102,7 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <p className="font-display text-base font-extrabold text-muc/80">
               Astro<span className="text-son">X</span>
             </p>
-            <p className="mx-auto mt-1.5 max-w-md leading-relaxed">
+            <p className="mx-auto mt-1.5 max-w-xl leading-relaxed">
               Họa tiết Việt lấy cảm hứng trống đồng Đông Sơn &amp; mây Lý–Trần, vector gốc AstroX.
             </p>
             <p className="mt-3">

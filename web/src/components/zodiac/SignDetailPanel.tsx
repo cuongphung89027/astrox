@@ -6,7 +6,7 @@
  * Sự nghiệp — prompt port từ ZODIAC_TOPICS, cache nhóm "zodiacTopics").
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AiText, Btn, Chip, GlassCard, Skeleton, SunSpinner, TopicTabs, type TabItem } from "@/components/kit";
+import { AiText, Btn, GlassCard, Skeleton, SunSpinner, TopicTabs, type TabItem } from "@/components/kit";
 import { DrumRing } from "@/components/kit/motifs";
 import { PanelReveal, useToast } from "@/components/motion";
 import { useRequireProfile } from "@/components/profile/ProfileModal";
@@ -15,7 +15,6 @@ import { runAiPrompt } from "@/lib/api";
 import {
   ELEMENT_CLASH,
   ELEMENT_FRIEND,
-  ELEMENT_TONE,
   ZODIAC_DEEP_TOPICS,
   buildNatalChart,
   signDateRange,
@@ -92,30 +91,26 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
     <GlassCard className={className}>
       <div className="p-6 md:p-8">
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-          <DrumRing size={120} className={sign.element === "Thuỷ" ? "text-sen" : sign.element === "Hoả" ? "text-son" : sign.element === "Thổ" ? "text-ngoc" : "text-cham"}>
-            <span aria-hidden="true" className="text-[40px] leading-none text-muc">
+          <DrumRing size={112} className="text-muc/40">
+            <span aria-hidden="true" className="text-[38px] leading-none text-muc">
               {sign.symbol}
             </span>
           </DrumRing>
           <div className="min-w-0">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-son-deep">Cung đang chọn</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-muc-2/80">Cung đang chọn</p>
             <h3 className="mt-1 font-display text-2xl font-extrabold tracking-tight text-muc md:text-3xl">
               {sign.name} <span className="text-lg font-bold text-muc-2">({sign.en})</span>
             </h3>
             <p className="mt-1 text-sm font-semibold text-muc-2">{signDateRange(sign)}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Chip tone={ELEMENT_TONE[sign.element]}>Nguyên tố {sign.element}</Chip>
-              <Chip tone="kim">{sign.quality}</Chip>
-              <Chip tone="neutral">Chủ tinh {sign.ruler}</Chip>
-            </div>
+            <p className="mt-2.5 text-[13px] font-medium tracking-wide text-muc-2">
+              Nguyên tố {sign.element} · {sign.quality} · Chủ tinh {sign.ruler}
+            </p>
             <p className="mt-3 text-sm leading-relaxed text-muc-2">
               Người của cung này thường <strong className="text-muc">{sign.traits}</strong>.
             </p>
-            <p className="mt-2 text-xs leading-relaxed text-muc-2">
-              Khắc chế: hợp với nguyên tố{" "}
-              <b className="text-muc">{ELEMENT_FRIEND[sign.element] ?? "—"}</b>, cần chú ý khi tiếp
-              năng lượng nguyên tố{" "}
-              <b className="text-muc">{ELEMENT_CLASH[sign.element] ?? "—"}</b>.
+            <p className="mt-2 text-xs leading-relaxed text-muc-2/90">
+              Hợp nguyên tố <b className="font-semibold text-muc-2">{ELEMENT_FRIEND[sign.element] ?? "—"}</b>, cần lưu ý khi tiếp{" "}
+              <b className="font-semibold text-muc-2">{ELEMENT_CLASH[sign.element] ?? "—"}</b>.
             </p>
           </div>
         </div>

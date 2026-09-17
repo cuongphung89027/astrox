@@ -1,14 +1,13 @@
 "use client";
 
 /**
- * SignGrid — băng 12 cung hoàng đạo: mỗi cung 1 GlassCard, glyph đặt trong
- * DrumRing (vòng trống đồng — signature của app). Cung của người xem viền son
- * + chip "Cung của bạn" + ShimmerText; cung đang chọn viền kim.
+ * SignGrid — băng 12 cung hoàng đạo (bản tinh giản v5.1).
+ * Nguyên tắc "single accent": toàn bộ ring một màu mực trung tính;
+ * màu chỉ xuất hiện ở 2 nơi — cung của bạn (son) và cung đang chọn (kim).
+ * Bỏ CardTilt/ShimmerText khỏi lưới để bớt noise; hover chỉ nhấc nhẹ.
  */
-import { Chip, GlassCard } from "@/components/kit";
 import { DrumRing } from "@/components/kit/motifs";
-import { CardTilt, ShimmerText } from "@/components/motion";
-import { ELEMENT_TONE, ZODIAC_SIGNS, signDateRange } from "@/lib/zodiac";
+import { ZODIAC_SIGNS, signDateRange } from "@/lib/zodiac";
 
 interface SignGridProps {
   mySignId: string | null;
@@ -16,51 +15,39 @@ interface SignGridProps {
   onSelect: (id: string) => void;
 }
 
-const TONE_RING: Record<string, string> = {
-  son: "text-son",
-  ngoc: "text-ngoc",
-  cham: "text-cham",
-  sen: "text-sen",
-};
-
 export function SignGrid({ mySignId, selectedId, onSelect }: SignGridProps) {
   return (
-    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 sm:gap-3" role="listbox" aria-label="Chọn cung hoàng đạo">
       {ZODIAC_SIGNS.map((sign) => {
         const mine = sign.id === mySignId;
         const active = sign.id === selectedId;
         return (
           <li key={sign.id}>
-            <CardTilt max={5} className="h-full">
-              <GlassCard
-                className={`h-full ${mine ? "ring-2 ring-son" : active ? "ring-2 ring-kim-deep shadow-[0_0_0_5px_rgba(242,169,18,0.16)]" : ""}`}
+            <button
+              type="button"
+              role="option"
+              aria-selected={active}
+              onClick={() => onSelect(sign.id)}
+              className={`group flex h-full w-full cursor-pointer flex-col items-center gap-1.5 rounded-2xl px-3 pb-4 pt-5 text-center transition-[background-color,box-shadow,transform] duration-300 ease-[var(--ease-viet)] hover:-translate-y-0.5 ${
+                mine
+                  ? "bg-son-tint/60 ring-1 ring-son/40"
+                  : active
+                    ? "bg-white/55 ring-1 ring-kim-deep/50 shadow-[0_0_0_4px_rgba(242,169,18,0.10)]"
+                    : "bg-white/35 ring-1 ring-white/50 hover:bg-white/50"
+              }`}
+            >
+              <DrumRing
+                size={74}
+                className={mine ? "text-son" : active ? "text-kim-deep" : "text-muc/35 transition-colors duration-300 group-hover:text-muc/55"}
               >
-                <button
-                  type="button"
-                  onClick={() => onSelect(sign.id)}
-                  aria-pressed={active}
-                  className="flex h-full w-full cursor-pointer flex-col items-center gap-2 px-3 pb-5 pt-6 text-center"
-                >
-                  <DrumRing
-                    size={86}
-                    className={mine ? TONE_RING.son : active ? "text-kim-deep" : `${TONE_RING[ELEMENT_TONE[sign.element]]} opacity-70`}
-                  >
-                    <span aria-hidden="true" className="text-[28px] leading-none text-muc">
-                      {sign.symbol}
-                    </span>
-                  </DrumRing>
-                  <span className="mt-1 font-display text-[15px] font-extrabold leading-tight text-muc">
-                    {mine ? <ShimmerText text={sign.name} /> : sign.name}
-                  </span>
-                  <span className="text-[11px] font-semibold text-muc-2">{signDateRange(sign)}</span>
-                  {mine ? (
-                    <Chip tone="son" className="mt-0.5">
-                      Cung của bạn
-                    </Chip>
-                  ) : null}
-                </button>
-              </GlassCard>
-            </CardTilt>
+                <span aria-hidden="true" className="text-[24px] leading-none text-muc">
+                  {sign.symbol}
+                </span>
+              </DrumRing>
+              <span className="mt-0.5 text-[13.5px] font-semibold leading-tight text-muc">{sign.name}</span>
+              <span className="text-[10.5px] font-medium tracking-wide text-muc-2/80">{signDateRange(sign)}</span>
+              {mine ? <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-son">Cung của bạn</span> : null}
+            </button>
           </li>
         );
       })}

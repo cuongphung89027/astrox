@@ -37,9 +37,9 @@
   --font-display: var(--font-bricolage), "Be Vietnam Pro", system-ui, sans-serif;
   --font-sans: var(--font-bevn), system-ui, sans-serif;
 
-  /* Shadow ấm cho glass + CTA */
-  --shadow-glass: 0 10px 34px -10px rgba(64, 36, 14, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.75);
-  --shadow-pop: 0 16px 40px -14px rgba(196, 47, 28, 0.45);
+  /* Shadow ấm cho glass + CTA — bản tinh giản: nhẹ, cao, ít màu */
+  --shadow-glass: 0 2px 6px -2px rgba(64, 36, 14, 0.08), 0 14px 34px -18px rgba(64, 36, 14, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow-pop: 0 10px 26px -12px rgba(196, 47, 28, 0.38);
 
   --radius-card: 26px;
 
@@ -75,18 +75,18 @@ body {
 /* ------------------------------- Liquid glass ------------------------------ */
 
 .glass {
-  background: color-mix(in srgb, white 62%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.35);
-  backdrop-filter: blur(18px) saturate(1.35);
-  border: 1px solid color-mix(in srgb, white 70%, transparent);
+  background: color-mix(in srgb, white 58%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.18);
+  backdrop-filter: blur(14px) saturate(1.18);
+  border: 1px solid color-mix(in srgb, white 55%, transparent);
   box-shadow: var(--shadow-glass);
 }
 
 .glass-strong {
-  background: color-mix(in srgb, white 84%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid color-mix(in srgb, white 85%, transparent);
+  background: color-mix(in srgb, white 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.28);
+  backdrop-filter: blur(18px) saturate(1.28);
+  border: 1px solid color-mix(in srgb, white 70%, transparent);
   box-shadow: var(--shadow-glass);
 }
 
@@ -110,7 +110,8 @@ body {
 
 /* -------------------------- Nền aurora kem + hoa văn ----------------------- */
 
-/* Blob màu tươi nổi sau glass — tĩnh, rẻ, không animation nào theo scroll */
+/* Blob màu nổi sau glass — tinh giản: chỉ 2 sắc thật nhẹ, để nội dung thở.
+   Tĩnh, rẻ, không animation theo scroll. */
 .ax-bg {
   position: fixed;
   inset: 0;
@@ -118,23 +119,22 @@ body {
   overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(38rem 30rem at 12% -6%, color-mix(in srgb, var(--color-son) 14%, transparent), transparent 62%),
-    radial-gradient(34rem 26rem at 88% 4%, color-mix(in srgb, var(--color-kim) 16%, transparent), transparent 60%),
-    radial-gradient(40rem 32rem at 78% 68%, color-mix(in srgb, var(--color-ngoc) 12%, transparent), transparent 64%),
-    radial-gradient(30rem 26rem at 6% 72%, color-mix(in srgb, var(--color-sen) 10%, transparent), transparent 60%),
+    radial-gradient(42rem 32rem at 10% -8%, color-mix(in srgb, var(--color-son) 8%, transparent), transparent 60%),
+    radial-gradient(38rem 30rem at 92% 6%, color-mix(in srgb, var(--color-kim) 9%, transparent), transparent 58%),
+    radial-gradient(44rem 36rem at 80% 76%, color-mix(in srgb, var(--color-ngoc) 6%, transparent), transparent 62%),
     var(--color-kem);
 }
 
-/* Pattern trống đồng độ tương phản cực thấp (2–4%) — vẽ thuần CSS
+/* Pattern trống đồng độ tương phản cực thấp (~1.5%) — vẽ thuần CSS
    (vòng tròn đồng tâm + tia) để không cần file ảnh. */
 .ax-bg::before {
   content: "";
   position: absolute;
   inset: 0;
   background-image:
-    repeating-radial-gradient(circle at 50% 50%, transparent 0 46px, color-mix(in srgb, var(--color-son) 3%, transparent) 46px 48px),
-    repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--color-kim) 2.5%, transparent) 0deg 4deg, transparent 4deg 30deg);
-  mask-image: radial-gradient(72rem 48rem at 50% 0%, black, transparent 78%);
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 52px, color-mix(in srgb, var(--color-son) 1.5%, transparent) 52px 54px),
+    repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--color-kim) 1.2%, transparent) 0deg 3deg, transparent 3deg 30deg);
+  mask-image: radial-gradient(64rem 40rem at 50% 0%, black, transparent 74%);
 }
 
 /* ------------------------------ Đông Sơn spin ------------------------------ */

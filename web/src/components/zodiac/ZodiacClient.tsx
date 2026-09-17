@@ -7,7 +7,7 @@
  * toán cá nhân hoá đều chạy sau useRequireProfile.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Btn, Chip, GlassCard, ModuleLockBadge, SectionTitle } from "@/components/kit";
+import { Btn, GlassCard, ModuleLockBadge, SectionTitle } from "@/components/kit";
 import { TextsReveal } from "@/components/motion";
 import { useProfileModal } from "@/components/profile/ProfileModal";
 import { useAuth } from "@/lib/auth";
@@ -45,7 +45,7 @@ export function ZodiacClient() {
   if (!allowed) {
     return (
       <section className="mx-auto w-full max-w-5xl px-5 py-14">
-        <SectionTitle eyebrow="Cung Hoàng Đạo" title="Cung Hoàng Đạo & Bản Đồ Sao" />
+        <SectionTitle eyebrow="Cung Hoàng Đạo" title="Cung Hoàng Đạo" />
         <GlassCard variant="premium" className="mt-8">
           <div className="flex flex-col items-center gap-4 p-8 text-center">
             <ModuleLockBadge />
@@ -84,13 +84,11 @@ export function ZodiacClient() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <SectionTitle
               eyebrow="Cung Hoàng Đạo"
-              title="Cung Hoàng Đạo & Bản Đồ Sao"
+              title="Cung Hoàng Đạo"
               sub="Tính cung Mặt Trời theo ngày sinh, xem đặc tính và horoscope hôm nay, tuần này hoặc tháng này."
             />
             <div className="flex flex-wrap items-center gap-2">
-              {profile?.dob ? (
-                <Chip tone="sen">Cung của bạn: {mySign?.name}</Chip>
-              ) : (
+              {profile?.dob ? null : (
                 <Btn variant="ghost" size="sm" onClick={() => openProfile()}>
                   Nhập hồ sơ
                 </Btn>

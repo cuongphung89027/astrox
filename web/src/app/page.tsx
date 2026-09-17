@@ -12,7 +12,7 @@
  *
  * Không gọi API nào — chỉ đọc profile local để đổi nhãn CTA.
  */
-import { DongSonSun, DrumRing, LacBird, Lotus, LyCloudDivider } from "@/components/kit/motifs";
+import { DongSonSun, DrumRing, Lotus, LyCloudDivider } from "@/components/kit/motifs";
 import { Btn, Chip, GlassCard, ModuleLockBadge, SectionTitle } from "@/components/kit";
 import { CardTilt, NumberPopIn, ShimmerText, TextsReveal } from "@/components/motion";
 import { useProfile } from "@/lib/use-store";
@@ -212,8 +212,6 @@ export default function Home() {
                 style={{ ["--sun-spin-dur" as string]: "90s" }}
               />
               <Lotus size={110} className="absolute -bottom-2 right-8 text-sen/35" />
-              <LacBird size={72} className="absolute right-44 top-28 text-son/25" />
-              <LyCloudDivider height={26} className="absolute inset-x-7 top-7 text-son/20" />
 
               <div className="relative z-10 mt-auto flex flex-col">
                 <div className="flex items-center gap-2.5">
@@ -224,13 +222,8 @@ export default function Home() {
                   <ShimmerText text="Tử Vi" className="ax-shimmer-hover" />
                 </h3>
                 <p className="max-w-sm pt-2.5 text-[15px] leading-relaxed text-muc-2">
-                  Lá số 12 cung vẽ bằng mây và sen — xem bản đồ cuộc đời, đại vận và lời khuyên theo năm.
+                  Lá số 12 cung, đại vận và lưu niên 2026 — bản đồ cuộc đời vẽ bằng mây và sen.
                 </p>
-                <div className="flex flex-wrap gap-2 pt-4">
-                  <Chip tone="neutral">12 cung</Chip>
-                  <Chip tone="neutral">Đại vận</Chip>
-                  <Chip tone="neutral">Lưu niên 2026</Chip>
-                </div>
                 <span className="inline-flex items-center gap-2 pt-5 text-sm font-extrabold text-son-deep">
                   Khám phá Tử Vi
                   <Arrow />

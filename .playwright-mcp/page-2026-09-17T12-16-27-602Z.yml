@@ -1,0 +1,76 @@
+- generic [active] [ref=f4e1]:
+  - link "Tới nội dung chính" [ref=f4e2] [cursor=pointer]:
+    - /url: "#main"
+  - generic [ref=f4e3]:
+    - complementary [ref=f4e4]:
+      - button "Về trang chủ" [ref=f4e5] [cursor=pointer]:
+        - img "AstroX" [ref=f4e6]
+        - generic [ref=f4e7]: AstroX
+      - navigation "Điều hướng chính" [ref=f4e8]:
+        - button [ref=f4e9] [cursor=pointer]
+        - button [ref=f4e13] [cursor=pointer]
+        - button [ref=f4e20] [cursor=pointer]
+        - button [ref=f4e27] [cursor=pointer]
+        - button [ref=f4e31] [cursor=pointer]
+        - button [ref=f4e36] [cursor=pointer]
+        - button [ref=f4e40] [cursor=pointer]
+        - button [ref=f4e46] [cursor=pointer]
+      - generic [ref=f4e51]:
+        - generic [ref=f4e52] [cursor=pointer]:
+          - generic [ref=f4e53]: "?"
+          - generic [ref=f4e54]:
+            - generic [ref=f4e55]: Thiết lập hồ sơ
+            - generic [ref=f4e56]: Hồ sơ · Chưa đăng nhập
+        - button "Giảm chuyển động" [ref=f4e60] [cursor=pointer]
+    - main [ref=f4e64]:
+      - generic [ref=f4e66]:
+        - generic [ref=f4e69]:
+          - paragraph [ref=f4e70]: AstroX · Huyền học Việt đương đại
+          - heading [level=1] [ref=f4e71]:
+            - text: Soi lá số,
+            - emphasis [ref=f4e72]: hiểu mình
+            - text: — Tử Vi, Kinh Dịch, Bát Tự, Tarot trên một bầu trời quen thuộc.
+          - paragraph [ref=f4e73]: AstroX tính lá số trực tiếp từ ngày giờ sinh bằng thư viện thiên văn, rồi luận giải theo ngữ cảnh câu hỏi của bạn — tham khảo văn hoá, không phải lời khuyên tuyệt đối.
+          - generic [ref=f4e74]:
+            - button "Bắt đầu — Thiết lập hồ sơ" [ref=f4e75] [cursor=pointer]
+            - button "Khám phá các công cụ" [ref=f4e76] [cursor=pointer]
+        - generic [ref=f4e77]:
+          - generic [ref=f4e83]:
+            - generic [ref=f4e84]: Dữ liệu thiên văn thật
+            - generic [ref=f4e85]: Lá số tính từ ngày giờ sinh, không đoán mò.
+          - generic [ref=f4e90]:
+            - generic [ref=f4e91]: Luận giải theo ngữ cảnh
+            - generic [ref=f4e92]: Trả lời đúng câu hỏi bạn đang băn khoăn.
+          - generic [ref=f4e97]:
+            - generic [ref=f4e98]: Tham khảo, không áp đặt
+            - generic [ref=f4e99]: Góc nhìn văn hoá giúp bạn tự quyết sáng suốt.
+        - paragraph [ref=f4e100]: Các công cụ
+        - generic [ref=f4e101]:
+          - button "Mở Tử Vi Đẩu Số" [ref=f4e102] [cursor=pointer]:
+            - generic [ref=f4e109]: Tử Vi Đẩu Số
+            - generic [ref=f4e110]: Lập lá số 12 cung, xem đại vận và các chủ đề về công việc, tình cảm, tiền tài.
+            - generic [ref=f4e111]: Khám phá lá số →
+          - button "Mở Cung Hoàng Đạo" [ref=f4e112] [cursor=pointer]:
+            - generic [ref=f4e119]: Cung Hoàng Đạo
+            - generic [ref=f4e120]: Tính cung Mặt Trời, xem đặc tính và mức độ hợp giữa hai cung.
+            - generic [ref=f4e121]: Xem bản đồ sao →
+          - button "Mở Kinh Dịch" [ref=f4e122] [cursor=pointer]:
+            - generic [ref=f4e126]: Kinh Dịch
+            - generic [ref=f4e127]: Nhập câu hỏi, gieo 3 số và nhận quẻ cùng quan hệ Thể–Dụng đã tính sẵn.
+            - generic [ref=f4e128]: Gieo quẻ →
+          - button "Mở Bát Tự" [ref=f4e129] [cursor=pointer]:
+            - generic [ref=f4e134]: Bát Tự
+            - generic [ref=f4e135]: Lập lá số Tứ Trụ (Năm–Tháng–Ngày–Giờ), xem Thập Thần, Đại Vận và tỷ lệ Ngũ Hành.
+            - generic [ref=f4e136]: Lập lá số →
+          - button "Mở Thần Số Học" [ref=f4e137] [cursor=pointer]:
+            - generic [ref=f4e141]: Thần Số Học
+            - generic [ref=f4e142]: Tính Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách và biểu đồ ngày sinh từ tên và ngày sinh.
+            - generic [ref=f4e143]: Xem chỉ số →
+          - button "Mở Tarot" [ref=f4e144] [cursor=pointer]:
+            - generic [ref=f4e149]: Tarot
+            - generic [ref=f4e150]: Chọn bộ bài, trải bài theo nhiều kiểu phổ biến và xem luận giải cùng AstroX.
+            - generic [ref=f4e151]: Trải bài →
+        - generic [ref=f4e152]:
+          - heading "Trạng thái hồ sơ" [level=3] [ref=f4e153]
+          - generic [ref=f4e154]: Chưa có hồ sơ. Thiết lập thông tin sinh để bắt đầu luận giải.
+    - text: ❖ ✦ ✦ ✦

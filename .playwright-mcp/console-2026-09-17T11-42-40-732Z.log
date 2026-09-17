@@ -1,0 +1,3 @@
+[     559ms] ReferenceError: cancelTarotShuffleIfActive is not defined
+    at showView (https://theastrox.space/kinhdich:2125:24)
+    at https://theastrox.space/kinhdich:2175:3

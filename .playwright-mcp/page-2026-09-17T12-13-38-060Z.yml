@@ -1,0 +1,63 @@
+- generic [active] [ref=f3e1]:
+  - link "Tới nội dung chính" [ref=f3e2] [cursor=pointer]:
+    - /url: "#main"
+  - generic [ref=f3e3]:
+    - main [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - button "Về trang chủ" [ref=f3e6] [cursor=pointer]:
+          - img "AstroX" [ref=f3e7]
+          - generic [ref=f3e8]: AstroX
+        - button "Đăng nhập" [ref=f3e9] [cursor=pointer]
+        - button "?" [ref=f3e10] [cursor=pointer]
+        - button "Bật/tắt hiệu ứng chuyển động" [ref=f3e12] [cursor=pointer]
+      - generic [ref=f3e16]:
+        - generic [ref=f3e19]:
+          - paragraph [ref=f3e20]: AstroX · Huyền học Việt đương đại
+          - heading [level=1] [ref=f3e21]:
+            - text: Soi lá số,
+            - emphasis [ref=f3e22]: hiểu mình
+            - text: — Tử Vi, Kinh Dịch, Bát Tự, Tarot trên một bầu trời quen thuộc.
+          - paragraph [ref=f3e23]: AstroX tính lá số trực tiếp từ ngày giờ sinh bằng thư viện thiên văn, rồi luận giải theo ngữ cảnh câu hỏi của bạn — tham khảo văn hoá, không phải lời khuyên tuyệt đối.
+          - generic [ref=f3e24]:
+            - button "Bắt đầu — Thiết lập hồ sơ" [ref=f3e25] [cursor=pointer]
+            - button "Khám phá các công cụ" [ref=f3e26] [cursor=pointer]
+        - generic [ref=f3e27]:
+          - generic [ref=f3e33]:
+            - generic [ref=f3e34]: Dữ liệu thiên văn thật
+            - generic [ref=f3e35]: Lá số tính từ ngày giờ sinh, không đoán mò.
+          - generic [ref=f3e40]:
+            - generic [ref=f3e41]: Luận giải theo ngữ cảnh
+            - generic [ref=f3e42]: Trả lời đúng câu hỏi bạn đang băn khoăn.
+          - generic [ref=f3e47]:
+            - generic [ref=f3e48]: Tham khảo, không áp đặt
+            - generic [ref=f3e49]: Góc nhìn văn hoá giúp bạn tự quyết sáng suốt.
+        - paragraph [ref=f3e50]: Các công cụ
+        - generic [ref=f3e51]:
+          - button "Mở Tử Vi Đẩu Số" [ref=f3e52] [cursor=pointer]:
+            - generic [ref=f3e59]: Tử Vi Đẩu Số
+            - generic [ref=f3e60]: Lập lá số 12 cung, xem đại vận và các chủ đề về công việc, tình cảm, tiền tài.
+            - generic [ref=f3e61]: Khám phá lá số →
+          - button "Mở Cung Hoàng Đạo" [ref=f3e62] [cursor=pointer]:
+            - generic [ref=f3e69]: Cung Hoàng Đạo
+            - generic [ref=f3e70]: Tính cung Mặt Trời, xem đặc tính và mức độ hợp giữa hai cung.
+            - generic [ref=f3e71]: Xem bản đồ sao →
+          - button "Mở Kinh Dịch" [ref=f3e72] [cursor=pointer]:
+            - generic [ref=f3e76]: Kinh Dịch
+            - generic [ref=f3e77]: Nhập câu hỏi, gieo 3 số và nhận quẻ cùng quan hệ Thể–Dụng đã tính sẵn.
+            - generic [ref=f3e78]: Gieo quẻ →
+          - button "Mở Bát Tự" [ref=f3e79] [cursor=pointer]:
+            - generic [ref=f3e84]: Bát Tự
+            - generic [ref=f3e85]: Lập lá số Tứ Trụ (Năm–Tháng–Ngày–Giờ), xem Thập Thần, Đại Vận và tỷ lệ Ngũ Hành.
+            - generic [ref=f3e86]: Lập lá số →
+          - button "Mở Thần Số Học" [ref=f3e87] [cursor=pointer]:
+            - generic [ref=f3e91]: Thần Số Học
+            - generic [ref=f3e92]: Tính Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách và biểu đồ ngày sinh từ tên và ngày sinh.
+            - generic [ref=f3e93]: Xem chỉ số →
+          - button "Mở Tarot" [ref=f3e94] [cursor=pointer]:
+            - generic [ref=f3e99]: Tarot
+            - generic [ref=f3e100]: Chọn bộ bài, trải bài theo nhiều kiểu phổ biến và xem luận giải cùng AstroX.
+            - generic [ref=f3e101]: Trải bài →
+        - generic [ref=f3e102]:
+          - heading "Trạng thái hồ sơ" [level=3] [ref=f3e103]
+          - generic [ref=f3e104]: Chưa có hồ sơ. Thiết lập thông tin sinh để bắt đầu luận giải.
+    - text: ❖ ✦ ✦ ✦

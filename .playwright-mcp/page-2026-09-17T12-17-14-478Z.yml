@@ -1,0 +1,78 @@
+- generic [active] [ref=f5e1]:
+  - link "Tới nội dung chính" [ref=f5e2] [cursor=pointer]:
+    - /url: "#main"
+  - generic [ref=f5e3]:
+    - complementary [ref=f5e4]:
+      - button "Về trang chủ" [ref=f5e5] [cursor=pointer]:
+        - img "AstroX" [ref=f5e6]
+        - generic [ref=f5e7]: AstroX
+      - navigation "Điều hướng chính" [ref=f5e8]:
+        - button [ref=f5e9] [cursor=pointer]
+        - button [ref=f5e13] [cursor=pointer]
+        - button [ref=f5e20] [cursor=pointer]
+        - button [ref=f5e27] [cursor=pointer]
+        - button [ref=f5e31] [cursor=pointer]
+        - button [ref=f5e36] [cursor=pointer]
+        - button [ref=f5e40] [cursor=pointer]
+        - button [ref=f5e46] [cursor=pointer]
+      - generic [ref=f5e51]:
+        - generic [ref=f5e52] [cursor=pointer]:
+          - generic [ref=f5e53]: "?"
+          - generic [ref=f5e54]:
+            - generic [ref=f5e55]: Nguyễn Minh Anh
+            - generic [ref=f5e56]: Hồ sơ · Chưa đăng nhập
+        - button "Giảm chuyển động" [ref=f5e60] [cursor=pointer]
+    - main [ref=f5e64]:
+      - generic [ref=f5e66]:
+        - generic [ref=f5e69]:
+          - paragraph [ref=f5e70]: AstroX · Huyền học Việt đương đại
+          - heading [level=1] [ref=f5e71]:
+            - text: Soi lá số,
+            - emphasis [ref=f5e72]: hiểu mình
+            - text: — Tử Vi, Kinh Dịch, Bát Tự, Tarot trên một bầu trời quen thuộc.
+          - paragraph [ref=f5e73]: Xin chào Nguyễn Minh Anh. Lá số của bạn đã sẵn sàng — chọn một công cụ bên dưới, hoặc xem nhanh vận trình hôm nay.
+          - generic [ref=f5e74]:
+            - button "Bắt đầu — Thiết lập hồ sơ" [ref=f5e75] [cursor=pointer]
+            - button "Khám phá các công cụ" [ref=f5e76] [cursor=pointer]
+        - generic [ref=f5e77]:
+          - generic [ref=f5e83]:
+            - generic [ref=f5e84]: Dữ liệu thiên văn thật
+            - generic [ref=f5e85]: Lá số tính từ ngày giờ sinh, không đoán mò.
+          - generic [ref=f5e90]:
+            - generic [ref=f5e91]: Luận giải theo ngữ cảnh
+            - generic [ref=f5e92]: Trả lời đúng câu hỏi bạn đang băn khoăn.
+          - generic [ref=f5e97]:
+            - generic [ref=f5e98]: Tham khảo, không áp đặt
+            - generic [ref=f5e99]: Góc nhìn văn hoá giúp bạn tự quyết sáng suốt.
+        - paragraph [ref=f5e100]: Các công cụ
+        - generic [ref=f5e101]:
+          - button "Mở Tử Vi Đẩu Số" [ref=f5e102] [cursor=pointer]:
+            - generic [ref=f5e109]: Tử Vi Đẩu Số
+            - generic [ref=f5e110]: Lập lá số 12 cung, xem đại vận và các chủ đề về công việc, tình cảm, tiền tài.
+            - generic [ref=f5e111]: Khám phá lá số →
+          - button "Mở Cung Hoàng Đạo" [ref=f5e112] [cursor=pointer]:
+            - generic [ref=f5e119]: Cung Hoàng Đạo
+            - generic [ref=f5e120]: Tính cung Mặt Trời, xem đặc tính và mức độ hợp giữa hai cung.
+            - generic [ref=f5e121]: Xem bản đồ sao →
+          - button "Mở Kinh Dịch" [ref=f5e122] [cursor=pointer]:
+            - generic [ref=f5e126]: Kinh Dịch
+            - generic [ref=f5e127]: Nhập câu hỏi, gieo 3 số và nhận quẻ cùng quan hệ Thể–Dụng đã tính sẵn.
+            - generic [ref=f5e128]: Gieo quẻ →
+          - button "Mở Bát Tự" [ref=f5e129] [cursor=pointer]:
+            - generic [ref=f5e134]: Bát Tự
+            - generic [ref=f5e135]: Lập lá số Tứ Trụ (Năm–Tháng–Ngày–Giờ), xem Thập Thần, Đại Vận và tỷ lệ Ngũ Hành.
+            - generic [ref=f5e136]: Lập lá số →
+          - button "Mở Thần Số Học" [ref=f5e137] [cursor=pointer]:
+            - generic [ref=f5e141]: Thần Số Học
+            - generic [ref=f5e142]: Tính Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách và biểu đồ ngày sinh từ tên và ngày sinh.
+            - generic [ref=f5e143]: Xem chỉ số →
+          - button "Mở Tarot" [ref=f5e144] [cursor=pointer]:
+            - generic [ref=f5e149]: Tarot
+            - generic [ref=f5e150]: Chọn bộ bài, trải bài theo nhiều kiểu phổ biến và xem luận giải cùng AstroX.
+            - generic [ref=f5e151]: Trải bài →
+        - generic [ref=f5e152]:
+          - heading "Trạng thái hồ sơ" [level=3] [ref=f5e153]
+          - generic [ref=f5e154]:
+            - strong [ref=f5e155]: Nguyễn Minh Anh
+            - text: · Nam · Sinh 18-04-1996, giờ Thìn, tại Hà Nội. Lá số đã sẵn sàng.
+    - text: ❖ ✦ ✦ ✦

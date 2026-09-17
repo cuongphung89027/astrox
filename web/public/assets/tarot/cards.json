@@ -1,0 +1,1742 @@
+[
+ {
+  "id": "major_00_fool",
+  "arcana": "major",
+  "suit": null,
+  "number": 0,
+  "nameEn": "The Fool",
+  "nameVi": "Người Ngốc",
+  "up": {
+   "kw": [
+    "khởi đầu mới",
+    "tự do",
+    "liều lĩnh hồn nhiên"
+   ],
+   "text": "Một khởi đầu hoàn toàn mới, dấn thân với niềm tin ngây thơ, sẵn sàng nhảy vào điều chưa biết."
+  },
+  "rev": {
+   "kw": [
+    "bốc đồng",
+    "thiếu chuẩn bị",
+    "rủi ro không đáng"
+   ],
+   "text": "Hành động thiếu suy nghĩ, bỏ qua cảnh báo, hoặc sợ hãi không dám bắt đầu."
+  }
+ },
+ {
+  "id": "major_01_magician",
+  "arcana": "major",
+  "suit": null,
+  "number": 1,
+  "nameEn": "The Magician",
+  "nameVi": "Pháp Sư",
+  "up": {
+   "kw": [
+    "ý chí",
+    "hành động",
+    "hội tụ nguồn lực"
+   ],
+   "text": "Có đủ công cụ và năng lực để biến ý tưởng thành hiện thực, chỉ cần bắt tay vào làm."
+  },
+  "rev": {
+   "kw": [
+    "thao túng",
+    "tiềm năng chưa dùng",
+    "lừa dối"
+   ],
+   "text": "Dùng sai mục đích năng lực bản thân, hoặc chưa tận dụng được nguồn lực đang có."
+  }
+ },
+ {
+  "id": "major_02_high_priestess",
+  "arcana": "major",
+  "suit": null,
+  "number": 2,
+  "nameEn": "The High Priestess",
+  "nameVi": "Nữ Tư Tế",
+  "up": {
+   "kw": [
+    "trực giác",
+    "bí ẩn",
+    "tri thức nội tâm"
+   ],
+   "text": "Lắng nghe trực giác và tiềm thức, có những điều chưa nên nói ra hoặc chưa rõ ràng."
+  },
+  "rev": {
+   "kw": [
+    "bí mật bị giấu",
+    "mất kết nối trực giác",
+    "thông tin sai lệch"
+   ],
+   "text": "Bỏ qua tiếng nói bên trong, hoặc có bí mật/thông tin đang bị che giấu."
+  }
+ },
+ {
+  "id": "major_03_empress",
+  "arcana": "major",
+  "suit": null,
+  "number": 3,
+  "nameEn": "The Empress",
+  "nameVi": "Nữ Hoàng",
+  "up": {
+   "kw": [
+    "sung túc",
+    "nuôi dưỡng",
+    "sáng tạo"
+   ],
+   "text": "Sự sinh sôi, chăm sóc, dư dả về vật chất lẫn tinh thần, kết nối với thiên nhiên."
+  },
+  "rev": {
+   "kw": [
+    "trì trệ sáng tạo",
+    "phụ thuộc quá mức",
+    "mất cân bằng"
+   ],
+   "text": "Bế tắc sáng tạo, chăm sóc người khác quá mức mà quên bản thân."
+  }
+ },
+ {
+  "id": "major_04_emperor",
+  "arcana": "major",
+  "suit": null,
+  "number": 4,
+  "nameEn": "The Emperor",
+  "nameVi": "Hoàng Đế",
+  "up": {
+   "kw": [
+    "kỷ luật",
+    "cấu trúc",
+    "quyền lực ổn định"
+   ],
+   "text": "Trật tự, quy tắc rõ ràng, vai trò lãnh đạo và kiểm soát vững vàng."
+  },
+  "rev": {
+   "kw": [
+    "độc đoán",
+    "cứng nhắc",
+    "mất kiểm soát"
+   ],
+   "text": "Áp đặt quá mức, thiếu linh hoạt, hoặc mất đi vị thế kiểm soát."
+  }
+ },
+ {
+  "id": "major_05_hierophant",
+  "arcana": "major",
+  "suit": null,
+  "number": 5,
+  "nameEn": "The Hierophant",
+  "nameVi": "Giáo Chủ",
+  "up": {
+   "kw": [
+    "truyền thống",
+    "quy chuẩn",
+    "cố vấn tinh thần"
+   ],
+   "text": "Đi theo khuôn khổ, học hỏi từ hệ thống/tổ chức, tìm lời khuyên từ người có kinh nghiệm."
+  },
+  "rev": {
+   "kw": [
+    "nổi loạn quy chuẩn",
+    "tư duy khác biệt",
+    "giáo điều"
+   ],
+   "text": "Phá bỏ khuôn mẫu cũ, hoặc bó buộc quá mức trong giáo điều cứng nhắc."
+  }
+ },
+ {
+  "id": "major_06_lovers",
+  "arcana": "major",
+  "suit": null,
+  "number": 6,
+  "nameEn": "The Lovers",
+  "nameVi": "Cặp Tình Nhân",
+  "up": {
+   "kw": [
+    "lựa chọn",
+    "kết nối sâu sắc",
+    "hài hoà giá trị"
+   ],
+   "text": "Một lựa chọn quan trọng dựa trên giá trị bản thân, sự gắn kết chân thành với người khác."
+  },
+  "rev": {
+   "kw": [
+    "mất cân bằng quan hệ",
+    "lựa chọn sai lầm",
+    "bất hoà giá trị"
+   ],
+   "text": "Xung đột giá trị, lựa chọn thiếu cân nhắc, hoặc rạn nứt trong mối quan hệ."
+  }
+ },
+ {
+  "id": "major_07_chariot",
+  "arcana": "major",
+  "suit": null,
+  "number": 7,
+  "nameEn": "The Chariot",
+  "nameVi": "Cỗ Xe Chiến",
+  "up": {
+   "kw": [
+    "ý chí quyết thắng",
+    "kiểm soát tình thế",
+    "tiến về phía trước"
+   ],
+   "text": "Vượt qua xung đột nội tại để tiến lên bằng ý chí mạnh mẽ và sự tập trung."
+  },
+  "rev": {
+   "kw": [
+    "mất phương hướng",
+    "hung hăng thái quá",
+    "trì hoãn"
+   ],
+   "text": "Mất kiểm soát, hành động hấp tấp, hoặc dừng lại vì thiếu định hướng."
+  }
+ },
+ {
+  "id": "major_08_strength",
+  "arcana": "major",
+  "suit": null,
+  "number": 8,
+  "nameEn": "Strength",
+  "nameVi": "Sức Mạnh",
+  "up": {
+   "kw": [
+    "kiên nhẫn dịu dàng",
+    "dũng khí nội tâm",
+    "làm chủ bản năng"
+   ],
+   "text": "Chế ngự khó khăn bằng sự kiên nhẫn, lòng trắc ẩn và bản lĩnh mềm mại chứ không phải vũ lực."
+  },
+  "rev": {
+   "kw": [
+    "tự nghi ngờ",
+    "mất kiểm soát bản thân",
+    "yếu đuối"
+   ],
+   "text": "Thiếu tự tin, để cảm xúc/bản năng chi phối, hoặc kiệt sức tinh thần."
+  }
+ },
+ {
+  "id": "major_09_hermit",
+  "arcana": "major",
+  "suit": null,
+  "number": 9,
+  "nameEn": "The Hermit",
+  "nameVi": "Ẩn Sĩ",
+  "up": {
+   "kw": [
+    "hướng nội",
+    "tìm kiếm chân lý",
+    "cô độc cần thiết"
+   ],
+   "text": "Lùi lại để suy ngẫm một mình, tìm câu trả lời từ bên trong thay vì bên ngoài."
+  },
+  "rev": {
+   "kw": [
+    "cô lập quá mức",
+    "né tránh",
+    "lạc lối"
+   ],
+   "text": "Thu mình quá đà đến mức cô lập, hoặc từ chối lời khuyên cần thiết."
+  }
+ },
+ {
+  "id": "major_10_wheel_of_fortune",
+  "arcana": "major",
+  "suit": null,
+  "number": 10,
+  "nameEn": "Wheel of Fortune",
+  "nameVi": "Bánh Xe Số Mệnh",
+  "up": {
+   "kw": [
+    "bước ngoặt",
+    "chu kỳ thay đổi",
+    "vận may"
+   ],
+   "text": "Một bước ngoặt do vận mệnh đưa đến, chu kỳ cũ kết thúc mở ra giai đoạn mới."
+  },
+  "rev": {
+   "kw": [
+    "vận rủi tạm thời",
+    "chống lại thay đổi",
+    "lặp lại chu kỳ xấu"
+   ],
+   "text": "Trì trệ do không chấp nhận thay đổi, hoặc gặp trở ngại ngoài tầm kiểm soát."
+  }
+ },
+ {
+  "id": "major_11_justice",
+  "arcana": "major",
+  "suit": null,
+  "number": 11,
+  "nameEn": "Justice",
+  "nameVi": "Công Lý",
+  "up": {
+   "kw": [
+    "công bằng",
+    "sự thật",
+    "hệ quả tất yếu"
+   ],
+   "text": "Sự thật được phơi bày, quyết định công bằng dựa trên nhân quả rõ ràng."
+  },
+  "rev": {
+   "kw": [
+    "bất công",
+    "trốn tránh trách nhiệm",
+    "thiên vị"
+   ],
+   "text": "Quyết định thiếu công bằng, né tránh hậu quả do chính mình gây ra."
+  }
+ },
+ {
+  "id": "major_12_hanged_man",
+  "arcana": "major",
+  "suit": null,
+  "number": 12,
+  "nameEn": "The Hanged Man",
+  "nameVi": "Người Treo Ngược",
+  "up": {
+   "kw": [
+    "tạm dừng",
+    "góc nhìn khác",
+    "hy sinh chủ động"
+   ],
+   "text": "Chủ động dừng lại, nhìn vấn đề từ góc độ khác, chấp nhận hy sinh ngắn hạn để đạt hiểu biết."
+  },
+  "rev": {
+   "kw": [
+    "trì hoãn vô ích",
+    "hy sinh vô nghĩa",
+    "bế tắc"
+   ],
+   "text": "Mắc kẹt vì sợ thay đổi góc nhìn, hy sinh mà không mang lại giá trị gì."
+  }
+ },
+ {
+  "id": "major_13_death",
+  "arcana": "major",
+  "suit": null,
+  "number": 13,
+  "nameEn": "Death",
+  "nameVi": "Tử Thần",
+  "up": {
+   "kw": [
+    "kết thúc tất yếu",
+    "chuyển hoá",
+    "buông bỏ"
+   ],
+   "text": "Một giai đoạn/thói quen/mối quan hệ cũ kết thúc để nhường chỗ cho sự chuyển hoá cần thiết."
+  },
+  "rev": {
+   "kw": [
+    "cưỡng lại kết thúc",
+    "trì trệ kéo dài",
+    "sợ thay đổi"
+   ],
+   "text": "Bám víu vào thứ đã hết vai trò, trì hoãn một kết thúc không thể tránh khỏi."
+  }
+ },
+ {
+  "id": "major_14_temperance",
+  "arcana": "major",
+  "suit": null,
+  "number": 14,
+  "nameEn": "Temperance",
+  "nameVi": "Tiết Chế",
+  "up": {
+   "kw": [
+    "cân bằng",
+    "dung hoà",
+    "kiên nhẫn điều chỉnh"
+   ],
+   "text": "Pha trộn hài hoà các thái cực, kiên nhẫn điều chỉnh từng bước nhỏ để đạt cân bằng."
+  },
+  "rev": {
+   "kw": [
+    "mất cân bằng",
+    "thái quá",
+    "thiếu kiên nhẫn"
+   ],
+   "text": "Đi từ cực đoan này sang cực đoan khác, thiếu sự điều độ cần thiết."
+  }
+ },
+ {
+  "id": "major_15_devil",
+  "arcana": "major",
+  "suit": null,
+  "number": 15,
+  "nameEn": "The Devil",
+  "nameVi": "Ác Quỷ",
+  "up": {
+   "kw": [
+    "ràng buộc",
+    "cám dỗ",
+    "phụ thuộc"
+   ],
+   "text": "Bị trói buộc bởi thói quen xấu, nỗi sợ, hoặc mối quan hệ độc hại — nhưng xiềng xích này có thể tự tháo."
+  },
+  "rev": {
+   "kw": [
+    "giải thoát",
+    "nhận ra ràng buộc",
+    "phá vỡ vòng lặp xấu"
+   ],
+   "text": "Bắt đầu nhận ra và thoát khỏi sự ràng buộc, hoặc vẫn chưa đủ can đảm để dứt ra."
+  }
+ },
+ {
+  "id": "major_16_tower",
+  "arcana": "major",
+  "suit": null,
+  "number": 16,
+  "nameEn": "The Tower",
+  "nameVi": "Tòa Tháp",
+  "up": {
+   "kw": [
+    "biến động đột ngột",
+    "sụp đổ cần thiết",
+    "sự thật phơi bày"
+   ],
+   "text": "Một cú sốc bất ngờ phá vỡ nền tảng ảo tưởng, buộc phải xây dựng lại trên nền thật hơn."
+  },
+  "rev": {
+   "kw": [
+    "hỗn loạn kéo dài",
+    "né tránh đổ vỡ",
+    "khủng hoảng nội tâm"
+   ],
+   "text": "Cố tránh một sự sụp đổ tất yếu, hoặc dư chấn khủng hoảng vẫn còn kéo dài."
+  }
+ },
+ {
+  "id": "major_17_star",
+  "arcana": "major",
+  "suit": null,
+  "number": 17,
+  "nameEn": "The Star",
+  "nameVi": "Ngôi Sao",
+  "up": {
+   "kw": [
+    "hy vọng",
+    "chữa lành",
+    "niềm tin vào tương lai"
+   ],
+   "text": "Sau giông bão là niềm hy vọng và sự chữa lành nhẹ nhàng, niềm tin được phục hồi."
+  },
+  "rev": {
+   "kw": [
+    "mất hy vọng",
+    "kiệt sức tinh thần",
+    "thất vọng"
+   ],
+   "text": "Mất niềm tin tạm thời, cảm thấy kiệt sức hoặc hoài nghi về tương lai."
+  }
+ },
+ {
+  "id": "major_18_moon",
+  "arcana": "major",
+  "suit": null,
+  "number": 18,
+  "nameEn": "The Moon",
+  "nameVi": "Mặt Trăng",
+  "up": {
+   "kw": [
+    "mơ hồ",
+    "lo âu tiềm thức",
+    "ảo giác"
+   ],
+   "text": "Vùng mờ ảo giữa thực và tưởng tượng, cảm xúc bất an chưa rõ nguyên do."
+  },
+  "rev": {
+   "kw": [
+    "sự thật dần sáng tỏ",
+    "vượt qua sợ hãi",
+    "nhầm lẫn kéo dài"
+   ],
+   "text": "Sương mù dần tan để lộ sự thật, hoặc vẫn còn chìm trong hoang mang/lo sợ vô cớ."
+  }
+ },
+ {
+  "id": "major_19_sun",
+  "arcana": "major",
+  "suit": null,
+  "number": 19,
+  "nameEn": "The Sun",
+  "nameVi": "Mặt Trời",
+  "up": {
+   "kw": [
+    "niềm vui",
+    "thành công rõ ràng",
+    "sức sống"
+   ],
+   "text": "Niềm vui, sự rõ ràng và thành công đến một cách tự nhiên, tràn đầy sinh khí."
+  },
+  "rev": {
+   "kw": [
+    "niềm vui bị trì hoãn",
+    "lạc quan thái quá",
+    "thiếu tự tin tạm thời"
+   ],
+   "text": "Thành công bị trì hoãn, hoặc lạc quan chưa thực tế."
+  }
+ },
+ {
+  "id": "major_20_judgement",
+  "arcana": "major",
+  "suit": null,
+  "number": 20,
+  "nameEn": "Judgement",
+  "nameVi": "Phán Xét",
+  "up": {
+   "kw": [
+    "thức tỉnh",
+    "đánh giá lại",
+    "lời gọi thay đổi"
+   ],
+   "text": "Một lời thức tỉnh để nhìn lại toàn bộ hành trình và bước sang giai đoạn mới với ý thức cao hơn."
+  },
+  "rev": {
+   "kw": [
+    "chần chừ thức tỉnh",
+    "tự phán xét quá khắt khe",
+    "bỏ lỡ cơ hội"
+   ],
+   "text": "Chưa sẵn sàng đối diện sự thật về bản thân, hoặc tự trách bản thân quá mức."
+  }
+ },
+ {
+  "id": "major_21_world",
+  "arcana": "major",
+  "suit": null,
+  "number": 21,
+  "nameEn": "The World",
+  "nameVi": "Thế Giới",
+  "up": {
+   "kw": [
+    "hoàn thành",
+    "viên mãn",
+    "khép lại trọn vẹn"
+   ],
+   "text": "Một chu kỳ được hoàn thành trọn vẹn, đạt được sự viên mãn và sẵn sàng cho hành trình mới."
+  },
+  "rev": {
+   "kw": [
+    "chưa trọn vẹn",
+    "trì hoãn hoàn tất",
+    "thiếu một bước cuối"
+   ],
+   "text": "Gần đạt được mục tiêu nhưng còn thiếu bước cuối cùng để hoàn tất."
+  }
+ },
+ {
+  "id": "wands_ace",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "ace",
+  "nameEn": "Ace of Wands",
+  "nameVi": "Á Gậy",
+  "up": {
+   "kw": [
+    "khởi nguồn năng lượng mới",
+    "cơ hội thuần khiết"
+   ],
+   "text": "Khởi nguồn năng lượng mới, cơ hội thuần khiết — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "cơ hội bị bỏ lỡ",
+    "khởi đầu trì hoãn"
+   ],
+   "text": "Cơ hội bị bỏ lỡ — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_02",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "02",
+  "nameEn": "Two of Wands",
+  "nameVi": "Hai Gậy",
+  "up": {
+   "kw": [
+    "cân nhắc lựa chọn",
+    "hợp tác ban đầu"
+   ],
+   "text": "Cân nhắc lựa chọn, hợp tác ban đầu — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "do dự kéo dài",
+    "mất cân bằng đôi bên"
+   ],
+   "text": "Do dự kéo dài — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_03",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "03",
+  "nameEn": "Three of Wands",
+  "nameVi": "Ba Gậy",
+  "up": {
+   "kw": [
+    "mở rộng",
+    "kết quả bước đầu"
+   ],
+   "text": "Mở rộng, kết quả bước đầu — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "chậm tiến độ",
+    "hợp tác rạn nứt"
+   ],
+   "text": "Chậm tiến độ — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_04",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "04",
+  "nameEn": "Four of Wands",
+  "nameVi": "Bốn Gậy",
+  "up": {
+   "kw": [
+    "ổn định tạm thời",
+    "nền tảng vững"
+   ],
+   "text": "Ổn định tạm thời, nền tảng vững — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "trì trệ",
+    "an toàn giả tạo"
+   ],
+   "text": "Trì trệ — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_05",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "05",
+  "nameEn": "Five of Wands",
+  "nameVi": "Năm Gậy",
+  "up": {
+   "kw": [
+    "xung đột",
+    "cạnh tranh, mất mát nhỏ"
+   ],
+   "text": "Xung đột, cạnh tranh, mất mát nhỏ — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "xung đột hạ nhiệt",
+    "học từ mất mát"
+   ],
+   "text": "Xung đột hạ nhiệt — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_06",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "06",
+  "nameEn": "Six of Wands",
+  "nameVi": "Sáu Gậy",
+  "up": {
+   "kw": [
+    "hài hoà trở lại",
+    "được hỗ trợ"
+   ],
+   "text": "Hài hoà trở lại, được hỗ trợ — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "hoài niệm quá khứ",
+    "mất cân bằng cho nhận"
+   ],
+   "text": "Hoài niệm quá khứ — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_07",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "07",
+  "nameEn": "Seven of Wands",
+  "nameVi": "Bảy Gậy",
+  "up": {
+   "kw": [
+    "thử thách kiên trì",
+    "cần lựa chọn hướng đi"
+   ],
+   "text": "Thử thách kiên trì, cần lựa chọn hướng đi — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "choáng ngợp lựa chọn",
+    "bỏ cuộc giữa chừng"
+   ],
+   "text": "Choáng ngợp lựa chọn — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_08",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "08",
+  "nameEn": "Eight of Wands",
+  "nameVi": "Tám Gậy",
+  "up": {
+   "kw": [
+    "tiến triển nhanh",
+    "tập trung cao độ"
+   ],
+   "text": "Tiến triển nhanh, tập trung cao độ — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "trì hoãn, phân tán"
+   ],
+   "text": "Trì hoãn, phân tán — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_09",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "09",
+  "nameEn": "Nine of Wands",
+  "nameVi": "Chín Gậy",
+  "up": {
+   "kw": [
+    "gần đạt mục tiêu",
+    "tích luỹ vững"
+   ],
+   "text": "Gần đạt mục tiêu, tích luỹ vững — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "kiệt sức, cảnh giác quá mức"
+   ],
+   "text": "Kiệt sức, cảnh giác quá mức — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_10",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "10",
+  "nameEn": "Ten of Wands",
+  "nameVi": "Mười Gậy",
+  "up": {
+   "kw": [
+    "gánh nặng ở đỉnh điểm",
+    "hoàn tất một chặng"
+   ],
+   "text": "Gánh nặng ở đỉnh điểm, hoàn tất một chặng — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "giải phóng gánh nặng",
+    "kiệt quệ cần nghỉ"
+   ],
+   "text": "Giải phóng gánh nặng — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_page",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "page",
+  "nameEn": "Page of Wands",
+  "nameVi": "Thị Đồng Gậy",
+  "up": {
+   "kw": [
+    "khởi đầu học hỏi",
+    "tin tức mới"
+   ],
+   "text": "Khởi đầu học hỏi, tin tức mới — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "thiếu kinh nghiệm",
+    "tin tức chưa chắc chắn"
+   ],
+   "text": "Thiếu kinh nghiệm — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_knight",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "knight",
+  "nameEn": "Knight of Wands",
+  "nameVi": "Hiệp Sĩ Gậy",
+  "up": {
+   "kw": [
+    "hành động mạnh mẽ",
+    "theo đuổi mục tiêu"
+   ],
+   "text": "Hành động mạnh mẽ, theo đuổi mục tiêu — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "hấp tấp, thiếu kiên nhẫn"
+   ],
+   "text": "Hấp tấp, thiếu kiên nhẫn — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_queen",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "queen",
+  "nameEn": "Queen of Wands",
+  "nameVi": "Nữ Hoàng Gậy",
+  "up": {
+   "kw": [
+    "làm chủ nội lực",
+    "nuôi dưỡng trưởng thành"
+   ],
+   "text": "Làm chủ nội lực, nuôi dưỡng trưởng thành — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "mất cân bằng cảm xúc/nội lực"
+   ],
+   "text": "Mất cân bằng cảm xúc/nội lực — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "wands_king",
+  "arcana": "minor",
+  "suit": "wands",
+  "number": "king",
+  "nameEn": "King of Wands",
+  "nameVi": "Vua Gậy",
+  "up": {
+   "kw": [
+    "làm chủ hoàn toàn",
+    "quyền uy trưởng thành"
+   ],
+   "text": "Làm chủ hoàn toàn, quyền uy trưởng thành — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  },
+  "rev": {
+   "kw": [
+    "lạm quyền hoặc thiếu quyết đoán"
+   ],
+   "text": "Lạm quyền hoặc thiếu quyết đoán — trong bối cảnh hành động, đam mê, sáng tạo, ý chí — ứng với nguyên tố Lửa."
+  }
+ },
+ {
+  "id": "cups_ace",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "ace",
+  "nameEn": "Ace of Cups",
+  "nameVi": "Á Cốc",
+  "up": {
+   "kw": [
+    "khởi nguồn năng lượng mới",
+    "cơ hội thuần khiết"
+   ],
+   "text": "Khởi nguồn năng lượng mới, cơ hội thuần khiết — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "cơ hội bị bỏ lỡ",
+    "khởi đầu trì hoãn"
+   ],
+   "text": "Cơ hội bị bỏ lỡ — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_02",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "02",
+  "nameEn": "Two of Cups",
+  "nameVi": "Hai Cốc",
+  "up": {
+   "kw": [
+    "cân nhắc lựa chọn",
+    "hợp tác ban đầu"
+   ],
+   "text": "Cân nhắc lựa chọn, hợp tác ban đầu — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "do dự kéo dài",
+    "mất cân bằng đôi bên"
+   ],
+   "text": "Do dự kéo dài — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_03",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "03",
+  "nameEn": "Three of Cups",
+  "nameVi": "Ba Cốc",
+  "up": {
+   "kw": [
+    "mở rộng",
+    "kết quả bước đầu"
+   ],
+   "text": "Mở rộng, kết quả bước đầu — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "chậm tiến độ",
+    "hợp tác rạn nứt"
+   ],
+   "text": "Chậm tiến độ — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_04",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "04",
+  "nameEn": "Four of Cups",
+  "nameVi": "Bốn Cốc",
+  "up": {
+   "kw": [
+    "ổn định tạm thời",
+    "nền tảng vững"
+   ],
+   "text": "Ổn định tạm thời, nền tảng vững — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "trì trệ",
+    "an toàn giả tạo"
+   ],
+   "text": "Trì trệ — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_05",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "05",
+  "nameEn": "Five of Cups",
+  "nameVi": "Năm Cốc",
+  "up": {
+   "kw": [
+    "xung đột",
+    "cạnh tranh, mất mát nhỏ"
+   ],
+   "text": "Xung đột, cạnh tranh, mất mát nhỏ — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "xung đột hạ nhiệt",
+    "học từ mất mát"
+   ],
+   "text": "Xung đột hạ nhiệt — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_06",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "06",
+  "nameEn": "Six of Cups",
+  "nameVi": "Sáu Cốc",
+  "up": {
+   "kw": [
+    "hài hoà trở lại",
+    "được hỗ trợ"
+   ],
+   "text": "Hài hoà trở lại, được hỗ trợ — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "hoài niệm quá khứ",
+    "mất cân bằng cho nhận"
+   ],
+   "text": "Hoài niệm quá khứ — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_07",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "07",
+  "nameEn": "Seven of Cups",
+  "nameVi": "Bảy Cốc",
+  "up": {
+   "kw": [
+    "thử thách kiên trì",
+    "cần lựa chọn hướng đi"
+   ],
+   "text": "Thử thách kiên trì, cần lựa chọn hướng đi — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "choáng ngợp lựa chọn",
+    "bỏ cuộc giữa chừng"
+   ],
+   "text": "Choáng ngợp lựa chọn — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_08",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "08",
+  "nameEn": "Eight of Cups",
+  "nameVi": "Tám Cốc",
+  "up": {
+   "kw": [
+    "tiến triển nhanh",
+    "tập trung cao độ"
+   ],
+   "text": "Tiến triển nhanh, tập trung cao độ — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "trì hoãn, phân tán"
+   ],
+   "text": "Trì hoãn, phân tán — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_09",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "09",
+  "nameEn": "Nine of Cups",
+  "nameVi": "Chín Cốc",
+  "up": {
+   "kw": [
+    "gần đạt mục tiêu",
+    "tích luỹ vững"
+   ],
+   "text": "Gần đạt mục tiêu, tích luỹ vững — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "kiệt sức, cảnh giác quá mức"
+   ],
+   "text": "Kiệt sức, cảnh giác quá mức — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_10",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "10",
+  "nameEn": "Ten of Cups",
+  "nameVi": "Mười Cốc",
+  "up": {
+   "kw": [
+    "gánh nặng ở đỉnh điểm",
+    "hoàn tất một chặng"
+   ],
+   "text": "Gánh nặng ở đỉnh điểm, hoàn tất một chặng — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "giải phóng gánh nặng",
+    "kiệt quệ cần nghỉ"
+   ],
+   "text": "Giải phóng gánh nặng — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_page",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "page",
+  "nameEn": "Page of Cups",
+  "nameVi": "Thị Đồng Cốc",
+  "up": {
+   "kw": [
+    "khởi đầu học hỏi",
+    "tin tức mới"
+   ],
+   "text": "Khởi đầu học hỏi, tin tức mới — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "thiếu kinh nghiệm",
+    "tin tức chưa chắc chắn"
+   ],
+   "text": "Thiếu kinh nghiệm — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_knight",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "knight",
+  "nameEn": "Knight of Cups",
+  "nameVi": "Hiệp Sĩ Cốc",
+  "up": {
+   "kw": [
+    "hành động mạnh mẽ",
+    "theo đuổi mục tiêu"
+   ],
+   "text": "Hành động mạnh mẽ, theo đuổi mục tiêu — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "hấp tấp, thiếu kiên nhẫn"
+   ],
+   "text": "Hấp tấp, thiếu kiên nhẫn — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_queen",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "queen",
+  "nameEn": "Queen of Cups",
+  "nameVi": "Nữ Hoàng Cốc",
+  "up": {
+   "kw": [
+    "làm chủ nội lực",
+    "nuôi dưỡng trưởng thành"
+   ],
+   "text": "Làm chủ nội lực, nuôi dưỡng trưởng thành — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "mất cân bằng cảm xúc/nội lực"
+   ],
+   "text": "Mất cân bằng cảm xúc/nội lực — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "cups_king",
+  "arcana": "minor",
+  "suit": "cups",
+  "number": "king",
+  "nameEn": "King of Cups",
+  "nameVi": "Vua Cốc",
+  "up": {
+   "kw": [
+    "làm chủ hoàn toàn",
+    "quyền uy trưởng thành"
+   ],
+   "text": "Làm chủ hoàn toàn, quyền uy trưởng thành — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  },
+  "rev": {
+   "kw": [
+    "lạm quyền hoặc thiếu quyết đoán"
+   ],
+   "text": "Lạm quyền hoặc thiếu quyết đoán — trong bối cảnh cảm xúc, tình cảm, quan hệ, trực giác — ứng với nguyên tố Nước."
+  }
+ },
+ {
+  "id": "swords_ace",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "ace",
+  "nameEn": "Ace of Swords",
+  "nameVi": "Á Kiếm",
+  "up": {
+   "kw": [
+    "khởi nguồn năng lượng mới",
+    "cơ hội thuần khiết"
+   ],
+   "text": "Khởi nguồn năng lượng mới, cơ hội thuần khiết — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "cơ hội bị bỏ lỡ",
+    "khởi đầu trì hoãn"
+   ],
+   "text": "Cơ hội bị bỏ lỡ — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_02",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "02",
+  "nameEn": "Two of Swords",
+  "nameVi": "Hai Kiếm",
+  "up": {
+   "kw": [
+    "cân nhắc lựa chọn",
+    "hợp tác ban đầu"
+   ],
+   "text": "Cân nhắc lựa chọn, hợp tác ban đầu — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "do dự kéo dài",
+    "mất cân bằng đôi bên"
+   ],
+   "text": "Do dự kéo dài — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_03",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "03",
+  "nameEn": "Three of Swords",
+  "nameVi": "Ba Kiếm",
+  "up": {
+   "kw": [
+    "mở rộng",
+    "kết quả bước đầu"
+   ],
+   "text": "Mở rộng, kết quả bước đầu — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "chậm tiến độ",
+    "hợp tác rạn nứt"
+   ],
+   "text": "Chậm tiến độ — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_04",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "04",
+  "nameEn": "Four of Swords",
+  "nameVi": "Bốn Kiếm",
+  "up": {
+   "kw": [
+    "ổn định tạm thời",
+    "nền tảng vững"
+   ],
+   "text": "Ổn định tạm thời, nền tảng vững — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "trì trệ",
+    "an toàn giả tạo"
+   ],
+   "text": "Trì trệ — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_05",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "05",
+  "nameEn": "Five of Swords",
+  "nameVi": "Năm Kiếm",
+  "up": {
+   "kw": [
+    "xung đột",
+    "cạnh tranh, mất mát nhỏ"
+   ],
+   "text": "Xung đột, cạnh tranh, mất mát nhỏ — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "xung đột hạ nhiệt",
+    "học từ mất mát"
+   ],
+   "text": "Xung đột hạ nhiệt — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_06",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "06",
+  "nameEn": "Six of Swords",
+  "nameVi": "Sáu Kiếm",
+  "up": {
+   "kw": [
+    "hài hoà trở lại",
+    "được hỗ trợ"
+   ],
+   "text": "Hài hoà trở lại, được hỗ trợ — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "hoài niệm quá khứ",
+    "mất cân bằng cho nhận"
+   ],
+   "text": "Hoài niệm quá khứ — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_07",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "07",
+  "nameEn": "Seven of Swords",
+  "nameVi": "Bảy Kiếm",
+  "up": {
+   "kw": [
+    "thử thách kiên trì",
+    "cần lựa chọn hướng đi"
+   ],
+   "text": "Thử thách kiên trì, cần lựa chọn hướng đi — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "choáng ngợp lựa chọn",
+    "bỏ cuộc giữa chừng"
+   ],
+   "text": "Choáng ngợp lựa chọn — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_08",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "08",
+  "nameEn": "Eight of Swords",
+  "nameVi": "Tám Kiếm",
+  "up": {
+   "kw": [
+    "tiến triển nhanh",
+    "tập trung cao độ"
+   ],
+   "text": "Tiến triển nhanh, tập trung cao độ — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "trì hoãn, phân tán"
+   ],
+   "text": "Trì hoãn, phân tán — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_09",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "09",
+  "nameEn": "Nine of Swords",
+  "nameVi": "Chín Kiếm",
+  "up": {
+   "kw": [
+    "gần đạt mục tiêu",
+    "tích luỹ vững"
+   ],
+   "text": "Gần đạt mục tiêu, tích luỹ vững — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "kiệt sức, cảnh giác quá mức"
+   ],
+   "text": "Kiệt sức, cảnh giác quá mức — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_10",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "10",
+  "nameEn": "Ten of Swords",
+  "nameVi": "Mười Kiếm",
+  "up": {
+   "kw": [
+    "gánh nặng ở đỉnh điểm",
+    "hoàn tất một chặng"
+   ],
+   "text": "Gánh nặng ở đỉnh điểm, hoàn tất một chặng — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "giải phóng gánh nặng",
+    "kiệt quệ cần nghỉ"
+   ],
+   "text": "Giải phóng gánh nặng — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_page",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "page",
+  "nameEn": "Page of Swords",
+  "nameVi": "Thị Đồng Kiếm",
+  "up": {
+   "kw": [
+    "khởi đầu học hỏi",
+    "tin tức mới"
+   ],
+   "text": "Khởi đầu học hỏi, tin tức mới — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "thiếu kinh nghiệm",
+    "tin tức chưa chắc chắn"
+   ],
+   "text": "Thiếu kinh nghiệm — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_knight",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "knight",
+  "nameEn": "Knight of Swords",
+  "nameVi": "Hiệp Sĩ Kiếm",
+  "up": {
+   "kw": [
+    "hành động mạnh mẽ",
+    "theo đuổi mục tiêu"
+   ],
+   "text": "Hành động mạnh mẽ, theo đuổi mục tiêu — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "hấp tấp, thiếu kiên nhẫn"
+   ],
+   "text": "Hấp tấp, thiếu kiên nhẫn — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_queen",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "queen",
+  "nameEn": "Queen of Swords",
+  "nameVi": "Nữ Hoàng Kiếm",
+  "up": {
+   "kw": [
+    "làm chủ nội lực",
+    "nuôi dưỡng trưởng thành"
+   ],
+   "text": "Làm chủ nội lực, nuôi dưỡng trưởng thành — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "mất cân bằng cảm xúc/nội lực"
+   ],
+   "text": "Mất cân bằng cảm xúc/nội lực — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "swords_king",
+  "arcana": "minor",
+  "suit": "swords",
+  "number": "king",
+  "nameEn": "King of Swords",
+  "nameVi": "Vua Kiếm",
+  "up": {
+   "kw": [
+    "làm chủ hoàn toàn",
+    "quyền uy trưởng thành"
+   ],
+   "text": "Làm chủ hoàn toàn, quyền uy trưởng thành — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  },
+  "rev": {
+   "kw": [
+    "lạm quyền hoặc thiếu quyết đoán"
+   ],
+   "text": "Lạm quyền hoặc thiếu quyết đoán — trong bối cảnh tư duy, xung đột, sự thật, giao tiếp — ứng với nguyên tố Khí."
+  }
+ },
+ {
+  "id": "pentacles_ace",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "ace",
+  "nameEn": "Ace of Pentacles",
+  "nameVi": "Á Tiền",
+  "up": {
+   "kw": [
+    "khởi nguồn năng lượng mới",
+    "cơ hội thuần khiết"
+   ],
+   "text": "Khởi nguồn năng lượng mới, cơ hội thuần khiết — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "cơ hội bị bỏ lỡ",
+    "khởi đầu trì hoãn"
+   ],
+   "text": "Cơ hội bị bỏ lỡ — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_02",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "02",
+  "nameEn": "Two of Pentacles",
+  "nameVi": "Hai Tiền",
+  "up": {
+   "kw": [
+    "cân nhắc lựa chọn",
+    "hợp tác ban đầu"
+   ],
+   "text": "Cân nhắc lựa chọn, hợp tác ban đầu — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "do dự kéo dài",
+    "mất cân bằng đôi bên"
+   ],
+   "text": "Do dự kéo dài — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_03",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "03",
+  "nameEn": "Three of Pentacles",
+  "nameVi": "Ba Tiền",
+  "up": {
+   "kw": [
+    "mở rộng",
+    "kết quả bước đầu"
+   ],
+   "text": "Mở rộng, kết quả bước đầu — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "chậm tiến độ",
+    "hợp tác rạn nứt"
+   ],
+   "text": "Chậm tiến độ — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_04",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "04",
+  "nameEn": "Four of Pentacles",
+  "nameVi": "Bốn Tiền",
+  "up": {
+   "kw": [
+    "ổn định tạm thời",
+    "nền tảng vững"
+   ],
+   "text": "Ổn định tạm thời, nền tảng vững — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "trì trệ",
+    "an toàn giả tạo"
+   ],
+   "text": "Trì trệ — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_05",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "05",
+  "nameEn": "Five of Pentacles",
+  "nameVi": "Năm Tiền",
+  "up": {
+   "kw": [
+    "xung đột",
+    "cạnh tranh, mất mát nhỏ"
+   ],
+   "text": "Xung đột, cạnh tranh, mất mát nhỏ — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "xung đột hạ nhiệt",
+    "học từ mất mát"
+   ],
+   "text": "Xung đột hạ nhiệt — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_06",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "06",
+  "nameEn": "Six of Pentacles",
+  "nameVi": "Sáu Tiền",
+  "up": {
+   "kw": [
+    "hài hoà trở lại",
+    "được hỗ trợ"
+   ],
+   "text": "Hài hoà trở lại, được hỗ trợ — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "hoài niệm quá khứ",
+    "mất cân bằng cho nhận"
+   ],
+   "text": "Hoài niệm quá khứ — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_07",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "07",
+  "nameEn": "Seven of Pentacles",
+  "nameVi": "Bảy Tiền",
+  "up": {
+   "kw": [
+    "thử thách kiên trì",
+    "cần lựa chọn hướng đi"
+   ],
+   "text": "Thử thách kiên trì, cần lựa chọn hướng đi — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "choáng ngợp lựa chọn",
+    "bỏ cuộc giữa chừng"
+   ],
+   "text": "Choáng ngợp lựa chọn — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_08",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "08",
+  "nameEn": "Eight of Pentacles",
+  "nameVi": "Tám Tiền",
+  "up": {
+   "kw": [
+    "tiến triển nhanh",
+    "tập trung cao độ"
+   ],
+   "text": "Tiến triển nhanh, tập trung cao độ — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "trì hoãn, phân tán"
+   ],
+   "text": "Trì hoãn, phân tán — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_09",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "09",
+  "nameEn": "Nine of Pentacles",
+  "nameVi": "Chín Tiền",
+  "up": {
+   "kw": [
+    "gần đạt mục tiêu",
+    "tích luỹ vững"
+   ],
+   "text": "Gần đạt mục tiêu, tích luỹ vững — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "kiệt sức, cảnh giác quá mức"
+   ],
+   "text": "Kiệt sức, cảnh giác quá mức — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_10",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "10",
+  "nameEn": "Ten of Pentacles",
+  "nameVi": "Mười Tiền",
+  "up": {
+   "kw": [
+    "gánh nặng ở đỉnh điểm",
+    "hoàn tất một chặng"
+   ],
+   "text": "Gánh nặng ở đỉnh điểm, hoàn tất một chặng — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "giải phóng gánh nặng",
+    "kiệt quệ cần nghỉ"
+   ],
+   "text": "Giải phóng gánh nặng — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_page",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "page",
+  "nameEn": "Page of Pentacles",
+  "nameVi": "Thị Đồng Tiền",
+  "up": {
+   "kw": [
+    "khởi đầu học hỏi",
+    "tin tức mới"
+   ],
+   "text": "Khởi đầu học hỏi, tin tức mới — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "thiếu kinh nghiệm",
+    "tin tức chưa chắc chắn"
+   ],
+   "text": "Thiếu kinh nghiệm — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_knight",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "knight",
+  "nameEn": "Knight of Pentacles",
+  "nameVi": "Hiệp Sĩ Tiền",
+  "up": {
+   "kw": [
+    "hành động mạnh mẽ",
+    "theo đuổi mục tiêu"
+   ],
+   "text": "Hành động mạnh mẽ, theo đuổi mục tiêu — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "hấp tấp, thiếu kiên nhẫn"
+   ],
+   "text": "Hấp tấp, thiếu kiên nhẫn — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_queen",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "queen",
+  "nameEn": "Queen of Pentacles",
+  "nameVi": "Nữ Hoàng Tiền",
+  "up": {
+   "kw": [
+    "làm chủ nội lực",
+    "nuôi dưỡng trưởng thành"
+   ],
+   "text": "Làm chủ nội lực, nuôi dưỡng trưởng thành — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "mất cân bằng cảm xúc/nội lực"
+   ],
+   "text": "Mất cân bằng cảm xúc/nội lực — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ },
+ {
+  "id": "pentacles_king",
+  "arcana": "minor",
+  "suit": "pentacles",
+  "number": "king",
+  "nameEn": "King of Pentacles",
+  "nameVi": "Vua Tiền",
+  "up": {
+   "kw": [
+    "làm chủ hoàn toàn",
+    "quyền uy trưởng thành"
+   ],
+   "text": "Làm chủ hoàn toàn, quyền uy trưởng thành — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  },
+  "rev": {
+   "kw": [
+    "lạm quyền hoặc thiếu quyết đoán"
+   ],
+   "text": "Lạm quyền hoặc thiếu quyết đoán — trong bối cảnh vật chất, công việc, sức khoẻ, tài chính — ứng với nguyên tố Đất."
+  }
+ }
+]

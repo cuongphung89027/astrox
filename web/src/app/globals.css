@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   ASTROX v5 — "MẶT TRỜI ĐÔNG SƠN" (Dong Son Sunrise)
+
+   Ngôn ngữ thiết kế mới, KHÔNG kế thừa palette/bố cục v2–v4:
+   - Nền kem giấy ấm, spot màu tươi: son (vermillion), ngọc (jade),
+     kim (gold), sen (lotus pink), chàm (indigo) — lấy từ sơn mài/trống đồng.
+   - Liquid glass: panel trắng mờ blur + viền trắng hairline + highlight trong.
+   - Họa tiết Việt (vẽ SVG gốc — Đông Sơn, mây Lý–Trần, sen) ở layer nền
+     opacity thấp, không dùng asset của bên thứ ba.
+   - Chữ: Bricolage Grotesque (display) + Be Vietnam Pro (thân).
+   ========================================================================== */
+
+@theme {
+  /* Palette */
+  --color-kem: #fbf6ec;
+  --color-kem-2: #f6edd9;
+  --color-son: #e8442e;
+  --color-son-deep: #c42f1c;
+  --color-son-tint: #ffe9e2;
+  --color-ngoc: #0ea768;
+  --color-ngoc-deep: #0a7d4f;
+  --color-ngoc-tint: #ddf5e9;
+  --color-kim: #f2a912;
+  --color-kim-deep: #c7860a;
+  --color-kim-tint: #fff3d1;
+  --color-sen: #ff6fa5;
+  --color-sen-deep: #e04d86;
+  --color-sen-tint: #ffe7f0;
+  --color-cham: #2f3fae;
+  --color-cham-deep: #1c2560;
+  --color-muc: #26190f;
+  --color-muc-2: #6f5d4c;
+
+  /* Type */
+  --font-display: var(--font-bricolage), "Be Vietnam Pro", system-ui, sans-serif;
+  --font-sans: var(--font-bevn), system-ui, sans-serif;
+
+  /* Shadow ấm cho glass + CTA */
+  --shadow-glass: 0 10px 34px -10px rgba(64, 36, 14, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --shadow-pop: 0 16px 40px -14px rgba(196, 47, 28, 0.45);
+
+  --radius-card: 26px;
+
+  /* Motion */
+  --ease-viet: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------------------------------- Base ---------------------------------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-kem);
+  color: var(--color-muc);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: var(--color-son);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-son);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ------------------------------- Liquid glass ------------------------------ */
+
+.glass {
+  background: color-mix(in srgb, white 62%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  backdrop-filter: blur(18px) saturate(1.35);
+  border: 1px solid color-mix(in srgb, white 70%, transparent);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-strong {
+  background: color-mix(in srgb, white 84%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid color-mix(in srgb, white 85%, transparent);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Viền vàng kim hairline cho element "đặc biệt" */
+.gold-ring {
+  position: relative;
+}
+.gold-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-kim) 85%, transparent), transparent 40%, color-mix(in srgb, var(--color-kim) 55%, transparent));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* -------------------------- Nền aurora kem + hoa văn ----------------------- */
+
+/* Blob màu tươi nổi sau glass — tĩnh, rẻ, không animation nào theo scroll */
+.ax-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(38rem 30rem at 12% -6%, color-mix(in srgb, var(--color-son) 14%, transparent), transparent 62%),
+    radial-gradient(34rem 26rem at 88% 4%, color-mix(in srgb, var(--color-kim) 16%, transparent), transparent 60%),
+    radial-gradient(40rem 32rem at 78% 68%, color-mix(in srgb, var(--color-ngoc) 12%, transparent), transparent 64%),
+    radial-gradient(30rem 26rem at 6% 72%, color-mix(in srgb, var(--color-sen) 10%, transparent), transparent 60%),
+    var(--color-kem);
+}
+
+/* Pattern trống đồng độ tương phản cực thấp (2–4%) — vẽ thuần CSS
+   (vòng tròn đồng tâm + tia) để không cần file ảnh. */
+.ax-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 46px, color-mix(in srgb, var(--color-son) 3%, transparent) 46px 48px),
+    repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--color-kim) 2.5%, transparent) 0deg 4deg, transparent 4deg 30deg);
+  mask-image: radial-gradient(72rem 48rem at 50% 0%, black, transparent 78%);
+}
+
+/* ------------------------------ Đông Sơn spin ------------------------------ */
+
+@keyframes ax-sun-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ax-spin-slow {
+  animation: ax-sun-spin 26s linear infinite;
+  transform-origin: center;
+}
+
+/* ------------------------------ Motion health ------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Toggle "Giảm chuyển động" của app ghi đè: html[data-motion="off"] */
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

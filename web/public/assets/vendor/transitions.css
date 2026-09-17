@@ -1,0 +1,180 @@
+/* ============================================================================
+   AstroX — transitions.dev recipes (bản free), vendor vào dự án.
+   Nguồn: https://transitions.dev — package npm "transitions-dev" v0.3.0, MIT.
+   Bản gốc recipes kèm theo tại docs/vendor/transitions-dev/*.md.
+   Đã chọn + tinh chỉnh cho AstroX: page slide, modal scale, tabs pill,
+   skeleton cross-blur reveal, stagger text, toast, card tilt glare.
+   Giữ nguyên namespacing .t-* và các guard prefers-reduced-motion.
+   ============================================================================ */
+:root{
+  /* transitions.dev motion tokens (font chuyển động chung của AstroX v3) */
+  --page-slide-dur: 250ms;
+  --page-fade-dur: 250ms;
+  --page-slide-distance: 8px;
+  --page-blur: 3px;
+  --page-stagger: 0ms;
+  --page-exit-enabled: 1;
+  --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --page-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --modal-open-dur: 250ms;
+  --modal-close-dur: 150ms;
+  --modal-scale: 0.96;
+  --modal-scale-close: 0.96;
+  --modal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --tabs-dur: 250ms;
+  --tabs-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --pulse-dur: 1000ms;
+  --pulse-count: 2;
+  --pulse-min: 0.5;
+  --reveal-dur: 400ms;
+  --reveal-blur: 2px;
+  --reveal-ease: ease-in-out;
+
+  --stagger-dur: 500ms;
+  --stagger-distance: 12px;
+  --stagger-stagger: 40ms;
+  --stagger-blur: 3px;
+  --stagger-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --toast-open: 250ms;
+  --toast-close: 180ms;
+  --toast-rise: 8px;
+  --toast-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --tilt-perspective: 1000px;
+  --tilt-return: 700ms;
+  --tilt-return-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tilt-follow: 400ms;
+  --tilt-follow-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --tilt-glare-opacity: 0.22;
+  --tilt-glare-fade: 300ms;
+  --tilt-glare-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---- Page side-by-side (dùng cho .view AstroX: view mới trượt + blur nhẹ) ---- */
+.t-view-enter{
+  animation: t-view-in var(--page-slide-dur) var(--page-slide-ease) both;
+}
+.t-view-exit{
+  animation: t-view-out calc(var(--page-fade-dur) * .7) var(--page-fade-ease) both;
+}
+@keyframes t-view-in{
+  from{ opacity:0; transform:translateX(var(--page-slide-distance)); filter:blur(var(--page-blur)); }
+  to{ opacity:1; transform:none; filter:blur(0); }
+}
+@keyframes t-view-out{
+  from{ opacity:1; }
+  to{ opacity:0; }
+}
+
+/* ---- Modal open/close (scale từ 0.96, đóng 150ms nhanh hơn) ---- */
+.t-modal{ transform-origin:center; }
+.modal-box{
+  transform:scale(var(--modal-scale));
+  opacity:0;
+  transition:
+    transform var(--modal-open-dur) var(--modal-ease),
+    opacity var(--modal-open-dur) var(--modal-ease);
+  will-change:transform, opacity;
+}
+.modal-backdrop.show .modal-box{ transform:scale(1); opacity:1; }
+
+/* ---- Tabs sliding pill (thanh kỳ Hôm nay / Tuần này / Tháng này) ---- */
+.t-tabs{ position:relative; display:flex; gap:4px; padding:4px; border-radius:var(--r-pill, 999px); background:var(--tabs-bar-bg, rgba(255,255,255,.55)); }
+.t-tabs-pill{
+  position:absolute; top:4px; bottom:4px; left:0; z-index:0;
+  border-radius:var(--r-pill, 999px); background:var(--tabs-pill-bg, #FFFDF7);
+  box-shadow:0 2px 8px rgba(20,30,51,.14), 0 0 0 1px rgba(20,30,51,.04);
+  transition:transform var(--tabs-dur) var(--tabs-ease), width var(--tabs-dur) var(--tabs-ease);
+  will-change:transform, width;
+}
+.t-tabs .t-tab{
+  position:relative; z-index:1; border:none; background:none; cursor:pointer;
+  padding:9px 17px; border-radius:var(--r-pill, 999px); font-size:13px; font-weight:700;
+  color:var(--ink-soft, #3A4767); transition:color var(--tabs-dur) var(--tabs-ease);
+  white-space:nowrap; min-height:38px;
+}
+.t-tabs .t-tab[aria-selected="true"]{ color:var(--ink, #1D2B4F); }
+.t-tabs.no-anim .t-tabs-pill{ transition:none !important; }
+
+/* ---- Skeleton → content reveal (cross-blur) ---- */
+.t-skel{ position:relative; }
+.t-skel-skeleton, .t-skel-content{
+  transition:
+    opacity var(--reveal-dur) var(--reveal-ease),
+    filter var(--reveal-dur) var(--reveal-ease);
+}
+.t-skel-content{ opacity:0; filter:blur(var(--reveal-blur)); }
+.t-skel.is-revealed .t-skel-content{ opacity:1; filter:blur(0); }
+
+/* ---- Texts reveal (stagger + blur) cho hero / tiêu đề view ---- */
+.t-stagger-line{
+  display:block; opacity:0;
+  transform:translateY(var(--stagger-distance));
+  filter:blur(var(--stagger-blur));
+  transition:
+    opacity var(--stagger-dur) var(--stagger-ease),
+    transform var(--stagger-dur) var(--stagger-ease),
+    filter var(--stagger-dur) var(--stagger-ease);
+}
+.t-stagger.is-shown .t-stagger-line{ opacity:1; transform:none; filter:blur(0); }
+.t-stagger.is-shown .t-stagger-line--2{ transition-delay:var(--stagger-stagger); }
+.t-stagger.is-shown .t-stagger-line--3{ transition-delay:calc(var(--stagger-stagger) * 2); }
+
+/* ---- Toast (blur + rise) ---- */
+.toast{
+  opacity:0; transform:translateX(-50%) translateY(var(--toast-rise)); filter:blur(2px);
+  transition:
+    opacity var(--toast-open) var(--toast-ease),
+    transform var(--toast-open) var(--toast-ease),
+    filter var(--toast-open) var(--toast-ease);
+}
+.toast.show{
+  opacity:1; transform:translateX(-50%) translateY(0); filter:blur(0);
+}
+
+/* ---- Card tilt + glare (chỉ desktop hover; JS ghi --tilt-rx/--tilt-ry/… ) ---- */
+.t-tilt{ touch-action:pan-y; }
+.t-tilt-card{
+  position:relative; border-radius:inherit;
+  transform:
+    perspective(var(--tilt-perspective))
+    rotateX(var(--tilt-rx, 0deg))
+    rotateY(var(--tilt-ry, 0deg));
+  transition:transform var(--tilt-return) var(--tilt-return-ease);
+  will-change:transform;
+}
+.t-tilt-card.is-tilting{ transition:transform var(--tilt-follow) var(--tilt-follow-ease); }
+.t-tilt-glare{
+  position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  opacity:0; transition:opacity var(--tilt-glare-fade) var(--tilt-glare-ease);
+  background:radial-gradient(
+    420px circle at var(--tilt-gx, 50%) var(--tilt-gy, 50%),
+    rgba(255,255,255,.55), rgba(255,255,255,0) 60%);
+  mix-blend-mode:soft-light;
+}
+.t-tilt-card.is-hover .t-tilt-glare{ opacity:var(--tilt-glare-opacity); }
+
+/* ---- Guard bắt buộc của transitions.dev: tắt chuyển động khi OS yêu cầu ---- */
+@media (prefers-reduced-motion: reduce){
+  .t-view-enter, .t-view-exit{ animation:none !important; }
+  .t-modal, .modal-box{ transition:none !important; }
+  .t-tabs-pill{ transition:none !important; }
+  .t-skel-skeleton, .t-skel-content{ transition:none !important; }
+  .t-stagger-line{ transition:none !important; opacity:1; transform:none; filter:none; }
+  .toast{ transition:none !important; }
+  .t-tilt-card{ transition:none !important; transform:none !important; }
+  .t-tilt-glare{ display:none !important; }
+}
+/* Tôn trọng cả lựa chọn giảm chuyển động trong app của AstroX */
+html[data-motion="reduced"] .t-view-enter,
+html[data-motion="reduced"] .t-view-exit{ animation:none !important; }
+html[data-motion="reduced"] .modal-box{ transition:none !important; }
+html[data-motion="reduced"] .t-tabs-pill{ transition:none !important; }
+html[data-motion="reduced"] .t-stagger-line{ transition:none !important; opacity:1; transform:none; filter:none; }
+html[data-motion="reduced"] .toast{ transition:none !important; }
+html[data-motion="reduced"] .t-tilt-card{ transition:none !important; transform:none !important; }
+html[data-motion="reduced"] .t-tilt-glare{ display:none !important; }

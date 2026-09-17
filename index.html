@@ -307,13 +307,16 @@ img{max-width:100%; display:block;}
 .avatar-ring{ width:52px; height:52px; border-radius:50%; background:var(--accent-tint, var(--ngoc-tint)); color:var(--accent-dark, var(--ngoc-dark));
   display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; flex-shrink:0; }
 
-.modal-backdrop{ position:fixed; inset:0; background:rgba(20,26,43,.5); z-index:80; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(3px); }
+.modal-backdrop{ position:fixed; inset:0; background:rgba(16,22,38,.58); z-index:80; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
 .modal-backdrop.show{ display:flex; animation:fadeIn .2s; }
 @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
-.modal-box{ background:var(--surface); border-radius:24px; max-width:560px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:var(--shadow-3); animation:modalIn .25s var(--ease-out); }
-@keyframes modalIn{ from{opacity:0; transform:translateY(16px) scale(.98);} to{opacity:1; transform:none;} }
-.modal-head{ display:flex; align-items:center; justify-content:space-between; padding:22px 24px 4px; }
-.modal-body{ padding:20px 24px 26px; }
+.modal-box{ background:var(--surface); border-radius:26px; max-width:560px; width:100%; max-height:88vh; overflow-y:auto; overflow-x:hidden; box-shadow:var(--shadow-3); animation:modalIn .3s var(--ease-out); border:1px solid var(--line); position:relative; }
+.modal-box::before{ content:""; position:absolute; top:-72px; right:-72px; width:190px; height:190px; border-radius:50%; pointer-events:none; opacity:.5;
+  background:repeating-radial-gradient(circle at center, transparent 0 13px, var(--gold) 13px 13.8px, transparent 13.8px 27px); }
+@keyframes modalIn{ from{opacity:0; transform:translateY(18px) scale(.97);} to{opacity:1; transform:none;} }
+.modal-head{ display:flex; align-items:center; justify-content:space-between; padding:22px 24px 4px; position:relative; z-index:1; }
+.modal-head p{ font-family:var(--font-display); font-size:21px !important; font-weight:700 !important; }
+.modal-body{ padding:20px 24px 26px; position:relative; z-index:1; }
 .icon-btn{ width:38px; height:38px; border-radius:50%; border:none; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink); flex-shrink:0; }
 .icon-btn:hover{ background:var(--line); }
 .ai-gate-progress{ height:10px; border-radius:99px; background:var(--line); overflow:hidden; }
@@ -329,9 +332,12 @@ img{max-width:100%; display:block;}
 .ai-gate-error{ color:var(--rose); font-size:12.5px; line-height:1.55; overflow-wrap:anywhere; }
 @media(max-width:600px){ .ai-gate-count{font-size:11px;} }
 
-.step-dots{ display:flex; gap:6px; justify-content:center; margin:6px 0 22px; }
-.step-dot{ width:7px; height:7px; border-radius:50%; background:var(--line); transition:.2s; }
-.step-dot.on{ width:20px; border-radius:4px; background:var(--accent, var(--ngoc)); }
+.step-dots{ display:flex; gap:6px; justify-content:center; margin:10px 0 22px; }
+.step-dot{ width:7px; height:7px; border-radius:99px; background:var(--line); transition:width .25s var(--ease-out), background .25s; }
+.step-dot.on{ width:26px; background:linear-gradient(90deg,var(--ngoc),var(--gold)); }
+
+.choice-card{ font-weight:600; }
+.choice-card span:first-child{ font-size:14.5px; }
 
 .toast{ position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(20px); z-index:200;
   background:var(--ink-cta); color:var(--ink-cta-text); padding:14px 22px; border-radius:var(--r-pill);
@@ -1129,7 +1135,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
         <div class="view-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
           <div>
             <p class="view-eyebrow">Tử Vi</p>
-            <h1 class="view-title serif">Tử Vi Đẩu Số</h1>
+            <h1 class="view-title">Tử Vi Đẩu Số</h1>
             <p class="view-sub">Xem dữ liệu 12 cung, vận trình năm 2026 và các chủ đề bạn muốn phân tích.</p>
           </div>
           <div style="display:flex; gap:10px;">
@@ -1180,7 +1186,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
         <button class="btn btn-text" data-goto="tuvi" style="padding-left:0;">← Quay lại Tử Vi</button>
         <div class="view-header" style="margin-top:6px;">
           <p class="view-eyebrow" id="td-eyebrow">Chủ đề</p>
-          <h1 class="view-title serif" id="td-title">—</h1>
+          <h1 class="view-title" id="td-title">—</h1>
         </div>
         <div class="tabbar hidden" id="td-subtabs" style="margin-bottom:18px;"></div>
         <div class="card">
@@ -1197,7 +1203,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
     <section class="view" data-view="tuvi-chart" data-accent="tuvi">
       <div class="view-inner" style="max-width:720px;">
         <button class="btn btn-text" data-goto="tuvi" style="padding-left:0;">← Quay lại Tử Vi</button>
-        <div class="view-header" style="margin-top:6px;"><h1 class="view-title serif">Lá số Tử Vi</h1><p class="view-sub">Biểu đồ 12 cung được tính từ ngày sinh, giờ sinh và giới tính bằng dữ liệu lá số có cấu trúc.</p></div>
+        <div class="view-header" style="margin-top:6px;"><h1 class="view-title">Lá số Tử Vi</h1><p class="view-sub">Biểu đồ 12 cung được tính từ ngày sinh, giờ sinh và giới tính bằng dữ liệu lá số có cấu trúc.</p></div>
         <div class="card" id="ziwei-chart-card"><div id="ziwei-chart-status" class="badge badge-accent">Chưa lập lá số</div><div id="ziwei-chart" class="ziwei-chart-wrap" style="margin-top:14px;"></div></div>
         <div class="natal-visual-grid section-gap" id="ziwei-visuals"></div>
         <div class="card-flat center-col section-gap" id="chart-image-wrap" hidden></div>
@@ -1216,7 +1222,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
         <div class="view-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
           <div>
             <p class="view-eyebrow">Cung Hoàng Đạo</p>
-            <h1 class="view-title serif">Cung Hoàng Đạo &amp; Bản Đồ Sao</h1>
+            <h1 class="view-title">Cung Hoàng Đạo &amp; Bản Đồ Sao</h1>
             <p class="view-sub">Tính cung Mặt Trời theo ngày sinh, xem đặc tính và horoscope hôm nay, tuần này hoặc tháng này.</p>
           </div>
           <div style="display:flex; gap:10px;">
@@ -1273,7 +1279,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
     <section class="view" data-view="zodiac-detail" data-accent="zodiac">
       <div class="view-inner" style="max-width:820px;">
         <button class="btn btn-text" data-goto="zodiac" style="padding-left:0;">← Quay lại Cung Hoàng Đạo</button>
-        <div class="view-header" style="margin-top:6px;"><p class="view-eyebrow">Chủ đề</p><h1 class="view-title serif" id="zd-title">—</h1></div>
+        <div class="view-header" style="margin-top:6px;"><p class="view-eyebrow">Chủ đề</p><h1 class="view-title" id="zd-title">—</h1></div>
         <div class="tabbar hidden" id="zd-subtabs" style="margin-bottom:18px;"></div>
         <div class="card"><div id="zd-content" class="content-md"><div class="skel" style="height:14px; width:95%; margin-bottom:10px;"></div><div class="skel" style="height:14px; width:80%;"></div></div></div>
       </div>
@@ -1282,7 +1288,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
     <section class="view" data-view="natal-detail" data-accent="zodiac">
       <div class="view-inner" style="max-width:980px;">
         <button class="btn btn-text" data-goto="zodiac" style="padding-left:0;">← Quay lại Cung Hoàng Đạo</button>
-        <div class="view-header" style="margin-top:6px;"><p class="view-eyebrow">Bản đồ sao chi tiết</p><h1 class="view-title serif">Hành tinh · 12 nhà · góc chiếu</h1><p class="view-sub">Dữ liệu thiên văn được tính trực tiếp trong trình duyệt; phần diễn giải bằng trí tuệ nhân tạo chỉ dùng dữ liệu này làm nguồn duy nhất.</p></div>
+        <div class="view-header" style="margin-top:6px;"><p class="view-eyebrow">Bản đồ sao chi tiết</p><h1 class="view-title">Hành tinh · 12 nhà · góc chiếu</h1><p class="view-sub">Dữ liệu thiên văn được tính trực tiếp trong trình duyệt; phần diễn giải bằng trí tuệ nhân tạo chỉ dùng dữ liệu này làm nguồn duy nhất.</p></div>
         <div class="card" id="natal-detail-card"></div>
       </div>
     </section>
@@ -1292,7 +1298,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
       <div class="view-inner">
         <div class="view-header">
           <p class="view-eyebrow">Kinh Dịch</p>
-          <h1 class="view-title serif">Kinh Dịch — Mai Hoa Dịch Số</h1>
+          <h1 class="view-title">Kinh Dịch — Mai Hoa Dịch Số</h1>
           <p class="view-sub">Đặt một câu hỏi cụ thể. AstroX dùng 3 số để tính thượng quái, hạ quái, hào động và quan hệ Thể–Dụng.</p>
         </div>
 
@@ -1380,7 +1386,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
         <div class="view-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
           <div>
             <p class="view-eyebrow">Bát Tự</p>
-            <h1 class="view-title serif">Bát Tự — Tứ Trụ Mệnh Lý</h1>
+            <h1 class="view-title">Bát Tự — Tứ Trụ Mệnh Lý</h1>
             <p class="view-sub">Lá số 4 trụ Năm–Tháng–Ngày–Giờ tính trực tiếp từ ngày giờ sinh dương lịch, cùng Đại Vận và tỷ lệ Ngũ Hành.</p>
           </div>
           <div style="display:flex; gap:10px;">
@@ -1439,7 +1445,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
         <button class="btn btn-text" data-goto="batu" style="padding-left:0;">← Quay lại Bát Tự</button>
         <div class="view-header" style="margin-top:6px;">
           <p class="view-eyebrow" id="bd-eyebrow">Chủ đề</p>
-          <h1 class="view-title serif" id="bd-title">—</h1>
+          <h1 class="view-title" id="bd-title">—</h1>
         </div>
         <div class="card">
           <div id="bd-content" class="content-md">
@@ -1457,7 +1463,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
         <div class="view-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap;">
           <div>
             <p class="view-eyebrow">Thần Số Học</p>
-            <h1 class="view-title serif">Thần Số Học — Pythagoras</h1>
+            <h1 class="view-title">Thần Số Học — Pythagoras</h1>
             <p class="view-sub">Các chỉ số tính từ họ tên và ngày sinh dương lịch theo hệ Pythagoras.</p>
           </div>
           <div style="display:flex; gap:10px;">
@@ -1529,7 +1535,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
         <button class="btn btn-text" data-goto="numerology" style="padding-left:0;">← Quay lại Thần Số Học</button>
         <div class="view-header" style="margin-top:6px;">
           <p class="view-eyebrow" id="nd-eyebrow">Chủ đề</p>
-          <h1 class="view-title serif" id="nd-title">—</h1>
+          <h1 class="view-title" id="nd-title">—</h1>
         </div>
         <div class="card">
           <div id="nd-content" class="content-md">
@@ -1546,7 +1552,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
       <div class="view-inner">
         <div class="view-header">
           <p class="view-eyebrow">Tarot</p>
-          <h1 class="view-title serif">AstroX Tarot</h1>
+          <h1 class="view-title">AstroX Tarot</h1>
           <p class="view-sub">Chọn bộ bài mà bạn muốn sử dụng, đặt câu hỏi và kiểu trải bài để AstroX giúp bạn tìm ra câu trả lời nhé.</p>
         </div>
 
@@ -1618,7 +1624,7 @@ html[data-motion="reduced"] .hero-scene-fallback{ display:block !important; }
       <div class="view-inner" style="max-width:760px;">
         <div class="view-header">
           <p class="view-eyebrow">Công cụ</p>
-          <h1 class="view-title serif">Hợp Tuổi</h1>
+          <h1 class="view-title">Hợp Tuổi</h1>
           <p class="view-sub">Nhập thông tin người ấy để so sánh hai lá số và xem điểm hợp, điểm cần dung hoà.</p>
         </div>
         <div class="card">

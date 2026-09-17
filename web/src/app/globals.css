@@ -145,7 +145,7 @@ body {
   }
 }
 .ax-spin-slow {
-  animation: ax-sun-spin 26s linear infinite;
+  animation: ax-sun-spin var(--sun-spin-dur, 26s) linear infinite;
   transform-origin: center;
 }
 
@@ -171,4 +171,407 @@ html[data-motion="off"] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
+}
+
+/* ============================================================================
+   MOTION KIT — port patterns transitions.dev (MIT) thành CSS thuần.
+   Tiền tố ax-*. Tất cả chỉ dùng transform/opacity/filter.
+   html[data-motion="off"] + prefers-reduced-motion đã có sẵn ở trên tự tắt.
+   ========================================================================== */
+
+:root {
+  /* card-tilt */
+  --tilt-perspective: 1000px;
+  --tilt-return: 800ms;
+  --tilt-follow: 350ms;
+  --tilt-ease: var(--ease-viet);
+  --tilt-glare-opacity: 0.35;
+  /* texts-reveal */
+  --stagger-dur: 550ms;
+  --stagger-distance: 14px;
+  --stagger-blur: 4px;
+  /* number-pop-in */
+  --digit-dur: 500ms;
+  --digit-distance: 8px;
+  --digit-stagger: 70ms;
+  --digit-blur: 2px;
+  --digit-ease: cubic-bezier(0.34, 1.45, 0.64, 1);
+  /* panel-reveal */
+  --panel-open-dur: 420ms;
+  --panel-close-dur: 320ms;
+  --panel-blur: 3px;
+  /* toast */
+  --toast-open: 340ms;
+  --toast-close: 240ms;
+  --toast-distance: 14px;
+  --toast-blur: 2px;
+  --toast-scale: 0.97;
+  /* success-check */
+  --check-dur: 500ms;
+  --check-rotate-from: 80deg;
+  --check-bob: 8px;
+  --check-blur-from: 8px;
+  /* shimmer-text */
+  --shimmer-dur: 2200ms;
+  --shimmer-base: var(--color-muc);
+  --shimmer-highlight: var(--color-kim-deep);
+}
+
+/* ------------------------------- Card tilt -------------------------------- */
+/* Wrapper phẳng nhận pointer, card con mới transform => không hover flicker. */
+.ax-tilt {
+  touch-action: pan-y;
+  height: 100%;
+}
+.ax-tilt-card {
+  position: relative;
+  height: 100%;
+  transform: perspective(var(--tilt-perspective)) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform var(--tilt-return) var(--tilt-ease);
+  will-change: transform;
+}
+.ax-tilt-card.is-tilting {
+  transition: transform var(--tilt-follow) var(--tilt-ease);
+}
+/* Glare sáng cộng thêm tại vị trí con trỏ (blend screen). */
+.ax-tilt-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle 90px at var(--tilt-gx, 50%) var(--tilt-gy, 50%), rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.06) 52%, rgba(255, 255, 255, 0) 84%),
+    radial-gradient(circle 220px at var(--tilt-gx, 50%) var(--tilt-gy, 50%), rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 78%);
+  transition: opacity 300ms var(--ease-viet);
+}
+.ax-tilt.is-hover .ax-tilt-glare {
+  opacity: var(--tilt-glare-opacity);
+}
+
+/* ------------------------------ Texts reveal ------------------------------- */
+/* Lưu ý: KHÔNG ép display:block — giữ nguyên display của element gốc
+   (p/h1/div đã block; pill inline-flex vẫn transform được). */
+.ax-stagger-line {
+  opacity: 0;
+  transform: translateY(var(--stagger-distance));
+  filter: blur(var(--stagger-blur));
+  transition:
+    opacity var(--stagger-dur) var(--ease-viet),
+    transform var(--stagger-dur) var(--ease-viet),
+    filter var(--stagger-dur) var(--ease-viet);
+  will-change: transform, opacity, filter;
+}
+.ax-stagger.is-shown .ax-stagger-line {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* ------------------------------ Shimmer text ------------------------------- */
+.ax-shimmer {
+  position: relative;
+  display: inline-block;
+  color: var(--shimmer-base);
+}
+.ax-shimmer::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 40%,
+    var(--shimmer-highlight) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 400% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: ax-shimmer-run var(--shimmer-dur) linear infinite;
+}
+/* Biến thể chỉ chạy khi hover card (.group) — trạng thái nghỉ paused ở 0% (trong suốt). */
+.ax-shimmer.ax-shimmer-hover::before {
+  animation-play-state: paused;
+}
+.group:hover .ax-shimmer.ax-shimmer-hover::before {
+  animation-play-state: running;
+}
+@keyframes ax-shimmer-run {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* ----------------------------- Number pop-in ------------------------------- */
+.ax-digit-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+.ax-digit {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+.ax-digit-group.is-animating .ax-digit {
+  animation: ax-digit-pop var(--digit-dur) var(--digit-ease) both;
+}
+.ax-digit-group.is-animating .ax-digit[data-stagger="1"] {
+  animation-delay: var(--digit-stagger);
+}
+.ax-digit-group.is-animating .ax-digit[data-stagger="2"] {
+  animation-delay: calc(var(--digit-stagger) * 2);
+}
+@keyframes ax-digit-pop {
+  0% {
+    transform: translateY(var(--digit-distance));
+    opacity: 0;
+    filter: blur(var(--digit-blur));
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* ------------------------------ Panel reveal ------------------------------- */
+.ax-panel {
+  transform: translateY(var(--panel-translate-y, 56px));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--ease-viet),
+    opacity var(--panel-close-dur) var(--ease-viet),
+    filter var(--panel-close-dur) var(--ease-viet);
+  will-change: transform, opacity, filter;
+}
+.ax-panel[data-open="true"] {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--ease-viet),
+    opacity var(--panel-open-dur) var(--ease-viet),
+    filter var(--panel-open-dur) var(--ease-viet);
+}
+/* Backdrop sheet: chỉ fade. */
+.ax-fade {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms var(--ease-viet);
+}
+.ax-fade[data-open="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --------------------------------- Toast ----------------------------------- */
+.ax-toast {
+  opacity: 0;
+  transform: translateY(var(--toast-distance)) scale(var(--toast-scale));
+  filter: blur(var(--toast-blur));
+  transition:
+    opacity var(--toast-close) var(--ease-viet),
+    transform var(--toast-close) var(--ease-viet),
+    filter var(--toast-close) var(--ease-viet);
+  will-change: transform, opacity, filter;
+}
+.ax-toast.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+  transition:
+    opacity var(--toast-open) var(--ease-viet),
+    transform var(--toast-open) var(--ease-viet),
+    filter var(--toast-open) var(--ease-viet);
+}
+
+/* ------------------------------ Success check ------------------------------ */
+.ax-check {
+  display: inline-block;
+  transform-origin: center;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+}
+.ax-check svg {
+  display: block;
+  overflow: visible;
+}
+.ax-check svg path {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+}
+.ax-check[data-state="in"] {
+  animation:
+    ax-check-fade var(--check-dur) var(--ease-viet) forwards,
+    ax-check-rotate var(--check-dur) var(--ease-viet) forwards,
+    ax-check-blur var(--check-dur) var(--ease-viet) forwards,
+    ax-check-bob var(--check-dur) cubic-bezier(0.34, 1.35, 0.64, 1) forwards;
+}
+.ax-check[data-state="in"] svg path {
+  animation: ax-check-draw var(--check-dur) var(--ease-viet) 80ms forwards;
+}
+@keyframes ax-check-fade {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes ax-check-rotate {
+  from {
+    transform: rotate(var(--check-rotate-from));
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+@keyframes ax-check-blur {
+  from {
+    filter: blur(var(--check-blur-from));
+  }
+  to {
+    filter: blur(0);
+  }
+}
+@keyframes ax-check-bob {
+  0% {
+    translate: 0 var(--check-bob);
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+@keyframes ax-check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ------------------------------- Like button ------------------------------- */
+.ax-like {
+  display: inline-block;
+  color: inherit;
+  animation: ax-like-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ax-like.is-on {
+  color: var(--color-sen);
+}
+.ax-like.is-on svg {
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--color-sen) 55%, transparent));
+}
+@keyframes ax-like-pop {
+  0% {
+    transform: scale(0.55);
+  }
+  60% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* -------------------------------- Marquee ---------------------------------- */
+/* Hai nửa track giống hệt nhau => translate -50% là loop liền mạch. */
+.ax-marquee {
+  overflow: hidden;
+}
+.ax-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: ax-marquee-run var(--marquee-dur, 32s) linear infinite;
+}
+.ax-marquee-track.is-reverse {
+  animation-direction: reverse;
+}
+.ax-marquee:hover .ax-marquee-track {
+  animation-play-state: paused;
+}
+@keyframes ax-marquee-run {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* -------------------------------- Skeleton --------------------------------- */
+.ax-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: color-mix(in srgb, white 55%, transparent);
+  animation: ax-skeleton-in 500ms var(--ease-viet) both;
+}
+.ax-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, color-mix(in srgb, white 85%, transparent) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: ax-skeleton-sheen 1.6s ease-in-out infinite;
+}
+@keyframes ax-skeleton-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes ax-skeleton-sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ----------------------------- Nav (desktop) ------------------------------- */
+/* Underline trượt, màu theo module qua --nav-accent trên từng link. */
+.ax-nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-muc) 72%, transparent);
+  transition: color 200ms var(--ease-viet);
+}
+.ax-nav-link:hover {
+  color: var(--color-muc);
+}
+.ax-nav-link[aria-current="page"] {
+  color: var(--nav-accent, var(--color-son));
+}
+.ax-nav-underline {
+  position: absolute;
+  left: 0.7rem;
+  right: 0.7rem;
+  bottom: 0.15rem;
+  height: 2.5px;
+  border-radius: 999px;
+  background: var(--nav-accent, var(--color-son));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 260ms var(--ease-viet), opacity 260ms var(--ease-viet);
+}
+.ax-nav-link[aria-current="page"] .ax-nav-underline {
+  transform: scaleX(1);
+}
+.ax-nav-link:hover .ax-nav-underline {
+  transform: scaleX(0.45);
+  opacity: 0.5;
 }

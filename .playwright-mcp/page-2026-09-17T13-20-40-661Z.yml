@@ -1,0 +1,65 @@
+- generic [active] [ref=f10e1]:
+  - link "Tới nội dung chính" [ref=f10e2] [cursor=pointer]:
+    - /url: "#main"
+  - generic [ref=f10e3]:
+    - main [ref=f10e4]:
+      - generic [ref=f10e5]:
+        - button "Về trang chủ" [ref=f10e6] [cursor=pointer]:
+          - img "AstroX" [ref=f10e7]
+          - generic [ref=f10e8]: AstroX
+        - button "Đăng nhập" [ref=f10e9] [cursor=pointer]
+        - button "?" [ref=f10e10] [cursor=pointer]
+        - button "Bật/tắt hiệu ứng chuyển động" [ref=f10e12] [cursor=pointer]
+      - generic [ref=f10e16]:
+        - generic [ref=f10e19]:
+          - paragraph [ref=f10e20]: AstroX · Huyền học Việt đương đại
+          - heading [level=1] [ref=f10e23]:
+            - text: Soi lá số,
+            - emphasis [ref=f10e24]: hiểu mình
+            - text: — Tử Vi, Kinh Dịch, Bát Tự, Tarot trên một bầu trời quen thuộc.
+          - paragraph [ref=f10e25]: Xin chào Nguyễn Minh Anh. Lá số của bạn đã sẵn sàng — chọn một công cụ bên dưới, hoặc xem nhanh vận trình hôm nay.
+          - generic [ref=f10e26]:
+            - button "Bắt đầu — Thiết lập hồ sơ" [ref=f10e27] [cursor=pointer]
+            - button "Khám phá các công cụ" [ref=f10e28] [cursor=pointer]
+        - generic [ref=f10e29]:
+          - generic [ref=f10e34]:
+            - generic [ref=f10e35]: Dữ liệu thiên văn thật
+            - generic [ref=f10e36]: Lá số tính từ ngày giờ sinh, không đoán mò.
+          - generic [ref=f10e41]:
+            - generic [ref=f10e42]: Luận giải theo ngữ cảnh
+            - generic [ref=f10e43]: Trả lời đúng câu hỏi bạn đang băn khoăn.
+          - generic [ref=f10e48]:
+            - generic [ref=f10e49]: Tham khảo, không áp đặt
+            - generic [ref=f10e50]: Góc nhìn văn hoá giúp bạn tự quyết sáng suốt.
+        - paragraph [ref=f10e51]: Các công cụ
+        - generic [ref=f10e52]:
+          - button "Mở Tử Vi Đẩu Số" [ref=f10e53] [cursor=pointer]:
+            - generic: Tử Vi Đẩu Số
+            - generic: Lập lá số 12 cung, xem đại vận và các chủ đề về công việc, tình cảm, tiền tài.
+            - generic: Khám phá lá số →
+          - button "Mở Cung Hoàng Đạo" [ref=f10e60] [cursor=pointer]:
+            - generic [ref=f10e67]: Cung Hoàng Đạo
+            - generic [ref=f10e68]: Tính cung Mặt Trời, xem đặc tính và mức độ hợp giữa hai cung.
+            - generic [ref=f10e69]: Xem bản đồ sao →
+          - button "Mở Kinh Dịch" [ref=f10e70] [cursor=pointer]:
+            - generic [ref=f10e74]: Kinh Dịch
+            - generic [ref=f10e75]: Nhập câu hỏi, gieo 3 số và nhận quẻ cùng quan hệ Thể–Dụng đã tính sẵn.
+            - generic [ref=f10e76]: Gieo quẻ →
+          - button "Mở Bát Tự" [ref=f10e77] [cursor=pointer]:
+            - generic: Bát Tự
+            - generic: Lập lá số Tứ Trụ (Năm–Tháng–Ngày–Giờ), xem Thập Thần, Đại Vận và tỷ lệ Ngũ Hành.
+            - generic: Lập lá số →
+          - button "Mở Thần Số Học" [ref=f10e82] [cursor=pointer]:
+            - generic: Thần Số Học
+            - generic: Tính Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách và biểu đồ ngày sinh từ tên và ngày sinh.
+            - generic: Xem chỉ số →
+          - button "Mở Tarot" [ref=f10e86] [cursor=pointer]:
+            - generic [ref=f10e91]: Tarot
+            - generic [ref=f10e92]: Chọn bộ bài, trải bài theo nhiều kiểu phổ biến và xem luận giải cùng AstroX.
+            - generic [ref=f10e93]: Trải bài →
+        - generic [ref=f10e94]:
+          - heading "Trạng thái hồ sơ" [level=3] [ref=f10e95]
+          - generic [ref=f10e96]:
+            - strong [ref=f10e97]: Nguyễn Minh Anh
+            - text: · Nam · Sinh 18-04-1996, giờ Thìn, tại Hà Nội. Lá số đã sẵn sàng.
+    - text: ❖ ✦ ✦ ✦

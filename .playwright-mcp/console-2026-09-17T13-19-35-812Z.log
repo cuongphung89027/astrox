@@ -1,0 +1,3 @@
+[      86ms] [WARNING] Scripts "build/three.js" and "build/three.min.js" are deprecated with r150+, and will be removed with r160. Please use ES Modules or alternatives: https://threejs.org/docs/index.html#manual/en/introduction/Installation @ https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js:0
+[     293ms] [ERROR] Access to fetch at 'https://api.theastrox.space/api/me' from origin 'http://127.0.0.1:8791' has been blocked by CORS policy: The 'Access-Control-Allow-Origin' header has a value 'https://theastrox.space' that is not equal to the supplied origin. Have the server send the header with a valid value. @ http://127.0.0.1:8791/trangchu:0
+[     293ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://api.theastrox.space/api/me:0

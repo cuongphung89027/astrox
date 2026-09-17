@@ -181,7 +181,14 @@ function cacheEntryUsable(entry: unknown, force: boolean): boolean {
   );
 }
 
-type CacheGroup = keyof AiProfileCache | "tuviPeriod.today" | "tuviPeriod.week" | "tuviPeriod.month";
+type CacheGroup =
+  | keyof AiProfileCache
+  | "tuviPeriod.today"
+  | "tuviPeriod.week"
+  | "tuviPeriod.month"
+  | "zodiacPeriod.today"
+  | "zodiacPeriod.week"
+  | "zodiacPeriod.month";
 
 export function readAiCache(group: CacheGroup, key: string, force = false): string {
   const cache = getActiveAiCache();
@@ -219,6 +226,9 @@ function resolveBucket(cache: AiProfileCache, group: CacheGroup): Record<string,
   if (group === "tuviPeriod.today") return cache.tuviPeriod.today;
   if (group === "tuviPeriod.week") return cache.tuviPeriod.week;
   if (group === "tuviPeriod.month") return cache.tuviPeriod.month;
+  if (group === "zodiacPeriod.today") return cache.zodiacPeriod.today;
+  if (group === "zodiacPeriod.week") return cache.zodiacPeriod.week;
+  if (group === "zodiacPeriod.month") return cache.zodiacPeriod.month;
   return (cache as unknown as Record<string, Record<string, import("./types").AiCacheEntry>>)[group] || null;
 }
 

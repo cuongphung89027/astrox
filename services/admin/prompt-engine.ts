@@ -1,5 +1,5 @@
-import templates from './prompt-templates.json' with {type:'json'};
-import originals from './original-prompts.json' with {type:'json'};
+import templates from './prompt-templates.ts';
+import originals from './original-prompts.ts';
 export type PromptNode = { id: string; values: (string | PromptNode)[] };
 export const ORIGINAL_SYSTEM_PROMPT = originals.system;
 export const PROMPT_TEMPLATES = templates;

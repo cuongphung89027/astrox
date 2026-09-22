@@ -1,4 +1,4 @@
-[
+export default [
   {
     "id": "tuvi.profileContextText.0",
     "module": "tuvi",
@@ -387,4 +387,4 @@
     ],
     "source": "index.html:4170"
   }
-]
+];

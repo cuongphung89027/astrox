@@ -1,7 +1,7 @@
 import {readPublished} from '../admin/store.mjs';
 import {publicConfig} from '../admin/config.ts';
 import {runtimeSettings,capabilities,legacySnapshot} from './config.mjs';
-import {readSession,zaloLogin,zaloCallback,logout} from './auth.mjs';
+import {readSession,zaloLogin,zaloCallback,zaloFinish,logout} from './auth.mjs';
 import {handlePayosWebhook,handleTopupCreate,handlePromoCheck} from './payments.mjs';
 import {json,corsHeaders} from './http.mjs';
 
@@ -22,7 +22,8 @@ export async function publicFetch(request,env){
   if(path==='/api/webhooks/payos'&&method==='POST'||path==='/api/payos/webhook'&&method==='POST')return await handlePayosWebhook(env,request);
   if(path==='/auth/zalo/login'&&method==='GET'){const s=await runtimeSettings(env);return await zaloLogin(s.env,request,s);}
   if(path==='/auth/zalo/callback'&&method==='GET'){const s=await runtimeSettings(env);return await zaloCallback(s.env,request,s);}
-  if(['/auth/zalo/finish','/auth/zalo/complete'].includes(path))return json(env,request,{error:'restart_login',message:'Vui lòng đăng nhập lại để xác minh danh tính.'},410);
+  if(path==='/auth/zalo/finish'){const s=await runtimeSettings(env);return await zaloFinish(s.env,request,s);}
+  if(path==='/auth/zalo/complete')return json(env,request,{error:'restart_login',message:'Vui lòng đăng nhập lại để xác minh danh tính.'},410);
   if(path==='/auth/logout'&&method==='POST')return logout(env,request);
   if(path==='/api/me'&&method==='GET'){const session=await readSession(env,request);if(!session)return json(env,request,{user:null});const user=await env.DB.prepare('SELECT id,display_name,email,avatar_url FROM app_users WHERE id=?').bind(session.sub).first();const wallet=await env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(session.sub).first();return json(env,request,{user,points:wallet?.balance||0});}
   if(path==='/api/module-access'&&method==='GET')return await moduleAccess(env,request);

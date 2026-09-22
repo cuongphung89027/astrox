@@ -5,7 +5,7 @@ import {testEnv} from '../admin/test/sqlite.mjs';
 import {defaultConfig} from '../admin/config.ts';
 import {state,saveDraft,publish} from '../admin/store.mjs';
 import {legacySnapshot, runtimeSettings, capabilities} from './config.mjs';
-import {sessionCookie,readSession,verifyZaloUser,zaloCallback} from './auth.mjs';
+import {sessionCookie,readSession,verifyZaloUser,zaloCallback,zaloFinish} from './auth.mjs';
 import {payosSignature,handlePayosWebhook,handleTopupCreate} from './payments.mjs';
 
 async function fixture(){
@@ -58,8 +58,23 @@ test('failed Zalo callbacks persist diagnostics without leaking tokens',async()=
  row=await env.DB.prepare('SELECT stage,detail FROM login_diagnostics ORDER BY id DESC LIMIT 1').first();
  assert.equal(row.stage,'token_exchange_failed');assert.ok(row.detail.includes('"status":400'));assert.ok(!row.detail.toLowerCase().includes('token'));
  await env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind('st2','v',new Date().toISOString()).run();
- const unverifiable=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=st2&code=x',{headers:{cookie:'astrox_oauth=st2'}}),{zalo:{returnUrl:'https://theastrox.space/'}},async(url)=>url.includes('access_token')?Response.json({access_token:'secret-access-token',refresh_token:'secret-refresh'}):Response.json({error:-1001},{status:401}));
- assert.equal(unverifiable.status,502);
+ const zaloFetch=async(url)=>url.includes('access_token')?Response.json({access_token:'secret-access-token',refresh_token:'secret-refresh'}):Response.json({error:-501});
+ const fallback=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=st2&code=x',{headers:{cookie:'astrox_oauth=st2'}}),{zalo:{returnUrl:'https://theastrox.space/'}},zaloFetch);
+ assert.equal(fallback.status,302);
+ const finishUrl=new URL(fallback.headers.get('location'),'https://api.example.com'),pendingId=finishUrl.searchParams.get('id');
  row=await env.DB.prepare('SELECT stage,detail FROM login_diagnostics ORDER BY id DESC LIMIT 1').first();
- assert.equal(row.stage,'identity_unverified');assert.ok(!row.detail.includes('secret'));
+ assert.equal(row.stage,'server_verify_failed_fallback');assert.ok(!row.detail.includes('secret'));
+ const page=await zaloFinish(env,new Request(finishUrl.href),{zalo:{returnUrl:'https://theastrox.space/'}});
+ assert.equal(page.status,200);assert.ok((await page.text()).includes('graph.zalo.me'));
+ const forged=await zaloFinish(env,new Request('https://api.example.com/auth/zalo/finish',{method:'POST',body:JSON.stringify({id:pendingId,token:'wrong-token',me:{id:'zp-new',name:'Fake'}})}),{zalo:{}});
+ assert.equal(forged.status,401);
+ const consumed=await zaloFinish(env,new Request('https://api.example.com/auth/zalo/finish',{method:'POST',body:JSON.stringify({id:pendingId,token:'secret-access-token',me:{id:'zp-new',name:'Real User'}})}),{zalo:{}});
+ assert.equal(consumed.status,400);
+ await env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind('st3','v',new Date().toISOString()).run();
+ const fallback2=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=st3&code=x',{headers:{cookie:'astrox_oauth=st3'}}),{zalo:{returnUrl:'https://theastrox.space/'}},zaloFetch);
+ const pid2=new URL(fallback2.headers.get('location'),'https://api.example.com').searchParams.get('id');
+ const done=await zaloFinish(env,new Request('https://api.example.com/auth/zalo/finish',{method:'POST',body:JSON.stringify({id:pid2,token:'secret-access-token',me:{id:'zp-new',name:'Real User'}})}),{zalo:{returnUrl:'https://theastrox.space/'}});
+ assert.equal(done.status,200);assert.equal((await done.json()).ok,true);assert.ok(done.headers.get('set-cookie')?.includes('astrox_session='));
+ const created=await env.DB.prepare("SELECT u.id,u.display_name FROM app_users u JOIN zalo_identities i ON i.user_id=u.id WHERE i.provider_subject='zp-new'").first();
+ assert.equal(created.display_name,'Real User');assert.ok(await env.DB.prepare('SELECT user_id FROM zalo_point_accounts WHERE user_id=?').bind(created.id).first());
 });

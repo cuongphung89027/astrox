@@ -5,7 +5,7 @@ import {testEnv} from '../admin/test/sqlite.mjs';
 import {defaultConfig} from '../admin/config.ts';
 import {state,saveDraft,publish} from '../admin/store.mjs';
 import {legacySnapshot, runtimeSettings, capabilities} from './config.mjs';
-import {sessionCookie,readSession,verifyZaloUser} from './auth.mjs';
+import {sessionCookie,readSession,verifyZaloUser,zaloCallback} from './auth.mjs';
 import {payosSignature,handlePayosWebhook,handleTopupCreate} from './payments.mjs';
 
 async function fixture(){
@@ -37,3 +37,29 @@ test('public routing never exposes internal configuration endpoints',async()=>{c
 test('legacy import retains exact package totals and maps active services',async()=>{const {importLegacyConfig}=await import('../admin/backend.mjs');const env=await fixture();const c=importLegacyConfig(defaultConfig(),await legacySnapshot(env));assert.equal(c.billing.packages[0].fixedPoints,55);assert.equal(c.integrations.payos.enabled,true);assert.equal(c.billing.enabled,true);assert.equal(c.billing.services.find(s=>s.id==='tuvi').status,'free')});
 test('promotion reservations prevent concurrent oversubscription before payment',async()=>{const env=await fixture();await published(env,c=>{c.billing.promos=[{id:'once',code:'ONCE',bonus:10,limit:1,perUser:1,enabled:true,expiresAt:''}]});const cookie=(await sessionCookie(env,'u1')).split(';')[0];const req=()=>new Request('https://api.example.com/api/topup/create',{method:'POST',headers:{cookie,origin:'https://theastrox.space'},body:JSON.stringify({amount_vnd:60000,promo_code:'ONCE'})});const upstream=async(url,init)=>{const b=JSON.parse(init.body),data={orderCode:b.orderCode,amount:b.amount,checkoutUrl:'https://pay.payos.vn/test',paymentLinkId:'link'};return Response.json({code:'00',data,signature:await payosSignature(env.PAYOS_CHECKSUM_KEY,data)})};assert.equal((await handleTopupCreate(env,req(),upstream)).status,200);const second=await handleTopupCreate(env,req(),upstream);assert.equal(second.status,400);assert.equal((await second.json()).error,'promo_exhausted')});
 test('new orders disabled in Admin do not reach PayOS',async()=>{const env=await fixture();await published(env,c=>{c.billing.enabled=false});const cookie=(await sessionCookie(env,'u1')).split(';')[0];let called=false;const r=await handleTopupCreate(env,new Request('https://api.example.com/api/topup/create',{method:'POST',headers:{cookie,origin:'https://theastrox.space'},body:JSON.stringify({amount_vnd:50000})}),async()=>{called=true;throw Error()});assert.equal(r.status,503);assert.equal(called,false)});
+// Workers reject redirect:'error' at fetch() argument validation, before any network call,
+// so an unsupported value throws TypeError and surfaces as a 503 instead of the intended error.
+test('outbound fetches only use redirect modes the Workers runtime accepts',async()=>{
+ const sources=['./auth.mjs','./payments.mjs','../admin/runtime.mjs'].map(f=>readFileSync(new URL(f,import.meta.url),'utf8'));
+ for(const src of sources)for(const [,mode] of src.matchAll(/redirect:\s*'([^']+)'/g))assert.ok(['follow','manual'].includes(mode),`unsupported redirect mode: ${mode}`);
+ const modes=sources.join('').matchAll(/redirect:\s*'([^']+)'/g);
+ assert.ok([...modes].length>=3,'expected outbound fetches to pin an explicit redirect mode');
+});
+// Failed Zalo logins must persist a sanitized diagnostic row so production
+// can be triaged from D1 even when the user never reports the error text.
+test('failed Zalo callbacks persist diagnostics without leaking tokens',async()=>{const env=await fixture();
+ const rejected=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=s&code=c'),{},async()=>{throw Error('unused')});
+ assert.equal(rejected.status,400);
+ let row=await env.DB.prepare('SELECT stage,detail FROM login_diagnostics ORDER BY id DESC LIMIT 1').first();
+ assert.equal(row.stage,'callback_rejected');assert.ok(JSON.parse(row.detail).zalo_error===null);
+ await env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind('st1','v',new Date().toISOString()).run();
+ const exchanged=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=st1&code=x',{headers:{cookie:'astrox_oauth=st1'}}),{zalo:{returnUrl:'https://theastrox.space/'}},async()=>Response.json({error_name:'invalid_code'},{status:400}));
+ assert.equal(exchanged.status,502);assert.equal((await exchanged.json()).error,'token_exchange_failed');
+ row=await env.DB.prepare('SELECT stage,detail FROM login_diagnostics ORDER BY id DESC LIMIT 1').first();
+ assert.equal(row.stage,'token_exchange_failed');assert.ok(row.detail.includes('"status":400'));assert.ok(!row.detail.toLowerCase().includes('token'));
+ await env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind('st2','v',new Date().toISOString()).run();
+ const unverifiable=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=st2&code=x',{headers:{cookie:'astrox_oauth=st2'}}),{zalo:{returnUrl:'https://theastrox.space/'}},async(url)=>url.includes('access_token')?Response.json({access_token:'secret-access-token',refresh_token:'secret-refresh'}):Response.json({error:-1001},{status:401}));
+ assert.equal(unverifiable.status,502);
+ row=await env.DB.prepare('SELECT stage,detail FROM login_diagnostics ORDER BY id DESC LIMIT 1').first();
+ assert.equal(row.stage,'identity_unverified');assert.ok(!row.detail.includes('secret'));
+});

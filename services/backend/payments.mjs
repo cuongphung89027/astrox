@@ -42,7 +42,7 @@ export async function handleTopupCreate(env,request,fetchImpl=fetch){
  const payload={orderCode,amount,description:`AstroX ${points} Point`,returnUrl:settings.payos.returnUrl,cancelUrl:settings.payos.cancelUrl};
  payload.signature=await payosSignature(runtime.PAYOS_CHECKSUM_KEY,payload);payload.expiredAt=Math.floor(Date.parse(expires)/1000);
  try{
-  const response=await fetchImpl('https://api-merchant.payos.vn/v2/payment-requests',{method:'POST',headers:{'content-type':'application/json','x-client-id':runtime.PAYOS_CLIENT_ID,'x-api-key':runtime.PAYOS_API_KEY},body:JSON.stringify(payload),redirect:'error',signal:AbortSignal.timeout(20000)});
+  const response=await fetchImpl('https://api-merchant.payos.vn/v2/payment-requests',{method:'POST',headers:{'content-type':'application/json','x-client-id':runtime.PAYOS_CLIENT_ID,'x-api-key':runtime.PAYOS_API_KEY},body:JSON.stringify(payload),redirect:'manual',signal:AbortSignal.timeout(20000)});
   const data=await response.json().catch(()=>null);if(!response.ok||data?.code!=='00'||!data.data)throw new Error('payos_create_failed');
   if(!await equal(await payosSignature(runtime.PAYOS_CHECKSUM_KEY,data.data),String(data.signature||'')))throw new Error('payos_bad_signature');
   if(Number(data.data.orderCode)!==orderCode||Number(data.data.amount)!==amount||!String(data.data.checkoutUrl||'').startsWith('https://pay.payos.vn/'))throw new Error('payos_invalid_response');

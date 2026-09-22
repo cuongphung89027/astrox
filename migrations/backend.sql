@@ -18,3 +18,10 @@ CREATE TABLE IF NOT EXISTS zalo_point_ledger (
  created_at TEXT NOT NULL,
  UNIQUE(reason,reference_id,user_id)
 );
+CREATE TABLE IF NOT EXISTS login_diagnostics (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ stage TEXT NOT NULL,
+ detail TEXT NOT NULL DEFAULT '{}',
+ created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS login_diagnostics_created ON login_diagnostics(created_at);

@@ -172,7 +172,7 @@ export function randomCastNumbers(): [number, number, number] {
 
 export function buildKdPrompt(result: CastResult, question: string, profile: Profile | null): string {
   const profileLine = profile
-    ? managedPrompt("kinhdich.buildKdPrompt.0", [profile.name, profile.gender, profile.dob.split("-").reverse().join("-"), profile.hourChi, profile.place])
+    ? managedPrompt("kinhdich.buildKdPrompt.0", [profile.name, profile.gender, profile.dob.split("-").reverse().join("/"), profile.hourChi, profile.place])
     : "";
   return managedPrompt("kinhdich.buildKdPrompt.1", [profileLine, result.s1, result.s2, result.s3, question, result.upper.name, result.upper.symbol, result.upper.nature, result.upper.elem, result.upper.dir, result.lower.name, result.lower.symbol, result.lower.nature, result.lower.elem, result.lower.dir, result.movingPos, result.the.name, result.the.symbol, result.the.elem, result.dung.name, result.dung.symbol, result.dung.elem, result.relation.label, result.relation.desc, result.bienUpper.name, result.bienUpper.symbol, result.bienLower.name, result.bienLower.symbol, result.hoUpper.name, result.hoUpper.symbol, result.hoLower.name, result.hoLower.symbol, result.upper.nature, result.lower.nature, result.upper.nature, result.lower.nature, result.movingPos, result.the.name, result.theIsLower ? "Hạ" : "Thượng", result.relation.label, result.bienUpper.name, result.bienLower.name, result.hoUpper.name, result.hoLower.name]);
 }

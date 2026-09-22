@@ -40,7 +40,7 @@ export const ZODIAC_SIGNS: ZodiacSign[] = [
 
 export function signDateRange(s: ZodiacSign): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(s.from[0])}/${pad(s.from[1])} – ${pad(s.to[0])}/${pad(s.to[1])}`;
+  return `${pad(s.from[1])}/${pad(s.from[0])} – ${pad(s.to[1])}/${pad(s.to[0])}`;
 }
 
 /** Port 1:1 getZodiacSign — tính cung Mặt Trời từ ngày sinh YYYY-MM-DD. */

@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </ul>
             </nav>
 
-            <div className="ml-auto flex shrink-0 items-center gap-2">
+            <div className="relative z-[5] ml-auto flex shrink-0 items-center gap-2">
               <PointsChip />
               <AuthMenu />
             </div>

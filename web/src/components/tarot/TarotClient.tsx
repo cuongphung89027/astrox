@@ -152,10 +152,10 @@ export function TarotClient() {
             {spread.frames && <label className={styles.frame}>Góc nhìn<select value={frameId} onChange={event => setFrameId(event.target.value)}>{spread.frames.map(frame => <option key={frame.id} value={frame.id}>{frame.label}</option>)}</select></label>}
             {cardsErr && <div role="alert" className={styles.error}>Không tải được bộ bài. <button onClick={fetchCards}>Thử lại</button></div>}
             <button className={styles.start} onClick={startDraw} disabled={!cardsData || deck.status !== "available"}>{deck.status !== "available" ? "Bộ bài đang được chuẩn bị" : cardsData ? "Bắt đầu trải bài" : "Đang tải bộ bài…"}<span aria-hidden="true">↗</span></button>
-            {historyCount > 0 && <Link href="/tarot?history=1" className={styles.historyLink}>
+            <Link href="/tarot?history=1" className={styles.historyLink}>
               <span>Nhật ký trải bài</span>
-              <span>{historyCount} lượt đã luận giải <i aria-hidden="true">↗</i></span>
-            </Link>}
+              <span>{historyCount > 0 ? `${historyCount} lượt đã luận giải ` : "Chưa có lượt nào "}<i aria-hidden="true">↗</i></span>
+            </Link>
           </div>
         </div>
         )

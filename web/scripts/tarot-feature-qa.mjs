@@ -50,9 +50,16 @@ const PROFILE_STATE = { profile: { name: "Mực Demo", gender: "Nam", dob: "1998
 const results = [];
 const check = (name, ok, detail = "") => { results.push({ name, ok, detail }); console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`); };
 
-async function overflowOk(page) {
-  return page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+const overflowOk = async (page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
+
+/** Trên prod (guest) modal mời đăng nhập mở sau mỗi lần load — tự đóng để test. */
+async function dismissInvites(page) {
+  const later = page.getByRole("button", { name: /Để sau, mình muốn khám phá trước/ });
+  try { await later.waitFor({ state: "visible", timeout: 2500 }); await later.click(); }
+  catch { /* localhost preview không có modal này */ }
 }
+
+const isLocal = /localhost|127\.0\.0\.1/.test(BASE);
 
 async function run(engine) {
   const browser = engine === "webkit" ? await webkit.launch() : await chromium.launch();
@@ -68,6 +75,7 @@ async function run(engine) {
 
     /* ---------- 1. Setup: nút âm thanh ---------- */
     await page.goto(`${BASE}/tarot`, { waitUntil: "networkidle" });
+    await dismissInvites(page);
     const soundBtn = page.locator("button[aria-pressed]").filter({ hasText: "" }).locator("visible=true").first();
     const muteBtn = page.getByRole("button", { name: /Bật tiếng video giới thiệu bộ bài/ });
     await muteBtn.waitFor({ state: "visible", timeout: 8000 });
@@ -84,15 +92,20 @@ async function run(engine) {
     check(`[${engine}] tắt tiếng lại được`, await page.locator("video").evaluate((v) => v.muted) === true);
 
     /* ---------- 2. Lối vào nhật ký ở setup ---------- */
+    // Lần đầu chưa có lượt nào: link vẫn phải hiện (không còn ẩn).
+    const firstLink = await page.getByRole("link", { name: /Nhật ký trải bài/ }).textContent();
+    check(`[${engine}] link nhật ký hiện ngay khi chưa có lượt`, (firstLink || "").includes("Chưa có lượt nào"), `text="${(firstLink || "").trim()}"`);
     // Seed history qua evaluate (không dùng addInitScript để còn kiểm được empty state).
     await page.evaluate((h) => localStorage.setItem("astrox_tarot_history_v1", JSON.stringify(h)), HISTORY);
     await page.reload({ waitUntil: "networkidle" });
+    await dismissInvites(page);
     const link = page.getByRole("link", { name: /Nhật ký trải bài/ });
     await link.waitFor({ state: "visible", timeout: 6000 });
     check(`[${engine}] link nhật ký hiện ở setup (4 lượt)`, (await link.textContent()).includes("4"));
 
     /* ---------- 3. Danh sách lượt trải ---------- */
     await page.goto(`${BASE}/tarot?history=1`, { waitUntil: "networkidle" });
+    await dismissInvites(page);
     await page.waitForTimeout(300);
     const rows = page.locator("li[class*=historyRow]");
     await rows.first().waitFor({ state: "visible", timeout: 6000 });
@@ -145,6 +158,7 @@ async function run(engine) {
     /* ---------- 6. Empty state ---------- */
     await page.evaluate(() => localStorage.removeItem("astrox_tarot_history_v1"));
     await page.goto(`${BASE}/tarot?history=1`, { waitUntil: "networkidle" });
+    await dismissInvites(page);
     await page.waitForTimeout(300);
     check(`[${engine}] empty state hiện`, await page.getByText("Chưa có lượt trải nào được lưu").isVisible());
     await page.screenshot({ path: `${OUT_DIR}${engine}-empty.png` });
@@ -152,15 +166,18 @@ async function run(engine) {
     await page.getByRole("button", { name: /Trải bài ngay/ }).click();
     await page.waitForURL("**/tarot", { timeout: 6000 });
     check(`[${engine}] empty → nút trải bài quay về /tarot`, page.url().endsWith("/tarot"));
-    /* Sau khi xoá hết, link nhật ký không còn ở setup */
+    /* Sau khi xoá hết, link nhật ký vẫn hiện với nhãn rỗng */
     await page.waitForTimeout(300);
-    check(`[${engine}] link nhật ký ẩn khi rỗng`, (await page.getByRole("link", { name: /Nhật ký trải bài/ }).count()) === 0);
+    const emptyLink = await page.getByRole("link", { name: /Nhật ký trải bài/ }).textContent();
+    check(`[${engine}] link nhật ký vẫn hiện khi rỗng`, (emptyLink || "").includes("Chưa có lượt nào"), `text="${(emptyLink || "").trim()}"`);
 
     /* ---------- 7. Trang chủ không lỗi & hiện tên gọi ---------- */
     await page.goto(`${BASE}/trangchu`, { waitUntil: "networkidle" });
+    await dismissInvites(page);
     await page.waitForTimeout(400);
     const h1 = await page.locator("h1").first().textContent();
-    check(`[${engine}] trang chủ chào bằng tên gọi`, h1.includes("Mực Demo"), `h1="${h1.slice(0, 60)}"`);
+    if (isLocal) check(`[${engine}] trang chủ chào bằng tên gọi`, h1.includes("Mực Demo"), `h1="${h1.slice(0, 60)}"`);
+    else check(`[${engine}] trang chủ (guest) render không lỗi`, /Chào|Xin chào/.test(h1), `h1="${h1.slice(0, 60)}"`);
     await ctx.close();
   })().catch((e) => check(`[${engine}] luồng không ném exception`, false, String(e).slice(0, 300)));
   const realErrors = errors.filter((e) => !/favicon|Download the React DevTools/i.test(e));

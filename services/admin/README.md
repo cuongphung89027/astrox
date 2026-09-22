@@ -1,6 +1,6 @@
 # AstroX Admin — bản tích hợp redesign
 
-Admin ở `/admin`, dùng cùng màu kem/xanh, typography và ngôn ngữ giao diện với web chính. Chưa merge `main`, chưa deploy và chưa ghi vào ví production.
+Admin ở `/admin`, dùng cùng màu kem/xanh, typography và ngôn ngữ giao diện với web chính. Đã có cấu hình production qua Cloudflare Access; backend cũ được tích hợp tại `services/backend`.
 
 ## Chạy local
 
@@ -26,7 +26,7 @@ Mặc định AI của web preview vẫn dùng đường dẫn hiện có. Để
 - Thông báo chung/lịch module và trạng thái bảo trì lấy cấu hình đã áp dụng trên web mới.
 - Màn dữ liệu nghiệp vụ hiện trạng thái chưa kết nối khi backend vắng mặt. Không tạo giao dịch hay số liệu giả. Nếu có bảng cũ, chỉ đọc người dùng/số dư.
 
-**Chưa có backend ví trong repo này.** Thanh toán PayOS thật, callback Zalo, nhận thưởng/Ads, trừ/cộng point, đối soát và các tác vụ theo lịch cần Worker nghiệp vụ. Các thông số đã lưu được nhưng việc bật tính năng cần ví bị chặn cho tới khi có backend hỗ trợ phiên bản cấu hình. Nút kiểm tra PayOS/Zalo chỉ kiểm tra cấu hình và handshake, không xác nhận giao dịch hay OAuth thành công. Helper chữ ký PayOS đã có kiểm thử, chưa gắn webhook production.
+**Backend Zalo/PayOS đã được đưa vào repo tại `services/backend`.** Tái sử dụng tài khoản, số dư, đơn và khóa cũ; đọc cấu hình đã áp dụng, xử lý webhook và cộng Point nguyên tử. Nút nhập cấu hình chỉ dùng trên bản nháp chưa chỉnh sửa. Thu Point cho AI, thưởng/Ads tự động, đối soát và tác vụ theo lịch chưa được hỗ trợ nên vẫn bị chặn khi áp dụng. Nút kiểm tra PayOS/Zalo kiểm tra cấu hình và handshake, không xác nhận giao dịch hoặc OAuth thực đã hoàn tất. Xem hướng dẫn triển khai ở `services/backend/README.md`.
 
 Các tùy chọn audit/retention/đối soát là chính sách cho backend tương lai; không cho phép tắt ghi audit cấu hình hay các bảo vệ chống cộng trùng. Frontend hiện suy ra service ID theo module; định giá riêng từng subtopic cần gắn ID tương ứng ở consumer khi nối backend.
 

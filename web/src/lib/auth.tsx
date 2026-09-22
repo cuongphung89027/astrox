@@ -160,7 +160,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
   const refreshModuleAccess = useCallback(async () => {
     let access: Record<string, boolean> = {};
     const hasSupa = !!(await currentAccessToken(client));
-    if (!hasSupa && astroxUser && AUTH_API_BASE) {
+    if (!hasSupa && AUTH_API_BASE) {
       access = await fetchModuleAccessAstrox();
     } else if (hasSupa) {
       try {
@@ -219,7 +219,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
   // Poll module access mỗi 20s khi tab hiển thị (admin bật/khoá realtime).
   useEffect(() => {
     const id = setInterval(() => {
-      if (document.visibilityState === "visible" && (astroxUser || supabaseEmail)) refreshModuleAccess();
+      if (document.visibilityState === "visible") refreshModuleAccess();
     }, 20000);
     return () => clearInterval(id);
   }, [astroxUser, supabaseEmail, refreshModuleAccess]);
@@ -246,7 +246,6 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
       displayName,
       moduleAccess,
       isModuleAllowed: (module: string) => {
-        if (!loggedIn) return true;
         if (moduleAccess[module] === false) return false;
         return true;
       },

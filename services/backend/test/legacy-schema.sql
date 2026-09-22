@@ -1,0 +1,16 @@
+CREATE TABLE user_module_access (user_id TEXT NOT NULL, module TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, updated_at INTEGER NOT NULL, PRIMARY KEY (user_id, module));
+CREATE TABLE modules (  id TEXT PRIMARY KEY,  slug TEXT NOT NULL UNIQUE,  name TEXT NOT NULL,  description TEXT,  access_mode TEXT NOT NULL DEFAULT 'public' CHECK (access_mode IN ('public','login','paid','disabled')),  enabled INTEGER NOT NULL DEFAULT 1,  created_at TEXT NOT NULL,  updated_at TEXT NOT NULL);
+CREATE TABLE module_prices (  id TEXT PRIMARY KEY, module_id TEXT NOT NULL REFERENCES modules(id), part_id TEXT REFERENCES module_parts(id),  points INTEGER NOT NULL CHECK(points >= 0), active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL);
+CREATE TABLE promotion_codes (  id TEXT PRIMARY KEY, code TEXT NOT NULL UNIQUE, points INTEGER NOT NULL DEFAULT 0 CHECK(points >= 0),  max_redemptions INTEGER, redeemed_count INTEGER NOT NULL DEFAULT 0, starts_at TEXT, expires_at TEXT,  active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL, bonus_type TEXT NOT NULL DEFAULT 'points', min_amount_vnd INTEGER);
+CREATE TABLE promotion_redemptions (id TEXT PRIMARY KEY, promotion_id TEXT NOT NULL REFERENCES promotion_codes(id), user_id TEXT NOT NULL REFERENCES users(id), redeemed_at TEXT NOT NULL, UNIQUE(promotion_id,user_id));
+CREATE TABLE point_ledger (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), delta INTEGER NOT NULL, reason TEXT NOT NULL, reference_id TEXT, created_at TEXT NOT NULL, UNIQUE(reason, reference_id, user_id));
+CREATE TABLE oauth_states ( id TEXT PRIMARY KEY, code_verifier TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE zalo_pending_tokens ( id TEXT PRIMARY KEY, access_token TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE app_users ( id TEXT PRIMARY KEY, display_name TEXT, email TEXT, avatar_url TEXT, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','suspended','deleted')), created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE TABLE zalo_identities ( id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id), provider TEXT NOT NULL, provider_subject TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(provider, provider_subject));
+CREATE TABLE zalo_point_accounts ( user_id TEXT PRIMARY KEY REFERENCES app_users(id), balance INTEGER NOT NULL DEFAULT 0 CHECK(balance >= 0), updated_at TEXT NOT NULL);
+CREATE TABLE topup_orders_zalo (id TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES app_users(id), order_code INTEGER NOT NULL UNIQUE, amount_vnd INTEGER NOT NULL CHECK(amount_vnd > 0), points INTEGER NOT NULL CHECK(points > 0), status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','cancelled','expired')), payos_checkout_url TEXT, payos_payment_link_id TEXT, idempotency_key TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, paid_at TEXT);
+CREATE TABLE topup_packages (id TEXT PRIMARY KEY, amount_vnd INTEGER NOT NULL UNIQUE CHECK(amount_vnd > 0), points INTEGER NOT NULL CHECK(points > 0), label TEXT, active INTEGER NOT NULL DEFAULT 1, sort_order INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
+CREATE TABLE topup_promo_map (order_code INTEGER PRIMARY KEY, promo_id TEXT NOT NULL);
+CREATE UNIQUE INDEX idx_app_users_email ON app_users(email) WHERE email IS NOT NULL;
+CREATE INDEX idx_topup_zalo_user ON topup_orders_zalo(user_id, created_at DESC);

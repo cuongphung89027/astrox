@@ -1,3 +1,4 @@
+import {readPublished} from '../../services/admin/store.mjs';
 /*
  * Cloudflare Pages Function — trả về quyền truy cập module của tài khoản
  * hiện tại (đọc bảng user_module_access do trang quản trị dashboard ghi).
@@ -53,13 +54,14 @@ export async function onRequestGet(context) {
 
   // Mặc định TẤT CẢ module đều được phép; chỉ ghi đè khi có dòng rõ ràng
   // trong user_module_access (admin đã tắt/bật thủ công cho tài khoản này).
-  const access = Object.fromEntries(ALL_MODULES.map((m) => [m, true]));
+  const published = await readPublished(env);
+  const access = Object.fromEntries(ALL_MODULES.map((m) => [m, !published || !published.config.operations.maintenance && published.config.billing.services.some(s => s.id === m && ["free", "paid"].includes(s.status))]));
   try {
     const { results } = await env.DB.prepare(
       "SELECT module, enabled FROM user_module_access WHERE user_id = ?1"
     ).bind(user.id).all();
     (results || []).forEach((row) => {
-      if (ALL_MODULES.includes(row.module)) access[row.module] = !!row.enabled;
+      if (ALL_MODULES.includes(row.module)) access[row.module] = access[row.module] && !!row.enabled;
     });
     return json(200, { access });
   } catch {

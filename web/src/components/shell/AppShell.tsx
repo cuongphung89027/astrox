@@ -118,7 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <ProfileModalProvider>
           {/* Trang chủ hero tràn từ mép trên (header đè lên video); trang khác
               chừa pt-16 đúng chiều cao header. pb-28 <lg = chừa bottom dock. */}
-          <main className="flex-1 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-0 pt-16"><PublishedNotice />{children}</main>
+          <main className="flex-1 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-0 pt-16"><PublishedNotice>{children}</PublishedNotice></main>
         </ProfileModalProvider>
 
         {/* Footer: dải mây Lý–Trần + credit + link Tương Hợp.

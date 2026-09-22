@@ -1,3 +1,4 @@
+import {backendStatus,connectionSecretAvailable} from './backend.mjs';
 import {state,readPublished,readSecret,recordAudit,sql} from './store.mjs';
 import {publicConfig} from './config.ts';
 import {executeProviderChain,testProvider,validateIntegration,RuntimeError} from './runtime.mjs';
@@ -28,14 +29,13 @@ export async function handleAdminRuntime(path,request,env,user){
   }
   const kind=path.split('/')[1];
   if(!['payos','zalo','wallet'].includes(kind))return json({error:'Không tìm thấy kết nối.'},404);
-  const checks=[];
+  const checks=[],backend=await backendStatus(env);
   if(kind!=='wallet'){
    const errors=validateIntegration(kind,draft.integrations[kind]);checks.push({label:'Thông tin cấu hình hợp lệ',ok:errors.length===0});
    const refs=kind==='payos'?['payos:apiKey','payos:checksumKey']:['zalo:appSecret'];
-   for(const ref of refs)checks.push({label:`Đã lưu ${ref.split(':')[1]}`,ok:Boolean(await readSecret(env,ref))});
+   for(const ref of refs)checks.push({label:`Đã lưu ${ref.split(':')[1]}`,ok:await connectionSecretAvailable(env,ref,backend)});
   }
-  let ready=false;
-  if(env.ASTROX_BACKEND){try{const r=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/admin/capabilities',{signal:AbortSignal.timeout(5000)}));ready=r.ok&&(await r.json()).configVersioned===true}catch{}}
+  const ready=backend.configVersioned;
   checks.push({label:'Backend nghiệp vụ đã hỗ trợ cấu hình phiên bản',ok:ready});
   await recordAudit(env,user.email,'integration.check',kind,{ready});
   return json({ok:checks.every(c=>c.ok),checks,message:checks.every(c=>c.ok)?'Cấu hình sẵn sàng. Cần kiểm thử giao dịch/đăng nhập trên môi trường tích hợp.':'Chưa đủ điều kiện tích hợp. Kiểm tra các mục bên dưới.',scope:'configuration-only'});
@@ -53,7 +53,10 @@ export async function handleConfiguredAi(request,env){
   if(c.operations.maintenance)throw new RuntimeError('MAINTENANCE',503);
   if(!c.ai.enabled)throw new RuntimeError('AI_DISABLED',503);
   input=normalizedInput(await parse(request));
-  if(c.billing.enabled){
+  const service=c.billing.services.find(s=>s.id===input.serviceId);
+  if(!service||!['free','paid'].includes(service.status))throw new RuntimeError('SERVICE_UNAVAILABLE',403);
+  if(service.status==='paid'){
+   if(!c.billing.enabled)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
    if(!env.ASTROX_BACKEND)throw new RuntimeError('BACKEND_UNAVAILABLE',503);
    const headers=new Headers({'content-type':'application/json','x-astrox-config-revision':String(published.revision)});
    for(const name of ['cookie','authorization']){const value=request.headers.get(name);if(value)headers.set(name,value)}
@@ -61,8 +64,7 @@ export async function handleConfiguredAi(request,env){
    const response=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/ai',{method:'POST',headers,body:JSON.stringify(input),signal:AbortSignal.timeout(Math.min(c.ai.totalTimeoutMs+5000,125000))}));
    outcome=response.ok?'success':`BACKEND_HTTP_${response.status}`;return response;
   }
-  const service=c.billing.services.find(s=>s.id===input.serviceId);
-  if(!service||service.status!=='free')throw new RuntimeError('SERVICE_UNAVAILABLE',403);
+
   const result=await executeProviderChain(c,{messages:input.messages,serviceId:input.serviceId},ref=>readSecret(env,ref),{allowHosts:hosts(env),healthStore:providerHealth(env)});attempts=result.attempts;outcome='success';
   const {choices,model,usage}=result;return json({choices,model,usage});
  }catch(e){attempts=e.attempts||attempts;outcome=e.code||'failed';return json({error:diagnostic(e.code)},e.status||503)}

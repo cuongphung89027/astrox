@@ -9,7 +9,8 @@ export type ConfigSnapshot = {
   published: AdminConfig | null;
   publishedRevision: number | null;
   secrets: string[];
-  integration: { wallet: boolean };
+  inheritedSecrets?: string[];
+  integration: { wallet: boolean; features?: Record<string, boolean> };
 };
 export class AdminError extends Error {
   constructor(

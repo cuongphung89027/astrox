@@ -9,3 +9,4 @@ test('only published maintenance rules block target and notices obey time/module
  const c=defaultConfig();c.billing.services[0].status='maintenance';c.content.notices=[{id:'n',title:'News',body:'Hello',module:'tuvi',enabled:true,startsAt:'2026-09-20T00:00:00Z',endsAt:'2026-09-30T00:00:00Z'}];
  assert.equal(publicState(c,'/tuvi',Date.parse('2026-09-22')).blocked,true);assert.equal(publicState(c,'/tarot',Date.parse('2026-09-22')).notice,null);assert.equal(publicState(c,'/tuvi',Date.parse('2026-10-22')).notice,null);
 });
+test('hidden services remain unavailable after public projection strips private service details',async()=>{const {publicConfig}=await import('./config.ts');const c=defaultConfig();c.billing.services.find(s=>s.id==='tuvi').status='hidden';const p=publicConfig(c);assert.equal(p.billing.services.find(s=>s.id==='tuvi'),undefined);assert.equal(publicState(p,'/tuvi').blocked,true)});

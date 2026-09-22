@@ -633,6 +633,16 @@ export function AdminDashboard() {
               {message}
             </div>
           )}
+          {snapshot.revision === 0 && snapshot.publishedRevision === null && snapshot.integration.wallet && session.user.capabilities.includes("access.manage") && (
+            <div className={s.info}>
+              <p>Đã tìm thấy backend AstroX hiện có. Nhập gói nạp, Zalo, PayOS và dịch vụ vào bản nháp để kiểm tra trước khi áp dụng.</p>
+              <button disabled={busy || dirty} onClick={() => void act(async () => {
+                await adminRequest("import-legacy", session.csrf, { expectedRevision: snapshot.revision });
+                accept(await adminRequest<ConfigSnapshot>("config"));
+                setMessage("Đã nhập cấu hình cũ. Tài khoản, số dư và đơn hàng được giữ nguyên.");
+              })}>Nhập cấu hình backend hiện tại</button>
+            </div>
+          )}
           {view === "aiMetrics" && <AiMetrics config={config} />}
           <fieldset
             disabled={
@@ -1513,14 +1523,14 @@ export function AdminDashboard() {
                         "secrets.write",
                       )}
                     />
+                    {snapshot.inheritedSecrets?.includes("payos:apiKey") && <p className={s.help}>Đang tái sử dụng khóa PayOS đã lưu trên backend. Nhập khóa mới chỉ khi cần thay thế.</p>}
                     <IntegrationTest
                       kind="payos"
                       csrf={session.csrf}
                       disabled={dirty}
                     />
                     <p className={s.help}>
-                      Webhook: <code>/api/payos/webhook</code> · Đăng ký URL
-                      tuyệt đối trên PayOS sau khi triển khai.
+                      Webhook: <code>https://api.theastrox.space/api/webhooks/payos</code>
                     </p>
                   </Card>
                 )}
@@ -1552,6 +1562,7 @@ export function AdminDashboard() {
                         "secrets.write",
                       )}
                     />
+                    {snapshot.inheritedSecrets?.includes("zalo:appSecret") && <p className={s.help}>Đang tái sử dụng App Secret Zalo đã lưu trên backend.</p>}
                     <IntegrationTest
                       kind="zalo"
                       csrf={session.csrf}
@@ -1580,7 +1591,7 @@ export function AdminDashboard() {
                     />
                     <div className={s.info}>
                       {snapshot.integration.wallet
-                        ? "Máy chủ đã có cấu hình kết nối backend ví."
+                        ? "Đã nối backend hiện tại: tài khoản, số dư, đơn hàng, gói nạp, Zalo và PayOS."
                         : "Chưa có kết nối backend ví trên máy chủ."}
                     </div>
                   </Card>

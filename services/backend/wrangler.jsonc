@@ -1,0 +1,11 @@
+{
+ "name": "astrox-api",
+ "main": "worker.mjs",
+ "account_id": "17dafb18db82f24f286900c270708342",
+ "compatibility_date": "2026-09-15",
+ "keep_vars": true,
+ "workers_dev": true,
+ "preview_urls": false,
+ "d1_databases": [{"binding":"DB","database_name":"astrox-db","database_id":"bbefe032-7053-49cf-99f1-794d3fbc128e","migrations_dir":"../../migrations"}],
+ "observability": {"enabled":true,"logs":{"enabled":true,"invocation_logs":false}}
+}

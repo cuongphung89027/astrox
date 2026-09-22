@@ -22,6 +22,7 @@ import { PreferencesEffect } from "@/components/profile/PreferencesEffect";
 import { AuthMenu } from "./AuthMenu";
 import { BottomDock } from "./BottomDock";
 import { LoginPrompt } from "./LoginPrompt";
+import { PointsChip } from "./PointsChip";
 import { PublishedNotice } from "./PublishedNotice";
 
 interface NavItem {
@@ -39,12 +40,13 @@ const NAV: NavItem[] = [
   { href: "/battu", label: "Bát Tự", accent: "#187650" },
   { href: "/thansohoc", label: "Thần Số Học", accent: "#187650" },
   { href: "/tarot", label: "Tarot", accent: "#187650" },
+  { href: "/hoso", label: "Hồ sơ", accent: "#187650" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const mobileTitle = !isHome ? NAV.find(item => item.href !== "/" && (pathname === item.href || pathname.startsWith(`${item.href}/`)))?.label ?? (pathname === "/tuonghop" ? "Tương Hợp" : pathname === "/hoso" ? "Hồ sơ" : "") : "";
+  const mobileTitle = !isHome ? NAV.find(item => item.href !== "/" && (pathname === item.href || pathname.startsWith(`${item.href}/`)))?.label ?? (pathname === "/tuonghop" ? "Tương Hợp" : "") : "";
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -84,7 +86,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <img src="/assets/logo.png" alt="AstroX" width={1254} height={1254} className="h-10 w-auto" />
             </Link>
 
-            {mobileTitle && <p className="pointer-events-none absolute inset-x-[72px] text-center text-[14px] leading-tight sm:text-[16px] font-semibold text-muc lg:hidden">{mobileTitle}</p>}
+            {/* Tiêu đề trang (mobile <lg). Co ô chữ theo 3 dải width để không
+                đè chip Point + avatar: 56/168 (<360), 64/124 (360–439),
+                đối xứng 72/72 từ 440px (font 14px + tiêu đề dài nhất an toàn). */}
+            {mobileTitle && <p className="pointer-events-none absolute left-[56px] right-[168px] min-[360px]:left-[64px] min-[360px]:right-[124px] min-[440px]:left-[72px] min-[440px]:right-[72px] text-center text-[14px] leading-tight sm:text-[16px] font-semibold text-muc lg:hidden">{mobileTitle}</p>}
 
             {/* Nav desktop: underline trượt màu theo module (chỉ ≥lg — dưới đó
                 là bottom dock, tránh nav vỡ dòng ở màn vừa) */}
@@ -110,6 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </nav>
 
             <div className="ml-auto flex shrink-0 items-center gap-2">
+              <PointsChip />
               <AuthMenu />
             </div>
           </div>

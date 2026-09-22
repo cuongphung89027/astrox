@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export type FeatureName = "home" | "tuvi" | "zodiac" | "kinhdich" | "battu" | "numerology" | "tarot" | "compat" | "profile" | "explore" | "settings" | "wallet" | "motion" | "text" | "calendar" | "logout" | "close";
+export type FeatureName = "home" | "tuvi" | "zodiac" | "kinhdich" | "battu" | "numerology" | "tarot" | "compat" | "profile" | "explore" | "settings" | "wallet" | "motion" | "text" | "calendar" | "logout" | "close" | "invite" | "play";
 export const FEATURE_BY_PATH: Record<string, FeatureName> = {
   "/": "home", "/tuvi": "tuvi", "/cunghoangdao": "zodiac", "/hoangdao": "zodiac", "/kinhdich": "kinhdich", "/battu": "battu", "/thansohoc": "numerology", "/thanso": "numerology", "/tarot": "tarot", "/tuonghop": "compat", "/hoso": "profile",
 };
@@ -24,5 +24,7 @@ export function FeatureIcon({ name, size = 24, ...props }: SVGProps<SVGSVGElemen
     {name === "logout" && <><path d="M10 4H5v16h5M10 12h11m-4-4 4 4-4 4"/></>}
     {name === "close" && <path d="m6 6 12 12M6 18 18 6"/>}
     {name === "explore" && <path d="M12 5v14M5 12h14"/>}
+    {name === "invite" && <><circle cx="9.5" cy="8" r="3.4"/><path d="M3.5 20.5v-1.7a6 6 0 0 1 12 0v1.7"/><path d="M18.5 5.5v5M16 8h5"/></>}
+    {name === "play" && <><circle cx="12" cy="12" r="8.5"/><path d="m10 8.6 6 3.4-6 3.4Z"/></>}
   </svg>;
 }

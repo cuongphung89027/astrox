@@ -3,6 +3,7 @@ import {publicConfig} from '../admin/config.ts';
 import {runtimeSettings,capabilities,legacySnapshot} from './config.mjs';
 import {readSession,zaloLogin,zaloCallback,zaloFinish,logout} from './auth.mjs';
 import {handlePayosWebhook,handleTopupCreate,handlePromoCheck} from './payments.mjs';
+import {handlePointsHistory} from './points.mjs';
 import {json,corsHeaders} from './http.mjs';
 
 export async function moduleAccess(env,request){
@@ -32,6 +33,7 @@ export async function publicFetch(request,env){
   if(path==='/api/topup/create'&&method==='POST')return await handleTopupCreate(env,request);
   if(path==='/api/topup/promo-check'&&method==='POST')return await handlePromoCheck(env,request);
   if(path==='/api/topup/history'&&method==='GET'){const session=await readSession(env,request);if(!session)return json(env,request,{error:'unauthorized'},401);const rows=await env.DB.prepare('SELECT order_code,amount_vnd,points,status,created_at,paid_at FROM topup_orders_zalo WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(session.sub).all();return json(env,request,{orders:rows.results});}
+  if(path==='/api/points/history'&&method==='GET')return await handlePointsHistory(env,request);
   if(path==='/zalo_verifierHiMyTOFJ571A-hHxZ_WyNqxxiMEYZMiqDZSq.html')return new Response('<!doctype html><meta property="zalo-platform-site-verification" content="HiMyTOFJ571A-hHxZ_WyNqxxiMEYZMiqDZSq">',{headers:{'content-type':'text/html; charset=utf-8'}});
   return json(env,request,{error:'not_found'},404);
  }catch(e){console.error(JSON.stringify({event:'backend.request_failed',path:new URL(request.url).pathname,code:e.message==='request_too_large'?'request_too_large':'internal_error'}));return json(env,request,{error:e.message==='request_too_large'?'request_too_large':'backend_unavailable'},e.message==='request_too_large'?413:503);}

@@ -78,3 +78,33 @@ test('failed Zalo callbacks persist diagnostics without leaking tokens',async()=
  const created=await env.DB.prepare("SELECT u.id,u.display_name FROM app_users u JOIN zalo_identities i ON i.user_id=u.id WHERE i.provider_subject='zp-new'").first();
  assert.equal(created.display_name,'Real User');assert.ok(await env.DB.prepare('SELECT user_id FROM zalo_point_accounts WHERE user_id=?').bind(created.id).first());
 });
+// Ví Point của người dùng và view Rewards của admin phải đọc cùng một ledger.
+test('points history is session-scoped, newest-first and cursor-paginated',async()=>{
+ const {publicFetch}=await import('./handler.mjs');const env=await fixture();
+ await env.DB.prepare("INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES('u2','Other','active','2026-01-01','2026-01-01')").run();
+ const ledger=(user,reason,ref,delta,at)=>env.DB.prepare('INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) VALUES(?,?,?,?,?,?)').bind(crypto.randomUUID(),user,delta,reason,ref,at).run();
+ await ledger('u1','topup_payos','t1',55,'2026-02-02T10:00:00.000Z');
+ await ledger('u1','unlock_service','s1',-30,'2026-02-03T09:00:00.000Z');
+ await ledger('u1','ad_reward','a1',5,'2026-02-01T08:00:00.000Z');
+ await ledger('u2','topup_payos','t9',999,'2026-02-04T00:00:00.000Z');
+ assert.equal((await publicFetch(new Request('https://api.example.com/api/points/history'),env)).status,401);
+ const cookie=(await sessionCookie(env,'u1')).split(';')[0];
+ const bad=await publicFetch(new Request('https://api.example.com/api/points/history?cursor=bad',{headers:{cookie}}),env);assert.equal(bad.status,400);
+ const page1=await (await publicFetch(new Request('https://api.example.com/api/points/history?limit=2',{headers:{cookie}}),env)).json();
+ assert.deepEqual(page1.transactions.map(t=>[t.reason,t.delta]),[['unlock_service',-30],['topup_payos',55]]);
+ assert.ok(page1.nextCursor);
+ const page2=await (await publicFetch(new Request(`https://api.example.com/api/points/history?limit=2&cursor=${page1.nextCursor}`,{headers:{cookie}}),env)).json();
+ assert.deepEqual(page2.transactions.map(t=>[t.reason,t.delta]),[['ad_reward',5]]);
+ assert.equal(page2.nextCursor,null);
+ assert.ok(!JSON.stringify([page1,page2]).includes('t9'),'must not leak other users ledger rows');
+});
+test('admin rewards view serves the same ledger rows as user points history',async()=>{
+ const {publicFetch,internalFetch}=await import('./handler.mjs');const env=await fixture();
+ await order(env);await handlePayosWebhook(env,await webhook(env));
+ const rows=(await (await internalFetch(new Request('https://astrox-internal/internal/admin/rewards'),env)).json()).rows;
+ const credit=rows.find(r=>r.reason==='topup_payos');
+ assert.equal(credit.delta,55);assert.equal(credit.user_id,'u1');
+ const cookie=(await sessionCookie(env,'u1')).split(';')[0];
+ const page=await (await publicFetch(new Request('https://api.example.com/api/points/history',{headers:{cookie}}),env)).json();
+ assert.equal(page.transactions[0].id,credit.id);
+});

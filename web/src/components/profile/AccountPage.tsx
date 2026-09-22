@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
@@ -7,9 +7,11 @@ import { useProfile } from "@/lib/use-store";
 import { useProfileModal } from "./ProfileModal";
 import { usePreferences, savePreferences } from "@/lib/preferences";
 import { formatDob } from "@/lib/utils";
-import { fetchMeWithPoints } from "@/lib/api";
+import { usePointsBalance, refreshPoints } from "@/lib/points";
 import { TopupPanel } from "@/components/topup/TopupPanel";
 import { FeatureIcon } from "@/components/kit/FeatureIcon";
+import { useToast } from "@/components/motion";
+import { PointsHome } from "@/components/points/PointsHome";
 import styles from "./AccountPage.module.css";
 
 const exploreLinks = [
@@ -21,32 +23,40 @@ const exploreLinks = [
 export function AccountPage() {
   const search = useSearchParams();
   const selected = search.get("section");
-  const section = ["personal","account","preferences"].includes(selected || "") ? selected : null;
-  const titles: Record<string,string> = {personal:"Thông tin cá nhân",account:"Tài khoản",preferences:"Hiển thị & trải nghiệm"};
+  const section = ["personal","account","preferences","points"].includes(selected || "") ? selected : null;
+  const titles: Record<string,string> = {personal:"Thông tin cá nhân",account:"Tài khoản",preferences:"Hiển thị & trải nghiệm",points:"AstroX Point"};
   const profile = useProfile();
   const { open } = useProfileModal();
   const { loggedIn, ready, displayName, astroxUser, supabaseUser, zaloLogin, logout } = useAuth();
   const settings = usePreferences();
   const preview = astroxUser?.id === "localhost-preview";
-  const [points, setPoints] = useState<number | null>(null);
-  const [pointsError, setPointsError] = useState(false);
+  const { points, status: pointsStatus, refresh: refreshBalance } = usePointsBalance(!preview);
+  const pointsError = pointsStatus === "error" && points === null;
   const [topup, setTopup] = useState(false);
   const [message, setMessage] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+  const toast = useToast();
+  const lastTopupFlag = useRef("");
   useEffect(() => {
     if (!astroxUser || preview) return;
-    let active = true;
-    fetchMeWithPoints().then(result => {
-      if (!active) return;
-      if (result.user) setPoints(result.points); else setPointsError(true);
-    }).catch(() => { if (active) setPointsError(true); });
-    return () => { active = false; };
-  }, [astroxUser, topup, preview]);
+    void refreshPoints();
+  }, [astroxUser, preview]);
+  // Quay về từ PayOS: cập nhật số dư ngay + báo kết quả một lần cho mỗi lần nạp.
+  useEffect(() => {
+    if (preview) return;
+    const flag = search.get("topup");
+    if (!flag || lastTopupFlag.current === flag) return;
+    lastTopupFlag.current = flag;
+    if (flag === "success") {
+      void refreshPoints(true);
+      toast.show("Nạp Point thành công — số dư đã được cập nhật.", "success");
+    }
+  }, [search, toast, preview]);
   const update = (patch: Parameters<typeof savePreferences>[0]) => {
     try { savePreferences(patch); setMessage("Đã lưu cài đặt trên thiết bị này."); }
     catch { setMessage("Không lưu được cài đặt. Kiểm tra quyền lưu trữ của trình duyệt."); }
   };
-  const name = loggedIn ? displayName || profile?.name || "Tài khoản của bạn" : "Chào mừng đến AstroX";
+  const name = loggedIn ? profile?.name || displayName || "Tài khoản của bạn" : "Chào mừng đến AstroX";
   return <div className={styles.page}>
     <h1 className="sr-only">Hồ sơ & cài đặt</h1>
     {!section ? <div className={styles.accountHome}>
@@ -61,8 +71,9 @@ export function AccountPage() {
     </header>
       <nav className={styles.accountMenu} aria-label="Quản lý hồ sơ">
         <Link href="/hoso?section=personal"><span className={styles.menuIcon}><FeatureIcon name="profile" size={23}/></span><div><h2>Thông tin cá nhân</h2><p>Họ tên, ngày giờ và nơi sinh</p></div><span aria-hidden="true">↗</span></Link>
-        <Link href="/hoso?section=account"><span className={styles.menuIcon}><FeatureIcon name="wallet" size={23}/></span><div><h2>Tài khoản</h2><p>AstroX Point, nạp điểm và đăng nhập</p></div><span aria-hidden="true">↗</span></Link>
-        <Link href="/hoso?section=preferences"><span className={styles.menuIcon}><FeatureIcon name="settings" size={23}/></span><div><h2>Hiển thị & trải nghiệm</h2><p>Chuyển động, cỡ chữ và vận trình</p></div><span aria-hidden="true">↗</span></Link>
+        <Link href="/hoso?section=points"><span className={`${styles.menuIcon} ${styles.menuIconPoint}`}><FeatureIcon name="wallet" size={23}/></span><div><h2>AstroX Point</h2><p>Số dư, nạp Point, kiếm Point và lịch sử</p></div><span aria-hidden="true">↗</span></Link>
+        <Link href="/hoso?section=account"><span className={styles.menuIcon}><FeatureIcon name="settings" size={23}/></span><div><h2>Tài khoản</h2><p>Đăng nhập và thông tin tài khoản</p></div><span aria-hidden="true">↗</span></Link>
+        <Link href="/hoso?section=preferences"><span className={styles.menuIcon}><FeatureIcon name="motion" size={23}/></span><div><h2>Hiển thị & trải nghiệm</h2><p>Chuyển động, cỡ chữ và vận trình</p></div><span aria-hidden="true">↗</span></Link>
       </nav>
         <section className={styles.section} aria-label="Về AstroX"><header><h2><FeatureIcon name="home" size={22} />Về AstroX</h2></header><div className={styles.brand}><Link href="/" aria-label="AstroX — Trang chủ" className={styles.logo}>
               {/* eslint-disable-next-line @next/next/no-img-element -- static export, logo PNG tĩnh */}
@@ -75,14 +86,15 @@ export function AccountPage() {
       </>}
       {section === "account" && <>
 
-        <section className={styles.section}><header><h2><FeatureIcon name="wallet" size={22} />Tài khoản</h2></header>{loggedIn ? <><div className={styles.row}><div><h3>Tài khoản đang đăng nhập</h3><p>{preview ? "Tài khoản xem thử trên localhost" : astroxUser ? "Zalo" : supabaseUser?.email || "Tài khoản AstroX"}</p></div><span className={styles.connected}>Đã đăng nhập</span></div>{astroxUser && <div className={styles.row}><div><h3>AstroX Point</h3><p>Điểm nạp bằng tiền, dùng để mở khóa dịch vụ AstroX.</p><p>{preview ? "1.000 Point · số dư minh họa" : pointsError ? "Chưa tải được số dư" : points === null ? "Đang tải…" : `${points.toLocaleString("vi-VN")} Point`}</p></div><button disabled={preview} onClick={() => setTopup(true)}>{preview ? "Xem thử" : "Nạp Point ↗"}</button></div>}<button className={styles.logout} disabled={loggingOut} onClick={async () => { if (!confirm("Đăng xuất khỏi AstroX?")) return; setLoggingOut(true); try { await logout(); } finally { setLoggingOut(false); } }}>{loggingOut ? "Đang đăng xuất…" : "Đăng xuất"}</button></> : <div className={styles.row}><div><h3>AstroX Point</h3><p>Đăng nhập để xem số dư, nạp Point và quản lý dịch vụ đã mở khóa.</p></div><button onClick={zaloLogin} disabled={!ready}>Đăng nhập ↗</button></div>}</section>
+        <section className={styles.section}><header><h2><FeatureIcon name="wallet" size={22} />Tài khoản</h2></header>{loggedIn ? <><div className={styles.row}><div><h3>Tài khoản đang đăng nhập</h3><p>{preview ? "Tài khoản xem thử trên localhost" : astroxUser ? "Zalo" : supabaseUser?.email || "Tài khoản AstroX"}</p></div><span className={styles.connected}>Đã đăng nhập</span></div>{astroxUser && <div className={styles.row}><div><h3>AstroX Point</h3><p>Điểm nạp bằng tiền, dùng để mở khóa dịch vụ AstroX.</p><p>{preview ? "1.000 Point · số dư minh họa" : pointsError ? "Chưa tải được số dư" : points === null ? "Đang tải…" : `${points.toLocaleString("vi-VN")} Point`}</p></div><span className={styles.rowActions}><Link className={styles.rowLink} href="/hoso?section=points">Ví Point ↗</Link><button disabled={preview} onClick={() => setTopup(true)}>{preview ? "Xem thử" : "Nạp Point ↗"}</button></span></div>}<button className={styles.logout} disabled={loggingOut} onClick={async () => { if (!confirm("Đăng xuất khỏi AstroX?")) return; setLoggingOut(true); try { await logout(); } finally { setLoggingOut(false); } }}>{loggingOut ? "Đang đăng xuất…" : "Đăng xuất"}</button></> : <div className={styles.row}><div><h3>AstroX Point</h3><p>Đăng nhập để xem số dư, nạp Point và quản lý dịch vụ đã mở khóa.</p></div><button onClick={zaloLogin} disabled={!ready}>Đăng nhập ↗</button></div>}</section>
       </>}
+      {section === "points" && <PointsHome />}
       {section === "preferences" && <>
         <section className={styles.section}><header><h2><FeatureIcon name="settings" size={22} />Hiển thị & trải nghiệm</h2></header><div className={styles.row}><div><h3><FeatureIcon name="motion" size={19} />Giảm chuyển động</h3><p>Giảm hiệu ứng động trong giao diện.</p></div><button role="switch" aria-checked={settings.motion === "reduced"} aria-label="Giảm chuyển động" className={styles.toggle} onClick={() => update({motion:settings.motion === "reduced" ? "system" : "reduced"})}><i /></button></div><label className={styles.row}><div><h3><FeatureIcon name="text" size={19} />Cỡ chữ luận giải</h3><p>Áp dụng cho nội dung AstroX.</p></div><select value={settings.readingSize} onChange={e => update({readingSize:e.target.value as "normal"|"large"})}><option value="normal">Tiêu chuẩn</option><option value="large">Lớn</option></select></label><label className={styles.row}><div><h3><FeatureIcon name="calendar" size={19} />Kỳ vận trình mặc định</h3><p>Khi mở mục Vận trình Tử Vi.</p></div><select value={settings.period} onChange={e => update({period:e.target.value as "today"|"week"|"month"})}><option value="today">Hôm nay</option><option value="week">Tuần này</option><option value="month">Tháng này</option></select></label></section>
         <p className={styles.saved} role="status">{message || "Cài đặt hiển thị được lưu riêng trên thiết bị này."}</p>
 
       </>}
     </div>}
-    <TopupPanel open={topup} onClose={() => setTopup(false)} />
+    <TopupPanel open={topup} onClose={() => { setTopup(false); void refreshBalance(); }} />
   </div>;
 }

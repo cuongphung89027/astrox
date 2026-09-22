@@ -230,6 +230,8 @@ export interface TopupOrder {
   points: number;
   amount_vnd: number;
   status: string;
+  order_code?: number;
+  created_at?: string;
 }
 
 export async function loadTopupHistory(): Promise<TopupOrder[]> {
@@ -237,6 +239,23 @@ export async function loadTopupHistory(): Promise<TopupOrder[]> {
   if (!res.ok) throw new Error("history_failed");
   const d = await res.json();
   return d?.orders || [];
+}
+
+export interface PointTxn {
+  id: string;
+  delta: number;
+  reason: string;
+  reference_id: string | null;
+  created_at: string;
+}
+
+/** Lịch sử Point (ledger zalo_point_ledger) — nạp/cộng/trừ, phân trang cursor. */
+export async function loadPointsHistory(cursor?: string): Promise<{ transactions: PointTxn[]; nextCursor: string | null }> {
+  const res = await fetch(`${AUTH_API_BASE}/api/points/history${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`, { credentials: "include" });
+  if (res.status === 401) throw new Error("unauthorized");
+  if (!res.ok) throw new Error("history_failed");
+  const d = await res.json();
+  return { transactions: d?.transactions || [], nextCursor: d?.nextCursor || null };
 }
 
 /** Tạo lệnh nạp PayOS; trả về checkoutUrl hoặc mã lỗi promo. */

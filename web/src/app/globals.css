@@ -1054,6 +1054,6 @@ body {
 .ax-nav-link[aria-current="page"] { color: var(--nav-accent, #187650); }
 .ax-nav-link:not([aria-current="page"]):hover .ax-nav-underline { transform: scaleX(0); }
 .ax-nav-link[aria-current="page"]:hover .ax-nav-underline { transform: scaleX(1); opacity: 1; }
-@media(min-width:1024px) { .ax-top-inner { display: grid; grid-template-columns: 110px minmax(0,1fr) 110px; } .ax-top-inner > nav { justify-self: center; } }
+@media(min-width:1024px) { .ax-top-inner { display: grid; grid-template-columns: 150px minmax(0,1fr) 150px; } .ax-top-inner > nav { justify-self: center; } }
 
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }

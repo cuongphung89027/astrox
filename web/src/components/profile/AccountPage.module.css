@@ -83,6 +83,10 @@
 .detailHeading h2 { font-family:var(--font-display); font-size:29px; line-height:1.2; }
 .accountDetail .saved { margin:17px 4px; }
 .editProfile,.identityEdit { padding:9px 12px; border:1px solid #ccd8c0; border-radius:11px; background:#fffdf6; cursor:pointer; font-size:12px; flex-shrink:0; }
+.rowActions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.rowLink { padding:10px 13px; border:1px solid #ccd8c0; border-radius:12px; background:#fffdf6; font-size:12px; color:#264d40; white-space:nowrap; }
+.rowLink:hover { background:#fff; }
+.menuIconPoint { border-color:#d9c98f80; background:#f7efd86b; color:#8a6a1c; }
 @keyframes accountEnter { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
 @media(hover:hover) { .accountMenu > a:hover { transform:translateY(-2px); background:#fffdf5; } }
 @media(max-width:480px) { .accountMenu > a { padding:18px 16px; gap:13px; } .accountMenu h2 { font-size:15px; } .detailHeading h2 { font-size:26px; } }

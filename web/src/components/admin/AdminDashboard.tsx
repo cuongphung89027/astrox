@@ -1,5 +1,6 @@
 "use client";
 
+import {renderPrompt, PROMPT_TEMPLATES, ORIGINAL_SYSTEM_PROMPT, defaultPromptSettings} from "../../../../services/admin/prompt-engine";
 import Link from "next/link";
 import {
   useCallback,
@@ -35,6 +36,8 @@ import { AiMetrics } from "./AiMetrics";
 import { AdminDataTable as DataTable } from "./AdminDataTable";
 
 type View =
+  | "prompts"
+  | "apis"
   | "overview"
   | "providers"
   | "aiMetrics"
@@ -54,6 +57,8 @@ type View =
 const navigation: [View, string, string, string][] = [
   ["overview", "Tổng quan", "◈", ""],
   ["services", "Dịch vụ & giá", "☷", "DỊCH VỤ & NỘI DUNG"],
+  ["prompts", "Kho prompt", "▤", "DỊCH VỤ & NỘI DUNG"],
+  ["apis", "Cài đặt API", "⇄", "HỆ THỐNG"],
   ["providers", "Cài đặt AI", "✧", "DỊCH VỤ & NỘI DUNG"],
   ["aiMetrics", "Thống kê AI", "↗", "DỊCH VỤ & NỘI DUNG"],
   ["content", "Nội dung & thông báo", "▤", "DỊCH VỤ & NỘI DUNG"],
@@ -210,6 +215,8 @@ function AdminLogo() {
 }
 
 export function AdminDashboard() {
+  const [promptSamples,setPromptSamples]=useState<Record<string,string>>({});
+
   const [session, setSession] = useState<AdminSession | null>(null),
     [snapshot, setSnapshot] = useState<ConfigSnapshot | null>(null),
     [config, setConfig] = useState<AdminConfig | null>(null),
@@ -495,6 +502,8 @@ export function AdminDashboard() {
       JSON.stringify(snapshot.published?.[key as keyof AdminConfig]),
   );
   const groupNames: Record<string, string> = {
+    prompts: "Kho prompt",
+    engines: "API và bộ tính",
     ai: "Cài đặt AI",
     billing: "Gói nạp & giá dịch vụ",
     integrations: "Tích hợp",
@@ -732,6 +741,18 @@ export function AdminDashboard() {
                 </div>
               </>
             )}
+            {view === "prompts" && <section>
+              <h2>Kho prompt gốc và bản đang chỉnh sửa</h2>
+              <p>Biến {"{{v0}}"}… là dữ liệu được tính từ hồ sơ. Giữ biến để đưa đúng cung, sao và kết quả vào bài. Thay đổi chỉ có hiệu lực sau khi áp dụng.</p>
+              <button onClick={()=>update(d=>{d.prompts=defaultPromptSettings();d.ai.systemPrompt=ORIGINAL_SYSTEM_PROMPT;d.billing.services=addMissingServices(d.billing.services).map(v=>v.id!==v.module&&v.status==='draft'?{...v,status:d.billing.services.find(m=>m.id===v.module)?.status||'draft'}:v);})}>Khôi phục toàn bộ prompt gốc vào bản nháp</button>
+              <label>System prompt chung<textarea value={config.ai.systemPrompt} onChange={e=>update(d=>{d.ai.systemPrompt=e.target.value;})}/></label>
+              {PROMPT_TEMPLATES.map(t=><details className={s.record} key={t.id}><summary>{t.module} · {t.id}</summary><p>{t.source}</p><p>{t.variables.map((v,i)=>`{{v${i}}}: ${v}`).join(' · ')}</p><label>Khung prompt<textarea rows={8} value={config.prompts.templates[t.id]} onChange={e=>update(d=>{d.prompts.templates[t.id]=e.target.value;})}/></label><details><summary>Bản gốc</summary><pre style={{whiteSpace:'pre-wrap'}}>{t.template}</pre></details><details><summary>Thử ghép prompt · không gọi AI</summary><label>Dữ liệu thử (mảng JSON)<textarea rows={4} value={promptSamples[t.id]??JSON.stringify(t.variables.map(v=>`[${v}]`),null,2)} onChange={e=>setPromptSamples(v=>({...v,[t.id]:e.target.value}))}/></label><pre style={{whiteSpace:'pre-wrap'}}>{(()=>{try{return renderPrompt({id:t.id,values:JSON.parse(promptSamples[t.id]??JSON.stringify(t.variables.map(v=>`[${v}]`)))},config.prompts.templates);}catch{return 'Dữ liệu thử không hợp lệ. Nhập đủ các biến theo mảng JSON.';}})()}</pre></details><button onClick={()=>update(d=>{d.prompts.templates[t.id]=t.template;})}>Khôi phục khung này</button></details>)}
+              {Object.entries(config.prompts.tasks).map(([id,text])=><details className={s.record} key={id}><summary>{SERVICE_CATALOG.find(t=>t.id===id)?.name||id}</summary><code>{id}</code><label>Prompt nhiệm vụ<textarea rows={5} value={text} onChange={e=>update(d=>{d.prompts.tasks[id]=e.target.value;})}/></label><details><summary>Bản gốc</summary><pre style={{whiteSpace:'pre-wrap'}}>{defaultPromptSettings().tasks[id]}</pre></details></details>)}
+            </section>}
+            {view === "apis" && <section><h2>API và bộ tính dữ liệu</h2><p>Các thư viện bên dưới chạy trực tiếp trên website. Không cần API key hoặc URL máy chủ. Công tắc được backend kiểm tra trước khi luận giải.</p>
+              {([['iztro','Ziwei / Tử Vi','iztro · astro.bySolar / horoscope · 12 cung, sao, đại vận và lưu chuyển'],['astronomy','Bản đồ sao / Hoàng Đạo','astronomy-engine · hành tinh, nhà và quá cảnh'],['lunar','Bát Tự','lunar-typescript · âm lịch, tứ trụ, thập thần'],['numerology','Thần Số Học','Thuật toán trong AstroX · chỉ số và chu kỳ'],['kinhdich','Kinh Dịch','Thuật toán Mai Hoa trong AstroX · quái, hào động, quẻ biến'],['tarot','Tarot','Bộ dữ liệu và thuật toán rút bài trong AstroX']] as const).map(([id,name,description])=><section className={s.record} key={id}><h3>{name}</h3><p>{description}</p><label><input type="checkbox" checked={config.engines[id].enabled} onChange={e=>update(d=>{d.engines[id].enabled=e.target.checked;})}/>Bật luận giải dùng bộ tính này</label></section>)}
+              <h3>API bên ngoài</h3><button onClick={()=>go('providers')}>AI · endpoint, model và khóa</button><button onClick={()=>go('payos')}>PayOS · thanh toán và webhook</button><button onClick={()=>go('zalo')}>Zalo · OAuth và callback</button><button onClick={()=>go('walletbackend')}>Backend ví AstroX</button>
+            </section>}
             {view === "providers" && (
               <>
                 <Card

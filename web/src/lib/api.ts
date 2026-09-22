@@ -4,8 +4,9 @@
  * Lớp gọi API — port từ callAiText/runAiPrompt/aiHedgeRace + topup của
  * index.html. Toàn bộ chạy client-side (static export).
  */
+import { promptDescriptor } from "./managed-prompts";
 import { AI_BASE, AUTH_API_BASE, DEFAULT_MODEL } from "./config";
-import { getState, setState } from "./state";
+import { getState, setState, setPromptRevision, recordPromptResult } from "./state";
 import type { AstroxUser } from "./types";
 
 /* ------------------------------------------------------------------ */
@@ -83,10 +84,12 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
     throw new Error(`Lỗi dịch vụ AstroX ${res.status}: ${msg}`);
   }
   const data = await res.json();
+  if(Number.isSafeInteger(data.configRevision))setPromptRevision(data.configRevision);
   const choice = data?.choices?.[0];
   const finish = choice?.finish_reason || choice?.finishReason;
   const content = typeof choice?.message?.content === "string" ? choice.message.content : "";
   if (content && content.trim() !== "") {
+    if(Number.isSafeInteger(data.configRevision))recordPromptResult(content,data.configRevision);
     if (finish !== "length") return content;
     const ceiling = Math.max(Number(body.max_tokens) || 0, 2400);
     if (content.length / ceiling >= AI_PARTIAL_MIN_RATIO) return content;
@@ -110,6 +113,8 @@ export async function callAiText(opts: {
   const state = getState();
   const body = {
     operationId: crypto.randomUUID(),
+    promptDescriptor: promptDescriptor(opts.parts?.[0]?.text || ""),
+    compact,
     serviceId: opts.serviceId || ({ "/tuvi": "tuvi", "/cunghoangdao": "zodiac", "/hoangdao": "zodiac", "/kinhdich": "kinhdich", "/battu": "batu", "/thansohoc": "numerology", "/thanso": "numerology", "/tarot": "tarot", "/tuonghop": "compat" } as Record<string, string>)[window.location.pathname],
     messages: [
       {

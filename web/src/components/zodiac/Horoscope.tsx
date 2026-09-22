@@ -1,4 +1,5 @@
 "use client";
+import { refreshPromptRevision } from "@/lib/state";
 import styles from "./Zodiac.module.css";
 import { ReadingLoader } from "@/components/kit/ReadingLoader";
 import { SavedReading, ReadingInvitation } from "@/components/kit/SavedReading";
@@ -58,6 +59,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
       const req = ++reqRef.current;
       const key = `natal-v2::${sign.id}::${period}::${periodCacheKey(period)}`;
       const group = `zodiacPeriod.${period}` as const;
+      await refreshPromptRevision();
       const cached = readAiCache(group, key, force);
       if (cached) {
         setText(cached);
@@ -72,7 +74,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
         const chart = natalChart ?? buildNatalChart(profile);
         if (chart && chart !== natalChart) setState({ natalChart: chart });
         const q = zodiacPeriodPrompt(sign, period, profile, chart);
-        const result = await runAiPrompt(q, { withChartImage: false, compact: true });
+        const result = await runAiPrompt(q, { withChartImage: false, compact: true, serviceId: `zodiac--period--${period}` });
         if (req !== reqRef.current) return;
         writeAiCache(group, key, result, { module: "zodiac", period });
         setText(result);

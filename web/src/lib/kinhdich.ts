@@ -1,3 +1,4 @@
+import { managedPrompt } from "./managed-prompts";
 /**
  * KINH DỊCH — Mai Hoa Dịch Số (Số Pháp).
  * Port trung thực 1:1 từ MODULE 3 của index.html (TRIGRAMS, castHexagram,
@@ -171,30 +172,9 @@ export function randomCastNumbers(): [number, number, number] {
 
 export function buildKdPrompt(result: CastResult, question: string, profile: Profile | null): string {
   const profileLine = profile
-    ? `Thông tin người xem: ${profile.name}, ${profile.gender}, sinh dương lịch ${profile.dob.split("-").reverse().join("-")}, giờ ${profile.hourChi}, tại ${profile.place}.\n`
+    ? managedPrompt("kinhdich.buildKdPrompt.0", [profile.name, profile.gender, profile.dob.split("-").reverse().join("-"), profile.hourChi, profile.place])
     : "";
-  return `${profileLine}Luận giải quẻ Kinh Dịch theo phương pháp Mai Hoa Dịch Số (Số Pháp), dùng 3 số ngẫu nhiên ${result.s1}, ${result.s2}, ${result.s3}.
-Câu hỏi của người gieo quẻ: "${question}"
-
-Dữ liệu quẻ đã tính chính xác theo toán pháp:
-- Thượng quái (ngoại quái): ${result.upper.name} ${result.upper.symbol} — tượng ${result.upper.nature}, ngũ hành ${result.upper.elem}, phương ${result.upper.dir}.
-- Hạ quái (nội quái): ${result.lower.name} ${result.lower.symbol} — tượng ${result.lower.nature}, ngũ hành ${result.lower.elem}, phương ${result.lower.dir}.
-- Hào động: hào thứ ${result.movingPos} (đếm từ dưới lên: Sơ Hào=1, Hào Nhị=2, Hào Tam=3, Hào Tứ=4, Hào Ngũ=5, Hào Thượng=6).
-- Thể quái (quái CHỨA hào động, đại diện người hỏi): ${result.the.name} ${result.the.symbol} (${result.the.elem}).
-- Dụng quái (quái KHÔNG chứa hào động, đại diện sự việc): ${result.dung.name} ${result.dung.symbol} (${result.dung.elem}).
-- Quan hệ Thể-Dụng theo ngũ hành: ${result.relation.label} — ${result.relation.desc}
-- Quẻ biến (sau khi đảo hào động): Thượng ${result.bienUpper.name} ${result.bienUpper.symbol}, Hạ ${result.bienLower.name} ${result.bienLower.symbol}.
-- Quẻ hỗ (hào 2-3-4 làm nội, hào 3-4-5 làm ngoại): Thượng ${result.hoUpper.name} ${result.hoUpper.symbol}, Hạ ${result.hoLower.name} ${result.hoLower.symbol}.
-
-Nhiệm vụ của bạn (theo đúng phép luận Thể-Dụng của Mai Hoa Dịch Số):
-1. Xác định và nêu rõ **tên quẻ chính** theo tên gọi cổ điển trong Kinh Dịch (ghép từ tượng ${result.upper.nature} trên + ${result.lower.nature} dưới, ví dụ dạng "Thiên Địa Bĩ", "Địa Thiên Thái"...). Nếu không chắc chắn 100% tên riêng cổ điển chính xác, hãy nói rõ tên ghép theo tượng (ví dụ "quẻ ${result.upper.nature} ${result.lower.nature}") thay vì đoán bừa tên riêng.
-2. Giải nghĩa ý nghĩa tổng quát của quẻ chính, gắn với câu hỏi.
-3. Diễn giải hào động (hào thứ ${result.movingPos}) — đây là trọng tâm lời khuyên. Hào động nằm ở quái ${result.the.name}, vì vậy ${result.theIsLower ? "Hạ" : "Thượng"} quái là **Thể** (bản thân người hỏi), quái còn lại là **Dụng** (sự việc được hỏi).
-4. Diễn giải ý nghĩa quan hệ Thể-Dụng đã tính ở trên (${result.relation.label}) trong bối cảnh câu hỏi — đây là lõi của phép luận Mai Hoa.
-5. Gợi ý ngắn từ quẻ biến (${result.bienUpper.name} trên ${result.bienLower.name} dưới) và quẻ hỗ (${result.hoUpper.name} trên ${result.hoLower.name} dưới) — quẻ hỗ là động lực ngầm bên trong, quẻ biến là xu hướng nếu tình hình tiếp diễn.
-6. Kết luận bằng 1 lời khuyên hành động cụ thể, ngắn gọn.
-
-Trình bày ngắn gọn khoảng 180–280 từ, đúng ba phần: **Điều đáng chú ý** (2–3 câu trả lời trực tiếp điều người dùng hỏi), **Gợi ý cho bạn** (tối đa 3 hành động hoặc điều cần cân nhắc cụ thể), **Cơ sở luận quẻ** (giải thích ngắn hào động, Thể-Dụng, quẻ biến và quẻ hỗ). Không lời chào, không nhắc lại câu hỏi, không kể lại dữ liệu sinh hay danh sách dữ liệu quẻ. Dùng ngôn ngữ đời thường ở hai phần đầu, chỉ đưa thuật ngữ vào phần cơ sở. Không khẳng định tương lai chắc chắn; đây là gợi ý chiêm nghiệm, không phải phán quyết định mệnh.`;
+  return managedPrompt("kinhdich.buildKdPrompt.1", [profileLine, result.s1, result.s2, result.s3, question, result.upper.name, result.upper.symbol, result.upper.nature, result.upper.elem, result.upper.dir, result.lower.name, result.lower.symbol, result.lower.nature, result.lower.elem, result.lower.dir, result.movingPos, result.the.name, result.the.symbol, result.the.elem, result.dung.name, result.dung.symbol, result.dung.elem, result.relation.label, result.relation.desc, result.bienUpper.name, result.bienUpper.symbol, result.bienLower.name, result.bienLower.symbol, result.hoUpper.name, result.hoUpper.symbol, result.hoLower.name, result.hoLower.symbol, result.upper.nature, result.lower.nature, result.upper.nature, result.lower.nature, result.movingPos, result.the.name, result.theIsLower ? "Hạ" : "Thượng", result.relation.label, result.bienUpper.name, result.bienLower.name, result.hoUpper.name, result.hoLower.name]);
 }
 
 /* ------------------------------------------------------------------ */

@@ -1,3 +1,4 @@
+import { managedPrompt, managedJoin } from "./managed-prompts";
 /**
  * Tarot — port trung thực từ index.html (MODULE — TAROT): bộ bài, kiểu trải,
  * rút bài ngẫu nhiên + chiều xuôi/ngược, prompt luận giải AI và khoá cache.
@@ -250,28 +251,16 @@ export interface TarotPromptInput {
 export function buildTarotPrompt(input: TarotPromptInput): string {
   const { spread, deck, cards, positionLabels } = input;
   const question = input.question || "(không có câu hỏi cụ thể — luận giải tổng quát)";
-  const cardLines = cards
+  const cardLines = managedJoin(cards
     .map((c, i) => {
       const card = tarotCardById(c.id);
-      if (!card) return `${i + 1}. Vị trí "${positionLabels[i]}": ${c.id}`;
+      if (!card) return managedPrompt("tarot.buildTarotPrompt.0", [i + 1, positionLabels[i], c.id]);
       const dir = c.reversed ? "NGƯỢC" : "XUÔI";
       const meaning = c.reversed ? card.rev : card.up;
-      return `${i + 1}. Vị trí "${positionLabels[i]}": ${card.nameEn} — ${dir}. Từ khoá: ${meaning.kw.join(", ")}. Ý nghĩa: ${meaning.text}`;
+      return managedPrompt("tarot.buildTarotPrompt.1", [i + 1, positionLabels[i], card.nameEn, dir, meaning.kw.join(", "), meaning.text]);
     })
-    .join("\n");
+    , "\n");
   const lengthHint = spread.count <= 1 ? "200-350" : spread.count <= 5 ? "420-650" : "750-1100";
-  const profileLine = input.profileContext ? `${input.profileContext}\n` : "";
-  return `${profileLine}Luận giải trải bài Tarot "${spread.name}" (${spread.count} lá), bộ bài ${deck.name}.
-Câu hỏi của người trải bài: "${question}"
-
-Các lá đã rút (dữ liệu đã xác định sẵn theo đúng thứ tự vị trí — KHÔNG được tự đổi tên lá, đổi chiều xuôi/ngược, hay bịa thêm lá khác ngoài danh sách này):
-${cardLines}
-
-Nhiệm vụ của bạn:
-Giữ nguyên tên tiếng Anh gốc của các lá bài trong toàn bộ luận giải, không dịch tên lá sang tiếng Việt.
-1. Luận giải từng vị trí theo đúng thứ tự trên — gắn ý nghĩa lá bài (xuôi/ngược, đã cho) với ý nghĩa của vị trí đó và câu hỏi.
-2. Chỉ ra mối liên hệ/tương tác đáng chú ý giữa các lá trong trải bài (ví dụ lặp chất bài, nhiều lá ngược, các lá bổ trợ hay mâu thuẫn nhau).
-3. Kết luận bằng một đoạn tổng hợp và một lời khuyên hành động cụ thể.
-
-Chia đoạn có tiêu đề in đậm cho từng vị trí (đặt tên vị trí + tên lá), và một đoạn **Tổng hợp & lời khuyên** ở cuối. Giữ tinh thần "không có lá bài tốt/xấu tuyệt đối — đây là gợi ý xu hướng, không phải định mệnh cố định". ~${lengthHint} từ.`;
+  const profileLine = input.profileContext ? managedPrompt("tarot.buildTarotPrompt.2", [input.profileContext]) : "";
+  return managedPrompt("tarot.buildTarotPrompt.3", [profileLine, spread.name, spread.count, deck.name, question, cardLines, lengthHint]);
 }

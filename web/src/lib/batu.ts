@@ -1,3 +1,4 @@
+import { managedPrompt } from "./managed-prompts";
 /**
  * BÁT TỰ (Tứ Trụ) — module độc lập, port trung thực từ MODULE "BAT TU (Tu Tru)"
  * của index.html: tính Tứ Trụ bằng lunar-typescript (app cũ gọi qua
@@ -331,10 +332,10 @@ export function buildBatuChart(input: BatuInput): BatuChart {
 
 export function buildBatuPromptBody(taskText: string, chart: BatuChart, profile: Profile | null): string {
   const profileLine = profile
-    ? `Thông tin người xem: ${profile.name}, ${profile.gender}, sinh dương lịch ${profile.dob.split("-").reverse().join("-")}, giờ ${profile.hourChi}, tại ${profile.place}.\n`
+    ? managedPrompt("batu.buildBatuPromptBody.0", [profile.name, profile.gender, profile.dob.split("-").reverse().join("-"), profile.hourChi, profile.place])
     : "";
-  const chartLine = `DỮ LIỆU LÁ SỐ BÁT TỰ ĐÃ TÍNH (đầy đủ, AI phải dùng trực tiếp — không được nói thiếu dữ liệu): ${JSON.stringify(chart)}`;
-  return `${profileLine}${chartLine}\n\nQUY TẮC PHÂN TÍCH BÁT TỰ: bắt đầu ngay từ dữ liệu Tứ Trụ, Thập Thần và tỷ lệ Ngũ Hành đã cho — không được nói "thiếu dữ liệu" hay yêu cầu bổ sung ngày giờ sinh. Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó và phân tích phần còn lại.\n\n${taskText}`;
+  const chartLine = managedPrompt("batu.buildBatuPromptBody.1", [JSON.stringify(chart)]);
+  return managedPrompt("batu.buildBatuPromptBody.2", [profileLine, chartLine, taskText]);
 }
 
 /* ------------------------------------------------------------------ */

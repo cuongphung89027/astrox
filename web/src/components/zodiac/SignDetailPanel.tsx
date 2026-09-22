@@ -1,4 +1,5 @@
 "use client";
+import { refreshPromptRevision } from "@/lib/state";
 import styles from "./Zodiac.module.css";
 import { ReadingLoader } from "@/components/kit/ReadingLoader";
 import { SavedReading, ReadingInvitation } from "@/components/kit/SavedReading";
@@ -32,7 +33,7 @@ interface SignDetailPanelProps {
 }
 
 export function SignDetailPanel({ sign, profile, natalChart, className }: SignDetailPanelProps) {
-  const [topicId, setTopicId] = useState(ZODIAC_DEEP_TOPICS[0].id);
+  const [topicId, setTopicId] = useState(`${ZODIAC_DEEP_TOPICS[0].id}::${ZODIAC_DEEP_TOPICS[0].subId}`);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,7 +42,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
   /** Chống race: chỉ nhận kết quả của request mới nhất. */
   const reqRef = useRef(0);
 
-  const topic = ZODIAC_DEEP_TOPICS.find((t) => t.id === topicId) ?? ZODIAC_DEEP_TOPICS[0];
+  const topic = ZODIAC_DEEP_TOPICS.find((t) => `${t.id}::${t.subId}` === topicId) ?? ZODIAC_DEEP_TOPICS[0];
 
   const load = useCallback(
     async (force: boolean) => {
@@ -49,6 +50,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
       if (!profile) return;
       const req = ++reqRef.current;
       const cacheKey = `natal-v2::${topic.id}::${topic.subId}::${sign.id}`;
+      await refreshPromptRevision();
       const cached = readAiCache("zodiacTopics", cacheKey, force);
       if (cached) {
         setText(cached);
@@ -66,7 +68,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
           chart,
           topic.prompt.replace(/\{SIGN\}/g, `${sign.name} (${sign.en})`).replace(/\{ELEMENT\}/g, sign.element).replace(/\{RULER\}/g, sign.ruler),
         );
-        const result = await runAiPrompt(q, { withChartImage: false });
+        const result = await runAiPrompt(q, { withChartImage: false, serviceId: `zodiac--${topic.id}--${topic.subId}` });
         if (req !== reqRef.current) return;
         writeAiCache("zodiacTopics", cacheKey, result, { module: "zodiac", topic: topic.id });
         setText(result);
@@ -90,7 +92,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
   }, [topic.id, topic.subId, sign.id, profile]);
 
   return <section className={`${styles.detail} ${className || ""}`}>
-    <div className={styles.topicChoices}>{ZODIAC_DEEP_TOPICS.map((item,i)=><button key={item.id} aria-pressed={topicId===item.id} onClick={()=>setTopicId(item.id)}><span>0{i+1}</span><strong>{item.label}</strong><i aria-hidden="true">↗</i></button>)}</div>
+    <div className={styles.topicChoices}>{ZODIAC_DEEP_TOPICS.map((item,i)=><button key={`${item.id}::${item.subId}`} aria-pressed={topicId===`${item.id}::${item.subId}`} onClick={()=>setTopicId(`${item.id}::${item.subId}`)}><span>0{i+1}</span><strong>{item.label}</strong><i aria-hidden="true">↗</i></button>)}</div>
     <div className={styles.result} aria-live="polite">{loading ? <ReadingLoader kind="zodiac" /> : text ? <SavedReading text={text} /> : <>{error && <p role="alert">{error}</p>}<ReadingInvitation label={error ? "Thử lại" : `Khám phá ${topic.label.toLowerCase()}`} onRun={()=> { if (requireProfile()) void load(false); }} /></>}</div>
   </section>;
 }

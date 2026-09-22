@@ -1,4 +1,5 @@
 "use client";
+import { refreshPromptRevision } from "@/lib/state";
 
 /**
  * KdAiPanel — luận giải quẻ bằng AI (useRequireProfile → runAiPrompt, cache
@@ -39,7 +40,8 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
     if (!requireProfile()) return;
     const q = question.trim() || "(không có câu hỏi cụ thể — luận giải tổng quát)";
     const key = kdCacheKey(result, q);
-    const cached = readAiCache("kinhDich", key);
+    await refreshPromptRevision();
+      const cached = readAiCache("kinhDich", key);
     if (cached) {
       setText(cached);
       setState("done");
@@ -49,7 +51,7 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
     setState("loading");
     try {
       const prompt = buildKdPrompt(result, q, profile);
-      const out = await runAiPrompt(prompt, { withChartImage: false, temperature: 0.75 });
+      const out = await runAiPrompt(prompt, { withChartImage: false, temperature: 0.75, serviceId: "kinhdich--interpretation" });
       writeAiCache("kinhDich", key, out, { module: "kinh-dich", topic: "interpretation" });
       setText(out);
       setState("done");

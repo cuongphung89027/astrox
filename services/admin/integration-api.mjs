@@ -1,3 +1,4 @@
+import {renderServicePrompt} from './prompt-engine.ts';
 import {backendStatus,connectionSecretAvailable} from './backend.mjs';
 import {state,readPublished,readSecret,recordAudit,sql} from './store.mjs';
 import {publicConfig} from './config.ts';
@@ -15,7 +16,7 @@ function normalizedInput(input){
  if(!input||typeof input.serviceId!=='string'||input.serviceId.length>80||!Array.isArray(input.messages)||!input.messages.length||input.messages.length>100)throw new RuntimeError('INVALID_MESSAGES',400);
  const messages=input.messages.map(m=>{if(!m||!['system','user','assistant'].includes(m.role))throw new RuntimeError('INVALID_MESSAGES',400);let content=m.content;if(Array.isArray(content)){if(!content.length||content.some(p=>!p||typeof p.text!=='string'||(p.type!==undefined&&p.type!=='text')||Object.keys(p).some(k=>!['type','text'].includes(k))))throw new RuntimeError('INVALID_MESSAGES',400);content=content.map(p=>p.text).join('\n')}if(typeof content!=='string'||!content.trim()||content.length>100000)throw new RuntimeError('INVALID_MESSAGES',400);return {role:m.role,content}}).filter(m=>m.role!=='system');
  if(!messages.length||input.operationId!==undefined&&(typeof input.operationId!=='string'||input.operationId.length>120))throw new RuntimeError('INVALID_MESSAGES',400);
- return {messages,serviceId:input.serviceId,operationId:input.operationId};
+ return {messages,serviceId:input.serviceId,operationId:input.operationId,promptDescriptor:input.promptDescriptor,compact:input.compact===true};
 }
 export async function handleAdminRuntime(path,request,env,user){
  if(request.method!=='POST')return json({error:'Phương thức không hỗ trợ.'},405);
@@ -55,6 +56,10 @@ export async function handleConfiguredAi(request,env){
   input=normalizedInput(await parse(request));
   const service=c.billing.services.find(s=>s.id===input.serviceId);
   if(!service||!['free','paid'].includes(service.status))throw new RuntimeError('SERVICE_UNAVAILABLE',403);
+  const root=c.billing.services.find(s=>s.id===service.module);if(root&&!['free','paid'].includes(root.status))throw new RuntimeError('SERVICE_UNAVAILABLE',403);
+  const engine={tuvi:'iztro',zodiac:'astronomy',batu:'lunar',numerology:'numerology',kinhdich:'kinhdich',tarot:'tarot'}[service.module];if(engine&&c.engines?.[engine]?.enabled===false)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
+  if(input.promptDescriptor){try{input.messages=[{role:'user',content:renderServicePrompt(input.promptDescriptor,input.serviceId,c.prompts)}]}catch{throw new RuntimeError('INVALID_MESSAGES',400)}}
+  if(input.compact)input.messages.push({role:'user',content:'Viết NGẮN GỌN: tổng cộng tối thiểu 150 từ, tối đa 200 từ, đúng nội dung chính, không mở rộng.'});
   if(service.status==='paid'){
    if(!c.billing.enabled)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
    if(!env.ASTROX_BACKEND)throw new RuntimeError('BACKEND_UNAVAILABLE',503);
@@ -66,7 +71,7 @@ export async function handleConfiguredAi(request,env){
   }
 
   const result=await executeProviderChain(c,{messages:input.messages,serviceId:input.serviceId},ref=>readSecret(env,ref),{allowHosts:hosts(env),healthStore:providerHealth(env)});attempts=result.attempts;outcome='success';
-  const {choices,model,usage}=result;return json({choices,model,usage});
+  const {choices,model,usage}=result;return json({choices,model,usage,configRevision:published.revision});
  }catch(e){attempts=e.attempts||attempts;outcome=e.code||'failed';return json({error:diagnostic(e.code)},e.status||503)}
  finally{await sql(env,'INSERT INTO admin_ai_requests(id,service_id,config_revision,created_at,status,attempts,duration_ms) VALUES(?,?,?,?,?,?,?)',crypto.randomUUID(),String(input?.serviceId||''),published.revision,new Date().toISOString(),outcome,JSON.stringify(attempts),Date.now()-started).run().catch(()=>{});}
 }

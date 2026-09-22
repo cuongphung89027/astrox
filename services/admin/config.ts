@@ -1,3 +1,4 @@
+import {defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES} from './prompt-engine.ts';
 import { providerRoutes } from "./provider-models.ts";
 import { addMissingServices } from "./catalog.ts";
 /** Shared, non-secret contract. Secrets are stored by reference only. */
@@ -9,6 +10,8 @@ export type Milestone = { id: string; day: number; user: number; inviter: number
 export type Promo = { id: string; code: string; bonus: number; limit: number; perUser: number; enabled: boolean; expiresAt: string };
 export type Notice = { id: string; title: string; body: string; module: string; enabled: boolean; startsAt: string; endsAt: string };
 export type AdminConfig = {
+ prompts: ReturnType<typeof defaultPromptSettings>;
+ engines: {iztro:{enabled:boolean};astronomy:{enabled:boolean};lunar:{enabled:boolean};numerology:{enabled:boolean};kinhdich:{enabled:boolean};tarot:{enabled:boolean}};
  ai: { enabled: boolean; providers: Provider[]; chain: string[]; totalTimeoutMs: number; maxAttempts: number; cooldownSeconds: number; failureThreshold: number; retryStatuses: number[]; systemPrompt: string };
  billing: { enabled: boolean; vndPerPoint: number; packages: TopupPackage[]; services: ServicePrice[]; promos: Promo[] };
  integrations: { payos: { enabled: boolean; clientId: string; returnUrl: string; cancelUrl: string; expiryMinutes: number }; zalo: { enabled: boolean; appId: string; callbackUrl: string; returnUrl: string }; wallet: { enabled: boolean; label: string } };
@@ -21,7 +24,8 @@ export const CAPABILITIES = ['config.read','config.write','config.publish','secr
 export const MODULES = [{id:'tuvi',name:'Tử Vi',policy:'profile'},{id:'zodiac',name:'Cung Hoàng Đạo',policy:'profile'},{id:'kinhdich',name:'Kinh Dịch',policy:'session'},{id:'batu',name:'Bát Tự',policy:'profile'},{id:'numerology',name:'Thần Số Học',policy:'profile'},{id:'tarot',name:'Tarot',policy:'session'},{id:'compat',name:'Tương Hợp',policy:'profile'}] as const;
 export function defaultConfig(): AdminConfig {
  return {
- ai:{enabled:false,providers:[],chain:[],totalTimeoutMs:90000,maxAttempts:3,cooldownSeconds:60,failureThreshold:3,retryStatuses:[429,500,502,503,504],systemPrompt:'Bạn là chuyên gia chiêm tinh và dịch lý của AstroX. Trả lời bằng tiếng Việt, chỉ dựa trên dữ liệu được cung cấp.'},
+ prompts:defaultPromptSettings(),engines:{iztro:{enabled:true},astronomy:{enabled:true},lunar:{enabled:true},numerology:{enabled:true},kinhdich:{enabled:true},tarot:{enabled:true}},
+ ai:{enabled:false,providers:[],chain:[],totalTimeoutMs:90000,maxAttempts:3,cooldownSeconds:60,failureThreshold:3,retryStatuses:[429,500,502,503,504],systemPrompt:ORIGINAL_SYSTEM_PROMPT},
  billing:{enabled:false,vndPerPoint:0,packages:[],services:addMissingServices(MODULES.map(m=>({id:m.id,module:m.id,name:m.name,points:0,status:'draft',policy:m.policy,prompt:'',chain:[]}))),promos:[]},
  integrations:{payos:{enabled:false,clientId:'',returnUrl:'https://theastrox.space/hoso',cancelUrl:'https://theastrox.space/hoso',expiryMinutes:30},zalo:{enabled:false,appId:'',callbackUrl:'',returnUrl:'https://theastrox.space/'},wallet:{enabled:false,label:'AstroX Wallet'}},
  rewards:{enabled:false,registrationUser:5,registrationInviter:5,firstTopupInviter:10,firstTopupUser:0,firstTopupMinVnd:0,daily:2,registrationEnabled:true,firstTopupEnabled:true,attendanceEnabled:true,referralMode:'unlimited',referralLimit:0,referralWindow:'month',milestones:[{id:'day-3',day:3,user:3,inviter:2},{id:'day-7',day:7,user:5,inviter:3},{id:'day-10',day:10,user:10,inviter:5}],ads:{enabled:false,networkCode:'',adUnit:'',points:5,dailyLimit:5,cooldownSeconds:90,sessionTtlSeconds:600}},
@@ -37,7 +41,7 @@ export function validateConfig(input: unknown): ConfigError[] {
  const errors:ConfigError[]=[];const add=(path:string,message:string)=>errors.push({path,message});
  if(!input || typeof input!=='object'||Array.isArray(input)) return [{path:'config',message:'Cấu hình không hợp lệ.'}];
  // Reject unknown properties and nonconforming primitive types before deeper checks.
- const c=input as AdminConfig; const defaults=defaultConfig();
+ const c=hydrateConfig(input as AdminConfig); const defaults=defaultConfig();
  const shape=(v:unknown,d:unknown,p:string)=>{if(Array.isArray(d)){if(!Array.isArray(v))add(p,'Phải là danh sách.');return;}if(d!==null&&typeof d==='object'){if(!v||typeof v!=='object'||Array.isArray(v)){add(p,'Thiếu nhóm cấu hình.');return;}for(const k of Object.keys(v))if(!Object.hasOwn(d,k))add(`${p}.${k}`,'Trường không được hỗ trợ.');for(const [k,value]of Object.entries(d))shape((v as Record<string,unknown>)[k],value,`${p}.${k}`);return;}if(typeof v!==typeof d)add(p,'Sai kiểu dữ liệu.');};
  shape(c,defaults,'config'); if(errors.length)return errors;
  const integer=(v:number,p:string,min=0,max=1e9)=>{if(!Number.isSafeInteger(v)||v<min||v>max)add(p,`Nhập số nguyên từ ${min} đến ${max}.`);};
@@ -71,10 +75,13 @@ export function validateConfig(input: unknown): ConfigError[] {
  try{new Intl.DateTimeFormat('vi',{timeZone:c.operations.reportTimezone});}catch{add('operations.reportTimezone','Múi giờ không hợp lệ.');}
  for(const role of c.access.roles){str(role.name,'access.roles.name');if(role.capabilities.some(v=>!CAPABILITIES.includes(v)))add('access.roles','Quyền không được hỗ trợ.');}if(!c.access.roles.some(r=>r.id==='owner'&&CAPABILITIES.every(v=>r.capabilities.includes(v))))add('access.roles','Vai trò owner phải giữ đầy đủ quyền.');
  const url=(v:string,p:string,required=false)=>{if(!v&&!required)return;try{const u=new URL(v);const clean=new URL(u);clean.search='';if(!isPublicHttps(clean.href))throw Error();}catch{add(p,'Cần URL HTTPS hợp lệ.');}};
+ for(const t of PROMPT_TEMPLATES){const value=c.prompts.templates[t.id];str(value,`prompts.templates.${t.id}`,12000);const keys=[...value.matchAll(/\{\{v(\d+)\}\}/g)].map(m=>Number(m[1]));if(keys.some(i=>i>=t.variables.length)||t.variables.some((_,i)=>!keys.includes(i)))add(`prompts.templates.${t.id}`,'Giữ đủ biến dữ liệu gốc và không thêm biến lạ.');}for(const [id,value] of Object.entries(c.prompts.tasks))str(value,`prompts.tasks.${id}`,12000);
  const pay=c.integrations.payos,zalo=c.integrations.zalo;integer(pay.expiryMinutes,'integrations.payos.expiryMinutes',5,1440);if(pay.enabled&&!pay.clientId.trim())add('integrations.payos.clientId','Thiếu Client ID.');if(zalo.enabled&&!/^\d+$/.test(zalo.appId))add('integrations.zalo.appId','Thiếu App ID.');url(pay.returnUrl,'integrations.payos.returnUrl',pay.enabled);url(pay.cancelUrl,'integrations.payos.cancelUrl',pay.enabled);url(zalo.callbackUrl,'integrations.zalo.callbackUrl',zalo.enabled);url(zalo.returnUrl,'integrations.zalo.returnUrl',zalo.enabled);url(c.content.supportUrl,'content.supportUrl');str(c.ai.systemPrompt,'ai.systemPrompt',12000);str(c.content.announcement,'content.announcement',1000);
  const codes=new Set();for(const p of c.billing.promos){if(!/^[A-Z0-9_-]{2,40}$/.test(p.code)||codes.has(p.code))add('billing.promos.code','Mã phải duy nhất, chữ hoa/số/gạch ngang.');codes.add(p.code);integer(p.bonus,'billing.promos.bonus');integer(p.limit,'billing.promos.limit',1);integer(p.perUser,'billing.promos.perUser',1);if(p.expiresAt&&!Number.isFinite(Date.parse(p.expiresAt)))add('billing.promos.expiresAt','Ngày không hợp lệ.');}
  for(const n of c.content.notices){str(n.title,'content.notices.title');str(n.body,'content.notices.body',4000);for(const d of [n.startsAt,n.endsAt])if(d&&!Number.isFinite(Date.parse(d)))add('content.notices','Ngày không hợp lệ.');if(n.startsAt&&n.endsAt&&Date.parse(n.startsAt)>=Date.parse(n.endsAt))add('content.notices','Thời gian kết thúc phải sau bắt đầu.');}
  return errors;
 }
 export function quotePackage(p:TopupPackage,rate:number){const base=p.mode==='fixed'?p.fixedPoints:rate>0?Math.floor(p.amountVnd/rate):0;return {base,bonus:p.bonus,total:base+p.bonus};}
-export function publicConfig(c:AdminConfig){return {availability:Object.fromEntries(c.billing.services.filter(s=>s.id===s.module).map(s=>[s.module,s.status])),billing:{enabled:c.billing.enabled,vndPerPoint:c.billing.vndPerPoint,packages:c.billing.packages.filter(p=>p.enabled).map(p=>({...p,...quotePackage(p,c.billing.vndPerPoint)})),services:c.billing.services.filter(s=>s.status!=='draft'&&s.status!=='hidden').map(({id,module,name,points,status,policy})=>({id,module,name,points,status,policy}))},rewards:{...c.rewards},content:c.content,maintenance:c.operations.maintenance};}
+export function publicConfig(c:AdminConfig){return {engines:c.engines,availability:Object.fromEntries(c.billing.services.filter(s=>s.id===s.module).map(s=>[s.module,s.status])),billing:{enabled:c.billing.enabled,vndPerPoint:c.billing.vndPerPoint,packages:c.billing.packages.filter(p=>p.enabled).map(p=>({...p,...quotePackage(p,c.billing.vndPerPoint)})),services:c.billing.services.filter(s=>s.status!=='draft'&&s.status!=='hidden').map(({id,module,name,points,status,policy})=>({id,module,name,points,status,policy}))},rewards:{...c.rewards},content:c.content,maintenance:c.operations.maintenance};}
+
+export function hydrateConfig(c:AdminConfig):AdminConfig{return {...c,prompts:c.prompts??defaultPromptSettings(),engines:c.engines??defaultConfig().engines};}

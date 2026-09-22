@@ -563,6 +563,25 @@ export const SERVICE_CATALOG: CatalogEntry[] = [
     "route": "/tuonghop"
   }
 ];
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--tong-quan-la-so--bo-ba-loi")) SERVICE_CATALOG.push({"id": "zodiac--tong-quan-la-so--bo-ba-loi", "module": "zodiac", "name": "Bộ ba cốt lõi", "group": "Tổng quan lá số", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--tong-quan-la-so--diem-noi-bat")) SERVICE_CATALOG.push({"id": "zodiac--tong-quan-la-so--diem-noi-bat", "module": "zodiac", "name": "Điểm nổi bật", "group": "Tổng quan lá số", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--big-3--mat-troi")) SERVICE_CATALOG.push({"id": "zodiac--big-3--mat-troi", "module": "zodiac", "name": "Mặt Trời", "group": "Bộ ba cốt lõi", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--big-3--mat-trang")) SERVICE_CATALOG.push({"id": "zodiac--big-3--mat-trang", "module": "zodiac", "name": "Mặt Trăng", "group": "Bộ ba cốt lõi", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--big-3--cung-moc")) SERVICE_CATALOG.push({"id": "zodiac--big-3--cung-moc", "module": "zodiac", "name": "Cung Mọc", "group": "Bộ ba cốt lõi", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--big-3--ket-hop")) SERVICE_CATALOG.push({"id": "zodiac--big-3--ket-hop", "module": "zodiac", "name": "Sắc thái chung", "group": "Bộ ba cốt lõi", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--hanh-tinh--hanh-tinh-ca-nhan")) SERVICE_CATALOG.push({"id": "zodiac--hanh-tinh--hanh-tinh-ca-nhan", "module": "zodiac", "name": "Hành tinh cá nhân", "group": "Hành tinh", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--hanh-tinh--hanh-tinh-xa-xi")) SERVICE_CATALOG.push({"id": "zodiac--hanh-tinh--hanh-tinh-xa-xi", "module": "zodiac", "name": "Hành tinh xa xỉ", "group": "Hành tinh", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--12-nha--nhac-trung-tam")) SERVICE_CATALOG.push({"id": "zodiac--12-nha--nhac-trung-tam", "module": "zodiac", "name": "Nhà trọng tâm", "group": "12 nhà", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--12-nha--nha-khac")) SERVICE_CATALOG.push({"id": "zodiac--12-nha--nha-khac", "module": "zodiac", "name": "Các nhà khác", "group": "12 nhà", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--goc-chieu--goc-thuan-loi")) SERVICE_CATALOG.push({"id": "zodiac--goc-chieu--goc-thuan-loi", "module": "zodiac", "name": "Góc thuận lợi", "group": "Góc chiếu", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--goc-chieu--goc-thach-thuc")) SERVICE_CATALOG.push({"id": "zodiac--goc-chieu--goc-thach-thuc", "module": "zodiac", "name": "Góc thử thách", "group": "Góc chiếu", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--tinh-cach-cung--dac-diem-cot-loi")) SERVICE_CATALOG.push({"id": "zodiac--tinh-cach-cung--dac-diem-cot-loi", "module": "zodiac", "name": "Đặc điểm cốt lõi", "group": "Tính cách theo cung", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--tinh-cach-cung--diem-manh-yeu")) SERVICE_CATALOG.push({"id": "zodiac--tinh-cach-cung--diem-manh-yeu", "module": "zodiac", "name": "Điểm mạnh & cần lưu ý", "group": "Tính cách theo cung", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--tinh-yeu-cung--phong-cach-yeu")) SERVICE_CATALOG.push({"id": "zodiac--tinh-yeu-cung--phong-cach-yeu", "module": "zodiac", "name": "Phong cách yêu", "group": "Tình yêu & quan hệ", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--tinh-yeu-cung--nhu-cau-cam-xuc")) SERVICE_CATALOG.push({"id": "zodiac--tinh-yeu-cung--nhu-cau-cam-xuc", "module": "zodiac", "name": "Nhu cầu cảm xúc", "group": "Tình yêu & quan hệ", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--su-nghiep-cung--huong-su-nghiep")) SERVICE_CATALOG.push({"id": "zodiac--su-nghiep-cung--huong-su-nghiep", "module": "zodiac", "name": "Hướng sự nghiệp", "group": "Công việc & tài chính", "policy": "profile", "route": "/cunghoangdao"});
+if(!SERVICE_CATALOG.some(s=>s.id==="zodiac--su-nghiep-cung--tai-chinh")) SERVICE_CATALOG.push({"id": "zodiac--su-nghiep-cung--tai-chinh", "module": "zodiac", "name": "Tài chính", "group": "Công việc & tài chính", "policy": "profile", "route": "/cunghoangdao"});
+
 export function addMissingServices(existing: ServicePrice[]): ServicePrice[] {
  const ids=new Set(existing.map(s=>s.id));
  return [...existing, ...SERVICE_CATALOG.filter(s=>!ids.has(s.id)).map(({id,module,name,policy})=>({id,module,name,policy,points:0,status:"draft" as const,prompt:"",chain:[]}))];

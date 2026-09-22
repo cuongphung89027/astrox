@@ -1,4 +1,5 @@
 "use client";
+import { refreshPromptRevision } from "@/lib/state";
 
 /**
  * useAiText — máy trạng thái chạy runAiPrompt + cache AI cho từng mục của
@@ -50,6 +51,7 @@ export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayM
     async (force: boolean) => {
       if (!requireProfile()) return;
       abortRef.current?.abort();
+      await refreshPromptRevision();
       const cached = readAiCache(group, cacheKey, force);
       if (cached) {
         setText(cached);
@@ -62,7 +64,7 @@ export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayM
       setCompleting(false);
       setLoading(true);
       try {
-        const result = await runAiPrompt(prompt, { withChartImage: false, signal: ctrl.signal });
+        const result = await runAiPrompt(prompt, { withChartImage: false, signal: ctrl.signal, serviceId: period ? `tuvi--period--${period}` : `tuvi--${cacheKey.replace("::", "--")}` });
         if (abortRef.current !== ctrl) return; // đã có yêu cầu mới thay thế
         writeAiCache(group, cacheKey, result, { module: "tuvi", topic: topic ?? "", period: period ?? "" });
         if (revealDelayMs > 0) {

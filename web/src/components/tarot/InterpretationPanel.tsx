@@ -1,4 +1,5 @@
 "use client";
+import { refreshPromptRevision } from "@/lib/state";
 
 /**
  * InterpretationPanel — AI tổng hợp trải bài: prompt port từ
@@ -49,7 +50,8 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
     const cacheKey = tarotCacheKey(
       JSON.stringify({ question, deckId: deck.id, spreadId: spread.id, frameId: frameLabel ?? "", cards: drawn, promptVersion: `${PROMPT_VERSION}:english-card-names` }),
     );
-    const cached = readAiCache("tarot", cacheKey, force);
+    await refreshPromptRevision();
+      const cached = readAiCache("tarot", cacheKey, force);
     if (cached) {
       setText(cached);
       setState("done");
@@ -71,7 +73,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
         positionLabels,
         profileContext: profile ? profileContextText(profile) : undefined,
       });
-      const result = await runAiPrompt(prompt, { temperature: 0.8 });
+      const result = await runAiPrompt(prompt, { temperature: 0.8, serviceId: spread.id === "three" ? `tarot--three--${spread.frames?.find(f=>f.label===frameLabel)?.id || "ppf"}` : `tarot--${spread.id}` });
       writeAiCache("tarot", cacheKey, result, { module: "tarot", topic: spread.id });
       setText(result);
       setState("done");

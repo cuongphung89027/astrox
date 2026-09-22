@@ -32,7 +32,8 @@ function messagesFor(config, input) {
   if (!Array.isArray(messages) || !messages.length || messages.length>100 || messages.some(m=>!m || !['system','user','assistant'].includes(m.role) || typeof m.content!=='string' || !m.content.trim() || m.content.length>100000 || Object.keys(m).some(k=>!['role','content'].includes(k))) || JSON.stringify(messages).length>200000) fail('INVALID_MESSAGES',400);
   const service=input.serviceId ? config.billing.services.find(s=>s.id===input.serviceId) : null;
   if (input.serviceId && !service) fail('UNKNOWN_SERVICE',400);
-  return {service,messages:[...(config.ai.systemPrompt ? [{role:'system',content:config.ai.systemPrompt}] : []),...(service?.prompt ? [{role:'system',content:service.prompt}] : []),...messages]};
+  const parent=service&&service.id!==service.module?config.billing.services.find(s=>s.id===service.module):null;
+  return {service,parent,messages:[...(config.ai.systemPrompt ? [{role:'system',content:config.ai.systemPrompt}] : []),...(parent?.prompt ? [{role:'system',content:parent.prompt}] : []),...(service?.prompt ? [{role:'system',content:service.prompt}] : []),...messages]};
 }
 function normalize(data, protocol, model, attempts) {
   if(!data || typeof data!=='object' || Array.isArray(data)) fail('INVALID_PROVIDER_RESPONSE',502,attempts);
@@ -59,8 +60,8 @@ function normalize(data, protocol, model, attempts) {
 }
 export async function executeProviderChain(config, input, readSecret, {fetchImpl=fetch, now=Date.now, allowHosts=[], healthStore}={}) {
   if(!config.ai.enabled) fail('AI_DISABLED',503);
-  const {messages,service}=messagesFor(config,input);
-  const chain=service?.chain?.length ? service.chain : config.ai.chain;
+  const {messages,service,parent}=messagesFor(config,input);
+  const chain=service?.chain?.length ? service.chain : parent?.chain?.length ? parent.chain : config.ai.chain;
   const deadline=now()+Math.min(config.ai.totalTimeoutMs,120000); const attempts=[];
   for(const id of chain) {
     const p=providerRoutes(config.ai.providers).find(p=>p.id===id&&p.enabled); if(!p) fail('PROVIDER_UNAVAILABLE',503,attempts);

@@ -1,3 +1,4 @@
+import { managedPrompt } from "./managed-prompts";
 /** Tropical geocentric positions from Astronomy Engine; Placidus houses. */
 import { placidusCusps } from "./natal-houses";
 import * as Astronomy from "astronomy-engine";
@@ -438,18 +439,18 @@ export function periodSkyText(period: ZodiacPeriod, natalChart: NatalChart | nul
 export function profileContextText(profile: Profile | null): string {
   if (!profile) return "";
   const p = profile;
-  return `Thông tin người xem: ${p.name}, ${p.gender}, sinh dương lịch ${formatDob(p.dob)}, giờ ${p.hourChi}, tại ${p.place}.`;
+  return managedPrompt("zodiac.profileContextText.0", [p.name, p.gender, formatDob(p.dob), p.hourChi, p.place]);
 }
 
 export function natalContextText(natalChart: NatalChart | null): string {
   return natalChart
-    ? `DỮ LIỆU BẢN ĐỒ SAO ĐÃ TÍNH (đầy đủ, AI phải dùng trực tiếp — không được nói thiếu dữ liệu): ${JSON.stringify(natalChart)}`
+    ? managedPrompt("zodiac.natalContextText.0", [JSON.stringify(natalChart)])
     : "";
 }
 
 export function zodiacPromptBody(profile: Profile | null, natalChart: NatalChart | null, taskText: string): string {
   const natalLine = natalContextText(natalChart);
-  return `${profileContextText(profile)}\n${natalLine}\n\nQUY TẮC PHÂN TÍCH BẢN ĐỒ SAO: bắt đầu ngay từ dữ liệu trên — luận giải trực tiếp các hành tinh, nhà, góc chiếu, MC và Cung Mọc đã cho. Cấm nói các câu như "không đọc được", "thiếu dữ liệu", "hãy bổ sung ngày giờ sinh". Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó và phân tích phần còn lại.\n\n${taskText}`;
+  return managedPrompt("zodiac.zodiacPromptBody.0", [profileContextText(profile), natalLine, taskText]);
 }
 
 /** Port zodiacPeriodPrompt — dự báo theo kỳ gắn quá cảnh thật. */
@@ -463,23 +464,14 @@ export function zodiacPeriodPrompt(
   const base = zodiacPromptBody(
     profile,
     natalChart,
-    `Dự báo cho cung ${sign.name} (${sign.en}), nguyên tố ${sign.element}, hành tinh chủ quản ${sign.ruler}.`,
+    managedPrompt("zodiac.zodiacPeriodPrompt.0", [sign.name, sign.en, sign.element, sign.ruler]),
   );
   const guide: Record<ZodiacPeriod, string> = {
-    today:
-      "DỮ LIỆU QUÁ CẢNH HÔM NAY (vị trí thật của các hành tinh hôm nay, tính bằng astronomy-engine):\n" +
-      sky +
-      "\n\nNhiệm vụ: dựa trên quá cảnh hôm nay — đặc biệt là vị trí Mặt Trăng theo giờ, các góc chiếu của Thuỷ/Kim/Hoả/Mặt Trời với bản đồ sao natal, và pha Mặt Trăng — viết đúng 3 gạch đầu dòng cho HÔM NAY: 1 câu công việc, 1 câu tình cảm, 1 câu lời khuyên cụ thể gắn với chuyển động trong ngày. Mỗi ý phải nhắc tới ít nhất một yếu tố quá cảnh cụ thể (ví dụ Mặt Trăng ở cung nào, góc chiếu nào đang chặt). Cấm viết chung chung dùng được cho mọi ngày.",
-    week:
-      "DỮ LIỆU QUÁ CẢNH TUẦN NÀY (vị trí thật tại hôm nay, +2, +4, +6 ngày):\n" +
-      sky +
-      "\n\nNhiệm vụ: dựa trên diễn biến quá cảnh cả tuần — Mặt Trăng đi qua các cung nào, góc chiếu nào hình thành/rời đi giữa tuần — viết đúng 3 gạch đầu dòng cho CẢ TUẦN: 1 câu công việc (ngày nào thuận/kỵ), 1 câu tình cảm, 1 câu lời khuyên phân bổ năng lượng theo nhịp tuần. Phải nêu chuyển động theo thời gian, cấm viết nội dung dùng được cho một ngày đơn lẻ.",
-    month:
-      "DỮ LIỆU QUÁ CẢNH THÁNG NÀY (vị trí thật tại hôm nay, +7, +14, +21, +28 ngày) — tập trung hành tinh chậm:\n" +
-      sky +
-      "\n\nNhiệm vụ: dựa trên quá cảnh tháng — Mặt Trời đổi cung khi nào, Kim/Hoả/Mộc/Thổ di chuyển ra sao, pha Mặt Trăng tròn/non rơi vào lúc nào — viết đúng 3 gạch đầu dòng cho CẢ THÁNG: 1 câu công việc (giai đoạn nào bứt phá/giữ nhịp), 1 câu tình cảm, 1 câu lời khuyên chiến lược tháng. Tầm nhìn tháng, cấm viết nội dung ngày/tuần.",
+    today: managedPrompt("zodiac.periodGuide.today", [sky]),
+    week: managedPrompt("zodiac.periodGuide.week", [sky]),
+    month: managedPrompt("zodiac.periodGuide.month", [sky]),
   };
-  return `${base}\n\n${guide[period] || guide.today}`;
+  return managedPrompt("zodiac.zodiacPeriodPrompt.1", [base, guide[period] || guide.today]);
 }
 
 /* ------------------------------------------------------------------ */
@@ -496,24 +488,113 @@ export interface ZodiacDeepTopic {
 
 export const ZODIAC_DEEP_TOPICS: ZodiacDeepTopic[] = [
   {
-    id: "tong-quan-la-so",
-    subId: "bo-ba-loi",
-    label: "Bộ ba cốt lõi",
-    prompt:
-      "Dựa trên dữ liệu đã tính, giải thích tổng quan Bộ ba cốt lõi (Mặt Trời, Mặt Trăng, Cung Mọc), điểm nổi bật và cách cân bằng năng lượng. ~260-440 từ.",
+    "id": "tong-quan-la-so",
+    "subId": "bo-ba-loi",
+    "label": "Tổng quan lá số · Bộ ba cốt lõi",
+    "prompt": "Dựa trên dữ liệu đã tính, giải thích tổng quan Bộ ba cốt lõi (Mặt Trời, Mặt Trăng, Cung Mọc), điểm nổi bật và cách cân bằng năng lượng. ~260-440 từ."
   },
   {
-    id: "tinh-yeu-cung",
-    subId: "phong-cach-yeu",
-    label: "Tình yêu & quan hệ",
-    prompt: "Phân tích phong cách yêu từ Kim Tinh, Hoả Tinh và nhà 5/7. ~240-420 từ.",
+    "id": "tong-quan-la-so",
+    "subId": "diem-noi-bat",
+    "label": "Tổng quan lá số · Điểm nổi bật",
+    "prompt": "Chỉ ra 3-4 điểm nổi bật nhất trong lá số (hành tinh nổi bật, cung đặc biệt, góc chiếu mạnh) và ý nghĩa của chúng. Dạng gạch đầu dòng. ~220-370 từ."
   },
   {
-    id: "su-nghiep-cung",
-    subId: "huong-su-nghiep",
-    label: "Sự nghiệp & tài chính",
-    prompt: "Phân tích hướng nghề từ MC, nhà 6/10 và các hành tinh liên quan. ~260-440 từ.",
+    "id": "big-3",
+    "subId": "mat-troi",
+    "label": "Bộ ba cốt lõi · Mặt Trời",
+    "prompt": "Phân tích Mặt Trời: cung, nhà, ý nghĩa với bản chất cốt lõi. ~220-370 từ."
   },
+  {
+    "id": "big-3",
+    "subId": "mat-trang",
+    "label": "Bộ ba cốt lõi · Mặt Trăng",
+    "prompt": "Phân tích Mặt Trăng: cung, nhà, nhu cầu cảm xúc và cách phản ứng tự nhiên. ~220-370 từ."
+  },
+  {
+    "id": "big-3",
+    "subId": "cung-moc",
+    "label": "Bộ ba cốt lõi · Cung Mọc",
+    "prompt": "Phân tích Cung Mọc: ấn tượng đầu tiên, phong cách bề ngoài và cách tiếp cận cuộc sống. ~220-370 từ."
+  },
+  {
+    "id": "big-3",
+    "subId": "ket-hop",
+    "label": "Bộ ba cốt lõi · Sắc thái chung",
+    "prompt": "Tổng hợp cách ba lớp Mặt Trời - Mặt Trăng - Cung Mọc phối hợp và bổ trợ lẫn nhau. ~200-340 từ."
+  },
+  {
+    "id": "hanh-tinh",
+    "subId": "hanh-tinh-ca-nhan",
+    "label": "Hành tinh · Hành tinh cá nhân",
+    "prompt": "Phân tích Thuỷ, Kim, Hoả, Mộc, Thổ Tinh: cung, nhà và ý nghĩa. Mỗi hành tinh 1 đoạn ngắn. ~290-510 từ."
+  },
+  {
+    "id": "hanh-tinh",
+    "subId": "hanh-tinh-xa-xi",
+    "label": "Hành tinh · Hành tinh xa xỉ",
+    "prompt": "Phân tích Thiên Vương, Hải Vương, Diêm Vương: thế hệ và điểm cá biệt trong lá số. ~220-370 từ."
+  },
+  {
+    "id": "12-nha",
+    "subId": "nhac-trung-tam",
+    "label": "12 nhà · Nhà trọng tâm",
+    "prompt": "Phân tích nhà 1, 4, 7, 10: bản thân, gia đình, quan hệ, sự nghiệp. Mỗi nhà 1 đoạn. ~290-510 từ."
+  },
+  {
+    "id": "12-nha",
+    "subId": "nha-khac",
+    "label": "12 nhà · Các nhà khác",
+    "prompt": "Phân tích các nhà còn lại có hành tinh hoặc điểm đáng chú ý. ~240-420 từ."
+  },
+  {
+    "id": "goc-chieu",
+    "subId": "goc-thuan-loi",
+    "label": "Góc chiếu · Góc thuận lợi",
+    "prompt": "Phân tích các góc chiếu thuận (trùng tụ, lục hợp, tam hợp): nguồn sức mạnh và may mắn. ~240-420 từ."
+  },
+  {
+    "id": "goc-chieu",
+    "subId": "goc-thach-thuc",
+    "label": "Góc chiếu · Góc thử thách",
+    "prompt": "Phân tích các góc căng (vuông, đối đỉnh): điểm cần dung hoà và bài học. ~240-420 từ."
+  },
+  {
+    "id": "tinh-cach-cung",
+    "subId": "dac-diem-cot-loi",
+    "label": "Tính cách theo cung · Đặc điểm cốt lõi",
+    "prompt": "Phân tích tính cách chi tiết của cung {SIGN}, gắn với dữ liệu tính trực tiếp. ~260-440 từ."
+  },
+  {
+    "id": "tinh-cach-cung",
+    "subId": "diem-manh-yeu",
+    "label": "Tính cách theo cung · Điểm mạnh & cần lưu ý",
+    "prompt": "Về cung {SIGN}: 3 điểm mạnh và 3 điểm cần lưu ý, mỗi điểm 1-2 câu, dạng gạch đầu dòng."
+  },
+  {
+    "id": "tinh-yeu-cung",
+    "subId": "phong-cach-yeu",
+    "label": "Tình yêu & quan hệ · Phong cách yêu",
+    "prompt": "Phân tích phong cách yêu từ Kim Tinh, Hoả Tinh và nhà 5/7. ~240-420 từ."
+  },
+  {
+    "id": "tinh-yeu-cung",
+    "subId": "nhu-cau-cam-xuc",
+    "label": "Tình yêu & quan hệ · Nhu cầu cảm xúc",
+    "prompt": "Phân tích nhu cầu cảm xúc từ Mặt Trăng và nhà 7: điều bạn cần trong mối quan hệ bền lâu. ~220-370 từ."
+  },
+  {
+    "id": "su-nghiep-cung",
+    "subId": "huong-su-nghiep",
+    "label": "Công việc & tài chính · Hướng sự nghiệp",
+    "prompt": "Phân tích hướng nghề từ MC, nhà 6/10 và các hành tinh liên quan. ~260-440 từ."
+  },
+  {
+    "id": "su-nghiep-cung",
+    "subId": "tai-chinh",
+    "label": "Công việc & tài chính · Tài chính",
+    "prompt": "Phân tích thái độ và tiềm năng tài chính từ nhà 2, Kim Tinh, Mộc Tinh. ~220-370 từ."
+  }
 ];
 
 /* ------------------------------------------------------------------ */
@@ -601,12 +682,7 @@ export function compatAnalysis(a: ZodiacSign, b: ZodiacSign): CompatAnalysis {
 /* ------------------------------------------------------------------ */
 
 export function compatPrompt(a: ZodiacSign, b: ZodiacSign, analysis: CompatAnalysis, profile: Profile | null): string {
-  return `So sánh mức độ hợp nhau giữa hai người theo cung hoàng đạo (chiêm tinh phương Tây, hệ tropical):
-Người 1 (bạn): ${profile ? profile.name : "Người xem"}, cung Mặt Trời ${a.name} (${a.en}), nguyên tố ${a.element}, tính chất ${a.quality}, hành tinh chủ quản ${a.ruler}, đặc tính: ${a.traits}.
-Người 2: cung Mặt Trời ${b.name} (${b.en}), nguyên tố ${b.element}, tính chất ${b.quality}, hành tinh chủ quản ${b.ruler}, đặc tính: ${b.traits}.
-DỮ LIỆU ĐÃ TÍNH (nguồn duy nhất, kết luận không được mâu thuẫn): khoảng góc ${analysis.angle}° (${analysis.aspectLabel}), quan hệ nguyên tố: ${analysis.relation} — ${analysis.elementNote}, điểm tương hợp tĩnh ${analysis.percent}/100.
-Trả lời DUY NHẤT bằng JSON hợp lệ, không thêm chữ nào khác:
-{"percent": ${analysis.percent}, "strengths": ["...", "...", "..."], "watchouts": ["...", "..."], "advice": "..."}`;
+  return managedPrompt("zodiac.compatPrompt.0", [profile ? profile.name : "Người xem", a.name, a.en, a.element, a.quality, a.ruler, a.traits, b.name, b.en, b.element, b.quality, b.ruler, b.traits, analysis.angle, analysis.aspectLabel, analysis.relation, analysis.elementNote, analysis.percent, analysis.percent]);
 }
 
 /** Port extractJson — bóc JSON khỏi phản hồi AI. */

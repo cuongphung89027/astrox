@@ -1,3 +1,4 @@
+import { managedPrompt } from "./managed-prompts";
 /**
  * Thần Số Học — hệ Pythagoras. Port trung thực từ index.html (MODULE 6 — THAN
  * SO HOC): toàn bộ công thức giữ nguyên cách tính của app cũ (Số Chủ Đạo rút
@@ -351,11 +352,11 @@ function formatDobVi(iso?: string): string {
 
 export function profileContextText(profile: PromptProfile | null): string {
   if (!profile) return "";
-  return `Thông tin người xem: ${profile.name || ""}, ${profile.gender || ""}, sinh dương lịch ${formatDobVi(profile.dob)}, giờ ${profile.hourChi || ""}, tại ${profile.place || ""}.`;
+  return managedPrompt("numerology.profileContextText.0", [profile.name || "", profile.gender || "", formatDobVi(profile.dob), profile.hourChi || "", profile.place || ""]);
 }
 
 export function numerologyContextText(chart: NumerologyChart): string {
-  return `DỮ LIỆU THẦN SỐ HỌC ĐÃ TÍNH (đầy đủ, AI phải dùng trực tiếp — không được nói thiếu dữ liệu): ${JSON.stringify(chart)}`;
+  return managedPrompt("numerology.numerologyContextText.0", [JSON.stringify(chart)]);
 }
 
 export function numerologyPromptBody(
@@ -364,10 +365,5 @@ export function numerologyPromptBody(
   profile: PromptProfile | null,
 ): string {
   const line = numerologyContextText(chart);
-  return `${profileContextText(profile)}
-${line}
-
-QUY TẮC PHÂN TÍCH THẦN SỐ HỌC: bắt đầu ngay từ dữ liệu các chỉ số đã tính (Số Chủ Đạo, Sứ Mệnh, Linh Hồn, Nhân Cách, biểu đồ ngày sinh, chu kỳ Đỉnh Cao/Thử Thách, năm cá nhân) — không được nói "thiếu dữ liệu" hay yêu cầu bổ sung thông tin. Với phần "grid" (biểu đồ ngày sinh): tự luận giải ý nghĩa số khuyết/số lặp và các hàng/cột/đường chéo nếu đủ 3 số liên tiếp cùng xuất hiện trong lưới 3x3 (hàng trên 3-6-9, hàng giữa 2-5-8, hàng dưới 1-4-7, cùng các cột và đường chéo tương ứng) — không cần dùng tên gọi cố định cho từng đường vì tên gọi khác nhau giữa các trường phái, chỉ mô tả ý nghĩa dựa trên các con số cụ thể có mặt. Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó.
-
-${taskText}`;
+  return managedPrompt("numerology.numerologyPromptBody.0", [profileContextText(profile), line, taskText]);
 }

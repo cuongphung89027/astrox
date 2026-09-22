@@ -1,8 +1,8 @@
-import {defaultConfig} from './config.ts';
+import {defaultConfig,hydrateConfig} from './config.ts';
 import {decrypt,encrypt} from './crypto.mjs';
 export const sql=(env,q,...args)=>env.DB.prepare(q).bind(...args);
-export async function state(env){await sql(env,'INSERT OR IGNORE INTO admin_state(id,draft,revision) VALUES(1,?,0)',JSON.stringify(defaultConfig())).run();return sql(env,'SELECT * FROM admin_state WHERE id=1').first();}
-export async function readPublished(env){if(!env.DB)return null;const exists=await sql(env,"SELECT name FROM sqlite_master WHERE type='table' AND name='admin_state'").first();if(!exists)return null;const r=await sql(env,'SELECT v.id,v.config FROM admin_state s JOIN admin_versions v ON s.published_id=v.id WHERE s.id=1').first();return r?{config:JSON.parse(r.config),revision:r.id}:null;}
+export async function state(env){await sql(env,'INSERT OR IGNORE INTO admin_state(id,draft,revision) VALUES(1,?,0)',JSON.stringify(defaultConfig())).run();const row=await sql(env,'SELECT * FROM admin_state WHERE id=1').first();return {...row,draft:JSON.stringify(hydrateConfig(JSON.parse(row.draft)))};}
+export async function readPublished(env){if(!env.DB)return null;const exists=await sql(env,"SELECT name FROM sqlite_master WHERE type='table' AND name='admin_state'").first();if(!exists)return null;const r=await sql(env,'SELECT v.id,v.config FROM admin_state s JOIN admin_versions v ON s.published_id=v.id WHERE s.id=1').first();return r?{config:hydrateConfig(JSON.parse(r.config)),revision:r.id}:null;}
 export async function readSecret(env,ref){const r=await sql(env,'SELECT ciphertext FROM admin_secrets WHERE ref=?',ref).first();return r?decrypt(env,ref,r.ciphertext):null;}
 export function auditStatement(env,actor,action,target,detail={}){return sql(env,'INSERT INTO admin_audit(actor,action,target,created_at,detail) VALUES(?,?,?,?,?)',actor,action,target,new Date().toISOString(),JSON.stringify(detail));}
 export async function recordAudit(env,actor,action,target,detail={}){return auditStatement(env,actor,action,target,detail).run();}

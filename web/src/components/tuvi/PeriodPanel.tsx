@@ -6,6 +6,7 @@
  * group "tuviPeriod.{today|week|month}", key = kỳ ISO (fingerprint hồ sơ do
  * store lo sẵn). Mỗi tab có nút làm mới (force bỏ qua cache).
  */
+import { managedPrompt } from "@/lib/managed-prompts";
 import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
 import { ReadingLoader } from "@/components/kit/ReadingLoader";
 import { useMemo, useState, useEffect, type CSSProperties } from "react";
@@ -76,7 +77,7 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
       tuviPromptBody(
         profile,
         chart,
-        tuviPeriodPromptText(ziweiInputFrom(profile), label, PERIOD_LABELS[period], period) + "\nTrình bày thành đúng 3 mục với tiêu đề riêng trên một dòng: ## Nhịp chung, ## Điều thuận lợi, ## Điều cần lưu tâm. Giữ đủ nội dung được yêu cầu trong các mục này.",
+        managedPrompt("tuvi.periodPresentation", [tuviPeriodPromptText(ziweiInputFrom(profile), label, PERIOD_LABELS[period], period)]),
       ),
     [profile, chart, label, period],
   );

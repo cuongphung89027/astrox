@@ -1,4 +1,5 @@
 "use client";
+import { refreshPromptRevision } from "@/lib/state";
 import { ReadingLoader } from "@/components/kit/ReadingLoader";
 import { SavedReading, ReadingInvitation } from "@/components/kit/SavedReading";
 
@@ -43,7 +44,7 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
 
   useEffect(() => {
     request.current++;
-    const cached = readAiCache("batuTopics", cacheKey);
+      const cached = readAiCache("batuTopics", cacheKey);
     setText(cached);
     setAiState(cached ? "done" : "idle");
     setErrorMsg("");
@@ -52,7 +53,8 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
 
   const run = useCallback(async () => {
     if (!requireProfile()) return;
-    const cached = readAiCache("batuTopics", cacheKey);
+    await refreshPromptRevision();
+      const cached = readAiCache("batuTopics", cacheKey);
     if (cached) {
       setText(cached);
       setAiState("done");
@@ -62,7 +64,7 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
     setAiState("loading");
     try {
       const prompt = buildBatuPromptBody(topic.prompt, chart, profile);
-      const out = await runAiPrompt(prompt, {});
+      const out = await runAiPrompt(prompt, {serviceId: `batu--${topic.id}`});
       writeAiCache("batuTopics", cacheKey, out, { module: "batu", topic: topic.id });
       if(id!==request.current)return;
       setText(out);

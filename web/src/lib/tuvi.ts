@@ -1,3 +1,4 @@
+import { managedPrompt } from "./managed-prompts";
 /**
  * Logic Tử Vi Đẩu Số — port trung thực từ index.html (MODULE 1 — TU VI):
  * buildZiweiChart, ZIWEI_HOUR_INDEX, ziweiPeriodSkyText (Lưu Nhật/Lưu Nguyệt/
@@ -301,19 +302,19 @@ export function ziweiPeriodSkyText(input: ZiweiInput, period: TuviPeriod): strin
 export function profileContextText(profile: Profile): string {
   if (!profile) return "";
   const p = profile;
-  return `Thông tin người xem: ${p.name}, ${p.gender}, sinh dương lịch ${formatDob(p.dob)}, giờ ${p.hourChi}, tại ${p.place}.`;
+  return managedPrompt("tuvi.profileContextText.0", [p.name, p.gender, formatDob(p.dob), p.hourChi, p.place]);
 }
 
 export function ziweiContextText(chart: ZiweiChart): string {
   if (!chart) return "";
-  return `DỮ LIỆU LÁ SỐ TỬ VI ĐÃ TÍNH (đầy đủ, AI phải dùng trực tiếp — không được nói thiếu dữ liệu): ${JSON.stringify(chart)}`;
+  return managedPrompt("tuvi.ziweiContextText.0", [JSON.stringify(chart)]);
 }
 
 /** Khung prompt chung: hồ sơ + JSON lá số + quy tắc bắt đầu từ dữ liệu thật. */
 export function tuviPromptBody(profile: Profile, chart: ZiweiChart | null, taskText: string): string {
   if (!chart) return taskText;
   const chartLine = ziweiContextText(chart);
-  return `${profileContextText(profile)}\n${chartLine}\n\nQUY TẮC PHÂN TÍCH LÁ SỐ: bắt đầu ngay từ dữ liệu trên — luận giải trực tiếp các sao, cung và đại vận đã cho. Cấm nói các câu như "không đọc được", "thiếu dữ liệu", "hãy bổ sung ngày giờ sinh". Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó và phân tích phần còn lại.\n\n${taskText}`;
+  return managedPrompt("tuvi.tuviPromptBody.0", [profileContextText(profile), chartLine, taskText]);
 }
 
 export const PERIOD_LABELS: Record<TuviPeriod, string> = { today: "hôm nay", week: "tuần này", month: "tháng này" };
@@ -327,11 +328,11 @@ export function tuviPeriodPromptText(
 ): string {
   const sky = ziweiPeriodSkyText(input, period);
   if (!sky)
-    return `Hôm nay là ${label} (${ptext}). Dựa trên lá số trên, viết 3 gạch đầu dòng ngắn về sắc thái ${ptext}: 1 câu công việc, 1 câu tình cảm/quan hệ, 1 câu lời khuyên. Diễn giải theo các sao, cung và tiểu vận đã cho.`;
+    return managedPrompt("tuvi.tuviPeriodPromptText.0", [label, ptext, ptext]);
   const guide: Record<TuviPeriod, string> = {
-    today: `DỮ LIỆU LƯU CHUYỂN HÔM NAY là ${label} (tính bằng thuật toán Tử Vi thật — Lưu Nhật, Tứ Hóa):\n${sky}\n\nNhiệm vụ: dựa trên Lưu Nhật và Tứ Hóa hôm nay ở trên, viết đúng 3 gạch đầu dòng cho HÔM NAY: 1 câu công việc, 1 câu tình cảm, 1 câu lời khuyên. Mỗi ý phải nhắc cụ thể tới cung hoặc sao lưu chuyển đã cho (tên cung Lưu Nhật Mệnh nhập, hoặc sao Hóa Lộc/Hóa Kỵ...). Cấm viết chung chung dùng được cho mọi ngày.`,
-    week: `DỮ LIỆU LƯU CHUYỂN TUẦN NÀY là ${label} (mẫu Lưu Nhật các ngày trong tuần, tính bằng thuật toán Tử Vi thật):\n${sky}\n\nNhiệm vụ: dựa trên diễn biến Lưu Nhật cả tuần ở trên, viết đúng 3 gạch đầu dòng cho CẢ TUẦN: 1 câu công việc (ngày nào thuận/kỵ dựa trên cung Lưu Nhật Mệnh nhập), 1 câu tình cảm, 1 câu lời khuyên theo nhịp tuần. Phải nêu khác biệt giữa các ngày mẫu, cấm viết nội dung dùng được cho một ngày đơn lẻ.`,
-    month: `DỮ LIỆU LƯU CHUYỂN THÁNG NÀY là ${label} (Lưu Nguyệt + mẫu Lưu Nhật trong tháng, tính bằng thuật toán Tử Vi thật):\n${sky}\n\nNhiệm vụ: dựa trên Lưu Nguyệt và Tứ Hóa tháng ở trên, viết đúng 3 gạch đầu dòng cho CẢ THÁNG: 1 câu công việc (giai đoạn nào bứt phá/giữ nhịp), 1 câu tình cảm, 1 câu lời khuyên chiến lược tháng. Tầm nhìn tháng, cấm viết nội dung của riêng một ngày.`,
+    today: managedPrompt("tuvi.tuviPeriodPromptText.1", [label, sky]),
+    week: managedPrompt("tuvi.tuviPeriodPromptText.2", [label, sky]),
+    month: managedPrompt("tuvi.tuviPeriodPromptText.3", [label, sky]),
   };
   return guide[period] || guide.today;
 }

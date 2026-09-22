@@ -1,4 +1,5 @@
 "use client";
+import { refreshPromptRevision } from "@/lib/state";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {ReadingLoader} from "@/components/kit/ReadingLoader";
 import {SavedReading,ReadingInvitation} from "@/components/kit/SavedReading";
@@ -12,6 +13,6 @@ export function TopicPanel({topic,chart,profile}:{topic:NumerologyTopic;chart:Nu
  const requireProfile=useRequireProfile();const [state,setState]=useState<'idle'|'loading'|'done'|'error'>('idle');const [text,setText]=useState(''),[error,setError]=useState('');const generation=useRef(0);
  const key=topic.id==='personal-year'?`${topic.id}::${chart.now.year}`:topic.id;
  useEffect(()=>{generation.current++;const cached=readAiCache('numerologyTopics',key);setText(cached);setState(cached?'done':'idle');setError('');return()=>{generation.current++;};},[key,profile]);
- const run=useCallback(async()=>{if(!requireProfile())return;const cached=readAiCache('numerologyTopics',key);if(cached){setText(cached);setState('done');return;}const id=++generation.current;setState('loading');setError('');try{const out=await runAiPrompt(numerologyPromptBody(topic.prompt,chart,profile),{});if(id!==generation.current)return;writeAiCache('numerologyTopics',key,out,{module:'numerology',topic:topic.id});setText(out);setState('done');}catch(e){if(id!==generation.current)return;setError(e instanceof Error?e.message:'Không lấy được luận giải.');setState('error');}},[requireProfile,key,topic,chart,profile]);
+ const run=useCallback(async()=>{if(!requireProfile())return;await refreshPromptRevision();const cached=readAiCache('numerologyTopics',key);if(cached){setText(cached);setState('done');return;}const id=++generation.current;setState('loading');setError('');try{const out=await runAiPrompt(numerologyPromptBody(topic.prompt,chart,profile),{serviceId:`numerology--${topic.id}`});if(id!==generation.current)return;writeAiCache('numerologyTopics',key,out,{module:'numerology',topic:topic.id});setText(out);setState('done');}catch(e){if(id!==generation.current)return;setError(e instanceof Error?e.message:'Không lấy được luận giải.');setState('error');}},[requireProfile,key,topic,chart,profile]);
  return <div aria-live="polite" aria-busy={state==='loading'}>{state==='idle'?<ReadingInvitation label="Đọc luận giải" onRun={run}/>:state==='loading'?<ReadingLoader kind="numerology"/>:state==='done'?<SavedReading text={text} periodic={topic.id==='personal-year'}/>:<div><p role="alert">{error}</p><Btn onClick={run}>Thử lại</Btn></div>}</div>;
 }

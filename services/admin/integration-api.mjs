@@ -59,7 +59,7 @@ export async function handleConfiguredAi(request,env){
   const root=c.billing.services.find(s=>s.id===service.module);if(root&&!['free','paid'].includes(root.status))throw new RuntimeError('SERVICE_UNAVAILABLE',403);
   const engine={tuvi:'iztro',zodiac:'astronomy',batu:'lunar',numerology:'numerology',kinhdich:'kinhdich',tarot:'tarot'}[service.module];if(engine&&c.engines?.[engine]?.enabled===false)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
   if(input.promptDescriptor){try{input.messages=[{role:'user',content:renderServicePrompt(input.promptDescriptor,input.serviceId,c.prompts)}]}catch{throw new RuntimeError('INVALID_MESSAGES',400)}}
-  if(input.compact)input.messages.push({role:'user',content:'Viết NGẮN GỌN: tổng cộng tối thiểu 150 từ, tối đa 200 từ, đúng nội dung chính, không mở rộng.'});
+  if(input.compact)input.messages.push({role:'user',content:c.prompts.templates['shared.compact']});
   if(service.status==='paid'){
    if(!c.billing.enabled)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
    if(!env.ASTROX_BACKEND)throw new RuntimeError('BACKEND_UNAVAILABLE',503);

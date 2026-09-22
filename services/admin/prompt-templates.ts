@@ -386,5 +386,12 @@ export default [
       "partnerDob"
     ],
     "source": "index.html:4170"
+  },
+  {
+    "id": "shared.compact",
+    "module": "shared",
+    "template": "Viết NGẮN GỌN: tổng cộng tối thiểu 150 từ, tối đa 200 từ, đúng nội dung chính, không mở rộng.",
+    "variables": [],
+    "source": "index.html · callAiText compact"
   }
 ];

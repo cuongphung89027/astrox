@@ -5,10 +5,14 @@
  * "kinhDich"). Chờ: SunSpinner + Skeleton; xong: PanelReveal + AiText +
  * LikeButton + "Gieo quẻ khác". Port prompt từ performCast của app cũ.
  */
-import { useCallback, useState } from "react";
-import { AiText, Btn, GlassCard, Skeleton, SunSpinner } from "@/components/kit";
-import { LikeButton, PanelReveal } from "@/components/motion";
-import { useRequireProfile } from "@/components/profile/ProfileModal";
+import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
+import { useCallback, useEffect, useState } from "react";
+import { Btn } from "@/components/kit";
+import { KdReading } from "./KdReading";
+import { LikeButton } from "@/components/motion";
+import styles from "./KinhDich.module.css";
+import { FeatureIcon } from "@/components/kit/FeatureIcon";
+import { useProfileModal, useRequireProfile } from "@/components/profile/ProfileModal";
 import { runAiPrompt } from "@/lib/api";
 import { buildKdPrompt, kdCacheKey } from "@/lib/kinhdich";
 import type { CastResult } from "@/lib/kinhdich";
@@ -29,6 +33,7 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
   const [errorMsg, setErrorMsg] = useState("");
   const profile = useProfile();
   const requireProfile = useRequireProfile();
+  const { open: openProfile } = useProfileModal();
 
   const interpret = useCallback(async () => {
     if (!requireProfile()) return;
@@ -40,6 +45,7 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
       setState("done");
       return;
     }
+    setElapsed(0);
     setState("loading");
     try {
       const prompt = buildKdPrompt(result, q, profile);
@@ -54,37 +60,43 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
   }, [requireProfile, question, result, profile]);
 
   const done = state === "done";
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (state !== "loading") return;
+    const started = Date.now();
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [state]);
+
+  if (!profile) return <section className={styles.profileInvitation}>
+    <div className={styles.invitationIcon}><FeatureIcon name="kinhdich" size={28}/></div>
+    <h3>Đọc luận giải của bạn</h3>
+    <p>Bổ sung hồ sơ để đọc luận giải cho câu hỏi của bạn.</p>
+    <button className={styles.primary} onClick={()=>openProfile()}>Bổ sung hồ sơ <span aria-hidden="true">↗</span></button>
+
+  </section>;
 
   return (
-    <GlassCard className="p-6 sm:p-7" variant={done ? "premium" : "default"}>
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-display text-lg font-extrabold text-muc">Luận giải bằng trí tuệ nhân tạo</h3>
+    <section className={styles.readingPanel} aria-busy={state === "loading"}>
+      {state !== "idle" && <div className="flex items-center justify-between gap-3">
+        <h3 className="font-display text-2xl font-normal text-muc">Luận giải quẻ</h3>
         {done ? <LikeButton label="Thích luận giải này" /> : null}
-      </div>
+      </div>}
 
       {state === "idle" ? (
-        <div className="mt-4">
-          <Btn variant="primary" size="md" onClick={interpret}>
-            Luận giải quẻ này
-          </Btn>
-          <p className="mt-2.5 text-xs leading-relaxed text-muc-2">
-            {profile
-              ? "AstroX luận theo đúng phép Thể–Dụng của Mai Hoa Dịch Số, gắn với câu hỏi của bạn."
-              : "Cần hồ sơ để AstroX xưng hô và luận cho đúng người — bấm nút sẽ mở form thiết lập."}
-          </p>
+        <div>
+          <button className={styles.primary} onClick={interpret}>
+            Đọc luận giải <span aria-hidden="true">↗</span>
+          </button>
+
         </div>
       ) : null}
 
-      {state === "loading" ? (
-        <div className="mt-5" role="status" aria-live="polite" aria-label="Đang luận giải quẻ">
-          <SunSpinner size={40} label="AstroX đang đọc quẻ…" className="items-start" />
-          <div className="mt-4 space-y-2.5" aria-hidden="true">
-            <Skeleton className="h-3.5 w-[95%]" />
-            <Skeleton className="h-3.5 w-[85%]" />
-            <Skeleton className="h-3.5 w-[70%]" />
-          </div>
-        </div>
-      ) : null}
+      {state === "loading" ? <div className={styles.readingWait} role="status" aria-live="polite">
+        <div className={styles.loadingHex} aria-hidden="true">{[0,1,2,3,4,5].map(i=><i key={i} style={{animationDelay:`${i*120}ms`}}>{i%2===0?<><b/><b/></>:<b/>}</i>)}</div>
+        <div><span className={styles.eyebrow}>ĐANG LUẬN GIẢI</span><p>Đọc quẻ của bạn…</p><small><LoadingWhisper kind="kinhdich"/></small></div>
+        <span className={styles.waitTime} aria-hidden="true">{elapsed}s</span>
+      </div> : null}
 
       {state === "error" ? (
         <div className="mt-4">
@@ -97,14 +109,14 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
         </div>
       ) : null}
 
-      <PanelReveal open={done}>
+      {done && <div className={styles.readingReveal}>
         <div className="mt-4">
-          <AiText text={text} />
+          <KdReading text={text} />
           <Btn variant="ghost" size="md" className="mt-5" onClick={onReset} arrow>
             Gieo quẻ khác
           </Btn>
         </div>
-      </PanelReveal>
-    </GlassCard>
+      </div>}
+    </section>
   );
 }

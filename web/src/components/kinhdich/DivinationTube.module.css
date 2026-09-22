@@ -1,0 +1,17 @@
+.scene { position: relative; width: min(360px,100%); height: 100%; min-height: 280px; margin: auto; display: grid; place-items: center; }
+.art { display: block; width: 100%; max-height: 420px; overflow: visible; filter: drop-shadow(0 12px 18px #1d422c0b); }
+.vessel { transform-origin: 180px 390px; }
+.scene[data-shaking=true] .vessel { animation: shake 1.25s ease-in-out infinite; }
+.scene[data-shaking=true] .stick { animation: rattle 625ms ease-in-out infinite; animation-delay: calc(var(--i) * -47ms); }
+.flying { transform-origin: 180px 214px; animation: cast 1150ms cubic-bezier(.22,.7,.3,1) both; }
+.shadow { transform-origin: 180px 405px; animation: breathe 3.5s ease-in-out infinite; }
+.orbit { transform-origin: 180px 245px; animation: halo 7s ease-in-out infinite; }
+@keyframes shake { 0%,100% { transform: rotate(0); } 18% { transform: rotate(-4deg) translateY(-3px); } 34% { transform: rotate(3deg); } 49% { transform: rotate(-2.5deg) translateY(-4px); } 64% { transform: rotate(2deg); } 80% { transform: rotate(0); } }
+@keyframes rattle { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-7px); } 70% { transform: translateY(2px); } }
+@keyframes cast { 0% { transform: translate(0,0); opacity: 1; } 48% { transform: translate(0,-135px); opacity: 1; } 66% { transform: translate(calc(var(--direction) * 30px),-142px) rotate(calc(var(--direction) * 12deg)); opacity: 1; } 100% { transform: translate(calc(var(--direction) * 92px),45px) rotate(calc(var(--direction) * 24deg)) scale(.25); opacity: 0; } }
+@keyframes breathe { 50% { opacity: .6; transform: scaleX(.92); } }
+@keyframes halo { 50% { opacity: .45; transform: scale(.97); } }
+@media(max-width:540px) { .art { max-height: 355px; } }
+@media(prefers-reduced-motion:reduce) { .scene * { animation: none!important; } .flying { opacity: 0; } }
+:global(html[data-motion=reduced]) .scene * { animation: none!important; }
+:global(html[data-motion=reduced]) .flying { opacity: 0; }

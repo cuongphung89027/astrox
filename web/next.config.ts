@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 /**
  * AstroX FE v5 (Next.js) — static export.
@@ -9,8 +10,28 @@ import type { NextConfig } from "next";
  * tuvi.html (hoặc tuvi/index.html nếu bật trailingSlash).
  */
 const nextConfig: NextConfig = {
-  output: "export",
+  // Shared admin contracts live beside web/, and must resolve in both bundles.
+  turbopack: { root: path.resolve(__dirname, "..") },
+  ...(process.env.NODE_ENV === "development"
+    ? {
+        async rewrites() {
+          return [
+            { source: "/api/admin/:path*", destination: "http://127.0.0.1:8789/api/admin/:path*" },
+            { source: "/api/site-config", destination: "http://127.0.0.1:8789/api/site-config" },
+            { source: "/api/ai", destination: process.env.ASTROX_LOCAL_AI === "1" ? "http://127.0.0.1:8789/api/ai" : "https://theastrox.space/api/ai" },
+          ];
+        },
+      }
+    : { output: "export" as const }),
   images: { unoptimized: true },
+  // Playwright/QA sometimes hits 127.0.0.1; Next 16 blocks cross-origin
+  // dev assets by default and client hydration never runs (text stays opacity:0
+  // => trang trắng khi mở qua tunnel).
+  // Wildcard "*.trycloudflare.com" phủ mọi quick tunnel mới (mỗi lần chạy
+  // cloudflared sinh 1 subdomain ngẫu nhiên), không cần sửa file mỗi lần.
+  // Next 16.3.5 hỗ trợ wildcard qua matchWildcardDomain() trong
+  // next/dist/server/app-render/csrf-protection.js.
+  allowedDevOrigins: ["localhost", "127.0.0.1", "*.trycloudflare.com"],
 };
 
 export default nextConfig;

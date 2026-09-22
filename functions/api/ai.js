@@ -10,6 +10,8 @@
  * hoặc qua `wrangler pages secret put DEVQUOTE_API_KEY`):
  *   DEVQUOTE_API_KEY
  */
+import { handleConfiguredAi } from "../../services/admin/integration-api.mjs";
+
 const ENDPOINT = "https://opencode.ai/zen/go/v1/responses";
 const DEFAULT_MODEL = "muse-spark-1.3-contributor";
 const SESSION_ID = "astrox-web";
@@ -30,6 +32,11 @@ function json(status, body) {
 
 export async function onRequestPost(context) {
   const { request, env } = context;
+
+  // Once published, admin configuration is authoritative. Never fall back to
+  // legacy credentials when the configured service is disabled or failing.
+  const configured = await handleConfiguredAi(request, env);
+  if (configured) return configured;
 
   const key = env.DEVQUOTE_API_KEY;
   if (!key) return json(500, { error: "Máy chủ chưa cấu hình DEVQUOTE_API_KEY trong Environment Variables." });
@@ -101,16 +108,16 @@ export async function onRequestPost(context) {
       if (!upstream.ok) {
         let detail = "";
         try { const j = JSON.parse(text); detail = j?.error?.message || j?.message || ""; } catch { detail = text.slice(0, 300); }
-        return json(upstream.status, { error: detail || "Nhà cung cấp AI trả về lỗi." });
+        return json(upstream.status, { error: detail || "Dịch vụ AstroX trả về lỗi." });
       }
       let data;
-      try { data = JSON.parse(text); } catch { return json(502, { error: "Phản hồi AI không hợp lệ." }); }
-      if (data?.error) return json(502, { error: data.error.message || "Nhà cung cấp AI trả về lỗi." });
+      try { data = JSON.parse(text); } catch { return json(502, { error: "Phản hồi AstroX không hợp lệ." }); }
+      if (data?.error) return json(502, { error: data.error.message || "Dịch vụ AstroX trả về lỗi." });
       const message = (data?.output || []).find(item => item.type === "message");
       const content = (message?.content || []).map(c => c?.text || "").join("").trim();
       if (!content) {
         const reason = data?.incomplete_details?.reason || "empty";
-        return json(502, { error: `AI không trả về nội dung (${reason}). Vui lòng thử lại.` });
+        return json(502, { error: `AstroX không trả về nội dung (${reason}). Vui lòng thử lại.` });
       }
       return new Response(JSON.stringify({
         choices: [{ message: { role: "assistant", content }, finish_reason: "stop" }],
@@ -121,15 +128,15 @@ export async function onRequestPost(context) {
       });
     } catch (error) {
       if (attempt + 1 >= MAX_ATTEMPTS) {
-        if (error?.name === "AbortError") return json(504, { error: "Nhà cung cấp AI phản hồi quá lâu sau khi thử lại." });
-        return json(502, { error: "Không kết nối được nhà cung cấp AI sau khi thử lại." });
+        if (error?.name === "AbortError") return json(504, { error: "Dịch vụ AstroX phản hồi quá lâu sau khi thử lại." });
+        return json(502, { error: "Không kết nối được dịch vụ AstroX sau khi thử lại." });
       }
       await new Promise(resolve => setTimeout(resolve, 800));
     } finally {
       clearTimeout(timeout);
     }
   }
-  return json(502, { error: "Không nhận được phản hồi từ nhà cung cấp AI." });
+  return json(502, { error: "Không nhận được phản hồi từ dịch vụ AstroX." });
 }
 
 // Mọi phương thức khác /api/ai đều không được hỗ trợ (giữ đúng hành vi bản Netlify).

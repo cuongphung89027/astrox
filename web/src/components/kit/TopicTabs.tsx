@@ -72,7 +72,7 @@ export function TopicTabs({ items, value, onChange, ariaLabel, className }: Topi
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
-      className={`glass relative inline-flex items-center gap-1 rounded-full p-1 ${className ?? ""}`}
+      className={`glass relative inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className ?? ""}`}
     >
       <span
         ref={pillRef}

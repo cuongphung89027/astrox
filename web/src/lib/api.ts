@@ -9,7 +9,7 @@ import { getState, setState } from "./state";
 import type { AstroxUser } from "./types";
 
 /* ------------------------------------------------------------------ */
-/* AI                                                                  */
+/* AstroX                                                                  */
 /* ------------------------------------------------------------------ */
 
 const AI_REQUEST_TIMEOUT = 120000;
@@ -22,7 +22,8 @@ QUY TẮC BẮT BUỘC:
 3. Đi thẳng vào nội dung phân tích. CẤM chào hỏi mở đầu kiểu "Chào bạn/Cường ơi", CẤM đoạn kết disclaimer kiểu "đây chỉ là góc nhìn tham khảo", "không phải phán xét tuyệt đối", "hãy cân nhắc khi áp dụng".
 4. Văn phong: đoạn ngắn, dùng **in đậm** cho tiêu đề nhỏ và gạch đầu dòng bằng dấu "-".
 5. Không đưa dự đoán y tế, pháp lý, tài chính mang tính khẳng định tuyệt đối — dùng ngôn ngữ khả năng.
-6. Trả lời đúng độ dài được yêu cầu, không lan man.`;
+6. Trả lời đúng độ dài được yêu cầu, không lan man.
+7. Gọi dịch vụ là AstroX. Dùng thuật ngữ "tứ trụ" trong Bát Tự. Giữ nguyên tên tiếng Anh gốc của các lá Tarot.`;
 
 type AiPart = { text?: string; inline_data?: { mime_type?: string; data: string } };
 
@@ -79,7 +80,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
     } catch {
       /* giữ msg mặc định */
     }
-    throw new Error(`Lỗi nhà cung cấp AI ${res.status}: ${msg}`);
+    throw new Error(`Lỗi dịch vụ AstroX ${res.status}: ${msg}`);
   }
   const data = await res.json();
   const choice = data?.choices?.[0];
@@ -91,7 +92,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
     if (content.length / ceiling >= AI_PARTIAL_MIN_RATIO) return content;
     throw new Error("AstroX dừng sớm (length).");
   }
-  throw new Error(finish && finish !== "stop" ? `AstroX dừng sớm (${finish}).` : "AI không trả về nội dung.");
+  throw new Error(finish && finish !== "stop" ? `AstroX dừng sớm (${finish}).` : "AstroX không trả về nội dung.");
 }
 
 export async function callAiText(opts: {
@@ -100,6 +101,7 @@ export async function callAiText(opts: {
   temperature?: number;
   maxTokens?: number;
   signal?: AbortSignal;
+  serviceId?: string;
 }): Promise<string> {
   const temperature = opts.temperature === undefined ? 0.7 : opts.temperature;
   const compact = opts.compact === true;
@@ -107,6 +109,8 @@ export async function callAiText(opts: {
   const maxTokens = opts.maxTokens ? Math.max(opts.maxTokens, AI_TOKEN_CEILING) : AI_TOKEN_CEILING;
   const state = getState();
   const body = {
+    operationId: crypto.randomUUID(),
+    serviceId: opts.serviceId || ({ "/tuvi": "tuvi", "/cunghoangdao": "zodiac", "/hoangdao": "zodiac", "/kinhdich": "kinhdich", "/battu": "batu", "/thansohoc": "numerology", "/thanso": "numerology", "/tarot": "tarot", "/tuonghop": "compat" } as Record<string, string>)[window.location.pathname],
     messages: [
       {
         role: "system",
@@ -138,7 +142,7 @@ export async function callAiText(opts: {
 
 export async function runAiPrompt(
   userQuestion: string,
-  opts: { withChartImage?: boolean; compact?: boolean; temperature?: number; signal?: AbortSignal } = {},
+  opts: { withChartImage?: boolean; compact?: boolean; temperature?: number; signal?: AbortSignal; serviceId?: string } = {},
 ): Promise<string> {
   const state = getState();
   if (!state.profile) throw new Error("Chưa có hồ sơ. Vui lòng lưu hồ sơ trước khi dùng AstroX.");
@@ -151,6 +155,7 @@ export async function runAiPrompt(
     compact: opts.compact === true,
     temperature: opts.temperature,
     signal: opts.signal,
+    serviceId: opts.serviceId,
   });
   // Captive: hồ sơ bị xoá giữa chừng (đăng xuất) thì huỷ kết quả.
   if (!getState().profile) throw new Error("Hồ sơ đã bị xoá trong khi xử lý — đã huỷ kết quả.");

@@ -6,7 +6,8 @@
  * VN/EN, chip xuôi/ngược, từ khoá và ý nghĩa ngắn từ cards.json.
  * Ảnh dùng <img> thường với width/height cố định (220×385) chống CLS.
  */
-import { Chip } from "@/components/kit";
+import { useLayoutEffect, useRef } from "react";
+import styles from "./Tarot.module.css";
 import { tarotCardById, tarotCardImage, type DrawnCard, type TarotDeck } from "@/lib/tarot";
 
 export interface DrawnSlot {
@@ -29,41 +30,68 @@ interface SlotProps {
 }
 
 export function TarotCardSlot({ deck, slot, label, index, selecting = false, overlay = false, className = "" }: SlotProps) {
+  const flightRef = useRef<HTMLDivElement>(null);
+  const cardId = slot?.entry.id;
+  useLayoutEffect(() => {
+    const target = flightRef.current;
+    if (!cardId || !target || matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motion === "reduced") return;
+    const source = target.closest("[data-tarot-table]")?.querySelector("[data-tarot-source]");
+    if (!source) return;
+    const from = source.getBoundingClientRect(), to = target.getBoundingClientRect();
+    const dx = from.left + from.width / 2 - to.left - to.width / 2;
+    const dy = from.top + 82 - to.top - to.height / 2;
+    const scale = Math.min(1, 82 / target.offsetWidth);
+    const pose = (x: number, y: number, size: number, angle: number) => `translate(${overlay ? y : x}px,${overlay ? -x : y}px) scale(${size}) rotate(${angle}deg)`;
+    // Lift from the fan, float while turning, then settle into this exact slot.
+    const flight = target.animate([
+      { transform: pose(dx,dy,scale,overlay ? -99 : -9), opacity: 0, offset: 0 },
+      { transform: pose(dx,dy-75,1.04,overlay ? -95 : -5), opacity: 1, offset: .24 },
+      { transform: pose(dx*.65,dy-95,1.09,overlay ? -86 : 4), opacity: 1, offset: .53 },
+      { transform: pose(0,-10,1.025,-1), opacity: 1, offset: .9 },
+      { transform: "translate(0,0) scale(1) rotate(0)", opacity: 1, offset: 1 },
+    ], { duration: 1300, easing: "cubic-bezier(.25,.65,.3,1)", fill: "both" });
+    target.dataset.flying = "true";
+    flight.onfinish = () => { delete target.dataset.flying; flight.cancel(); };
+    return () => { flight.cancel(); delete target.dataset.flying; };
+  }, [cardId, overlay]);
   const card = slot ? tarotCardById(slot.entry.id) : undefined;
   const meaning = slot ? (slot.entry.reversed ? card?.rev : card?.up) : undefined;
 
   // Vị trí chưa có lá — khung nét đứt báo trước nơi lá sẽ xếp vào.
   if (!slot) {
     return (
-      <div className={`flex flex-col items-center ${className ?? ""}`}>
-        <p aria-hidden="true" className="mb-1.5 h-4 text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-muc-2/50">
+      <div className={`${styles.slot} flex w-[var(--tarot-card-width,100px)] flex-col items-center sm:w-[124px] lg:w-[150px] ${className ?? ""}`}>
+        <p aria-hidden="true" className="mb-1.5 min-h-8 text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/50">
           {label}
         </p>
         <div
           aria-hidden="true"
-          className="aspect-[220/385] w-[100px] rounded-xl border-2 border-dashed border-muc/15 bg-white/30 sm:w-[124px] lg:w-[150px]"
-        />
+          className={`${styles.emptySlot} aspect-[220/385] w-[var(--tarot-card-width,100px)] sm:w-[124px] lg:w-[150px]`}
+        ><span>{String(index + 1).padStart(2,"0")}</span></div>
+        <div className={styles.cardCaption}/>
       </div>
     );
   }
 
   const flip = (
     <div
-      className={`relative aspect-[220/385] w-[100px] transition-shadow duration-500 sm:w-[124px] lg:w-[150px] ${
-        selecting && !slot.revealed ? "gold-ring rounded-xl shadow-[0_0_30px_-2px_rgba(242,169,18,0.8)]" : ""
+      ref={flightRef}
+      data-tarot-card={index}
+      className={`${styles.cardArrival} relative [perspective:1200px] aspect-[220/385] w-[var(--tarot-card-width,100px)] transition-shadow duration-500 sm:w-[124px] lg:w-[150px] ${
+        selecting && !slot.revealed ? "rounded-xl shadow-[0_8px_28px_rgba(36,77,64,0.18)]" : ""
       }`}
     >
       <div
-        className="relative h-full w-full transition-transform duration-700 ease-[var(--ease-viet)] [perspective:1200px] [transform-style:preserve-3d]"
+        className="relative h-full w-full transition-transform duration-700 ease-[var(--ease-viet)]  [transform-style:preserve-3d]"
         style={{ transform: slot.flipped ? "rotateY(0deg)" : "rotateY(180deg)" }}
       >
         {/* Mặt trước — ảnh lá bài (ngược thì xoay 180°) */}
         <img
           src={tarotCardImage(deck, slot.entry.id)}
-          alt={card ? `${card.nameVi} (${card.nameEn})${slot.entry.reversed ? " — ngược" : ""}` : slot.entry.id}
+          alt={card ? `${card.nameEn}${slot.entry.reversed ? " — ngược" : ""}` : slot.entry.id}
           width={220}
           height={385}
-          loading={index === 0 ? "eager" : "lazy"}
+          loading="eager"
           className={`absolute inset-0 h-full w-full rounded-xl object-cover shadow-[var(--shadow-glass)] [backface-visibility:hidden] ${
             slot.entry.reversed ? "rotate-180" : ""
           }`}
@@ -74,31 +102,24 @@ export function TarotCardSlot({ deck, slot, label, index, selecting = false, ove
           alt=""
           width={220}
           height={385}
-          loading={index === 0 ? "eager" : "lazy"}
+          loading="eager"
           className="absolute inset-0 h-full w-full rounded-xl object-cover [backface-visibility:hidden] [transform:rotateY(180deg)]"
         />
       </div>
-      {/* Hào quang nhấp nháy khi lá đang được chọn */}
-      {selecting && !slot.revealed ? (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute -inset-1.5 animate-pulse rounded-2xl"
-          style={{ border: "2px solid var(--color-kim)", boxShadow: "0 0 26px -2px rgba(242,169,18,0.85)" }}
-        />
-      ) : null}
+
     </div>
   );
 
   if (overlay) {
-    return <div className={`absolute inset-0 z-10 [transform:rotate(90deg)] ${className}`}>{flip}</div>;
+    return <div className={`absolute left-0 top-[38px] z-10 aspect-[220/385] w-[var(--tarot-card-width,100px)] sm:w-[124px] lg:w-[150px] [transform:rotate(90deg)] ${className}`}>{flip}</div>;
   }
 
   return (
-    <div className={`flex flex-col items-center ${className}`}>
+    <div className={`${styles.slot} flex w-[var(--tarot-card-width,100px)] flex-col items-center sm:w-[124px] lg:w-[150px] ${className}`}>
       {/* Nhãn vị trí — chỉ hiện sau khi lá đã lật xong */}
       <p
         aria-hidden={!slot.revealed}
-        className={`mb-1.5 h-4 text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-kim-deep transition-opacity duration-500 ${
+        className={`mb-1.5 min-h-8 text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-white/65 transition-opacity duration-500 ${
           slot.revealed ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -107,27 +128,14 @@ export function TarotCardSlot({ deck, slot, label, index, selecting = false, ove
       {flip}
 
       {/* Kết quả lá — hiện sau khi lật */}
+      <div className={styles.cardCaption}>
       {slot.revealed ? (
-        <div className="mt-2 flex w-full max-w-[170px] flex-col items-center gap-1.5 text-center">
-          <p className="font-display text-[13.5px] font-extrabold leading-tight text-muc">
-            {card?.nameVi ?? slot.entry.id}
-            {card ? <span className="block text-[10.5px] font-semibold text-muc-2">{card.nameEn}</span> : null}
-          </p>
-          <Chip tone={slot.entry.reversed ? "cham" : "sen"}>{slot.entry.reversed ? "Ngược" : "Xuôi"}</Chip>
-          {meaning ? (
-            <>
-              <div className="flex flex-wrap justify-center gap-1">
-                {meaning.kw.slice(0, 3).map((kw) => (
-                  <span key={kw} className="rounded-full bg-white/70 px-2 py-0.5 text-[10.5px] font-semibold text-muc-2">
-                    {kw}
-                  </span>
-                ))}
-              </div>
-              <p className="text-[11.5px] leading-snug text-muc-2">{meaning.text}</p>
-            </>
-          ) : null}
-        </div>
+        <details className={styles.cardDetails}>
+          <summary><strong>{card?.nameEn ?? slot.entry.id}</strong><span>{slot.entry.reversed ? "Ngược" : "Xuôi"} · Chi tiết</span></summary>
+          <p>{meaning?.text}</p>
+        </details>
       ) : null}
+      </div>
     </div>
   );
 }

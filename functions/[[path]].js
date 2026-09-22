@@ -28,33 +28,33 @@ const ROUTE_META = {
     image: "/assets/og/trangchu.png"
   },
   "/tuvi": {
-    title: "Tử Vi Đẩu Số — Luận giải lá số bằng AI | AstroX",
-    description: "Lập lá số Tử Vi Đẩu Số, xem vận hạn theo ngày, tuần, tháng dựa trên Lưu Niên, Lưu Nguyệt, Lưu Nhật thật, luận giải bằng AI.",
+    title: "Tử Vi Đẩu Số — Luận giải lá số bằng AstroX | AstroX",
+    description: "Lập lá số Tử Vi Đẩu Số, xem vận hạn theo ngày, tuần, tháng dựa trên Lưu Niên, Lưu Nguyệt, Lưu Nhật thật, luận giải bằng AstroX.",
     image: "/assets/og/tuvi.png"
   },
   "/hoangdao": {
     title: "Cung Hoàng Đạo — Tử vi phương Tây mỗi ngày | AstroX",
-    description: "Xem tử vi 12 cung hoàng đạo theo ngày, tuần, tháng dựa trên vị trí thiên thể thật, luận giải bằng AI.",
+    description: "Xem tử vi 12 cung hoàng đạo theo ngày, tuần, tháng dựa trên vị trí thiên thể thật, luận giải bằng AstroX.",
     image: "/assets/og/hoangdao.png"
   },
   "/kinhdich": {
-    title: "Kinh Dịch — Gieo quẻ và luận giải bằng AI | AstroX",
-    description: "Gieo quẻ Kinh Dịch, xem hào từ và luận giải quẻ theo tình huống của bạn bằng AI.",
+    title: "Kinh Dịch — Gieo quẻ và luận giải bằng AstroX | AstroX",
+    description: "Gieo quẻ Kinh Dịch, xem hào từ và luận giải quẻ theo tình huống của bạn bằng AstroX.",
     image: "/assets/og/kinhdich.png"
   },
   "/battu": {
-    title: "Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AI | AstroX",
-    description: "Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AI.",
+    title: "Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AstroX | AstroX",
+    description: "Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AstroX.",
     image: "/assets/og/battu.png"
   },
   "/thanso": {
     title: "Thần Số Học — Giải mã con số cuộc đời | AstroX",
-    description: "Tính Số Chủ Đạo, Số Đường Đời và các chỉ số Thần Số Học, luận giải ý nghĩa bằng AI.",
+    description: "Tính Số Chủ Đạo, Số Đường Đời và các chỉ số Thần Số Học, luận giải ý nghĩa bằng AstroX.",
     image: "/assets/og/thanso.png"
   },
   "/tarot": {
-    title: "Tarot — Trải bài và luận giải bằng AI | AstroX",
-    description: "Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AI dựa trên đúng các lá đã rút.",
+    title: "Tarot — Trải bài và luận giải bằng AstroX | AstroX",
+    description: "Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AstroX dựa trên đúng các lá đã rút.",
     image: "/assets/og/tarot.png"
   }
 };
@@ -85,6 +85,11 @@ export async function onRequest(context) {
 
   // Không can thiệp /api/* hay file tĩnh có phần mở rộng (css/js/png/svg/...)
   if (pathname.startsWith("/api/") || /\.[a-zA-Z0-9]+$/.test(pathname)) {
+    return env.ASSETS.fetch(request);
+  }
+
+  // Admin is a separately exported Next page, never a legacy SPA fallback.
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     return env.ASSETS.fetch(request);
   }
 

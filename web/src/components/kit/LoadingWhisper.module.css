@@ -1,0 +1,7 @@
+.whisper { display: inline-grid; min-height: 2.8em; align-items: center; max-width: 100%; font-size: inherit; line-height: 1.6; }
+.phrase { display: inline-flex; align-items: baseline; gap: 8px; animation: whisper 2.8s cubic-bezier(.22,1,.36,1) both; }
+.phrase i { flex: 0 0 4px; width: 4px; height: 4px; align-self: center; border-radius: 50%; background: currentColor; box-shadow: 0 0 9px currentColor; animation: glimmer 1.4s ease-in-out infinite; }
+@keyframes whisper { 0% { opacity: 0; transform: translateY(7px); filter: blur(3px); } 18%,76% { opacity: 1; transform: translateY(0); filter: blur(0); } 100% { opacity: 0; transform: translateY(-5px); filter: blur(2px); } }
+@keyframes glimmer { 0%,100% { opacity: .3; transform: scale(.75); } 50% { opacity: .9; transform: scale(1); } }
+@media(prefers-reduced-motion:reduce) { .phrase,.phrase i { animation: none; } }
+:global(html[data-motion=reduced]) .phrase,:global(html[data-motion=reduced]) .phrase i { animation: none; }

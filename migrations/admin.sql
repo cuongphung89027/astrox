@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS admin_state (id INTEGER PRIMARY KEY CHECK(id=1), draft TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0, published_id INTEGER);
+CREATE TABLE IF NOT EXISTS admin_versions (id INTEGER PRIMARY KEY AUTOINCREMENT, config TEXT NOT NULL, created_at TEXT NOT NULL, actor TEXT NOT NULL, note TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS admin_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, actor TEXT NOT NULL, action TEXT NOT NULL, target TEXT NOT NULL, created_at TEXT NOT NULL, detail TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS admin_secrets (ref TEXT PRIMARY KEY, ciphertext TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS admin_login_attempts (key TEXT PRIMARY KEY, count INTEGER NOT NULL, window INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS admin_sessions (id TEXT PRIMARY KEY, expires INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS admin_provider_health (provider_id TEXT PRIMARY KEY, failures INTEGER NOT NULL DEFAULT 0, last_failure_at INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS admin_ai_requests (id TEXT PRIMARY KEY, service_id TEXT, config_revision INTEGER, created_at TEXT, status TEXT, attempts TEXT, duration_ms INTEGER);
+CREATE INDEX IF NOT EXISTS admin_ai_requests_created ON admin_ai_requests(created_at);
+CREATE TABLE IF NOT EXISTS admin_members (email TEXT PRIMARY KEY, role_id TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);

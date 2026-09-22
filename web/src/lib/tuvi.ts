@@ -3,9 +3,11 @@
  * buildZiweiChart, ZIWEI_HOUR_INDEX, ziweiPeriodSkyText (Lưu Nhật/Lưu Nguyệt/
  * Lưu Niên), tuviPromptBody + TUVI_TOPICS + periodCacheKey.
  * Khác biệt duy nhất: app cũ gọi window.iztro qua CDN, bản này dùng iztro npm
- * (`import { astro } from "iztro"`). Dữ liệu JSON lá số là nguồn duy nhất
+ * (`import { branchName } from "./earthly-branches";
+import { astro } from "iztro"`). Dữ liệu JSON lá số là nguồn duy nhất
  * đưa cho AI — cấm bịa.
  */
+import { branchName } from "./earthly-branches";
 import { astro } from "iztro";
 import type { Profile } from "./types";
 import { formatDob } from "./utils";
@@ -137,7 +139,7 @@ export function buildZiweiChart(input: ZiweiInput): ZiweiChart {
       fiveElementsClass: safeText(raw.fiveElementsClass),
       soul: safeText(raw.soul),
       body: safeText(raw.body),
-      zodiac: safeText(raw.zodiac),
+      zodiac: branchName(safeText(raw.zodiac)),
       sign: safeText(raw.sign),
       chineseDate: safeText(raw.chineseDate),
     },

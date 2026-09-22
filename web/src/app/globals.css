@@ -34,7 +34,7 @@
   --color-muc-2: #6f5d4c;
 
   /* Type */
-  --font-display: var(--font-bricolage), "Be Vietnam Pro", system-ui, sans-serif;
+  --font-display: var(--font-beautique), "Be Vietnam Pro", Georgia, serif;
   --font-sans: var(--font-bevn), system-ui, sans-serif;
 
   /* Shadow ấm cho glass + CTA — bản tinh giản: nhẹ, cao, ít màu */
@@ -51,9 +51,11 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
+  overflow-x: clip;
   background-color: var(--color-kem);
   color: var(--color-muc);
   font-family: var(--font-sans);
@@ -149,6 +151,141 @@ body {
   transform-origin: center;
 }
 
+/* Từ xoay hero trang chủ — AstroX cố định, module đổi theo vòng (flip 3D
+   từng ký tự, hai pha tách bạch: thoát hết hẳn rồi từ mới mới vào — không
+   bao giờ hai từ đè nhau giữa dòng).
+   · Vào: ký tự lật xuống từ trần dòng (rotateX(-92°) → 0, origin trên),
+     stagger PHẢI→TRÁI (delay gán inline từ HeroVideo).
+   · Thoát: ký tự lật lên quanh đáy dòng (rotateX(0 → 92°), origin dưới),
+     stagger TRÁI→PHẢI.
+   Dải sáng kim quét ngang phần tử tại cao điểm lật cho cảm giác "đúc kim". */
+.ax-hero-word {
+  position: relative;
+  perspective: 9em;
+  line-height: 1.22;
+}
+@keyframes ax-word-flip-in {
+  0% {
+    opacity: 0;
+    transform: rotateX(-92deg) translateY(-0.12em);
+  }
+  55% {
+    opacity: 1;
+  }
+  78% {
+    transform: rotateX(9deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ax-word-flip-out {
+  0% {
+    opacity: 1;
+    transform: none;
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotateX(92deg) translateY(-0.12em);
+  }
+}
+.ax-word-char-in,
+.ax-word-char-out {
+  display: inline-block;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  /* KHÔNG đặt text-shadow ở đây: fill gradient trong suốt (clip:text) sẽ làm
+     bóng tối hiện XUYÊN qua thân chữ, chìm toàn bộ hiệu ứng. Việc tách nền
+     do glow + drop-shadow trong .ax-word-wash đảm nhận. */
+}
+.ax-word-char-in {
+  transform-origin: 50% 0%;
+  animation: ax-word-flip-in 0.56s var(--ease-viet, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+.ax-word-char-out {
+  transform-origin: 50% 100%;
+  animation: ax-word-flip-out 0.45s cubic-bezier(0.55, 0.06, 0.68, 0.19) both;
+}
+
+/* Animated jade-to-mint gradient, phase-shifted across the hero letters. */
+@property --wash-a {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.ax-word-wash {
+  background-image: conic-gradient(
+    from var(--wash-a) at 50% 260%,
+    #76c9ae 0%,
+    #c8ecdb 25%,
+    #91d5bd 50%,
+    #b0e2cd 75%,
+    #76c9ae 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter:
+    drop-shadow(0 3px 18px rgba(93, 176, 146, 0.22))
+    drop-shadow(0 2px 5px rgba(15, 38, 31, 0.45));
+}
+.ax-word-char-in.ax-word-wash {
+  animation:
+    ax-word-flip-in 0.56s var(--ease-viet, cubic-bezier(0.22, 1, 0.36, 1)) both,
+    ax-word-orbit 8000ms linear infinite;
+}
+.ax-word-char-out.ax-word-wash {
+  animation:
+    ax-word-flip-out 0.45s cubic-bezier(0.55, 0.06, 0.68, 0.19) both,
+    ax-word-orbit 8000ms linear infinite;
+}
+@keyframes ax-word-orbit {
+  to {
+    --wash-a: 360deg;
+  }
+}
+
+/* Topbar liquid glass — blur sâu + bão hoà màu kiểu iOS, đậm hơn .glass */
+.ax-liquid-topbar {
+  --nav-progress: 0;
+  background: linear-gradient(to bottom,
+    rgba(calc(255 - 4 * var(--nav-progress)), calc(255 - 9 * var(--nav-progress)), calc(255 - 19 * var(--nav-progress)), .8),
+    rgba(calc(255 - 4 * var(--nav-progress)), calc(255 - 9 * var(--nav-progress)), calc(255 - 19 * var(--nav-progress)), .8));
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  box-shadow:
+    0 10px 32px -22px rgba(38, 25, 15, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Scroll cue đáy hero — vệt sáng rơi trong vạch hairline, mời cuộn */
+.ax-scroll-cue-line {
+  position: relative;
+  width: 1px;
+  height: 36px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-kem) 22%, transparent);
+}
+.ax-scroll-cue-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 14px;
+  background: linear-gradient(to bottom, transparent, var(--color-kim));
+  animation: ax-cue-drop 2.2s var(--ease-viet, cubic-bezier(0.22, 1, 0.36, 1)) infinite;
+}
+@keyframes ax-cue-drop {
+  0% { transform: translateY(-16px); }
+  72%, 100% { transform: translateY(38px); }
+}
+
 /* ------------------------------ Motion health ------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
@@ -162,15 +299,6 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Toggle "Giảm chuyển động" của app ghi đè: html[data-motion="off"] */
-html[data-motion="off"] *,
-html[data-motion="off"] *::before,
-html[data-motion="off"] *::after {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
 }
 
 /* ============================================================================
@@ -264,10 +392,13 @@ html[data-motion="off"] *::after {
     filter var(--stagger-dur) var(--ease-viet);
   will-change: transform, opacity, filter;
 }
+/* Sau reveal: NHẢ filter + will-change — filter (kể cả blur 0) tạo "filter
+   region" cắt mọi nét vươn ra ngoài khối (dấu tiếng Việt, đuôi g/q) */
 .ax-stagger.is-shown .ax-stagger-line {
   opacity: 1;
   transform: translateY(0);
-  filter: blur(0);
+  filter: none;
+  will-change: auto;
 }
 
 /* ------------------------------ Shimmer text ------------------------------- */
@@ -554,7 +685,7 @@ html[data-motion="off"] *::after {
   color: var(--color-muc);
 }
 .ax-nav-link[aria-current="page"] {
-  color: var(--nav-accent, var(--color-son));
+  color: var(--nav-accent, #187650);
 }
 .ax-nav-underline {
   position: absolute;
@@ -563,7 +694,7 @@ html[data-motion="off"] *::after {
   bottom: 0.15rem;
   height: 2.5px;
   border-radius: 999px;
-  background: var(--nav-accent, var(--color-son));
+  background: var(--nav-accent, #187650);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 260ms var(--ease-viet), opacity 260ms var(--ease-viet);
@@ -575,3 +706,354 @@ html[data-motion="off"] *::after {
   transform: scaleX(0.45);
   opacity: 0.5;
 }
+
+/* Discovery collection — asymmetric composition and fine brass frames.
+   Responsive contract (AstroX redesign-v5): layout CHANGES per width band,
+   never mechanical scale. See docs/VIEWPORT-CONTRACT.md. */
+.ax-modules {
+  scroll-margin-top: 72px;
+  padding: 88px 24px 36px;
+  overflow-x: clip;
+}
+.ax-modules-heading { max-width: 1120px; margin: 0 auto 38px; display: flex; align-items: end; justify-content: space-between; gap: 32px; }
+.ax-modules-eyebrow { color: #82642d; font-size: 11px; letter-spacing: .18em; font-weight: 600; text-transform: uppercase; }
+.ax-modules-heading h2 { margin-top: 12px; color: #194e44; font-family: var(--font-display); font-size: clamp(16px, 6vw, 42px); line-height: 1.18; letter-spacing: -.035em; }
+.ax-modules-intro { max-width: 300px; color: #726c5e; font-size: 14px; line-height: 1.8; }
+.ax-module-card { --art-bg: #f5f1e7; --card-surface: #fffdf7; --frame: #b9a77b; position: relative; isolation: isolate; display: flex; flex-direction: column; height: 100%; padding: 17px; color: #214d42; background: linear-gradient(145deg, #fffdf9, #f9f5ea) padding-box, linear-gradient(130deg, #e6d9ba, #a9915d 36%, #f6eedb 62%, #c4af80) border-box; border: 1px solid transparent; border-radius: 5px 28px 5px 28px; text-decoration: none; box-shadow: 0 2px 3px #56472b05, 0 14px 30px -24px #48391638; transition: transform 260ms ease, box-shadow 260ms ease; }
+.ax-module-card::before { content: ''; position: absolute; inset: 6px; z-index: 2; border: 1px solid color-mix(in srgb, var(--frame) 32%, transparent); border-radius: 2px 22px 2px 22px; pointer-events: none; }
+.ax-module-card::after { content: ''; position: absolute; top: -1px; left: -1px; width: 32px; height: 32px; border-top: 2px solid var(--frame); border-left: 2px solid var(--frame); border-top-left-radius: 5px; pointer-events: none; }
+.ax-module-art { position: relative; overflow: hidden; background: radial-gradient(ellipse at center, var(--art-bg), transparent 73%); color: #53725e; border-radius: 2px 17px 2px 17px; }
+.ax-module-illustration { display: block; width: 100%; height: 166px; transition: transform 400ms ease; }
+.ax-module-number { position: absolute; top: 9px; left: 10px; font-family: var(--font-display); font-size: 17px; line-height: 1; font-variant-numeric: tabular-nums; }
+.ax-module-art-label { display: none; }
+.ax-module-zodiac { --art-bg: #ececf1; }
+.ax-module-zodiac .ax-module-art { color: #65637e; }
+.ax-module-iching { --art-bg: #e7eddf; }
+.ax-module-iching .ax-module-art { color: #7c724e; }
+.ax-module-battu { --art-bg: #efe6d7; }
+.ax-module-battu .ax-module-art { color: #8c6c40; }
+.ax-module-numerology { --art-bg: #e6edec; }
+.ax-module-numerology .ax-module-art { color: #517271; }
+.ax-module-tarot { --art-bg: #ebe5ed; }
+.ax-module-tarot .ax-module-art { color: #826682; }
+.ax-module-body { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: 12px 12px 6px; }
+.ax-module-category { color: #81704e; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .11em; line-height: 1.7; }
+.ax-module-body h3 { margin-top: 7px; font-family: var(--font-display); font-size: 27px; line-height: 1.25; letter-spacing: -.025em; }
+.ax-module-description { margin: 12px 0 20px; font-size: 13px; line-height: 1.8; color: #736e61; }
+.ax-module-action { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 13px; border-top: 1px solid #d7c9a780; font-size: 12px; font-weight: 600; }
+.ax-module-arrow { display: grid; width: 33px; height: 33px; flex-shrink: 0; place-items: center; border: 1px solid #b4a78170; border-radius: 50%; transition: color 200ms ease, background 200ms ease; }
+.ax-module-card:focus-visible { outline: 3px solid #247463; outline-offset: 5px; }
+.ax-module-tuvi { --art-bg: #284f42; --frame: #d1b77c; color: #f8f1de; background: radial-gradient(ellipse at 30% 5%, #355f50, transparent 65%), linear-gradient(145deg, #1b4036, #173b33) padding-box, linear-gradient(135deg, #e0c38a, #8a764b 40%, #e3cea4 75%, #a28b59) border-box; }
+.ax-module-tuvi .ax-module-art { color: #d7bd83; flex: 1; display: grid; align-items: center; min-height: 235px; }
+.ax-module-tuvi .ax-module-illustration { height: 255px; }
+.ax-module-tuvi .ax-module-body { flex: 0; padding: 18px 19px 15px; }
+.ax-module-tuvi .ax-module-category { color: #d7bd83; }
+.ax-module-tuvi .ax-module-body h3 { font-size: 43px; }
+.ax-module-tuvi .ax-module-description { color: #d2dace; max-width: 34ch; }
+.ax-module-tuvi .ax-module-action { color: #efddb1; border-color: #c9b17650; }
+.ax-module-tuvi .ax-module-arrow { border-color: #c9b17670; }
+
+/* The hand fans around a raised central card. Slots keep stable keys during rotation. */
+.ax-deck { display: flex; flex-direction: column; container-type: inline-size; margin: 0 auto; width: 100%; }
+.ax-deck-control > span { display: block; line-height: 1; }
+.ax-deck-stage {
+  --card-h: 390px;
+  --fan-angle: 7deg;
+  /* Reserve the horizontal reach of a rotated card around its 58% pivot.
+     Four spread intervals cover slots -2..2; slot 3 stays centered behind.
+     Use the actual container width, not the viewport, and keep a 12px inset. */
+  --rotation-room: calc(1.16 * var(--card-h) * sin(calc(2 * var(--fan-angle))));
+  --card-w: min(calc(100cqw - var(--rotation-room) - 24px), clamp(340px, 32cqw, 640px));
+  --spread: max(0px, calc((100cqw - var(--card-w) - var(--rotation-room) - 24px) / 4));
+  --stage-h: calc(var(--slot-top) + var(--card-h) + 48px);
+  --slot-top: 58px;
+  position: relative;
+  height: var(--stage-h);
+  /* The entire fan fits; clipping must not conceal a sizing error. */
+  overflow: visible;
+  perspective: 1400px;
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+  max-width: 100%;
+}
+.ax-deck-stage:active { cursor: grabbing; }
+.ax-deck-orbit {
+  position: absolute;
+  left: 50%;
+  top: 40px;
+  width: min(490px, 92%);
+  height: min(490px, 92vw);
+  transform: translateX(-50%);
+  border: 1px solid #bda37324;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, #d8c8a330, transparent 68%);
+  max-width: 100%;
+}
+.ax-deck-orbit::before { content: ''; position: absolute; inset: 18px; border: 1px dashed #bda37324; border-radius: 50%; }
+.ax-deck-orbit::after { content: '✦'; position: absolute; top: -13px; left: calc(50% - 12px); width: 24px; text-align: center; color: #af945c; background: #fbf6ec; font-size: 19px; }
+/* Animate selection coordinates only. Container resizing must take effect
+   immediately, rather than tweening old desktop offsets on a phone width. */
+@property --deck-slot { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --deck-depth { syntax: "<number>"; inherits: false; initial-value: 0; }
+.ax-deck-slot {
+  position: absolute;
+  width: var(--card-w);
+  height: var(--card-h);
+  left: calc(50% - var(--card-w) / 2);
+  top: var(--slot-top);
+  transform-origin: 50% 58%;
+  /* Back cards LIFT one step per depth so their bottoms tuck behind the active
+     card — dropping them (old +8px) let rotated bottoms + footer pills poke
+     out below the active edge, reading as a straight cut / broken buttons. */
+  --safe-drag: clamp(calc((var(--card-w) - 100cqw) / 2 + 12px), var(--drag), calc((100cqw - var(--card-w)) / 2 - 12px));
+  transform: translateX(calc(var(--deck-slot) * var(--spread) + var(--safe-drag))) translateY(calc(var(--deck-depth) * -12px)) rotate(calc(var(--deck-slot) * var(--fan-angle))) scale(calc(1 - var(--deck-depth) * .025));
+  transition: --deck-slot 440ms cubic-bezier(.22,1,.36,1), --deck-depth 440ms cubic-bezier(.22,1,.36,1), filter 400ms ease, opacity 400ms ease;
+  filter: saturate(.6);
+}
+.ax-deck-slot.is-back { transform: translateY(-18px) scale(.84); opacity: .65; pointer-events: none; }
+.ax-deck-slot.is-active { filter: none; }
+.ax-deck-slot.is-dragging { transition: none; }
+.ax-deck-slot .ax-module-card { border-radius: 12px; padding: 20px; box-shadow: 0 7px 14px -10px #142b3460, 0 22px 38px -26px #142b3470; }
+.ax-deck-slot .ax-module-card::before { border-radius: 7px; }
+.ax-deck-slot .ax-module-card::after { border-top-left-radius: 12px; }
+.ax-deck-slot:not(.is-active) .ax-module-card { cursor: pointer; }
+.ax-deck-slot.is-active .ax-module-card { box-shadow: 0 8px 18px -12px #142b3460, 0 36px 54px -30px #142b3480; }
+.ax-deck-slot .ax-module-art { flex: 0 0 auto; min-height: 0; display: block; }
+.ax-deck-slot .ax-module-illustration { height: clamp(100px, 9vw, 130px); }
+/* Reserve content space at every viewport height; never clip copy to fit
+   the screen. All six cards share the same typography. */
+.ax-deck-slot .ax-module-body { min-height: 0; }
+.ax-deck-slot .ax-module-body h3, .ax-deck-slot .ax-module-category { flex-shrink: 0; }
+.ax-deck-slot .ax-module-description { flex-shrink: 0; }
+.ax-deck-slot .ax-module-body { flex: 1; padding: 14px 10px 8px; }
+.ax-deck-slot .ax-module-body h3 { font-size: 28px; }
+.ax-deck-slot .ax-module-description { font-size: 13px; line-height: 1.8; margin: 10px 0 14px; }
+.ax-deck-slot .ax-module-art-label { display: block; text-align: center; font-size: 7px; letter-spacing: .25em; opacity: .7; margin-top: -8px; }
+.ax-deck-controls { display: flex; justify-content: center; align-items: center; gap: 26px; margin-top: 16px; }
+.ax-deck-control { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; border: 1px solid #b9a77b80; background: #fffcf580; color: #214d42; font-size: 23px; cursor: pointer; transition: background 200ms, transform 200ms; }
+.ax-deck-control:hover { background: #eae5d4; transform: scale(1.06); }
+.ax-deck-status { display: flex; align-items: center; gap: 12px; color: #8d7d5b; font-size: 12px; font-variant-numeric: tabular-nums; }
+.ax-deck-status > span:first-child { color: #214d42; font-size: 20px; font-family: var(--font-display); }
+.ax-deck-status-line { width: 38px; height: 1px; background: #c9b990; }
+.ax-deck-hint { text-align: center; color: #827866; font-size: 11px; margin: 16px 0 24px; }
+.ax-deck-picker { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.ax-deck-picker button { display: flex; align-items: center; gap: 8px; padding: 12px 16px; min-height: 44px; border: 1px solid transparent; border-radius: 24px; color: #726955; font-size: 12px; cursor: pointer; transition: background 200ms, color 200ms, border-color 200ms; }
+.ax-deck-picker button > span:first-child { font-size: 10px; opacity: .65; }
+.ax-picker-short { display: none; }
+.ax-deck-picker button[aria-pressed="true"] { color: #214d42; border-color: #b9a77b70; background: #fffdf7; box-shadow: 0 3px 10px #48391608; }
+.ax-deck-picker button:hover { background: #eee9dc; }
+
+/* ========== Viewport bands — intentional layouts, not scale ========== */
+
+/* Tablet portrait/landscape: airy deck, numbered chip row stays horizontal */
+@media (max-width: 1023px) and (min-width: 600px) {
+  .ax-modules-heading { align-items: start; flex-direction: column; gap: 16px; text-align: center; }
+  .ax-modules-intro { max-width: 440px; margin-inline: auto; }
+  .ax-deck-stage {
+    --fan-angle: 5deg;
+    --slot-top: clamp(36px, 5vh, 58px);
+  }
+  .ax-deck .ax-deck-picker {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    max-width: min(720px, 100%);
+    margin-inline: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .ax-deck .ax-deck-picker::-webkit-scrollbar { display: none; }
+  .ax-deck .ax-deck-picker button { flex: 0 0 auto; white-space: nowrap; }
+}
+
+@media (max-width: 599px) {
+  .ax-deck-stage { --fan-angle: 2deg; }
+}
+
+/* Large phone / phablet 430–599: roomier single-column fan */
+@media (max-width: 599px) and (min-width: 430px) {
+  .ax-modules { padding: 48px 20px 20px; overflow-x: clip; }
+  .ax-modules-heading { margin-bottom: 10px; text-align: center; }
+  .ax-deck-stage {
+    --slot-top: 28px;
+    margin: 0;
+  }
+  .ax-deck-orbit { width: min(360px, 88vw); height: min(420px, 88vw); top: 24px; }
+  .ax-deck-slot .ax-module-card { padding: 14px; }
+  .ax-deck-slot .ax-module-body { padding: 12px 10px 8px; }
+  .ax-deck .ax-deck-picker {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .ax-deck .ax-deck-picker button {
+    justify-content: center;
+    padding: 10px 6px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  .ax-deck .ax-deck-picker button > span:first-child { display: none; }
+  .ax-picker-full { display: none; }
+  .ax-picker-short { display: inline; }
+  .ax-deck-controls { margin-top: 10px; padding-bottom: 88px; }
+}
+
+/* Standard phone 360–429: classic carousel, 3×2 short-name picker */
+@media (max-width: 429px) and (min-width: 360px) {
+  .ax-modules { padding: 40px 16px 16px; overflow-x: clip; }
+  .ax-modules-heading { margin-bottom: 6px; text-align: center; }
+  .ax-deck-stage {
+    --slot-top: 22px;
+    margin: 0;
+  }
+  .ax-deck-orbit { width: min(320px, 90vw); height: min(380px, 90vw); top: 18px; }
+  .ax-deck-slot.is-back { opacity: .5; }
+  .ax-deck-slot .ax-module-card { padding: 12px; }
+  .ax-deck-slot .ax-module-body { padding: 10px 8px 6px; }
+  .ax-deck .ax-deck-picker {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .ax-deck .ax-deck-picker button {
+    justify-content: center;
+    padding: 9px 4px;
+    font-size: 12px;
+  }
+  .ax-deck .ax-deck-picker button > span:first-child { display: none; }
+  .ax-picker-full { display: none; }
+  .ax-picker-short { display: inline; }
+  .ax-deck-controls { margin-top: 10px; padding-bottom: 88px; }
+}
+
+/* XS phone ≤359 (320×568…): one hero card, micro-peeks, 2×3 short picker */
+@media (max-width: 359px) {
+  .ax-modules { padding: 32px 12px 12px; overflow-x: clip; }
+  .ax-modules-heading { margin-bottom: 4px; text-align: center; }
+  .ax-deck-stage {
+    --slot-top: 12px;
+    margin: 0;
+  }
+  .ax-deck-orbit { width: min(260px, 88vw); height: min(300px, 88vw); top: 8px; }
+  .ax-deck-slot:not(.is-active) { opacity: .42; }
+  .ax-deck-slot .ax-module-card { padding: 10px; }
+  .ax-deck-slot .ax-module-art-label { display: none; }
+  .ax-deck-slot .ax-module-body { padding: 8px 6px 4px; }
+  .ax-deck .ax-deck-picker {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .ax-deck .ax-deck-picker button {
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 12px;
+    min-height: 40px;
+  }
+  .ax-deck .ax-deck-picker button > span:first-child { display: none; }
+  .ax-picker-full { display: none; }
+  .ax-picker-short { display: inline; }
+  .ax-deck-status { gap: 8px; }
+  .ax-deck-controls { margin-top: 8px; padding-bottom: 96px; }
+}
+
+/* Large screens use the full container while the fan retains safe side insets. */
+@media (min-width: 1024px) {
+  .ax-deck-orbit { width: min(760px, 58vw, calc(var(--stage-h) - 56px)); height: min(760px, 58vw, calc(var(--stage-h) - 56px)); }
+}
+
+@media (max-height: 780px) {
+  .ax-deck-stage {
+    --slot-top: 16px;
+  }
+  .ax-modules { padding-top: 36px; }
+}
+@media (max-height: 780px) and (max-width: 359px) {
+  .ax-deck-stage {
+    --slot-top: 8px;
+  }
+}
+@media (max-height: 800px) and (min-width: 1024px) {
+  /* Height only changes vertical spacing, never card width or fan spread. */
+  .ax-deck-stage {
+    --slot-top: 24px;
+  }
+          .ax-deck-orbit { width: min(520px, 40vw, calc(var(--stage-h) - 56px)); height: min(520px, 40vw, calc(var(--stage-h) - 56px)); }
+  .ax-modules { padding-top: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ax-deck-slot, .ax-deck-control, .ax-deck-picker button, .ax-module-card, .ax-module-illustration, .ax-module-arrow { transition: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ax-deck-slot, .ax-deck-control, .ax-deck-picker button, .ax-module-card, .ax-module-illustration, .ax-module-arrow { transition: none; }
+}
+
+/* Explicit selection and navigation: a card body never opens a tool. */
+.ax-deck-select-card { position: absolute; inset: 0; z-index: 3; border-radius: inherit; cursor: pointer; }
+.ax-deck .ax-deck-picker { order: -1; margin: 0 auto 12px; }
+.ax-deck .ax-deck-controls { position: relative; z-index: 11; margin-top: 16px; gap: 24px; }
+/* Arrow-only: one 44px circle everywhere — big enough for touch, sized for the glyph. */
+.ax-deck .ax-deck-control { display: grid; place-items: center; gap: 0; width: 44px; height: 44px; border-radius: 50%; background: #fffcf5; box-shadow: 0 4px 14px #48391610; }
+.ax-deck-control > span { font-size: 17px; font-weight: 400; }
+.ax-deck-slot .ax-module-action { min-height: 44px; padding: 10px 15px; border: 1px solid #b9a77b70; border-radius: 8px; background: #edf0e6; color: #214d42; text-decoration: none; justify-content: center; gap: 8px; flex-shrink: 0; }
+/* Peek cards only advertise the module — their footer pill would poke out below
+   the active card's edge and read as a broken button. Selecting uses the whole card. */
+.ax-deck-slot:not(.is-active) .ax-module-action { visibility: hidden; }
+.ax-deck-slot.is-active .ax-module-action { background: #214d42; color: #fffdf7; border-color: #214d42; }
+.ax-deck-slot.is-active .ax-module-tuvi .ax-module-action { background: #e3cf9e; color: #173b33; border-color: #e3cf9e; }
+.ax-deck-slot.is-active .ax-module-action:hover { filter: brightness(1.1); }
+.ax-deck .ax-deck-hint { margin-bottom: 0; }
+.ax-deck .ax-deck-controls { gap: 14px; }
+
+/* Compact shuffled deck: the controls occupy their own row below every card. */
+.ax-deck-stage { flex: 0 0 auto; }
+.ax-deck-slot.is-active .ax-module-card { animation: ax-card-draw 520ms cubic-bezier(.22,1,.36,1) both; }
+.ax-deck-slot.is-dragging .ax-module-card { animation: none; }
+@keyframes ax-card-draw {
+  from { transform: translateY(-18px); }
+  to { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ax-deck-slot.is-active .ax-module-card { animation: none; }
+}
+
+/* Centered section title and illustration motion, scoped to the selected card. */
+.ax-modules-heading { display: block; text-align: center; margin-bottom: clamp(48px, 6vw, 80px); }
+.ax-modules-heading h2 { margin-top: 0; }
+.ax-art-motion { transform-box: view-box; transform-origin: 180px 95px; animation-play-state: paused !important; }
+.ax-deck-slot.is-active .ax-art-motion { animation-play-state: running !important; }
+.ax-art-tuvi { animation: ax-art-breathe 5s ease-in-out infinite; }
+.ax-art-zodiac { animation: ax-art-float 6s ease-in-out infinite; }
+.ax-art-orbit { animation: ax-art-revolve 28s linear infinite; }
+.ax-art-iching { animation: ax-art-revolve 32s linear infinite; }
+.ax-art-pillar { animation: ax-art-glow 4s ease-in-out infinite; }
+.ax-art-pillar-1 { animation-delay: -.8s; }
+.ax-art-pillar-2 { animation-delay: -1.6s; }
+.ax-art-pillar-3 { animation-delay: -2.4s; }
+.ax-art-numerology { animation: ax-art-breathe 6s ease-in-out infinite; }
+.ax-art-tarot { animation: ax-art-sway 6s ease-in-out infinite; }
+@keyframes ax-art-breathe { 0%, 100% { transform: scale(.97); opacity: .75; } 50% { transform: scale(1.04); opacity: 1; } }
+@keyframes ax-art-float { 0%, 100% { transform: translateY(3px); } 50% { transform: translateY(-5px); } }
+@keyframes ax-art-revolve { to { transform: rotate(360deg); } }
+@keyframes ax-art-glow { 0%, 100% { opacity: .4; } 45%, 65% { opacity: 1; } }
+@keyframes ax-art-sway { 0%, 100% { transform: translateY(2px) rotate(-3deg); } 50% { transform: translateY(-4px) rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .ax-deck-slot .ax-art-motion { animation: none; }
+}
+
+/* Larger navigation with only the current destination accented. */
+.ax-nav-link { font-size: clamp(14px,1.1vw,17px); color: #171717; padding-inline: clamp(8px,.8vw,13px); }
+.ax-nav-link:hover { color: #171717; }
+.ax-nav-link[aria-current="page"] { color: var(--nav-accent, #187650); }
+.ax-nav-link:not([aria-current="page"]):hover .ax-nav-underline { transform: scaleX(0); }
+.ax-nav-link[aria-current="page"]:hover .ax-nav-underline { transform: scaleX(1); opacity: 1; }
+@media(min-width:1024px) { .ax-top-inner { display: grid; grid-template-columns: 110px minmax(0,1fr) 110px; } .ax-top-inner > nav { justify-self: center; } }
+
+html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }

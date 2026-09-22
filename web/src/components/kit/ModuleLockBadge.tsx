@@ -1,6 +1,6 @@
 /**
  * ModuleLockBadge — huy hiệu vàng kim đánh dấu module trả phí
- * (Tử Vi / Hoàng Đạo / Bát Tự / Thần Số).
+ * (Tử Vi / Cung Hoàng Đạo / Bát Tự / Thần Số).
  */
 import { DongSonSun } from "./motifs/DongSonSun";
 

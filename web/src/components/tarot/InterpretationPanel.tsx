@@ -7,10 +7,14 @@
  * version). Chờ SunSpinner/Skeleton → PanelReveal + AiText + LikeButton +
  * "Tạo lại".
  */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AiText, Btn, Chip, Skeleton, SunSpinner } from "@/components/kit";
+import { ReadingLoader } from "@/components/kit/ReadingLoader";
+import { useCallback, useRef, useState } from "react";
+import { Btn, Chip } from "@/components/kit";
 import { LikeButton, PanelReveal } from "@/components/motion";
-import { useRequireProfile } from "@/components/profile/ProfileModal";
+import { FeatureIcon } from "@/components/kit/FeatureIcon";
+import styles from "./Tarot.module.css";
+import { TarotReading } from "./TarotReading";
+import { useProfileModal, useRequireProfile } from "@/components/profile/ProfileModal";
 import { PROMPT_VERSION } from "@/lib/config";
 import { runAiPrompt } from "@/lib/api";
 import { profileContextText } from "@/lib/numerology";
@@ -33,17 +37,17 @@ type AiState = "idle" | "loading" | "done" | "error";
 export function InterpretationPanel(props: InterpretationPanelProps) {
   const { spread, frameLabel, deck, question, drawn, positionLabels, profile } = props;
   const requireProfile = useRequireProfile();
+  const { open: openProfile } = useProfileModal();
   const [text, setText] = useState("");
   const [state, setState] = useState<AiState>("idle");
   const [errMsg, setErrMsg] = useState("");
-  const [gen, setGen] = useState(0);
   const forceRef = useRef(false);
 
   const load = useCallback(async () => {
     const force = forceRef.current;
     forceRef.current = false;
     const cacheKey = tarotCacheKey(
-      JSON.stringify({ question, deckId: deck.id, spreadId: spread.id, frameId: frameLabel ?? "", cards: drawn, promptVersion: PROMPT_VERSION }),
+      JSON.stringify({ question, deckId: deck.id, spreadId: spread.id, frameId: frameLabel ?? "", cards: drawn, promptVersion: `${PROMPT_VERSION}:english-card-names` }),
     );
     const cached = readAiCache("tarot", cacheKey, force);
     if (cached) {
@@ -78,23 +82,30 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spread.id, spread.count, spread.name, frameLabel, deck.id, deck.name, question, drawn, positionLabels, profile, requireProfile]);
 
-  useEffect(() => {
-    if (gen > 0) void load();
-  }, [gen, load]);
+
+
+  if (!profile) return <div className={styles.profileInvitation}>
+    <span className={styles.profileInvitationIcon}><FeatureIcon name="tarot" size={32} /></span>
+    <span className={styles.profileInvitationLabel}>THÊM MỘT CHÚT VỀ BẠN</span>
+    <h3>Để những lá bài kể chuyện của bạn</h3>
+    <p>Hoàn tất hồ sơ để mở luận giải riêng cho trải bài này.</p>
+    <button onClick={() => openProfile()}>Bổ sung hồ sơ <span aria-hidden="true">↗</span></button>
+    <small>Các lá vừa rút vẫn được giữ nguyên.</small>
+  </div>;
 
   return (
     <div aria-live="polite">
       {state === "idle" ? (
         <div className="flex flex-col items-center gap-4 py-2 text-center">
           <p className="max-w-md text-sm leading-relaxed text-muc-2">
-            Đã rút đủ các lá. Bấm bên dưới để AstroX tổng hợp luận giải cho đúng các lá và chiều đã rút.
+            Trải bài đã sẵn sàng. Khám phá thông điệp dành cho bạn.
           </p>
           <Btn
             size="lg"
             arrow
             onClick={() => {
               if (requireProfile()) {
-                setGen((g) => g + 1);
+                void load();
               }
             }}
           >
@@ -102,14 +113,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
           </Btn>
         </div>
       ) : state === "loading" ? (
-        <PanelReveal open className="flex flex-col items-center gap-5">
-          <SunSpinner size={46} label="AstroX đang phân tích các lá bài của bạn…" />
-          <div className="w-full space-y-2.5">
-            <Skeleton className="h-3.5 w-[95%]" />
-            <Skeleton className="h-3.5 w-[85%]" />
-            <Skeleton className="h-3.5 w-[70%]" />
-          </div>
-        </PanelReveal>
+        <ReadingLoader kind="tarot" />
       ) : state === "done" ? (
         <PanelReveal open>
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -120,7 +124,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
                 size="sm"
                 onClick={() => {
                   forceRef.current = true;
-                  setGen((g) => g + 1);
+                  void load();
                 }}
               >
                 Tạo lại
@@ -128,7 +132,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
               <LikeButton label="Thích luận giải này" />
             </div>
           </div>
-          <AiText text={text} />
+          <TarotReading text={text} />
         </PanelReveal>
       ) : (
         <PanelReveal open>
@@ -136,7 +140,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
             Không lấy được luận giải: {errMsg}
           </p>
           <div className="mt-4">
-            <Btn size="sm" onClick={() => setGen((g) => g + 1)}>
+            <Btn size="sm" onClick={() => void load()}>
               Thử lại
             </Btn>
           </div>

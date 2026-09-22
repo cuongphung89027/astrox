@@ -194,7 +194,7 @@ Nhiệm vụ của bạn (theo đúng phép luận Thể-Dụng của Mai Hoa D�
 5. Gợi ý ngắn từ quẻ biến (${result.bienUpper.name} trên ${result.bienLower.name} dưới) và quẻ hỗ (${result.hoUpper.name} trên ${result.hoLower.name} dưới) — quẻ hỗ là động lực ngầm bên trong, quẻ biến là xu hướng nếu tình hình tiếp diễn.
 6. Kết luận bằng 1 lời khuyên hành động cụ thể, ngắn gọn.
 
-Chia đoạn có tiêu đề in đậm: **Tên quẻ & ý nghĩa chung**, **Hào động — trọng tâm**, **Quan hệ Thể-Dụng**, **Xu hướng (quẻ biến)**, **Lời khuyên**. Giữ tinh thần "không có quẻ tốt/xấu tuyệt đối" — đây là gợi ý xu hướng, không phải phán quyết định mệnh. ~360-680 từ.`;
+Trình bày ngắn gọn khoảng 180–280 từ, đúng ba phần: **Điều đáng chú ý** (2–3 câu trả lời trực tiếp điều người dùng hỏi), **Gợi ý cho bạn** (tối đa 3 hành động hoặc điều cần cân nhắc cụ thể), **Cơ sở luận quẻ** (giải thích ngắn hào động, Thể-Dụng, quẻ biến và quẻ hỗ). Không lời chào, không nhắc lại câu hỏi, không kể lại dữ liệu sinh hay danh sách dữ liệu quẻ. Dùng ngôn ngữ đời thường ở hai phần đầu, chỉ đưa thuật ngữ vào phần cơ sở. Không khẳng định tương lai chắc chắn; đây là gợi ý chiêm nghiệm, không phải phán quyết định mệnh.`;
 }
 
 /* ------------------------------------------------------------------ */

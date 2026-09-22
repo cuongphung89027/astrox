@@ -1,179 +1,76 @@
 "use client";
-
-/**
- * Control đăng nhập/tài khoản cho header (compact, ngang hàng nav).
- *
- * - Chưa đăng nhập: nút "Đăng nhập Zalo" → zaloLogin().
- * - Đã đăng nhập: nút tròn chữ cái đầu → popover glass: tên hiển thị, loại
- *   tài khoản (Zalo/Supabase), số Point (fetch khi mở, chỉ với tài khoản Zalo),
- *   "Sửa hồ sơ" (ProfileModal), "Nạp Point" (TopupPanel — chỉ Zalo), "Đăng xuất".
- *
- * Lưu ý: AuthMenu nằm NGOÀI <ProfileModalProvider> (AppShell chỉ bọc <main>),
- * useProfileModal() ở đây trả control uỷ quyền qua registry của Provider.
- */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { fetchMeWithPoints } from "@/lib/api";
-import { useProfileModal } from "@/components/profile/ProfileModal";
+import { FeatureIcon } from "@/components/kit/FeatureIcon";
+import { useRouter } from "next/navigation";
 import { TopupPanel } from "@/components/topup/TopupPanel";
+import styles from "./AuthMenu.module.css";
 
 export function AuthMenu() {
   const { loggedIn, displayName, astroxUser, zaloLogin, logout } = useAuth();
-  const { open: openProfileModal } = useProfileModal();
-
-  const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
+  const id = useId();
+  const preview = astroxUser?.id === "localhost-preview";
+  const avatarUrl = typeof astroxUser?.avatar_url === "string" ? astroxUser.avatar_url : typeof astroxUser?.avatar === "string" ? astroxUser.avatar : "";
+  const [failedAvatar, setFailedAvatar] = useState("");
+  const [open, setOpen] = useState(false);
+  const [present, setPresent] = useState(false);
   const [topupOpen, setTopupOpen] = useState(false);
-  const [points, setPoints] = useState<number | null>(null); // null = đang tải
-  const pointsFetchedRef = useRef(false);
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
-
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
-
-  const toggleMenu = () => {
-    const next = !menuOpen;
-    setMenuOpen(next);
-    // Lấy số Point một lần khi mở popover lần đầu (chỉ tài khoản Zalo).
-    if (next && astroxUser && !pointsFetchedRef.current) {
-      pointsFetchedRef.current = true;
-      fetchMeWithPoints().then((r) => setPoints(r.points));
-    }
-  };
-
-  // Đóng khi click ngoài + Escape (trả focus về nút mở).
+  const [points, setPoints] = useState<number | null>(null);
+  const [pointsError, setPointsError] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
   useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (e: MouseEvent | TouchEvent) => {
-      if (wrapRef.current && e.target instanceof Node && !wrapRef.current.contains(e.target)) {
-        setMenuOpen(false);
+    if (open) { setPresent(true); return; }
+    const timer = setTimeout(() => setPresent(false), 160);
+    return () => clearTimeout(timer);
+  }, [open]);
+  useEffect(() => {
+    if (!open || !astroxUser || preview) return;
+    let active = true;
+    setPoints(null); setPointsError(false);
+    fetchMeWithPoints().then(r => { if (active) { setPoints(r.points); setPointsError(!r.user); } }).catch(() => { if (active) setPointsError(true); });
+    return () => { active = false; };
+  }, [open, astroxUser, preview]);
+  useEffect(() => {
+    if (!open || !present) return;
+    menu.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus({preventScroll:true});
+    const outside = (e: PointerEvent) => { if (e.target instanceof Node && !wrap.current?.contains(e.target)) close(); };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { close(); trigger.current?.focus(); }
+      const items = Array.from(menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') || []);
+      if (["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) {
+        e.preventDefault();
+        const i = items.indexOf(document.activeElement as HTMLElement);
+        const next = e.key === "Home" ? 0 : e.key === "End" ? items.length-1 : (i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+        items[next]?.focus();
       }
     };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMenuOpen(false);
-        triggerRef.current?.focus();
-      }
-    };
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("touchstart", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("touchstart", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
-
-  // Reset cờ fetch point khi đăng xuất rồi đăng nhập lại bằng user khác.
-  useEffect(() => {
-    if (!astroxUser) {
-      pointsFetchedRef.current = false;
-      setPoints(null);
-    }
-  }, [astroxUser]);
-
-  if (!loggedIn) {
-    return (
-      <button
-        type="button"
-        onClick={zaloLogin}
-        className="rounded-full bg-son px-4 py-1.5 text-sm font-semibold text-white shadow-[var(--shadow-pop)] transition-transform hover:-translate-y-0.5"
-      >
-        Đăng nhập Zalo
-      </button>
-    );
-  }
-
-  const accountType = astroxUser ? "Tài khoản Zalo" : "Tài khoản Supabase";
-
-  return (
-    <div ref={wrapRef} className="relative">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={toggleMenu}
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        aria-label={`Tài khoản ${displayName}`}
-        title={displayName}
-        className="grid size-9 place-items-center rounded-full bg-cham text-sm font-bold text-white shadow-[var(--shadow-glass)] ring-2 ring-white/60 transition-transform hover:-translate-y-0.5"
-      >
-        {(displayName || "?").trim().charAt(0).toUpperCase()}
-      </button>
-
-      {menuOpen ? (
-        <div
-          role="menu"
-          aria-label="Menu tài khoản"
-          className="glass-strong absolute right-0 top-full z-50 mt-2 w-72 rounded-[var(--radius-card)] p-4"
-        >
-          <div className="flex items-center gap-3">
-            <span
-              aria-hidden="true"
-              className="grid size-10 shrink-0 place-items-center rounded-full bg-cham font-display text-base font-extrabold text-white"
-            >
-              {(displayName || "?").trim().charAt(0).toUpperCase()}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-muc" title={displayName}>
-                {displayName}
-              </p>
-              <p className="text-[11.5px] font-medium text-muc-2">{accountType}</p>
-            </div>
-          </div>
-
-          <div className="mt-3 flex items-center justify-between rounded-xl bg-white/65 px-3.5 py-2.5">
-            <span className="text-xs font-semibold text-muc-2">AstroX Point</span>
-            {astroxUser ? (
-              <span className="font-display text-sm font-extrabold text-kim-deep">
-                {points === null ? "— Point" : `${points.toLocaleString("vi-VN")} Point`}
-              </span>
-            ) : (
-              <span className="text-[11.5px] font-medium text-muc-2">Xem Point trong tài khoản Zalo</span>
-            )}
-          </div>
-
-          <div className="mt-3 grid gap-1.5">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                closeMenu();
-                openProfileModal();
-              }}
-              className="rounded-xl bg-white/65 px-3.5 py-2 text-left text-sm font-semibold text-muc transition-colors hover:bg-white"
-            >
-              ✎ Sửa hồ sơ
-            </button>
-            {astroxUser ? (
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  closeMenu();
-                  setTopupOpen(true);
-                }}
-                className="rounded-xl bg-white/65 px-3.5 py-2 text-left text-sm font-semibold text-muc transition-colors hover:bg-white"
-              >
-                ◍ Nạp Point
-              </button>
-            ) : null}
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                closeMenu();
-                if (confirm("Đăng xuất khỏi AstroX?")) logout();
-              }}
-              className="rounded-xl px-3.5 py-2 text-left text-sm font-semibold text-son transition-colors hover:bg-son-tint"
-            >
-              Đăng xuất
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      <TopupPanel open={topupOpen} onClose={() => setTopupOpen(false)} />
-    </div>
-  );
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", key); };
+  }, [open, present, close]);
+  const go = (href: string) => { close(); router.push(href); };
+  const avatar = avatarUrl && failedAvatar !== avatarUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element -- Remote account avatar.
+    <img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedAvatar(avatarUrl)}/>
+  ) : <FeatureIcon name="profile" size={23}/>;
+  if (!loggedIn) return <button type="button" onClick={zaloLogin} className="rounded-full bg-son px-4 py-1.5 text-sm font-semibold text-white">Đăng nhập</button>;
+  return <div ref={wrap} className={styles.wrap} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) close(); }}>
+    <button ref={trigger} type="button" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open} aria-controls={present ? id : undefined} aria-label={`Tài khoản ${displayName}`} className={styles.trigger}>{avatar}</button>
+    {present && <div ref={menu} id={id} role="menu" aria-label="Menu tài khoản" className={styles.panel} data-open={open} inert={!open}>
+      <div className={styles.identity}><span className={styles.avatar}>{avatar}</span><div><span className={styles.status}>{preview ? "Xem thử · localhost" : "Đã đăng nhập"}</span><h2>{displayName}</h2></div></div>
+      {astroxUser && <div className={styles.wallet}><div><span><FeatureIcon name="wallet" size={17}/>AstroX Point</span><p>{preview ? "1.000" : pointsError ? "Chưa tải được" : points === null ? "…" : points.toLocaleString("vi-VN")}<small>{preview ? "minh họa" : !pointsError && points !== null ? "Point" : ""}</small></p></div><button role="menuitem" disabled={preview} onClick={() => { close(); setTopupOpen(true); }} aria-label="Nạp Point"><FeatureIcon name="explore" size={19}/></button></div>}
+      <div className={styles.links}>
+        <button role="menuitem" onClick={() => go("/hoso")}><FeatureIcon name="profile" size={20}/><span>Hồ sơ của bạn</span><i>↗</i></button>
+        <button role="menuitem" onClick={() => go("/hoso?section=account")}><FeatureIcon name="wallet" size={20}/><span>Quản lý tài khoản</span><i>↗</i></button>
+        <button role="menuitem" onClick={() => go("/hoso?section=preferences")}><FeatureIcon name="settings" size={20}/><span>Hiển thị & trải nghiệm</span><i>↗</i></button>
+      </div>
+      <button role="menuitem" className={styles.logout} onClick={() => { close(); if(confirm("Đăng xuất khỏi AstroX?")) void logout(); }}><FeatureIcon name="logout" size={19}/>Đăng xuất</button>
+    </div>}
+    <TopupPanel open={topupOpen} onClose={() => setTopupOpen(false)}/>
+  </div>;
 }

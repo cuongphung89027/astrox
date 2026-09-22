@@ -111,6 +111,7 @@ interface AuthContextValue {
   supabaseUser: { email?: string | null; fullName?: string | null } | null;
   astroxUser: AstroxUser | null;
   loggedIn: boolean;
+  ready: boolean;
   displayName: string;
   moduleAccess: Record<string, boolean>;
   isModuleAllowed: (module: string) => boolean;
@@ -122,6 +123,30 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [localPreview, setLocalPreview] = useState<boolean | null>(null);
+  useEffect(() => {
+    setLocalPreview(process.env.NODE_ENV === "development" &&
+      ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname));
+  }, []);
+  if (localPreview === null) return null;
+  return localPreview ? <LocalPreviewProvider>{children}</LocalPreviewProvider> : <RealAuthProvider>{children}</RealAuthProvider>;
+}
+
+function LocalPreviewProvider({ children }: { children: React.ReactNode }) {
+  const [active, setActive] = useState(true);
+  const name = getState().profile?.name || "Tài khoản xem thử";
+  const value: AuthContextValue = {
+    supabaseUser: null,
+    astroxUser: active ? { id: "localhost-preview", display_name: name } : null,
+    loggedIn: active, ready: true, displayName: name, moduleAccess: {},
+    isModuleAllowed: () => true, refresh: () => {},
+    logout: async () => { setActive(false); },
+    zaloLogin: () => { setActive(true); },
+  };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function RealAuthProvider({ children }: { children: React.ReactNode }) {
   const clientRef = useRef<SupabaseClient | null>(null);
   if (typeof window !== "undefined" && !clientRef.current) clientRef.current = getSupabase();
   const client = clientRef.current;
@@ -217,6 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       supabaseUser: supabaseEmail ? { email: supabaseEmail, fullName: supabaseName } : null,
       astroxUser,
       loggedIn,
+      ready,
       displayName,
       moduleAccess,
       isModuleAllowed: (module: string) => {
@@ -243,7 +269,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (AUTH_API_BASE) window.location.href = `${AUTH_API_BASE}/auth/zalo/login`;
       },
     }),
-    [supabaseEmail, supabaseName, astroxUser, loggedIn, displayName, moduleAccess, refreshModuleAccess, client],
+    [supabaseEmail, supabaseName, astroxUser, loggedIn, ready, displayName, moduleAccess, refreshModuleAccess, client],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

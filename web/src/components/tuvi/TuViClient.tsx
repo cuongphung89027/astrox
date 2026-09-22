@@ -6,197 +6,118 @@
  * + hồ sơ (useRequireProfile). Lá số chuẩn hoá lưu vào state.ziweiChart để
  * prompt AI + cache fingerprint dùng chung (đúng ràng buộc store cũ).
  */
-import { useEffect, useMemo, useState } from "react";
-import { Btn, SectionTitle } from "@/components/kit";
-import { DongSonSun, LyCloudDivider } from "@/components/kit/motifs";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Btn } from "@/components/kit";
+import { FeatureIcon } from "@/components/kit/FeatureIcon";
 import { useAuth } from "@/lib/auth";
 import { setState } from "@/lib/state";
 import { useProfile } from "@/lib/use-store";
-import { buildZiweiChart, TUVI_TOPICS, type ZiweiChart } from "@/lib/tuvi";
-import { HOUR_CHI_OPTIONS } from "@/lib/utils";
-import type { Profile } from "@/lib/types";
-import { useRequireProfile } from "@/components/profile/ProfileModal";
+import { buildZiweiChart, type ZiweiChart } from "@/lib/tuvi";
+import { formatDob } from "@/lib/utils";
+import { useProfileModal } from "@/components/profile/ProfileModal";
 import { ChartBoard } from "./ChartBoard";
-import { ChartFormPanel, type ChartFormValue } from "./ChartFormPanel";
 import { LockPanel } from "./LockPanel";
 import { PeriodPanel } from "./PeriodPanel";
 import { TopicsPanel } from "./TopicsPanel";
-
-function formFromProfile(profile: Profile | null): ChartFormValue {
-  return {
-    gender: profile?.gender || "Nam",
-    dob: profile?.dob || "",
-    hourChi: profile?.hourChi || HOUR_CHI_OPTIONS[0],
-    place: profile?.place || "",
-  };
-}
+import styles from "./TuVi.module.css";
 
 function NoProfileCta({ onOpen }: { onOpen: () => void }) {
   return (
-    <div className="glass flex flex-col items-center gap-3 rounded-[var(--radius-card)] p-10 text-center">
-      <DongSonSun size={52} className="text-son" />
-      <p className="font-display text-xl font-extrabold text-muc">Chưa có hồ sơ</p>
+    <div className={styles.empty}>
+      <FeatureIcon name="tuvi" size={52} className="text-ngoc-deep" />
+      <p className="font-display text-xl font-extrabold text-muc">Lá số bắt đầu từ bạn</p>
       <p className="max-w-md text-sm leading-relaxed text-muc-2">
-        AstroX cần giới tính, ngày sinh và giờ sinh để lập lá số Tử Vi. Hoàn tất 5 bước hồ sơ ngắn là lá số hiện ngay.
+        Hồ sơ của bạn chưa đủ thông tin sinh. Bổ sung một lần để AstroX tự lập lá số và sử dụng cho những lần sau.
       </p>
-      <Btn onClick={onOpen}>Nhập hồ sơ để lập lá số</Btn>
+      <Btn onClick={onOpen}>Hoàn tất hồ sơ</Btn>
     </div>
   );
 }
 
-/** Empty-state cho khối 2/3: panel gợi ý thay vì dòng chữ mỏng — kèm preview chip. */
-function StepHint({
-  text,
-  chips,
-}: {
-  text: string;
-  chips?: { id: string; label: string }[];
-}) {
-  return (
-    <div className="glass rounded-[var(--radius-card)] border-dashed border-muc/25 p-8">
-      <div className="flex items-start gap-4">
-        <DongSonSun size={40} className="mt-0.5 shrink-0 text-muc-2/70" />
-        <div>
-          <p className="text-sm font-semibold text-muc">{text}</p>
-          {chips ? (
-            <ul className="mt-3 flex flex-wrap gap-2" aria-label="Các chủ đề sẽ mở khi có lá số">
-              {chips.slice(0, 8).map((c) => (
-                <li
-                  key={c.id}
-                  className="cursor-default rounded-full bg-white/55 px-3 py-1 text-xs font-medium text-muc-2"
-                >
-                  {c.label}
-                </li>
-              ))}
-              {chips.length > 8 ? <li className="px-1 py-1 text-xs text-muc-2">+{chips.length - 8} nữa</li> : null}
-            </ul>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
+function StepHint({ period = false, onOpen }: { period?: boolean; onOpen: () => void }) {
+  return <section className={styles.welcomePanel}>
+    <div className={styles.welcomeMark} aria-hidden="true"><FeatureIcon name="tuvi" size={42} /></div>
+    <span className={styles.welcomeEyebrow}>{period ? "VẬN TRÌNH CỦA BẠN" : "LUẬN GIẢI RIÊNG BẠN"}</span>
+    <h2>{period ? "Đón nhịp ngày mới" : "Hiểu mình, từng khía cạnh"}</h2>
+    <p>Bổ sung ngày và giờ sinh để bắt đầu.</p>
+    <div className={styles.welcomePreview} aria-label="Nội dung khám phá">{(period ? [["01","Hôm nay"],["02","Tuần này"],["03","Tháng này"]] : [["01","Bản thân"],["02","Sự nghiệp"],["03","Tình duyên"]]).map(([n,label])=><div key={n}><span>{n}</span><strong>{label}</strong></div>)}</div>
+    <button onClick={onOpen}>Hoàn tất hồ sơ <span aria-hidden="true">↗</span></button>
+  </section>;
 }
 
 export function TuViClient() {
+  const [tab, setTab] = useState<"chart" | "topics" | "period">("chart");
+  useEffect(() => {
+    const view = new URLSearchParams(window.location.search).get("view");
+    // Read the client URL after hydration; the exported HTML has no query state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (view === "topics" || view === "period") setTab(view);
+  }, []);
+  const wideRef = useRef<HTMLDialogElement>(null);
   const { isModuleAllowed } = useAuth();
   const allowed = isModuleAllowed("tuvi");
   const profile = useProfile();
-  const requireProfile = useRequireProfile();
+  const { open: openProfile } = useProfileModal();
 
-  // Form nguồn dữ liệu lá số — khởi tạo từ hồ sơ, tự sync khi hồ sơ đổi ngoài wizard.
-  const [form, setForm] = useState<ChartFormValue>(() => formFromProfile(profile));
-  useEffect(() => {
-    setForm(formFromProfile(profile));
-  }, [profile]);
-
-  const dobValid = /^\d{4}-\d{2}-\d{2}$/.test(form.dob);
-
-  // Tính lá số cục bộ (iztro, không gọi mạng) từ form.
+  // The saved account profile is the sole source of birth information.
   const { chart, chartError } = useMemo<{ chart: ZiweiChart | null; chartError: string }>(() => {
-    if (!form.gender || !dobValid || !form.hourChi) return { chart: null, chartError: "" };
+    if (!profile?.gender || !/^\d{4}-\d{2}-\d{2}$/.test(profile.dob) || !profile.hourChi) return { chart: null, chartError: "" };
     try {
-      return { chart: buildZiweiChart(form), chartError: "" };
+      return { chart: buildZiweiChart(profile), chartError: "" };
     } catch (e) {
       return { chart: null, chartError: e instanceof Error ? e.message : "Không lập được lá số." };
     }
-  }, [form, dobValid]);
+  }, [profile]);
 
   // Lưu lá số vào store — nguồn dữ liệu duy nhất cho prompt + fingerprint cache.
   useEffect(() => {
-    if (chart) setState({ ziweiChart: chart });
+    setState({ ziweiChart: chart });
   }, [chart]);
 
   if (!allowed) return <LockPanel />;
 
   const hasProfile = !!profile;
-  // ChartBoard cần Profile để hiển thị trung tâm — khi chưa lưu hồ sơ dùng form.
-  const chartProfile: Profile =
-    profile ?? { name: "", gender: form.gender, dob: form.dob, hourChi: form.hourChi, place: form.place };
-
-  const chartBlock =
-    chart && dobValid ? (
-      <ChartBoard chart={chart} profile={chartProfile} />
-    ) : !hasProfile ? (
-      <NoProfileCta onOpen={() => requireProfile()} />
-    ) : chartError ? (
-      <p role="alert" className="text-sm font-semibold text-son-deep">
-        Không thể lập lá số: {chartError}
-      </p>
-    ) : (
-      <p className="text-sm text-muc-2">Điền ngày sinh và giờ sinh ở trên để lập lá số.</p>
-    );
+  const chartBlock = chart && profile ? (
+    <ChartBoard chart={chart} profile={profile} />
+  ) : chartError ? (
+    <div role="alert"><p className="text-sm text-son-deep">Không thể lập lá số: {chartError}</p><button className={styles.outlineButton} onClick={() => openProfile()}>Kiểm tra hồ sơ</button></div>
+  ) : <NoProfileCta onOpen={() => openProfile()} />;
 
   return (
-    <section className="mx-auto w-full max-w-5xl px-5 py-14">
-      <SectionTitle
-        eyebrow="Tử Vi"
-        as="h1"
-        title="Tử Vi Đẩu Số"
-        sub="Xem dữ liệu 12 cung, vận trình năm 2026 và các chủ đề bạn muốn phân tích."
-      />
+    <main className={styles.page}>
+      <h1 className="sr-only">Tử Vi</h1>
+      <div className={styles.workspace}>
+        {profile && <div className={styles.profileSummary}>
+          <div><p className={styles.eyebrow}>HỒ SƠ CỦA BẠN</p><p className={styles.profileName}>{profile.name || "Thông tin đã lưu"}</p></div>
+          <p className={styles.profileDetails}>{[profile.gender, profile.dob && formatDob(profile.dob), profile.hourChi && `Giờ ${profile.hourChi}`, profile.place].filter(Boolean).join(" · ")}</p>
+          <button className={styles.outlineButton} onClick={() => openProfile()}>Sửa hồ sơ</button>
+        </div>}
+        <div className={styles.tabs} role="tablist" aria-label="Khám phá lá số">
+          {([ ["chart", "Lá số"], ["topics", "Luận giải"], ["period", "Vận trình"] ] as const).map(([id, label], index, items) => (
+            <button key={id} id={`${id}-tab`} role="tab" aria-selected={tab === id} aria-controls={`${id}-panel`} tabIndex={tab === id ? 0 : -1} onClick={() => setTab(id)} onKeyDown={(e) => {
+              if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) return;
+              e.preventDefault();
+              const next = e.key === "Home" ? 0 : e.key === "End" ? 2 : (index + (e.key === "ArrowRight" ? 1 : -1) + 3) % 3;
+              setTab(items[next][0]); document.getElementById(`${items[next][0]}-tab`)?.focus();
+            }}>{label}</button>
+          ))}
+        </div>
+        <div id="chart-panel" role="tabpanel" aria-labelledby="chart-tab" hidden={tab !== "chart"} className={styles.chartArea}>
 
-      <div className="mt-10 space-y-14">
-        {/* Khối 1 — Lập lá số */}
-        <section aria-labelledby="tuvi-khoi-laso" className="space-y-5 scroll-mt-24">
-          <SectionTitle
-            id="tuvi-khoi-laso"
-            eyebrow="Bước 1"
-            as="h2"
-            title="Lập lá số 12 cung"
-            sub="Tính trực tiếp từ ngày sinh, giờ sinh và giới tính bằng thuật toán Tử Vi thật."
-          />
-          <ChartFormPanel
-            value={form}
-            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-            onUseProfile={() => setForm(formFromProfile(profile))}
-            hasProfile={hasProfile}
-          />
+          <div className={styles.chartHeader}><div><p className={styles.eyebrow}>BẢN ĐỒ CỦA BẠN</p><h2 id="tuvi-khoi-laso">{chart ? "Lá số của bạn" : "Lá số Tử Vi"}</h2></div>{chart && <button className={styles.outlineButton} onClick={() => wideRef.current?.showModal()}>Xem rộng ↗</button>}</div>
           {chartBlock}
-        </section>
-
-        <LyCloudDivider />
-
-        {/* Khối 2 — Chủ đề luận giải */}
-        <section aria-labelledby="tuvi-khoi-chude" className="space-y-5 scroll-mt-24">
-          <SectionTitle
-            id="tuvi-khoi-chude"
-            eyebrow="Bước 2"
-            as="h2"
-            title="Chủ đề luận giải"
-            sub="Chọn chủ đề bạn muốn phân tích — AstroX đọc trực tiếp dữ liệu lá số đã tính ở trên."
-          />
-          {hasProfile && chart ? (
-            <TopicsPanel profile={profile} chart={chart} />
-          ) : (
-            <StepHint
-              text="Hoàn tất hồ sơ và lá số ở Bước 1 để mở 12 chủ đề luận giải theo dữ liệu cung của riêng bạn."
-              chips={TUVI_TOPICS.map((t) => ({ id: t.id, label: t.title }))}
-            />
-          )}
-        </section>
-
-        <LyCloudDivider />
-
-        {/* Khối 3 — Vận trình */}
-        <section aria-labelledby="tuvi-khoi-vantrinh" className="space-y-5 scroll-mt-24">
-          <SectionTitle
-            id="tuvi-khoi-vantrinh"
-            eyebrow="Bước 3"
-            as="h2"
-            title="Vận trình"
-            sub="Hôm nay, tuần này, tháng này — dựa trên Lưu Nhật, Lưu Nguyệt và Tứ Hóa thật của từng kỳ."
-          />
-          {hasProfile && chart ? (
-            <PeriodPanel profile={profile} chart={chart} />
-          ) : (
-            <StepHint text="Vận trình hôm nay / tuần này / tháng này sẽ mở ngay khi lá số ở Bước 1 sẵn sàng." />
-          )}
-        </section>
-
-        <p className="text-xs leading-relaxed text-muc-2">
-          Nội dung tham khảo văn hoá truyền thống, không phải lời khuyên y tế / tài chính / pháp lý tuyệt đối.
-        </p>
+          {!chart && <div className={styles.emptyFoot}><span>Ngày sinh</span><i /> <span>Giờ sinh</span><i /><span>Lá số riêng bạn</span></div>}
+        </div>
+        <div id="topics-panel" role="tabpanel" aria-labelledby="topics-tab" hidden={tab !== "topics"}>
+          {hasProfile && chart ? <TopicsPanel profile={profile} chart={chart} /> : <StepHint onOpen={() => openProfile()} />}
+        </div>
+        <div id="period-panel" role="tabpanel" aria-labelledby="period-tab" hidden={tab !== "period"}>
+          {hasProfile && chart ? <PeriodPanel profile={profile} chart={chart} /> : <StepHint period onOpen={() => openProfile()} />}
+        </div>
       </div>
-    </section>
+      <dialog ref={wideRef} className={styles.wideDialog} aria-label="Lá số Tử Vi mở rộng" onClick={(e) => { if (e.target === e.currentTarget) wideRef.current?.close(); }}>
+        <div className={styles.wideContent}><div className={styles.chartHeader}><h2>Lá số Tử Vi</h2><button autoFocus className={styles.outlineButton} onClick={() => wideRef.current?.close()}>Đóng ×</button></div>{chart && profile && <ChartBoard chart={chart} profile={profile} />}</div>
+      </dialog>
+    </main>
   );
 }

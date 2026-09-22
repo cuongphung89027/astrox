@@ -8,7 +8,8 @@
  * góc chiếu. Vị trí giữ đúng phép chiếu cũ: natalPointAngle = 270 − kinh độ.
  */
 import { Chip, GlassCard } from "@/components/kit";
-import { TextsReveal } from "@/components/motion";
+import styles from "./Zodiac.module.css";
+import { AspectMatrix } from "./AspectMatrix";
 import { ZODIAC_SIGNS, normDeg, type NatalChart, type NatalPlanet } from "@/lib/zodiac";
 
 /** Góc SVG của một kinh độ hoàng đạo — port natalPointAngle. */
@@ -34,8 +35,8 @@ const ASPECT_COLOR: Record<string, string> = {
   "Trùng tụ": "var(--color-ngoc)",
   "Lục hợp": "var(--color-ngoc)",
   "Tam hợp": "var(--color-ngoc)",
-  "Vuông": "var(--color-cham)",
-  "Đối đỉnh": "var(--color-son)",
+  "Vuông": "#819578",
+  "Đối đỉnh": "#ad9670",
 };
 
 function aspectColor(name: string): string {
@@ -43,6 +44,7 @@ function aspectColor(name: string): string {
 }
 
 function NatalWheelSvg({ chart }: { chart: NatalChart }) {
+  const natalPointAngle = (deg: number) => normDeg(180 + chart.points.ascendant.longitude - deg);
   const planetPos = new Map<string, [number, number]>();
   chart.planets.forEach((p) => {
     planetPos.set(p.name, polar(C, C, R_ASPECT, natalPointAngle(p.longitude)));
@@ -56,11 +58,17 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
       className="mx-auto h-auto w-full max-w-[460px]"
     >
       {/* Vòng ngoài cách điệu + vòng cung hoàng đạo */}
-      <circle cx={C} cy={C} r={R_SIGN_OUT + 9} fill="none" stroke="var(--color-kim)" strokeOpacity={0.5} strokeWidth={1.6} strokeDasharray="0.5 7" />
-      <circle cx={C} cy={C} r={R_SIGN_OUT} fill="var(--color-cham)" fillOpacity={0.05} stroke="var(--color-cham)" strokeOpacity={0.35} strokeWidth={1.5} />
-      <circle cx={C} cy={C} r={R_SIGN_IN} fill="var(--color-kem)" stroke="var(--color-cham)" strokeOpacity={0.35} strokeWidth={1.2} />
-      <circle cx={C} cy={C} r={R_HOUSE_IN} fill="var(--color-sen)" fillOpacity={0.05} stroke="var(--color-cham)" strokeOpacity={0.3} strokeWidth={1} />
+      <circle cx={C} cy={C} r={R_SIGN_OUT + 9} fill="none" stroke="#c2b17e" strokeOpacity={0.5} strokeWidth={1.6} strokeDasharray="0.5 7" />
+      <circle cx={C} cy={C} r={R_SIGN_OUT} fill="#819578" fillOpacity={0.05} stroke="#819578" strokeOpacity={0.35} strokeWidth={1.5} />
+      <circle cx={C} cy={C} r={R_SIGN_IN} fill="var(--color-kem)" stroke="#819578" strokeOpacity={0.35} strokeWidth={1.2} />
+      <circle cx={C} cy={C} r={R_HOUSE_IN} fill="#466b52" fillOpacity={0.05} stroke="#819578" strokeOpacity={0.3} strokeWidth={1} />
 
+      {Array.from({length:72},(_,i)=>{
+        const angle=natalPointAngle(i*5);
+        const [x1,y1]=polar(C,C,R_SIGN_IN,angle);
+        const [x2,y2]=polar(C,C,R_SIGN_IN-(i%6===0?8:3),angle);
+        return <line key={`tick-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#869779" strokeWidth={.6} />;
+      })}
       {/* 12 cung: vạch chia + glyph */}
       {ZODIAC_SIGNS.map((s, i) => {
         const cuspAngle = natalPointAngle(i * 30);
@@ -69,9 +77,9 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
         const [gx, gy] = polar(C, C, (R_SIGN_OUT + R_SIGN_IN) / 2, natalPointAngle(i * 30 + 15));
         return (
           <g key={s.id}>
-            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--color-cham)" strokeOpacity={0.35} strokeWidth={1.2} />
-            <text x={gx} y={gy + 7} textAnchor="middle" fontSize={19} fill="var(--color-cham)" fontWeight={600}>
-              {s.symbol}
+            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#819578" strokeOpacity={0.35} strokeWidth={1.2} />
+            <text x={gx} y={gy + 7} textAnchor="middle" fontSize={19} fill="#819578" fontWeight={600}>
+              {s.symbol.replace(/\uFE0F/g, "")}&#xfe0e;
             </text>
             <title>{`${s.name} (${s.en})`}</title>
           </g>
@@ -83,10 +91,10 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
         const cuspAngle = natalPointAngle(h.longitude);
         const [x1, y1] = polar(C, C, R_HOUSE_OUT, cuspAngle);
         const [x2, y2] = polar(C, C, R_HOUSE_IN, cuspAngle);
-        const [nx, ny] = polar(C, C, (R_HOUSE_OUT + R_HOUSE_IN) / 2, natalPointAngle(h.longitude + 15));
+        const [nx, ny] = polar(C, C, (R_HOUSE_OUT + R_HOUSE_IN) / 2, natalPointAngle(h.longitude + normDeg(chart.houses[h.number % 12].longitude - h.longitude) / 2));
         return (
           <g key={h.number}>
-            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--color-cham)" strokeOpacity={0.3} strokeWidth={1} />
+            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#819578" strokeOpacity={0.3} strokeWidth={1} />
             <text x={nx} y={ny + 3.5} textAnchor="middle" fontSize={11} fontWeight={700} fill="var(--color-muc-2)">
               {h.number}
             </text>
@@ -105,8 +113,8 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
         const [tx, ty] = polar(C, C, R_HOUSE_IN - 11, a);
         return (
           <g key={label}>
-            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--color-son)" strokeWidth={2} />
-            <text x={tx} y={ty + 4} textAnchor="middle" fontSize={11} fontWeight={800} fill="var(--color-son-deep)">
+            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#ad9670" strokeWidth={2} />
+            <text x={tx} y={ty + 4} textAnchor="middle" fontSize={11} fontWeight={800} fill="#335b45">
               {label}
             </text>
           </g>
@@ -140,7 +148,7 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
         const [x, y] = polar(C, C, R_PLANET, a);
         return (
           <g key={p.body}>
-            <text x={x} y={y + 6} textAnchor="middle" fontSize={17} fontWeight={700} fill="var(--color-son-deep)">
+            <text x={x} y={y + 6} textAnchor="middle" fontSize={17} fontWeight={700} fill="#335b45">
               {p.symbol}
             </text>
             <title>{`${p.name} — ${p.sign.name} ${p.sign.degree.toFixed(1)}°, nhà ${p.house}`}</title>
@@ -175,18 +183,17 @@ function PlanetRow({ p }: { p: NatalPlanet }) {
 interface NatalChartSectionProps {
   chart: NatalChart | null;
   hasProfile: boolean;
+  exactTime?: boolean;
   className?: string;
 }
 
-export function NatalChartSection({ chart, hasProfile, className }: NatalChartSectionProps) {
+export function NatalChartSection({ chart, hasProfile, className, exactTime }: NatalChartSectionProps) {
   if (!hasProfile || !chart) {
     return (
       <GlassCard className={className}>
         <div className="p-6 md:p-8">
           <p className="text-sm leading-relaxed text-muc-2">
-            Cần hồ sơ (ngày sinh) để tính bản đồ sao. Mở{" "}
-            <strong className="text-muc">Hồ sơ</strong> và bổ sung — giờ sinh và nơi sinh quyết định
-            Cung Mọc, Thiên Đỉnh và các nhà.
+            {hasProfile ? "Chưa xác định được tọa độ nơi sinh. Hãy kiểm tra nơi sinh trong hồ sơ; AstroX không tự thay bằng một địa điểm khác." : "Bổ sung ngày, giờ và nơi sinh trong hồ sơ để lập bản đồ sao."}
           </p>
         </div>
       </GlassCard>
@@ -195,150 +202,19 @@ export function NatalChartSection({ chart, hasProfile, className }: NatalChartSe
 
   const big3 = [chart.big3.sun, chart.big3.moon, chart.big3.ascendant];
 
-  return (
-    <div className={className}>
-      <TextsReveal className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]" stagger={90}>
-        <GlassCard className="ax-stagger-line">
-          <div className="p-4 md:p-6">
-            <NatalWheelSvg chart={chart} />
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] font-semibold text-muc-2">
-              <span className="flex items-center gap-1.5">
-                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-ngoc" /> Hội hợp (trùng tụ · lục hợp · tam hợp)
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-cham" /> Vuông
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span aria-hidden="true" className="inline-block size-2 rounded-full bg-son" /> Đối đỉnh
-              </span>
-            </div>
-            <p className="mt-4 text-center text-xs font-semibold text-kim-deep">
-              {chart.planets.length} hành tinh · 12 nhà · {chart.aspects.length} góc chiếu
-            </p>
-          </div>
-        </GlassCard>
-
-        <div className="ax-stagger-line space-y-5">
-          <GlassCard>
-            <div className="p-5 md:p-6">
-              <h3 className="font-display text-lg font-extrabold text-muc">Bộ ba cốt lõi</h3>
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {big3.map((p) => (
-                  <div key={p.name} className="rounded-2xl border border-muc/10 bg-white/55 p-3">
-                    <b className="block text-[13px] font-extrabold text-muc">{p.name}</b>
-                    <span className="mt-1 block text-[12px] text-muc-2">
-                      {p.sign.symbol} {p.sign.name} {p.sign.degree.toFixed(1)}°
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-4 text-[11.5px] leading-relaxed text-muc-2">
-                Hoàng đạo nhiệt đới · hệ thống nhà gần đúng. Vị trí hành tinh tính trực tiếp bằng
-                astronomy-engine; giờ và nơi sinh quyết định Cung Mọc, Thiên Đỉnh và các nhà.
-              </p>
-            </div>
-          </GlassCard>
-
-          <GlassCard>
-            <div className="p-5 md:p-6">
-              <h3 className="font-display text-lg font-extrabold text-muc">Hành tinh</h3>
-              <div className="-mx-2 mt-2 overflow-x-auto px-2">
-                <table className="w-full min-w-[300px] text-left text-[13px]">
-                  <thead>
-                    <tr className="border-b border-muc/15 text-[11px] uppercase tracking-wide text-muc-2">
-                      <th scope="col" className="py-2 pr-3 font-bold">Hành tinh</th>
-                      <th scope="col" className="py-2 pr-3 font-bold">Cung</th>
-                      <th scope="col" className="py-2 pr-3 font-bold">Độ</th>
-                      <th scope="col" className="py-2 font-bold">Nhà</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chart.planets.map((p) => (
-                      <PlanetRow key={p.body} p={p} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-      </TextsReveal>
-
-      <TextsReveal className="mt-5 grid gap-5 lg:grid-cols-2" stagger={90}>
-        <GlassCard className="ax-stagger-line">
-          <div className="p-5 md:p-6">
-            <h3 className="font-display text-lg font-extrabold text-muc">12 nhà</h3>
-            <div className="-mx-2 mt-2 overflow-x-auto px-2">
-              <table className="w-full min-w-[280px] text-left text-[13px]">
-                <thead>
-                  <tr className="border-b border-muc/15 text-[11px] uppercase tracking-wide text-muc-2">
-                    <th scope="col" className="py-2 pr-3 font-bold">Nhà</th>
-                    <th scope="col" className="py-2 pr-3 font-bold">Cung bắt đầu</th>
-                    <th scope="col" className="py-2 font-bold">Độ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chart.houses.map((h) => (
-                    <tr key={h.number}>
-                      <td className="py-2 pr-3 font-bold tabular-nums text-muc">{h.number}</td>
-                      <td className="py-2 pr-3 text-muc-2">
-                        {h.sign.symbol} {h.sign.name}
-                      </td>
-                      <td className="py-2 tabular-nums text-muc-2">{h.sign.degree.toFixed(1)}°</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </GlassCard>
-
-        <GlassCard className="ax-stagger-line">
-          <div className="p-5 md:p-6">
-            <h3 className="font-display text-lg font-extrabold text-muc">Góc chiếu chính</h3>
-            <div className="-mx-2 mt-2 overflow-x-auto px-2">
-              <table className="w-full min-w-[320px] text-left text-[13px]">
-                <thead>
-                  <tr className="border-b border-muc/15 text-[11px] uppercase tracking-wide text-muc-2">
-                    <th scope="col" className="py-2 pr-3 font-bold">Hành tinh</th>
-                    <th scope="col" className="py-2 pr-3 font-bold">Góc</th>
-                    <th scope="col" className="py-2 pr-3 font-bold">Hành tinh</th>
-                    <th scope="col" className="py-2 font-bold">Khoảng cách</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chart.aspects.map((a, i) => (
-                    <tr key={`${a.a}-${a.b}-${i}`}>
-                      <td className="py-2 pr-3 text-muc">{a.a}</td>
-                      <td className="py-2 pr-3">
-                        <Chip
-                          tone={a.aspect === "Đối đỉnh" ? "son" : a.aspect === "Vuông" ? "cham" : "ngoc"}
-                        >
-                          {a.aspect}
-                        </Chip>
-                      </td>
-                      <td className="py-2 pr-3 text-muc">{a.b}</td>
-                      <td className="py-2 tabular-nums text-muc-2">{a.angle}°</td>
-                    </tr>
-                  ))}
-                  {chart.aspects.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="py-3 text-muc-2">
-                        Chưa có góc chiếu trong orb đang dùng.
-                      </td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </GlassCard>
-      </TextsReveal>
-
-      <p className="mt-4 text-center text-xs leading-relaxed text-muc-2">
-        Dữ liệu thiên văn được tính trực tiếp trong trình duyệt; phần diễn giải bằng AI chỉ dùng
-        dữ liệu này làm nguồn duy nhất.
-      </p>
+  return <div className={`${styles.chartLayout} ${className || ""}`}>
+    <section className={styles.skyMap}>
+      <header><span>{exactTime ? "BẦU TRỜI LÚC BẠN SINH" : "BẢN ĐỒ ƯỚC TÍNH THEO KHUNG GIỜ"}</span><h2>Dấu ấn thiên thể</h2></header>
+      <NatalWheelSvg chart={chart} />
+      <div className={styles.mapLegend}><span>● Hài hòa</span><span>○ Thử thách</span></div>
+    </section>
+    <AspectMatrix chart={chart} />
+    <div className={styles.chartSidebar}>
+      <div className={styles.bigThree}>{big3.map((p,i)=><div key={p.name}><span>{["Mặt Trời","Mặt Trăng","Cung Mọc"][i]}</span><strong>{p.sign.name}</strong><small>{p.sign.degree.toFixed(1)}°</small></div>)}</div>
+      <div className={styles.chartNote}><strong>Hoàng đạo nhiệt đới · Hệ nhà Placidus</strong><p>{exactTime ? "Dùng giờ sinh đến phút." : "Chưa có giờ chính xác: đang dùng giữa khung giờ sinh."} Múi giờ UTC+7.</p><p>Tọa độ: {chart.latitude.toFixed(4)}° Bắc, {chart.longitude.toFixed(4)}° Đông · {chart.place}</p></div>
+      <details className={styles.chartDisclosure} open><summary>Hành tinh <span>{chart.planets.length}</span></summary><div className={styles.planetList}>{chart.planets.map(p=><div key={p.body}><span>{p.name}</span><strong>{p.sign.name}<small>{p.sign.degree.toFixed(1)}° · Nhà {p.house}</small></strong></div>)}</div></details>
+      <details className={styles.chartDisclosure}><summary>Mười hai nhà <span>12</span></summary><div className={styles.houseList}>{chart.houses.map(h=><div key={h.number}><span>{String(h.number).padStart(2,"0")}</span><strong>{h.sign.name}<small>{h.sign.degree.toFixed(1)}°</small></strong></div>)}</div></details>
+      <details className={styles.chartDisclosure}><summary>Góc chiếu <span>{chart.aspects.length}</span></summary><div className={styles.aspectList}>{chart.aspects.map((a,i)=><div key={i}><strong>{a.a} <span>↔</span> {a.b}</strong><small>{a.aspect} · {a.angle}°</small></div>)}{!chart.aspects.length && <p>Chưa có góc chiếu trong phạm vi đang xét.</p>}</div></details>
     </div>
-  );
+  </div>;
 }

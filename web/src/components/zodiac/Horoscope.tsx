@@ -1,4 +1,7 @@
 "use client";
+import styles from "./Zodiac.module.css";
+import { ReadingLoader } from "@/components/kit/ReadingLoader";
+import { SavedReading, ReadingInvitation } from "@/components/kit/SavedReading";
 
 /**
  * Horoscope — tử vi theo kỳ (hôm nay / tuần này / tháng này) cho cung đang
@@ -7,7 +10,7 @@
  * AiText + nút "Tạo lại".
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AiText, Btn, Skeleton, SunSpinner, TopicTabs, type TabItem } from "@/components/kit";
+import { Btn, TopicTabs, type TabItem } from "@/components/kit";
 import { PanelReveal, useToast } from "@/components/motion";
 import { useProfile } from "@/lib/use-store";
 import { readAiCache, writeAiCache, setState } from "@/lib/state";
@@ -53,7 +56,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
       // Tải tự động: chỉ chạy khi đã có hồ sơ (không bật modal).
       if (!profile) return;
       const req = ++reqRef.current;
-      const key = `${sign.id}::${period}::${periodCacheKey(period)}`;
+      const key = `natal-v2::${sign.id}::${period}::${periodCacheKey(period)}`;
       const group = `zodiacPeriod.${period}` as const;
       const cached = readAiCache(group, key, force);
       if (cached) {
@@ -74,19 +77,24 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
         writeAiCache(group, key, result, { module: "zodiac", period });
         setText(result);
       } catch (e) {
+        if (req !== reqRef.current) return;
         const msg = e instanceof Error ? e.message : "Không lấy được dự báo.";
         setError(msg);
         toast(`Lỗi dự báo: ${msg}`, "error");
       } finally {
-        setLoading(false);
+        if (req === reqRef.current) setLoading(false);
       }
     },
     [sign, period, profile, natalChart, toast],
   );
 
   useEffect(() => {
-    void load(false);
-  }, [load]);
+    reqRef.current += 1;
+    setText(readAiCache(`zodiacPeriod.${period}`, `natal-v2::${sign.id}::${period}::${periodCacheKey(period)}`));
+    setLoading(false);
+    setError("");
+    return () => { reqRef.current += 1; };
+  }, [sign.id, period, profile]);
 
   if (!profile) {
     return (
@@ -106,15 +114,16 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
 
   return (
     <div className={className}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className={styles.periodBar}>
         <TopicTabs
+          className={styles.periodTabs}
           items={PERIOD_TABS}
           value={period}
           onChange={(id) => setPeriod(id as ZodiacPeriod)}
           ariaLabel="Chọn kỳ dự báo"
         />
         <span
-          className="rounded-full bg-kim-tint px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-kim-deep"
+          className={styles.periodBadge}
           suppressHydrationWarning
         >
           {periodLabel(period, key)}
@@ -123,14 +132,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
 
       <div aria-live="polite" className="mt-5">
         {loading ? (
-          <div className="flex flex-col items-center gap-5 py-8">
-            <SunSpinner size={44} label={`AstroX đang đọc vị trí thiên thể cho ${sign.name}…`} />
-            <div className="w-full max-w-md space-y-2.5" aria-hidden="true">
-              <Skeleton className="h-4 w-11/12" />
-              <Skeleton className="h-4 w-4/5" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          </div>
+          <ReadingLoader kind="zodiac" />
         ) : error ? (
           <div>
             <p role="alert" className="text-sm font-semibold text-son-deep">
@@ -142,7 +144,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
           </div>
         ) : text ? (
           <PanelReveal open key={`${sign.id}-${period}-${text.slice(0, 24)}`}>
-            <AiText text={text} />
+            <SavedReading text={text} periodic />
             <div className="mt-4">
               <Btn variant="ghost" size="sm" onClick={() => void load(true)}>
                 ↻ Tạo lại
@@ -150,7 +152,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
             </div>
           </PanelReveal>
         ) : (
-          <p className="text-sm text-muc-2">Chọn kỳ dự báo để AstroX luận giải.</p>
+          <ReadingInvitation label={`Xem dự báo ${PERIOD_LABELS[period].toLowerCase()}`} onRun={() => void load(false)} />
         )}
       </div>
 

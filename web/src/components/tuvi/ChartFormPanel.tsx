@@ -5,6 +5,8 @@
  * tay (giới tính, ngày sinh, giờ sinh, nơi sinh). Form KHÔNG ghi đè hồ sơ đã
  * lưu — chỉ làm đầu vào tính toán (giữ ràng buộc với use-store cũ).
  */
+import { VN_PROVINCES } from "@/lib/provinces";
+import styles from "./TuVi.module.css";
 import { Btn } from "@/components/kit";
 import { HOUR_CHI_OPTIONS } from "@/lib/utils";
 import { useProfileModal } from "@/components/profile/ProfileModal";
@@ -31,7 +33,7 @@ export function ChartFormPanel({ value, onChange, onUseProfile, hasProfile }: Ch
   const { open } = useProfileModal();
 
   return (
-    <div className="glass rounded-[var(--radius-card)] p-5 md:p-6">
+    <div className={styles.form}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm font-bold text-muc">Dữ liệu lập lá số</p>
         {hasProfile ? (
@@ -46,7 +48,7 @@ export function ChartFormPanel({ value, onChange, onUseProfile, hasProfile }: Ch
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className={styles.fields}>
         <div>
           <span className={labelCls} id="tuvi-gender-label">
             Giới tính
@@ -61,7 +63,7 @@ export function ChartFormPanel({ value, onChange, onUseProfile, hasProfile }: Ch
                   aria-pressed={active}
                   onClick={() => onChange({ gender: g })}
                   className={`rounded-full px-4 py-2 text-sm font-bold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-son ${
-                    active ? "bg-son text-white shadow-[var(--shadow-pop)]" : "glass text-muc-2 hover:text-muc"
+                    active ? "bg-ngoc-deep text-white shadow-sm" : "glass text-muc-2 hover:text-muc"
                   }`}
                 >
                   {g}
@@ -106,14 +108,11 @@ export function ChartFormPanel({ value, onChange, onUseProfile, hasProfile }: Ch
           <label className={labelCls} htmlFor="tuvi-place">
             Nơi sinh
           </label>
-          <input
-            id="tuvi-place"
-            type="text"
-            value={value.place}
-            placeholder="Ví dụ: Hà Nội"
-            onChange={(e) => onChange({ place: e.target.value })}
-            className={`mt-2 ${fieldCls}`}
-          />
+          <select id="tuvi-place" value={value.place} onChange={e => onChange({ place: e.target.value })} className={`mt-2 ${fieldCls}`}>
+            <option value="" disabled>Chọn tỉnh / thành phố</option>
+            {value.place && !VN_PROVINCES.includes(value.place) && <option value={value.place}>{value.place} (đã lưu)</option>}
+            {VN_PROVINCES.map(place => <option key={place} value={place}>{place}</option>)}
+          </select>
         </div>
       </div>
     </div>

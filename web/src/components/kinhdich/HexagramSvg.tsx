@@ -24,7 +24,7 @@ export function HexagramSvg({ lines, label, className }: HexagramSvgProps) {
 
   return (
     <svg
-      viewBox={`0 0 ${W} ${height}`}
+      viewBox={`-8 -8 ${W + 32} ${height + 16}`}
       width={W}
       height={height}
       role="img"
@@ -39,17 +39,17 @@ export function HexagramSvg({ lines, label, className }: HexagramSvgProps) {
         return (
           <g key={line.pos}>
             {line.bit === 1 ? (
-              <rect x={0} y={y} width={W} height={H_LINE} rx={5} fill="var(--color-son)" />
+              <rect x={0} y={y} width={W} height={H_LINE} rx={5} fill="currentColor" />
             ) : (
               <>
-                <rect x={0} y={y} width={(W - YIN_GAP) / 2} height={H_LINE} rx={5} fill="var(--color-cham)" />
+                <rect x={0} y={y} width={(W - YIN_GAP) / 2} height={H_LINE} rx={5} fill="currentColor" />
                 <rect
                   x={(W + YIN_GAP) / 2}
                   y={y}
                   width={(W - YIN_GAP) / 2}
                   height={H_LINE}
                   rx={5}
-                  fill="var(--color-cham)"
+                  fill="currentColor"
                 />
               </>
             )}
@@ -64,9 +64,9 @@ export function HexagramSvg({ lines, label, className }: HexagramSvgProps) {
                   fill="none"
                   stroke="var(--color-kim-deep)"
                   strokeWidth={2.4}
-                  style={{ animation: "ax-kd-blink 1.4s ease-in-out infinite" }}
+
                 />
-                <circle cx={W + 16} cy={y + H_LINE / 2} r={4} fill="var(--color-son-deep)" />
+                <circle cx={W + 16} cy={y + H_LINE / 2} r={4} fill="var(--color-kim-deep)" />
               </>
             ) : null}
           </g>

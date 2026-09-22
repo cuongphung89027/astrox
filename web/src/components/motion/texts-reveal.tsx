@@ -3,7 +3,7 @@
 /**
  * TextsReveal — các dòng con hiện lần lượt vào viewport (pattern texts-reveal,
  * transitions.dev): translateY + blur + stagger delay. Mỗi direct child = 1 dòng.
- * is-shown do useInView thêm vào; data-motion="off" / reduced-motion => hiện tức thì
+ * is-shown do useInView thêm vào; prefers-reduced-motion => hiện tức thì
  * (global CSS ép transition ~0ms).
  */
 import { cloneElement, isValidElement, type CSSProperties, type ReactElement, type ReactNode } from "react";

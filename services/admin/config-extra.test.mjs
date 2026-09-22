@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {defaultConfig,validateConfig,isPublicHttps} from './config.ts';
+const provider=()=>({id:'a',name:'A',baseUrl:'https://api.openai.com/v1',protocol:'chat',model:'model',enabled:true,timeoutMs:1000,retries:0,maxTokens:100,temperature:0.5,secretRef:'provider:a'});
+test('reject unknown properties even when inherited by Object.prototype',()=>{const c=defaultConfig();c.ai.constructor='injected';assert.ok(validateConfig(c).length);});
+test('reject array entries of incorrect primitive type without crashing',()=>{for(const [set] of [[c=>c.ai.chain.push(null)],[c=>c.ai.retryStatuses.push({})],[c=>c.access.roles[0].capabilities.push(null)],[c=>c.billing.services[0].chain.push(42)],[c=>c.billing.packages.push(null)]]){const c=defaultConfig();set(c);assert.ok(validateConfig(c).length);}});
+test('public provider URL excludes nonstandard ports and trailing-dot internal domains',()=>{for(const url of ['https://api.openai.com:8443/v1','https://thing.local./v1','https://metadata.google.internal./v1'])assert.equal(isPublicHttps(url),false,url);});
+test('callback URLs cannot point to local addresses or fragments',()=>{for(const value of ['https://127.0.0.1/callback','https://localhost/callback','https://example.com/callback#token']){const c=defaultConfig();c.integrations.zalo.enabled=true;c.integrations.zalo.appId='123';c.integrations.zalo.callbackUrl=value;assert.ok(validateConfig(c).length,value);}});
+test('enabled providers require nonblank model and display name',()=>{for(const key of ['model','name']){const c=defaultConfig();const p=provider();p[key]='  ';c.ai.providers=[p];assert.ok(validateConfig(c).length,key);}});
+test('enabled Zalo app ID must match numeric identifier',()=>{const c=defaultConfig();c.integrations.zalo={enabled:true,appId:'letters',callbackUrl:'https://site.com/callback',returnUrl:'https://site.com/'};assert.ok(validateConfig(c).length);});
+test('monetary overflow and fractional points cannot publish',()=>{for(const n of [Infinity,NaN,Number.MAX_SAFE_INTEGER,1.5]){const c=defaultConfig();c.billing.services[0].points=n;assert.ok(validateConfig(c).length);}});

@@ -1,14 +1,15 @@
 "use client";
 
 /**
- * ZodiacClient — trang /hoangdao: hub 12 cung (SignGrid) + chi tiết cung
+ * ZodiacClient — trang /cunghoangdao: hub 12 cung (SignGrid) + chi tiết cung
  * (SignDetailPanel) + horoscope theo kỳ (Horoscope) + chế độ "Bản đồ sao
  * chi tiết" (NatalChartSection). Gate module "zodiac" qua useAuth; mọi tính
  * toán cá nhân hoá đều chạy sau useRequireProfile.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Btn, GlassCard, ModuleLockBadge, SectionTitle } from "@/components/kit";
-import { TextsReveal } from "@/components/motion";
+import styles from "./Zodiac.module.css";
+import { FeatureIcon } from "@/components/kit/FeatureIcon";
 import { useProfileModal } from "@/components/profile/ProfileModal";
 import { useAuth } from "@/lib/auth";
 import { setState } from "@/lib/state";
@@ -27,12 +28,12 @@ export function ZodiacClient() {
 
   const mySign = getZodiacSign(profile?.dob);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [mode, setMode] = useState<"hub" | "natal">("hub");
+  const [mode, setMode] = useState<"overview" | "forecast" | "natal">("overview");
 
   // Bản đồ sao tính 1 lần cho mỗi hồ sơ; lưu vào store cho các module khác + AI.
   const natalChart = useMemo(
     () => (profile?.dob ? buildNatalChart(profile) : null),
-    [profile?.dob, profile?.hourChi, profile?.place], // eslint-disable-line react-hooks/exhaustive-deps
+    [profile?.dob, profile?.hourChi, profile?.place, profile?.birthTime], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const savedChartRef = useRef<NatalChart | null>(null);
   useEffect(() => {
@@ -64,72 +65,15 @@ export function ZodiacClient() {
 
   const selected = ZODIAC_SIGNS.find((s) => s.id === selectedId) ?? mySign ?? ZODIAC_SIGNS[0];
 
-  return (
-    <section className="mx-auto w-full max-w-5xl px-5 py-14">
-      {mode === "natal" ? (
-        <div>
-          <Btn variant="ghost" size="sm" onClick={() => setMode("hub")} ariaLabel="Quay lại Cung Hoàng Đạo">
-            ← Quay lại Cung Hoàng Đạo
-          </Btn>
-          <SectionTitle
-            eyebrow="Bản đồ sao chi tiết"
-            title="Hành tinh · 12 nhà · góc chiếu"
-            sub="Dữ liệu thiên văn được tính trực tiếp bằng astronomy-engine; phần diễn giải bằng AI chỉ dùng dữ liệu này làm nguồn duy nhất."
-            className="mt-4"
-          />
-          <NatalChartSection chart={natalChart} hasProfile={!!profile?.dob} className="mt-8" />
-        </div>
-      ) : (
-        <div>
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <SectionTitle
-              eyebrow="Cung Hoàng Đạo"
-              title="Cung Hoàng Đạo"
-              sub="Tính cung Mặt Trời theo ngày sinh, xem đặc tính và horoscope hôm nay, tuần này hoặc tháng này."
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              {profile?.dob ? null : (
-                <Btn variant="ghost" size="sm" onClick={() => openProfile()}>
-                  Nhập hồ sơ
-                </Btn>
-              )}
-              <Btn variant="gold" size="sm" arrow onClick={() => setMode("natal")}>
-                Bản đồ sao chi tiết
-              </Btn>
-            </div>
-          </div>
-
-          <TextsReveal className="mt-9" stagger={60}>
-            <div className="ax-stagger-line">
-              <SignGrid mySignId={mySign?.id ?? null} selectedId={selected.id} onSelect={setSelectedId} />
-            </div>
-            <SignDetailPanel sign={selected} profile={profile} natalChart={natalChart} className="ax-stagger-line mt-6" />
-            <GlassCard className="ax-stagger-line mt-6">
-              <div className="p-6 md:p-8">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h3 className="font-display text-xl font-extrabold tracking-tight text-muc">
-                    Horoscope · {selected.name}
-                  </h3>
-                  <p className="text-xs font-semibold text-muc-2">
-                    Dự báo theo quá cảnh thật — không phải nội dung cố định cho mọi năm.
-                  </p>
-                </div>
-                <Horoscope
-                  sign={selected}
-                  profile={profile}
-                  natalChart={natalChart}
-                  className="mt-5"
-                />
-              </div>
-            </GlassCard>
-            <p className="ax-stagger-line mt-6 text-center text-xs leading-relaxed text-muc-2">
-              Ngày phân chia 12 cung theo hệ chiêm tinh nhiệt đới (tropical) phổ biến nhất hiện nay.
-              Nội dung tham khảo văn hoá, không phải lời khuyên tuyệt đối.
-            </p>
-          </TextsReveal>
-        </div>
-      )}
-    </section>
-  );
+  return <section className={styles.page}>
+    <h1 className="sr-only">Cung Hoàng Đạo</h1>
+    {!profile ? <div className={styles.welcome}><FeatureIcon name="zodiac" size={50} /><span>BẦU TRỜI RIÊNG BẠN</span><h2>Bắt đầu từ ngày bạn sinh</h2><p>Thêm hồ sơ để xem cung Mặt Trời, bản đồ sao và dự báo của bạn.</p><button onClick={() => openProfile()}>Hoàn tất hồ sơ <span>↗</span></button></div> : <>
+      <header className={styles.hero}><div className={styles.heroCopy}><span>{selected.id === mySign?.id ? "CUNG MẶT TRỜI CỦA BẠN" : "ĐANG KHÁM PHÁ"}</span><h2>{selected.name}</h2><p>{selected.en} · {profile.name}</p><button onClick={() => openProfile()}>Chỉnh hồ sơ ↗</button></div><div className={styles.orb} aria-hidden="true"><span>{selected.symbol.replace(/\uFE0F/g, "")}&#xfe0e;</span></div><div className={styles.facts}><div><span>Nguyên tố</span><strong>{selected.element}</strong></div><div><span>Chủ tinh</span><strong>{selected.ruler}</strong></div><div><span>Đặc tính</span><strong>{selected.quality}</strong></div></div></header>
+      <details className={styles.explore}><summary>Khám phá 12 cung <span>＋</span></summary><SignGrid mySignId={mySign?.id ?? null} selectedId={selected.id} onSelect={setSelectedId} />{selected.id !== mySign?.id && <button className={styles.backToMine} onClick={() => setSelectedId(null)}>Về cung của tôi ↗</button>}</details>
+      <div className={styles.tabs} role="tablist" aria-label="Cung Hoàng Đạo">{([ ["overview","Luận giải"],["forecast","Dự báo"],["natal","Bản đồ sao"] ] as const).map(([id,label])=><button key={id} id={`zodiac-${id}`} role="tab" aria-selected={mode===id} aria-controls={`zodiac-panel-${id}`} onClick={()=>setMode(id)}>{label}</button>)}</div>
+      <div key={mode} className={styles.content} role="tabpanel" id={`zodiac-panel-${mode}`} aria-labelledby={`zodiac-${mode}`}>
+        {mode === "overview" ? <SignDetailPanel sign={selected} profile={profile} natalChart={natalChart} /> : mode === "forecast" ? <div className={styles.forecast}><Horoscope sign={selected} profile={profile} natalChart={natalChart} /></div> : <NatalChartSection chart={natalChart} hasProfile={!!profile.dob} className={styles.natal} exactTime={!!profile.birthTime} />}
+      </div>
+    </>}
+  </section>;
 }
-

@@ -1,15 +1,14 @@
 "use client";
 
 /**
- * BottomDock — điều hướng mobile (<md): dock glass cố định dưới màn hình
- * với 4 mục chính + "Thêm" mở sheet glass (Bát Tự, Thần Số, Tarot, Tương Hợp,
- * công tắc giảm chuyển động). Desktop ẩn hoàn toàn.
+ * Mobile navigation with a raised discovery button anchoring the gooey menu.
  */
 import Link from "next/link";
+import styles from "./DiscoverySheet.module.css";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { DongSonSun } from "@/components/kit/motifs/DongSonSun";
-import { MotionToggle } from "./MotionToggle";
+import { useEffect, useState, useRef, type CSSProperties } from "react";
+import { Fragment } from "react";
+import { FeatureIcon, FEATURE_BY_PATH } from "@/components/kit/FeatureIcon";
 
 interface DockItem {
   href: string;
@@ -18,164 +17,165 @@ interface DockItem {
   icon: React.ReactNode;
 }
 
-/* ---- Icon 24px nét tròn, kế thừa currentColor ---- */
-const iconProps = {
-  viewBox: "0 0 24 24",
-  className: "size-[22px]",
-  fill: "none",
-  "aria-hidden": true as const,
-  stroke: "currentColor",
-  strokeWidth: 1.9,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-};
-
 const DOCK: DockItem[] = [
   {
     href: "/",
     label: "Trang chủ",
-    accent: "var(--color-son)",
-    icon: (
-      <svg {...iconProps}>
-        <path d="M4 11.2 12 4.5l8 6.7" />
-        <path d="M6.2 10.2V19a.8.8 0 0 0 .8.8h10a.8.8 0 0 0 .8-.8v-8.8" />
-      </svg>
-    ),
+    accent: "#187650",
+    icon: <FeatureIcon name="home" size={26} />,
   },
   {
     href: "/tuvi",
     label: "Tử Vi",
-    accent: "var(--color-son)",
-    icon: <DongSonSun size={22} />,
+    accent: "#187650",
+    icon: <FeatureIcon name="tuvi" size={26} />,
   },
   {
-    href: "/hoangdao",
-    label: "Hoàng Đạo",
-    accent: "var(--color-sen)",
-    icon: (
-      <svg {...iconProps}>
-        <path d="M12 3.6l2.3 4.9 5.3.7-3.9 3.7 1 5.3L12 15.6l-4.7 2.6 1-5.3L4.4 9.2l5.3-.7L12 3.6Z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/kinhdich",
-    label: "Kinh Dịch",
-    accent: "var(--color-cham)",
-    icon: (
-      <svg {...iconProps}>
-        <path d="M5.5 6.5h13M5.5 12h13M5.5 17.5h4.5m4.5 0h4" />
-      </svg>
-    ),
+    href: "/tarot", label: "Tarot", accent: "#187650",
+    icon: <FeatureIcon name="tarot" size={26} />,
   },
 ];
 
 const SHEET_LINKS = [
-  { href: "/battu", label: "Bát Tự", desc: "Bốn trụ ngũ hành" },
-  { href: "/thanso", label: "Thần Số", desc: "Số chủ đạo & vòng năm" },
+  { href: "/cunghoangdao", label: "Cung Hoàng Đạo", desc: "Khám phá bản đồ sao" },
+  { href: "/kinhdich", label: "Kinh Dịch", desc: "Gieo quẻ & chiêm nghiệm" },
+  { href: "/battu", label: "Bát Tự", desc: "Tứ trụ ngũ hành" },
+  { href: "/thansohoc", label: "Thần Số Học", desc: "Số chủ đạo & vòng năm" },
   { href: "/tarot", label: "Tarot", desc: "Rút lá & lời ngỏ" },
   { href: "/tuonghop", label: "Tương Hợp", desc: "Độ hợp của hai người" },
 ];
 
 export function BottomDock() {
   const pathname = usePathname();
+  const dockRef = useRef<HTMLElement>(null);
+  const [dockWidth, setDockWidth] = useState(366);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const dock = dockRef.current;
+    if (!dock) return;
+    const observer = new ResizeObserver(() => setDockWidth(dock.getBoundingClientRect().width));
+    observer.observe(dock);
+    return () => observer.disconnect();
+  }, []);
 
   // Escape đóng sheet; đóng khi đổi route.
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
     if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusFrame = requestAnimationFrame(() => triggerRef.current?.focus());
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
+      if (e.key === "Tab") {
+        const links = panelRef.current?.querySelectorAll<HTMLElement>("a[href]");
+        const items = [triggerRef.current, ...Array.from(links ?? [])].filter((item): item is HTMLElement => item !== null);
+        if (!items.length) return;
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    const media = window.matchMedia("(min-width: 1024px)");
+    const desktop = () => { if (media.matches) setOpen(false); };
+    media.addEventListener("change", desktop);
+    return () => {
+      cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", onKey);
+      media.removeEventListener("change", desktop);
+      document.body.style.overflow = previous;
+      triggerRef.current?.focus({ preventScroll: true });
+    };
   }, [open]);
+
+  const dockShape = `M22 28 H${dockWidth / 2 - 45} C${dockWidth / 2 - 27} 28 ${dockWidth / 2 - 25} 14 ${dockWidth / 2} 14 C${dockWidth / 2 + 25} 14 ${dockWidth / 2 + 27} 28 ${dockWidth / 2 + 45} 28 H${dockWidth - 22} Q${dockWidth - 1} 28 ${dockWidth - 1} 49 V70 Q${dockWidth - 1} 91 ${dockWidth - 22} 91 H22 Q1 91 1 70 V49 Q1 28 22 28 Z`;
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
 
   return (
     <>
-      {/* Sheet "Thêm" — luôn mounted, animate bằng ax-panel/ax-fade */}
-      <div className={`fixed inset-0 z-50 md:hidden ${open ? "" : "pointer-events-none"}`} aria-hidden={!open}>
-        <div className="ax-fade absolute inset-0 bg-muc/35 backdrop-blur-[2px]" data-open={open} onClick={() => setOpen(false)} />
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Thêm mục"
-          className="ax-panel glass-strong absolute inset-x-3 bottom-[86px] rounded-[var(--radius-card)] p-2"
-          data-open={open}
-        >
-          <ul className="grid">
-            {SHEET_LINKS.map((l) => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-2xl px-3.5 py-3 transition-colors hover:bg-white/70"
-                >
-                  <span aria-hidden="true" className="size-2 rounded-full bg-son" />
-                  <span className="flex-1">
-                    <span className="block text-sm font-bold text-muc">{l.label}</span>
-                    <span className="block text-xs text-muc-2">{l.desc}</span>
-                  </span>
-                  <svg viewBox="0 0 20 20" className="size-4 text-muc-2" fill="none" aria-hidden="true">
-                    <path d="M7.5 4.5 13 10l-5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </Link>
-              </li>
+      <div className={styles.overlay} data-open={open} aria-hidden={!open} inert={!open}>
+        <div className={styles.backdrop} onClick={() => setOpen(false)} />
+        <div id="discovery-menu" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="discovery-title" className={styles.panel}>
+          <h2 id="discovery-title" className="sr-only">Khám phá</h2>
+          <svg className={styles.goo} viewBox="0 0 300 360" aria-hidden="true">
+            <defs><filter id="astrox-discovery-goo" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
+              <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8" />
+              <feComposite in="SourceGraphic" operator="atop" />
+            </filter></defs>
+            <g filter="url(#astrox-discovery-goo)" fill="#fbf6ec">
+              <circle cx="150" cy="324" r="27" />
+
+              {SHEET_LINKS.map((item, i) => <circle key={item.href} cx="150" cy="324" r="27" className={styles.blob} style={{ '--x': `${[-92, 0, 92, -92, 0, 92][i]}px`, '--y': `${[-242, -272, -242, -126, -154, -126][i]}px`, '--delay': `${i * 28}ms` } as CSSProperties} />)}
+            </g>
+          </svg>
+          <div className={styles.grid}>
+            {SHEET_LINKS.map((item, i) => (
+              <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={styles.tile} style={{ "--x": `${[-92, 0, 92, -92, 0, 92][i]}px`, "--y": `${[-242, -272, -242, -126, -154, -126][i]}px`, "--delay": `${i * 28}ms` } as CSSProperties} aria-current={isActive(item.href) ? "page" : undefined}>
+                <FeatureIcon name={FEATURE_BY_PATH[item.href]} className={styles.icon} />
+                <span className={styles.label}>{item.label}</span>
+              </Link>
             ))}
-          </ul>
-          <div className="mt-1 border-t border-muc/10 p-2">
-            <MotionToggle className="w-full" />
           </div>
         </div>
       </div>
 
       {/* Dock chính */}
       <nav
+        ref={dockRef}
         aria-label="Điều hướng dưới (mobile)"
-        className="glass-strong fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-[22px] px-1.5 py-1.5 md:hidden"
+        className={`${styles.dock} fixed inset-x-3 bottom-[calc(12px+env(safe-area-inset-bottom))] z-[60] grid h-16 grid-cols-5 px-1 py-1.5 sm:px-1.5 lg:hidden`}
       >
+        <div aria-hidden="true" className={styles.dockGlass} style={{ clipPath: `path("${dockShape}")` }} />
+        <svg className={styles.dockSurface} width="100%" height="92" viewBox={`0 0 ${dockWidth} 92`} aria-hidden="true">
+          <path d={dockShape} />
+        </svg>
         {DOCK.map((item) => {
           const active = isActive(item.href);
           return (
+            <Fragment key={item.href}>
+            {item.href === "/tarot" && (
+              <div className={styles.discoverySlot} data-active={open || SHEET_LINKS.some(item => item.href !== "/tarot" && isActive(item.href))}>
+                <button
+                  type="button"
+                  ref={triggerRef}
+                  onClick={() => setOpen((v) => !v)}
+                  aria-expanded={open}
+                  aria-controls="discovery-menu"
+                  aria-haspopup="dialog"
+                  aria-label={open ? "Đóng Khám phá" : "Khám phá"}
+                  data-open={open}
+                  className={styles.trigger}
+                >
+                  <span aria-hidden="true"><FeatureIcon name="explore" size={28} /></span>
+                </button>
+                <span className={styles.triggerLabel}>Khám phá</span>
+              </div>
+            )}
             <Link
               key={item.href}
               href={item.href}
+              inert={open}
               aria-current={active ? "page" : undefined}
               style={active ? { color: item.accent } : undefined}
-              className={`flex flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10.5px] font-bold transition-colors ${
-                active ? "bg-white/75 text-muc" : "text-muc-2"
+              className={`flex flex-col items-center gap-0.5 rounded-2xl px-0.5 py-1.5 text-[11px] min-[380px]:text-[12px] font-bold transition-colors ${
+                active ? "bg-white/75 text-muc" : "text-black"
               }`}
             >
               {item.icon}
-              {item.label}
+              <span className="max-w-full whitespace-nowrap">{item.label}</span>
             </Link>
+            </Fragment>
           );
         })}
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          className={`flex flex-col items-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10.5px] font-bold transition-colors ${
-            open ? "bg-white/75 text-muc" : "text-muc-2"
-          }`}
-        >
-          <svg {...iconProps}>
-            <circle cx="6.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="12" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="6.5" cy="12" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="17.5" cy="12" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="6.5" cy="17.5" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="12" cy="17.5" r="1.5" fill="currentColor" stroke="none" />
-            <circle cx="17.5" cy="17.5" r="1.5" fill="currentColor" stroke="none" />
-          </svg>
-          Thêm
-        </button>
+        <Link href="/hoso" inert={open} aria-current={pathname === "/hoso" ? "page" : undefined} style={{ color: pathname === "/hoso" ? "#187650" : "#000" }} className="flex flex-col items-center gap-0.5 rounded-2xl px-0.5 py-1.5 text-[11px] min-[380px]:text-[12px] font-bold">
+          <FeatureIcon name="profile" size={26} />Hồ sơ
+        </Link>
       </nav>
     </>
   );

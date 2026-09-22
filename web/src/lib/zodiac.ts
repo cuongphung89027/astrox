@@ -1,15 +1,5 @@
-/**
- * Lib Cung Hoàng Đạo + Bản Đồ Sao + Tương Hợp — port từ MODULE 2 (ZODIAC) và
- * phần COMPATIBILITY của index.html.
- *
- * - Dữ liệu 12 cung, cách tính cung Mặt Trời, bản đồ sao (10 hành tinh, 12
- *   nhà, góc chiếu) giữ nguyên thuật toán cũ; window.Astronomy thay bằng
- *   `import * as Astronomy from "astronomy-engine"` — kết quả số học giống hệt.
- * - Prompt horoscope theo kỳ (hôm nay / tuần này / tháng này) port nguyên văn,
- *   gồm dữ liệu quá cảnh tính thật bằng astronomy-engine.
- * - Tương hợp: điểm % tĩnh theo quy tắc nguyên tố (lửa hút khí, đất hút nước,
- *   lửa–nước và đất–khí khắc nhau) trên đúng bảng nguyên tố của 12 cung cũ.
- */
+/** Tropical geocentric positions from Astronomy Engine; Placidus houses. */
+import { placidusCusps } from "./natal-houses";
 import * as Astronomy from "astronomy-engine";
 import { formatDob, HOUR_CHI_OPTIONS } from "./utils";
 import type { Profile } from "./types";
@@ -154,6 +144,7 @@ const NATAL_BODIES: Array<[string, string, string]> = [
 
 const VN_COORDS: Record<string, [number, number]> = {
   "Hà Nội": [21.0285, 105.8542],
+  "Sơn La": [21.328, 103.91],
   "TP. Hồ Chí Minh": [10.8231, 106.6297],
   "Đà Nẵng": [16.0544, 108.2022],
   "Hải Phòng": [20.8449, 106.6881],
@@ -182,7 +173,8 @@ function hourChiLabel(hourChi: string | undefined): string {
   return hourChi.split(" (")[0].trim();
 }
 
-export function natalTime(profile: Pick<Profile, "dob" | "hourChi">): Date {
+export function natalTime(profile: Pick<Profile, "dob" | "hourChi" | "birthTime">): Date {
+  if (profile.birthTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(profile.birthTime)) return new Date(`${profile.dob}T${profile.birthTime}:00+07:00`);
   const label = hourChiLabel(profile.hourChi);
   const mid = CHI_MID_HOUR[label];
   const known = label.length > 0 && mid !== undefined && HOUR_CHI_OPTIONS.some((o) => o.startsWith(label));
@@ -198,14 +190,8 @@ function localSidereal(date: Date, lon: number): number {
 
 /** Kinh độ hoàng đạo (tropical) của một hành tinh — đúng công thức app cũ. */
 function eclipticLongitude(body: string, date: Date, lat: number, lon: number): number {
-  if (body === "Moon") return Astronomy.EclipticGeoMoon(date).lon;
-  const A = Astronomy;
-  const bodyEnum = A.Body[body as keyof typeof A.Body];
-  const eq = A.Equator(bodyEnum, date, new A.Observer(lat, lon, 0), true, true);
-  const ra = eq.ra * 15 * (Math.PI / 180);
-  const dec = eq.dec * (Math.PI / 180);
-  const e = 23.4393 * (Math.PI / 180);
-  return (Math.atan2(Math.sin(ra) * Math.cos(e) + Math.tan(dec) * Math.sin(e), Math.cos(ra)) * 180) / Math.PI;
+  const bodyEnum = Astronomy.Body[body as keyof typeof Astronomy.Body];
+  return Astronomy.Ecliptic(Astronomy.GeoVector(bodyEnum, date, true)).elon;
 }
 
 /** Nhà chứa một kinh độ cho trước — đếm số đỉnh nhà đã vượt (vòng tròn). */
@@ -213,7 +199,8 @@ export function houseOf(longitude: number, houses: NatalHouse[]): number {
   let house = 12;
   for (const h of houses) {
     const diff = normDeg(longitude - h.longitude);
-    if (diff < 30) {
+    const next = houses[h.number % houses.length];
+    if (diff < normDeg(next.longitude - h.longitude)) {
       house = h.number;
       break;
     }
@@ -221,9 +208,12 @@ export function houseOf(longitude: number, houses: NatalHouse[]): number {
   return house;
 }
 
-export function buildNatalChart(profile: Pick<Profile, "dob" | "hourChi" | "place"> | null): NatalChart | null {
+export function buildNatalChart(profile: Pick<Profile, "dob" | "hourChi" | "place" | "birthTime"> | null): NatalChart | null {
   if (!profile?.dob) return null;
-  const [lat, lon] = VN_COORDS[profile.place] || VN_COORDS["Hà Nội"];
+  const normalizedPlace = profile.place.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const coordinates = Object.entries(VN_COORDS).find(([name]) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === normalizedPlace)?.[1];
+  if (!coordinates) return null;
+  const [lat, lon] = coordinates;
   const date = natalTime(profile);
 
   const planets: NatalPlanet[] = NATAL_BODIES.map(([body, name, symbol]) => {
@@ -231,20 +221,11 @@ export function buildNatalChart(profile: Pick<Profile, "dob" | "hourChi" | "plac
     return { body, name, symbol, longitude, sign: zodiacAt(longitude), house: 0 };
   });
 
-  const lst = localSidereal(date, lon);
-  const eps = 23.4393 * (Math.PI / 180);
-  const latRad = (lat * Math.PI) / 180;
-  const lstRad = (lst * Math.PI) / 180;
-  const asc = normDeg(
-    (Math.atan2(Math.cos(lstRad), -(Math.sin(lstRad) * Math.cos(eps) + Math.tan(latRad) * Math.sin(eps))) * 180) / Math.PI,
-  );
-  const mc = normDeg((Math.atan2(Math.sin(lstRad) * Math.cos(eps), Math.cos(lstRad)) * 180) / Math.PI);
-
-  const houses: NatalHouse[] = Array.from({ length: 12 }, (_, i) => normDeg(asc + i * 30)).map((longitude, i) => ({
-    number: i + 1,
-    longitude,
-    sign: zodiacAt(longitude),
-  }));
+  const lst = normDeg(Astronomy.SiderealTime(date) * 15 + lon);
+  const eps = Astronomy.e_tilt(Astronomy.MakeTime(date)).tobl;
+  const cusps = placidusCusps(lst, lat, eps);
+  const asc = cusps[0], mc = cusps[9];
+  const houses: NatalHouse[] = cusps.map((longitude,i)=>({number:i+1,longitude,sign:zodiacAt(longitude)}));
 
   for (const p of planets) p.house = houseOf(p.longitude, houses);
 

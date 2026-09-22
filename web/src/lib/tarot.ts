@@ -83,16 +83,7 @@ export const TAROT_DECKS: TarotDeck[] = [
     back: "",
     desc: "Sắp ra mắt — bộ bài minh hoạ chú chó Shiba.",
   },
-  {
-    id: "vajrayana",
-    name: "Vajrayana Tarot",
-    nameVi: "Tarot Kim Cương Thừa",
-    status: "soon",
-    base: "",
-    ext: "",
-    back: "",
-    desc: "Sắp ra mắt — bộ bài lấy cảm hứng từ Mật Tông Kim Cương Thừa.",
-  },
+
 ];
 
 export const TAROT_SPREADS: TarotSpread[] = [
@@ -265,7 +256,7 @@ export function buildTarotPrompt(input: TarotPromptInput): string {
       if (!card) return `${i + 1}. Vị trí "${positionLabels[i]}": ${c.id}`;
       const dir = c.reversed ? "NGƯỢC" : "XUÔI";
       const meaning = c.reversed ? card.rev : card.up;
-      return `${i + 1}. Vị trí "${positionLabels[i]}": ${card.nameVi} (${card.nameEn}) — ${dir}. Từ khoá: ${meaning.kw.join(", ")}. Ý nghĩa: ${meaning.text}`;
+      return `${i + 1}. Vị trí "${positionLabels[i]}": ${card.nameEn} — ${dir}. Từ khoá: ${meaning.kw.join(", ")}. Ý nghĩa: ${meaning.text}`;
     })
     .join("\n");
   const lengthHint = spread.count <= 1 ? "200-350" : spread.count <= 5 ? "420-650" : "750-1100";
@@ -277,6 +268,7 @@ Các lá đã rút (dữ liệu đã xác định sẵn theo đúng thứ tự v
 ${cardLines}
 
 Nhiệm vụ của bạn:
+Giữ nguyên tên tiếng Anh gốc của các lá bài trong toàn bộ luận giải, không dịch tên lá sang tiếng Việt.
 1. Luận giải từng vị trí theo đúng thứ tự trên — gắn ý nghĩa lá bài (xuôi/ngược, đã cho) với ý nghĩa của vị trí đó và câu hỏi.
 2. Chỉ ra mối liên hệ/tương tác đáng chú ý giữa các lá trong trải bài (ví dụ lặp chất bài, nhiều lá ngược, các lá bổ trợ hay mâu thuẫn nhau).
 3. Kết luận bằng một đoạn tổng hợp và một lời khuyên hành động cụ thể.

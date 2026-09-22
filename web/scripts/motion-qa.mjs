@@ -1,0 +1,33 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {mkdirSync} from 'node:fs';
+const base='http://localhost:3311';
+const browser=await chromium.launch({headless:true});
+const context=await browser.newContext({viewport:{width:390,height:844}});
+await context.addInitScript(()=>localStorage.setItem('astrox_v2_state',JSON.stringify({onboarded:true,profile:{name:'Minh Anh',gender:'Nữ',dob:'1991-06-15',hourChi:'Ngọ (11:00–12:59)',place:'Hà Nội'}})));
+await context.route('**/*',route=>{
+ if(route.request().url().endsWith('/api/ai'))return; // Hold local reading request to inspect the loading state.
+ return new URL(route.request().url()).origin===base&&['GET','HEAD'].includes(route.request().method())?route.continue():route.abort();
+});
+const page=await context.newPage();let errors=[];page.on('pageerror',e=>errors.push(e.message));
+mkdirSync('qa-report/motion-refinement',{recursive:true});
+await page.goto(base+'/tarot');
+assert.match(await page.locator('header.ax-liquid-topbar').evaluate(e=>getComputedStyle(e).backgroundImage),/0\.8/);
+await page.getByRole('button',{name:/Bắt đầu trải bài/}).click();
+await page.locator('[data-flying=true]').first().waitFor();
+const flight=await page.locator('[data-flying=true]').first().evaluate(e=>e.getAnimations().map(a=>a.effect.getKeyframes()));
+assert.ok(flight.some(frames=>frames.length===5&&frames[0].transform!==frames[4].transform));
+await page.waitForTimeout(450);await page.screenshot({path:'qa-report/motion-refinement/tarot-flight.png',fullPage:true});
+await page.getByRole('button',{name:'Luận giải trải bài'}).click();
+const phrase=page.locator('[data-loading-whisper=tarot]').last().locator('[aria-hidden=true]');
+const first=await phrase.textContent();await page.waitForTimeout(3100);const second=await phrase.textContent();assert.notEqual(first,second);assert.ok(!/\bAI\b/.test(second));
+await page.screenshot({path:'qa-report/motion-refinement/loading.png',fullPage:true});
+await page.goto(base+'/kinhdich');assert.equal(await page.locator('main canvas').count(),0);
+await page.screenshot({path:'qa-report/motion-refinement/tube-setup.png',fullPage:true});
+await page.getByRole('button',{name:/Xóc quẻ/}).click();await page.waitForTimeout(1550);
+await page.screenshot({path:'qa-report/motion-refinement/tube-ritual.png'});
+assert.equal(await page.getByRole('dialog',{name:'Nghi thức xóc quẻ'}).count(),1);
+await page.getByRole('button',{name:'Huỷ gieo quẻ'}).click();await page.waitForTimeout(300);
+assert.equal(await page.locator('dialog[open]').count(),0);
+assert.deepEqual(errors,[]);console.log('PASS header 80%, Tarot flight keyframes, rotating loading copy, 2.5D tube and cancel; no page errors');
+await browser.close();

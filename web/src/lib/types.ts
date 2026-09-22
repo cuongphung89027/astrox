@@ -9,6 +9,8 @@ export interface Profile {
   dob: string;
   /** Giờ sinh theo can giờ, ví dụ "Tí (23:00–01:00)". */
   hourChi: string;
+  /** Exact local time (HH:mm), when known. */
+  birthTime?: string;
   /** Nơi sinh (tự do). */
   place: string;
   /** Họ tên đầy đủ (tuỳ chọn — dùng cho Thần Số Học). */

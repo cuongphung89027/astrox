@@ -21,12 +21,14 @@ interface UseAiTextOptions {
   prompt: string;
   topic?: string;
   period?: string;
+  revealDelayMs?: number;
 }
 
-export function useAiText({ group, cacheKey, prompt, topic, period }: UseAiTextOptions) {
+export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayMs = 0 }: UseAiTextOptions) {
   const requireProfile = useRequireProfile();
   const { show } = useToast();
   const [text, setText] = useState<string>(() => readAiCache(group, cacheKey));
+  const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const abortRef = useRef<AbortController | null>(null);
@@ -34,6 +36,8 @@ export function useAiText({ group, cacheKey, prompt, topic, period }: UseAiTextO
   // Cache AI nằm trong store phi-reactive → khi đổi mục thì đọc lại chủ động.
   useEffect(() => {
     abortRef.current?.abort();
+    abortRef.current = null;
+    setCompleting(false);
     setLoading(false);
     setText(readAiCache(group, cacheKey));
     setError("");
@@ -55,11 +59,25 @@ export function useAiText({ group, cacheKey, prompt, topic, period }: UseAiTextO
       const ctrl = new AbortController();
       abortRef.current = ctrl;
       setError("");
+      setCompleting(false);
       setLoading(true);
       try {
         const result = await runAiPrompt(prompt, { withChartImage: false, signal: ctrl.signal });
         if (abortRef.current !== ctrl) return; // đã có yêu cầu mới thay thế
         writeAiCache(group, cacheKey, result, { module: "tuvi", topic: topic ?? "", period: period ?? "" });
+        if (revealDelayMs > 0) {
+          setCompleting(true);
+          await new Promise<void>((resolve) => {
+            const done = () => {
+              clearTimeout(timer);
+              ctrl.signal.removeEventListener("abort", done);
+              resolve();
+            };
+            const timer = setTimeout(done, revealDelayMs);
+            ctrl.signal.addEventListener("abort", done, { once: true });
+          });
+          if (abortRef.current !== ctrl || ctrl.signal.aborted) return;
+        }
         setText(result);
       } catch (e) {
         if (abortRef.current !== ctrl) return;
@@ -71,11 +89,11 @@ export function useAiText({ group, cacheKey, prompt, topic, period }: UseAiTextO
         setError(msg);
         show(msg, "error");
       } finally {
-        if (abortRef.current === ctrl) setLoading(false);
+        if (abortRef.current === ctrl) { setLoading(false); setCompleting(false); }
       }
     },
-    [group, cacheKey, prompt, topic, period, requireProfile, show],
+    [group, cacheKey, prompt, topic, period, requireProfile, show, revealDelayMs],
   );
 
-  return { text, loading, error, run };
+  return { text, loading, completing, error, run };
 }

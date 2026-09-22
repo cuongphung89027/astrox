@@ -1,0 +1,106 @@
+.page { width: min(1120px,100%); margin: auto; padding: 24px clamp(16px,3vw,36px) 40px; color: #244d40; }
+.hero { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0,1fr) 180px; align-items: center; padding: 28px; border-radius: 24px; color: #f5efdb; background: radial-gradient(ellipse at 90% 0%,#527b5e80,transparent 65%),#214b3d; }
+.heroCopy > span { font-size: 9px; letter-spacing: .17em; color: #c0c6a4; }
+.hero h2 { font-family: var(--font-display); font-size: clamp(34px,4vw,48px); line-height: 1.2; margin: 12px 0 8px; }
+.heroCopy p { font-size: 12px; color: #c3cdb5; overflow-wrap: anywhere; }
+.heroCopy button { margin-top: 18px; font-size: 11px; border-bottom: 1px solid #ffffff30; padding-bottom: 3px; cursor: pointer; }
+.orb { display: grid; place-items: center; justify-self: center; width: 138px; height: 138px; border: 1px solid #d5c79955; border-radius: 50%; box-shadow: 0 0 0 13px #ffffff03,0 0 0 14px #d5c79920,0 0 0 29px #ffffff02; }
+.orb span { font-size: 64px; font-family: serif; color: #dfd4ab; }
+.facts { grid-column: 1/-1; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); margin-top: 28px; padding-top: 18px; border-top: 1px solid #ffffff15; gap: 12px; }
+.facts div { display: grid; gap: 5px; }
+.facts span { font-size: 10px; color: #aebd9f; }
+.facts strong { font-weight: 400; font-size: 14px; }
+.explore { margin: 16px 0; }
+.explore summary { display: flex; justify-content: space-between; padding: 12px 4px; cursor: pointer; font-size: 13px; list-style: none; }
+.explore summary::-webkit-details-marker { display: none; }
+.signs { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 8px; padding: 8px 0; }
+.signs button { display: grid; place-items: center; gap: 6px; min-width: 0; padding: 14px 5px; border: 1px solid #dce2d0; border-radius: 14px; background: #fffdf580; cursor: pointer; }
+.signs button[aria-pressed=true] { background: #e4ecd9; border-color: #8fA381; }
+.signs button > span { font-size: 25px; }
+.signs strong { font-size: 12px; font-weight: 500; }
+.signs small { font-size: 9px; color: #8a957c; }
+.backToMine { font-size: 12px; margin: 12px 0; cursor: pointer; }
+.tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); padding: 5px; gap: 4px; border: 1px solid #ffffffb0; border-radius: 16px; background: #f4f3e8c9; margin-bottom: 20px; }
+.tabs button { min-height: 45px; border-radius: 12px; font-size: 14px; color: #819076; cursor: pointer; transition: background 180ms,color 180ms; }
+.tabs button[aria-selected=true] { background: #244d40; color: #fff6df; }
+.content { animation: enter 250ms ease-out; min-width: 0; }
+.topicChoices { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.topicChoices button { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; text-align: left; min-width: 0; padding: 18px; border: 1px solid #dee3d2; border-radius: 16px; background: #fffdf580; cursor: pointer; }
+.topicChoices button[aria-pressed=true] { border-color: #a4b595; background: #e9eedf; }
+.topicChoices span { font-size: 10px; color: #96a081; }
+.topicChoices strong { font-size: 14px; font-weight: 500; }
+.topicChoices i { position: absolute; top: 15px; right: 14px; font-style: normal; font-size: 12px; color: #89977a; }
+.result { margin-top: 20px; }
+.loading { display: grid; justify-items: center; gap: 16px; padding: 40px 15px; }
+.forecast { padding: 22px; border: 1px solid #e0e4d3; border-radius: 20px; background: #fffdf570; }
+.welcome { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 44px 22px; border: 1px solid #ffffffb0; border-radius: 24px; background: radial-gradient(ellipse at top,#dde7d6,transparent),#fffdf580; }
+.welcome > span { font-size: 9px; letter-spacing: .17em; color: #8c967b; margin-top: 26px; }
+.welcome h2 { font-family: var(--font-display); font-size: 32px; margin: 12px 0; }
+.welcome p { max-width: 300px; font-size: 13px; line-height: 1.8; color: #819075; }
+.welcome button { display: flex; justify-content: space-between; width: min(340px,100%); padding: 15px 18px; background: #244d40; color: #fff5df; border-radius: 13px; margin-top: 26px; cursor: pointer; }
+.natal { min-width: 0; }
+.natal table { font-size: 12px; }
+.page button:focus-visible,.explore summary:focus-visible { outline: 2px solid #ad945e; outline-offset: 3px; }
+@keyframes enter { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@media(max-width:600px) { .hero { padding: 22px 20px; grid-template-columns: minmax(0,1fr) 100px; } .orb { width: 82px; height: 82px; } .orb span { font-size: 44px; } .signs { grid-template-columns: repeat(3,minmax(0,1fr)); } .topicChoices { gap: 7px; } .topicChoices button { padding: 14px 10px; } .topicChoices strong { font-size: 12px; } .forecast { padding: 16px 12px; } .facts strong { font-size: 12px; } }
+@media(prefers-reduced-motion:reduce) { .content { animation: none; } .tabs button { transition: none; } }
+.periodBar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: 8px; container-type: inline-size; }
+.periodBar .periodTabs { flex: 1 1 auto; min-width: 0; max-width: 340px; gap: 0; overflow: visible; }
+.periodTabs > button { flex: 1 1 0; min-width: 0; padding: 8px clamp(3px,1.6cqi,14px); font-size: clamp(10px,3cqi,14px); }
+.periodBadge { flex: 0 0 auto; white-space: nowrap; border-radius: 30px; background: #fff1cd; color: #a87824; padding: 5px clamp(5px,2cqi,12px); font-size: clamp(8px,2.3cqi,11px); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+@container (max-width:300px) { .periodBadge { letter-spacing: 0; } }
+.chartLayout { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 22px; align-items: start; }
+.skyMap { min-width: 0; padding: 26px 14px 20px; background: radial-gradient(circle at 50% 48%,#e4ebd8,transparent 70%),#fffdf580; border: 1px solid #e0e5d3; border-radius: 24px; }
+.skyMap header { text-align: center; margin-bottom: 22px; }
+.skyMap header > span { font-size: 9px; letter-spacing: .18em; color: #8f977d; }
+.skyMap h2 { font-family: var(--font-display); font-size: 30px; margin-top: 7px; }
+.skyMap svg { filter: drop-shadow(0 4px 12px #244d4008); }
+.mapLegend { display: flex; justify-content: center; gap: 24px; font-size: 10px; color: #7d8c6d; padding-top: 18px; }
+.chartSidebar { min-width: 0; }
+.bigThree { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-radius: 18px; background: #254e40; padding: 20px 8px; color: #faf2d8; }
+.bigThree > div { display: grid; text-align: center; gap: 7px; padding: 0 4px; }
+.bigThree > div + div { border-left: 1px solid #ffffff20; }
+.bigThree span { font-size: 10px; color: #b7c5a6; }
+.bigThree strong { font-family: var(--font-display); font-size: 20px; font-weight: 400; }
+.bigThree small { font-size: 10px; opacity: .65; }
+.chartNote { font-size: 10px; color: #8c967d; line-height: 1.7; padding: 12px 5px 18px; }
+.chartDisclosure { border-top: 1px solid #d9dfcd; }
+.chartDisclosure summary { display: flex; align-items: center; justify-content: space-between; min-height: 60px; cursor: pointer; list-style: none; font-size: 15px; }
+.chartDisclosure summary::-webkit-details-marker { display: none; }
+.chartDisclosure summary > span { display: flex; align-items: center; gap: 14px; font-size: 11px; color: #8d997a; }
+.chartDisclosure summary > span::after { content: '+'; font-size: 18px; }
+.chartDisclosure[open] summary > span::after { content: '−'; }
+.planetList { padding-bottom: 15px; }
+.planetList > div { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid #dce2d160; }
+.planetList > div > span { font-size: 12px; }
+.planetList strong { text-align: right; font-size: 13px; font-weight: 500; }
+.planetList small,.houseList small { display: block; margin-top: 3px; font-size: 10px; color: #8a957c; font-weight: 400; }
+.houseList { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding-bottom: 20px; }
+.houseList > div { display: flex; gap: 12px; padding: 12px; background: #fffdf580; border-radius: 12px; }
+.houseList > div > span { color: #a2a78a; font-size: 11px; }
+.houseList strong { font-size: 12px; font-weight: 500; }
+.aspectList > div { padding: 12px 0; border-bottom: 1px solid #dce2d160; }
+.aspectList strong { display: block; font-size: 13px; font-weight: 400; }
+.aspectList strong > span { margin: 0 6px; color: #a8ad90; }
+.aspectList small { font-size: 11px; color: #889779; }
+@media(max-width:767px) { .chartLayout { grid-template-columns: minmax(0,1fr); gap: 18px; } .skyMap { padding: 22px 8px 18px; } .skyMap h2 { font-size: 27px; } .bigThree strong { font-size: 18px; } }
+.chartSidebar { grid-column: 2; grid-row: 1 / span 2; }
+.matrixSection { grid-column: 1; padding: 24px; border: 1px solid #dce3cf; border-radius: 24px; background: linear-gradient(145deg,#fffdf7,#eaf0e180); min-width: 0; }
+.matrixSection header > span { font-size: 9px; letter-spacing: .15em; color: #939b7f; }
+.matrixSection h3 { font-family: var(--font-display); font-size: 29px; margin: 8px 0; }
+.matrixSection header p { font-size: 12px; line-height: 1.6; color: #869377; }
+.matrix { display: grid; gap: 3px; margin: 24px 0; }
+.matrix button,.matrixPlanet { aspect-ratio: 1; display: grid; place-items: center; min-width: 0; padding: 0; font-size: clamp(12px,2vw,20px); border-radius: 6px; }
+.matrixPlanet { background: #244d40; color: #f3edd4; font-family: serif; }
+.matrix button { border: 1px solid #d4ddc5; background: #ffffff90; color: #54795b; cursor: pointer; transition: background 160ms,box-shadow 160ms; }
+.matrix button[data-tone=tension] { color: #a18552; background: #f5eedc90; }
+.matrix button:hover,.matrix button[aria-pressed=true] { background: #dce8d1; box-shadow: inset 0 0 0 1px #6e8d60; }
+.noAspect { opacity: .25; }
+.matrixSelection { padding: 16px; border-radius: 13px; background: #e6eddc90; min-height: 84px; }
+.matrixSelection strong { font-size: 13px; font-weight: 500; }
+.matrixSelection strong span { margin: 0 7px; opacity: .4; }
+.matrixSelection p { margin-top: 5px; font-size: 11px; line-height: 1.7; color: #7b896f; }
+.matrixLegend { display: flex; flex-wrap: wrap; gap: 12px 16px; margin-top: 18px; }
+.matrixLegend > span { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #829174; }
+.matrixLegend b { font-size: 16px; font-weight: 400; color: #577250; }
+@media(max-width:767px) { .chartSidebar { grid-column: 1; grid-row: auto; } .matrixSection { padding: 20px 14px; } .matrix button,.matrixPlanet { font-size: 16px; border-radius: 4px; } }

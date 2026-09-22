@@ -8,6 +8,7 @@
  * Supabase-only sẽ thấy ghi chú chuyển hướng (AuthMenu đã lọc trước, đây là
  * lớp phòng khi panel được mở từ nơi khác).
  */
+import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import {
@@ -242,7 +243,7 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
               {pkgError ? (
                 <p className="col-span-full text-[13px] font-medium text-son">Không tải được gói nạp. Thử lại sau.</p>
               ) : packages.length === 0 ? (
-                <p className="col-span-full text-[13px] font-medium text-muc-2">Đang tải gói nạp…</p>
+                <p className="col-span-full text-[13px] font-medium text-muc-2"><LoadingWhisper kind="packages"/></p>
               ) : (
                 packages.map((p) => {
                   const busy = buying === p.amount_vnd;
@@ -319,7 +320,7 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
                 {historyError ? (
                   <p className="font-medium text-son">Không tải được lịch sử.</p>
                 ) : history === null ? (
-                  <p className="font-medium text-muc-2">Đang tải…</p>
+                  <p className="font-medium text-muc-2"><LoadingWhisper kind="payment"/></p>
                 ) : history.length === 0 ? (
                   <p className="font-medium text-muc-2">Chưa có giao dịch nào.</p>
                 ) : (

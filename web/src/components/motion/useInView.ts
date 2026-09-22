@@ -25,10 +25,13 @@ export function useInView<T extends HTMLElement>(options?: UseInViewOptions) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Fallback: nếu IO không gắn được (hydration lỗi / browser lạ), vẫn hiện
+    // nội dung — tránh hero/CTA kẹt opacity:0 vĩnh viễn.
+    const failSafe = setTimeout(() => setInView(true), 1200);
     // Môi trường không có IntersectionObserver (ct cũ) => hiện luôn.
     if (typeof IntersectionObserver === "undefined") {
       setInView(true);
-      return;
+      return () => clearTimeout(failSafe);
     }
     const io = new IntersectionObserver(
       (entries) => {
@@ -44,7 +47,10 @@ export function useInView<T extends HTMLElement>(options?: UseInViewOptions) {
       { threshold, rootMargin },
     );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      clearTimeout(failSafe);
+      io.disconnect();
+    };
     // Chạy 1 lần khi mount — options coi như bất biến với caller.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

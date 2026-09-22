@@ -1,181 +1,102 @@
 "use client";
 
-/**
- * ChartBoard — bánh lá số 12 cung, lưới 4×4 kiểu lá số truyền thống nhưng theo
- * design system "Mặt Trời Đông Sơn": mỗi cung 1 GlassCard, cung Mệnh viền son +
- * DongSonSun nhỏ. Sao chip màu theo ngũ hành (Kim vàng, Mộc ngọc, Thủy chàm,
- * Hỏa son, Thổ nâu kem-2). Reveal stagger dùng đúng cơ chế ax-stagger sẵn có.
- * Mobile: lưới giữ 4 cột trong khung cuộn ngang để chữ vẫn đọc được.
- */
-import { GlassCard } from "@/components/kit";
-import { DongSonSun } from "@/components/kit/motifs";
-import { NumberPopIn, PanelReveal, ShimmerText, useInView } from "@/components/motion";
-import { menhPalace, starElement, yearStemBranch, type ZiweiChart, type ZiweiPalace, type ZiweiStar, type StarElement } from "@/lib/tuvi";
+import { useState, useRef, useEffect, type CSSProperties } from "react";
+import { menhPalace, starElement, yearStemBranch, type ZiweiChart, type ZiweiStar } from "@/lib/tuvi";
 import type { Profile } from "@/lib/types";
 import { formatDob } from "@/lib/utils";
+import { zodiacAsset } from "@/lib/earthly-branches";
+import styles from "./ChartBoard.module.css";
 
-const STAR_TONES: Record<StarElement, string> = {
-  Kim: "bg-kim-tint text-kim-deep",
-  Mộc: "bg-ngoc-tint text-ngoc-deep",
-  Thủy: "bg-cham/10 text-cham",
-  Hỏa: "bg-son-tint text-son-deep",
-  Thổ: "bg-kem-2 text-muc-2",
+// Fixed earthly-branch positions around the central 2 × 2 space.
+const POSITIONS: Record<string, [number, number]> = {
+  "Tỵ": [1, 1], "Tị": [1, 1], "Ngọ": [1, 2], "Mùi": [1, 3], "Thân": [1, 4],
+  "Thìn": [2, 1], "Dậu": [2, 4], "Mão": [3, 1], "Tuất": [3, 4],
+  "Dần": [4, 1], "Sửu": [4, 2], "Tý": [4, 3], "Tí": [4, 3], "Hợi": [4, 4],
 };
+const BRANCHES = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
+const branchIndex = (branch: string) => BRANCHES.indexOf(branch === "Tí" ? "Tý" : branch === "Tị" ? "Tỵ" : branch);
+const TONES: Record<string, string> = { Kim: "#8b681f", Mộc: "#266647", Thủy: "#31568e", Hỏa: "#a83f38", Thổ: "#845735" };
 
-function StarChip({ star }: { star: ZiweiStar }) {
-  const el = starElement(star.name);
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none md:text-[11px] ${
-        el ? STAR_TONES[el] : "bg-white/70 text-muc-2"
-      }`}
-    >
-      {star.name}
-      {star.mutagen ? <span className="text-[9px] font-extrabold">{star.mutagen}</span> : null}
-    </span>
-  );
-}
-
-interface CellProps {
-  p: ZiweiPalace;
-  isMenh: boolean;
-  delayMs: number;
-}
-
-function PalaceCell({ p, isMenh, delayMs }: CellProps) {
-  const minors = [...p.minorStars, ...p.adjectiveStars].slice(0, 8);
-  return (
-    <li
-      className="ax-stagger-line"
-      style={{ transitionDelay: `${delayMs}ms` }}
-      aria-label={`Cung ${p.name} tại ${p.earthlyBranch}`}
-    >
-      <GlassCard
-        className={`flex h-full flex-col gap-1.5 p-3 transition-transform duration-200 hover:-translate-y-0.5 ${
-          isMenh ? "ring-2 ring-son" : ""
-        }`}
-      >
-        <div className="flex items-center justify-between gap-1 text-[10px] font-extrabold uppercase tracking-[0.12em] text-muc-2">
-          <span>{p.earthlyBranch}</span>
-          <span className="font-semibold normal-case tracking-normal text-muc-2/70">{p.decadal}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {isMenh ? <DongSonSun size={14} className="shrink-0 text-son" /> : null}
-          <span className="font-display text-[13px] font-extrabold tracking-tight text-muc md:text-sm">{p.name}</span>
-          {p.isBodyPalace ? (
-            <span className="gold-ring inline-flex items-center rounded-full bg-kim-tint px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.08em] text-kim-deep">
-              Thân
-            </span>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {p.majorStars.length ? (
-            p.majorStars.map((s) => <StarChip key={s.name} star={s} />)
-          ) : (
-            <span className="text-[10px] italic text-muc-2">Vô chính diệu</span>
-          )}
-        </div>
-        {minors.length ? (
-          <div className="flex flex-wrap gap-1">
-            {minors.map((s, i) => (
-              <StarChip key={`${s.name}-${i}`} star={s} />
-            ))}
-          </div>
-        ) : null}
-        <p className="mt-auto pt-1 text-[10px] font-semibold text-muc-2/80">
-          {[p.changSheng, p.isOriginalPalace ? "Lai Nhân" : ""].filter(Boolean).join(" · ")}
-        </p>
-      </GlassCard>
-    </li>
-  );
-}
-
-function ChartCenter({ chart, profile, delayMs }: { chart: ZiweiChart; profile: Profile; delayMs: number }) {
-  const menh = menhPalace(chart);
-  return (
-    <li className="col-span-2 row-span-2 ax-stagger-line" style={{ transitionDelay: `${delayMs}ms` }}>
-      <div className="glass flex h-full flex-col items-center justify-center gap-2 rounded-[var(--radius-card)] p-4 text-center">
-        <DongSonSun size={46} className="text-son" />
-        <p className="font-display text-lg font-extrabold tracking-tight text-muc md:text-xl">
-          {profile.name || "Lá số của bạn"}
-        </p>
-        <p className="text-[11px] leading-relaxed text-muc-2 md:text-xs">
-          {formatDob(profile.dob)} · {profile.gender} · Giờ {profile.hourChi}
-        </p>
-        {chart.meta.fiveElementsClass ? (
-          <ShimmerText text={chart.meta.fiveElementsClass} className="text-sm font-extrabold" />
-        ) : null}
-        <p className="text-[11px] leading-relaxed text-muc-2">
-          Mệnh chủ: {chart.meta.soul || "—"} · Thân chủ: {chart.meta.body || "—"}
-        </p>
-        <p className="text-[11px] text-muc-2">
-          Mệnh tại {menh?.earthlyBranch || "—"}
-          {chart.meta.zodiac ? ` · Con giáp: ${chart.meta.zodiac}` : ""}
-        </p>
-      </div>
-    </li>
-  );
-}
-
-function SummaryRow({ chart }: { chart: ZiweiChart }) {
-  const menh = menhPalace(chart);
-  const menhStars = menh ? menh.majorStars.map((s) => s.name).join(" · ") : "";
-  const stats = [
-    { label: "Mệnh chính", value: menhStars || "Vô chính diệu", pop: false, shimmer: false },
-    { label: "Cung Mệnh", value: menh ? `${menh.name} tại ${menh.earthlyBranch}` : "—", pop: false, shimmer: false },
-    { label: "Ngũ hành bản mệnh", value: chart.meta.fiveElementsClass || "—", pop: false, shimmer: true },
-    { label: "Thiên can năm sinh", value: yearStemBranch(chart), pop: true, shimmer: false },
-  ];
-  return (
-    <ul className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
-      {stats.map((st) => (
-        <li key={st.label}>
-          <GlassCard className="flex h-full flex-col gap-1.5 p-4">
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-muc-2">{st.label}</span>
-            {st.pop ? (
-              <NumberPopIn value={st.value} className="font-display text-lg font-extrabold text-muc md:text-xl" />
-            ) : st.shimmer ? (
-              <ShimmerText text={st.value} className="font-display text-lg font-extrabold md:text-xl" />
-            ) : (
-              <span className="font-display text-lg font-extrabold text-muc md:text-xl">{st.value}</span>
-            )}
-          </GlassCard>
-        </li>
-      ))}
-    </ul>
-  );
+function Star({ star }: { star: ZiweiStar }) {
+  return <span className={styles.star} style={{ color: TONES[starElement(star.name) || ""] }}>
+    {star.name}{star.brightness && <small> ({star.brightness})</small>}{star.mutagen && <b className={styles.mutagen}> {star.mutagen}</b>}
+  </span>;
 }
 
 export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Profile }) {
-  // Cơ chế reveal: container .ax-stagger + .is-shown (useInView) — đúng CSS sẵn có.
-  const { ref, inView } = useInView<HTMLUListElement>();
-  const isMenh = (p: ZiweiPalace) => p.name === "Mệnh";
-
-  // Thứ tự ô port từ renderZiweiNative: 0..4, trung tâm 2×2, 5..11.
-  const head = chart.palaces.slice(0, 5);
-  const tail = chart.palaces.slice(5);
-
-  return (
-    <PanelReveal open className="space-y-4">
-      <SummaryRow chart={chart} />
-      <div className="overflow-x-auto">
-        <ul
-          ref={ref}
-          className={`ax-stagger grid min-w-[640px] grid-cols-4 gap-2 md:min-w-0 md:gap-3 ${inView ? "is-shown" : ""}`}
-        >
-          {head.map((p, i) => (
-            <PalaceCell key={p.index} p={p} isMenh={isMenh(p)} delayMs={100 + i * 45} />
-          ))}
-          <ChartCenter chart={chart} profile={profile} delayMs={100 + 5 * 45} />
-          {tail.map((p, i) => (
-            <PalaceCell key={p.index} p={p} isMenh={isMenh(p)} delayMs={100 + (i + 6) * 45} />
-          ))}
-        </ul>
+  const menh = menhPalace(chart);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [anchors, setAnchors] = useState<Record<string, [number, number]>>({});
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    const measure = () => {
+      const bounds = board.getBoundingClientRect();
+      if (!bounds.width || !bounds.height) return;
+      const next: Record<string, [number, number]> = {};
+      board.querySelectorAll<HTMLElement>("[data-branch]").forEach(cell => {
+        const branch = cell.dataset.branch!;
+        const [row, col] = POSITIONS[branch] || [1, 1];
+        const rect = cell.getBoundingClientRect();
+        const x = col === 1 ? rect.right : col === 4 ? rect.left : rect.left + rect.width / 2;
+        const y = row === 1 ? rect.bottom : row === 4 ? rect.top : rect.top + rect.height / 2;
+        next[branch] = [(x - bounds.left) / bounds.width * 100, (y - bounds.top) / bounds.height * 100];
+      });
+      setAnchors(next);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(board);
+    board.querySelectorAll("[data-branch]").forEach(cell => observer.observe(cell));
+    measure();
+    return () => observer.disconnect();
+  }, [chart]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const active = selected ?? hovered;
+  const activeIndex = active ? branchIndex(active) : -1;
+  const related = activeIndex < 0 ? [] : [0, 4, 8, 6].map(offset => chart.palaces.find(p => branchIndex(p.earthlyBranch) === (activeIndex + offset) % 12)).filter(p => p !== undefined);
+  const points = related.map(p => anchors[p.earthlyBranch]).filter((point): point is [number, number] => !!point);
+  const toggle = (branch: string) => { setSelected(current => current === branch ? null : branch); setHovered(null); };
+  return <div>
+    <div className={styles.scroll} role="region" aria-label="Lá số đầy đủ 12 cung">
+      <div ref={boardRef} className={styles.board} data-active={!!active} onPointerLeave={() => setHovered(null)} onKeyDown={e => { if (e.key === "Escape") { setSelected(null); setHovered(null); } }}>
+        {points.length === 4 && <svg className={styles.connections} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <polygon points={points.slice(0, 3).map(p => p.join(",")).join(" ")} className={styles.trine} />
+          <line x1={points[0][0]} y1={points[0][1]} x2={points[3][0]} y2={points[3][1]} className={styles.opposition} />
+        </svg>}
+        {chart.palaces.map(p => {
+          const [row, column] = POSITIONS[p.earthlyBranch] || [1, 1];
+          return <section key={p.index} data-branch={p.earthlyBranch} aria-label={`Cung ${p.name} tại ${p.earthlyBranch}`} className={styles.palace} data-related={related.some(item => item.index === p.index)} data-selected={active === p.earthlyBranch}
+            onPointerEnter={e => { if (e.pointerType === "mouse") setHovered(p.earthlyBranch); }} data-menh={p.name === "Mệnh"} style={{ gridRow: row, gridColumn: column } as CSSProperties}>
+            <img className={styles.zodiacWatermark} src={zodiacAsset(p.earthlyBranch)} alt="" aria-hidden="true" width={180} height={180} />
+            <header><span>{p.heavenlyStem} {p.earthlyBranch}</span><span>{p.decadal}</span></header>
+            <h3><button type="button" className={styles.palaceButton} aria-label={`Chọn cung ${p.name} tại ${p.earthlyBranch}`} aria-pressed={selected === p.earthlyBranch} onClick={() => toggle(p.earthlyBranch)} onFocus={() => setHovered(p.earthlyBranch)} onBlur={() => setHovered(null)}>{p.name}{p.isBodyPalace && <small> · THÂN</small>}</button></h3>
+            <div className={styles.major}>{p.majorStars.length ? p.majorStars.map((s, i) => <Star key={i} star={s} />) : <span className={styles.noMajor}>Vô chính diệu</span>}</div>
+            <div className={styles.minor}>{[...p.minorStars, ...p.adjectiveStars].map((s, i) => <Star key={i} star={s} />)}</div>
+            <footer><span>{p.changSheng}</span>{p.isOriginalPalace && <span>Lai Nhân</span>}</footer>
+          </section>;
+        })}
+        <section className={styles.center} aria-label="Thông tin trung tâm lá số">
+          <p className={styles.brand}>ASTROX · TỬ VI ĐẨU SỐ</p>
+          <h2>{profile.name || "Lá số Tử Vi"}</h2>
+          <dl>
+            <div><dt>Ngày sinh</dt><dd>{formatDob(profile.dob)}</dd></div>
+            <div><dt>Năm sinh</dt><dd>{yearStemBranch(chart)}</dd></div>
+            <div><dt>Giờ sinh</dt><dd>{profile.hourChi}</dd></div>
+            <div><dt>Giới tính</dt><dd>{profile.gender}</dd></div>
+            <div><dt>Cục</dt><dd>{chart.meta.fiveElementsClass || "—"}</dd></div>
+            <div><dt>Mệnh chủ</dt><dd>{chart.meta.soul || "—"}</dd></div>
+            <div><dt>Thân chủ</dt><dd>{chart.meta.body || "—"}</dd></div>
+            <div><dt>Mệnh tại</dt><dd>{menh?.earthlyBranch || "—"}</dd></div>
+          </dl>
+          <p className={styles.centerNote}>Thông tin lấy từ hồ sơ của bạn</p>
+        </section>
       </div>
-      <p className="text-xs leading-relaxed text-muc-2">
-        Cung viền son là cung <strong className="font-bold text-muc">Mệnh</strong>. Chip màu theo ngũ hành sao: vàng
-        (Kim), ngọc (Mộc), chàm (Thủy), son (Hỏa), nâu kem (Thổ).
-      </p>
-    </PanelReveal>
-  );
+    </div>
+    <div className={styles.relationship}>
+      <p aria-live="polite">{related.length === 4 ? <><strong>{related[0].name}</strong><span> · Tam hợp: {related[1].name}, {related[2].name}</span><span> · Xung chiếu: {related[3].name}</span></> : "Chạm một cung để xem tam hợp và xung chiếu."}</p>
+      {selected && <button type="button" onClick={() => { setSelected(null); setHovered(null); }}>Bỏ chọn ×</button>}
+    </div>
+    <p className={styles.legend}>Đường xanh: tam hợp · Đường vàng: xung chiếu. Màu chữ sao thể hiện ngũ hành.</p>
+  </div>;
 }

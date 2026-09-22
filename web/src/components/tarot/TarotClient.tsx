@@ -4,11 +4,13 @@
  * TarotClient — nghi thức trải bài Tarot, port tinh thần từ view "tarot" của
  * app cũ: chọn bộ bài (raccoon khả dụng) → câu hỏi (tuỳ chọn) → chọn kiểu
  * trải (1 lá / 3 lá 3 khung / Thánh Giá / Tình Yêu / Celtic Cross) → rút bài
- * ngẫu nhiên kèm chiều xuôi/ngược → lật từng lá từ quạt bài úp (flip 3D) →
+ * ngẫu nhiên kèm chiều xuôi/ngược → tự rút và lật đủ lá (flip 3D) →
  * AI tổng hợp (cache "tarot"). Tarot tự do rút bài; AI cần hồ sơ.
  */
+import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
+import { ReadingQuestion } from "@/components/kit/ReadingQuestion";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Btn, Chip, GlassCard, SectionTitle, TopicTabs } from "@/components/kit";
+import { GlassCard } from "@/components/kit";
 import { useToast } from "@/components/motion/toast";
 import { useProfile } from "@/lib/use-store";
 import {
@@ -16,6 +18,7 @@ import {
   peekTarotCards,
   drawCards,
   tarotDeckById,
+  tarotCardById,
   tarotPositionsForFlow,
   tarotSpreadById,
   TAROT_DECKS,
@@ -26,6 +29,8 @@ import {
 import { InterpretationPanel } from "./InterpretationPanel";
 import { TarotCardSlot, type DrawnSlot } from "./TarotCardSlot";
 import { TarotFan } from "./TarotFan";
+import styles from "./Tarot.module.css";
+import { DeckPicker } from "./DeckPicker";
 
 export function TarotClient() {
   const profile = useProfile();
@@ -38,10 +43,9 @@ export function TarotClient() {
   const [cardsData, setCardsData] = useState<TarotCard[] | null>(peekTarotCards());
   const [cardsErr, setCardsErr] = useState(false);
 
-  const [phase, setPhase] = useState<"setup" | "ritual">("setup");
+  const [phase, setPhase] = useState<"setup" | "shuffling" | "ritual">("setup");
   const [pool, setPool] = useState<DrawnCard[]>([]);
   const [drawn, setDrawn] = useState<DrawnSlot[]>([]);
-  const [busy, setBusy] = useState(false);
 
   const timersRef = useRef<number[]>([]);
   const boardRef = useRef<HTMLDivElement | null>(null);
@@ -70,8 +74,7 @@ export function TarotClient() {
 
   // Dọn timer khi rời trang
   useEffect(() => {
-    const timers = timersRef.current;
-    return () => timers.forEach((t) => clearTimeout(t));
+    return () => timersRef.current.forEach((t) => clearTimeout(t));
   }, []);
 
   const later = (fn: () => void, ms: number) => {
@@ -81,34 +84,26 @@ export function TarotClient() {
 
   /* --------------------- Nghi thức rút bài --------------------- */
   const startDraw = () => {
+    if (deck.status !== "available") return;
     if (!cardsData || cardsData.length === 0) {
       fetchCards();
       return;
     }
     timersRef.current.forEach((t) => clearTimeout(t));
     timersRef.current = [];
-    setPool(drawCards(cardsData, spread.count));
+    const nextPool = drawCards(cardsData, spread.count);
+    setPool(nextPool);
     setDrawn([]);
-    setBusy(false);
-    setPhase("ritual");
-    later(() => boardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
-  };
-
-  const drawNext = () => {
-    if (busy || phase !== "ritual") return;
-    const nextIdx = drawn.length;
-    if (nextIdx >= pool.length) return;
-    setBusy(true);
-    const entry = pool[nextIdx];
-    setDrawn((prev) => [...prev, { entry, flipped: false, revealed: false }]);
-    // 380ms giữ lá úp + hào quang → lật 3D (transition 700ms) → lộ nhãn + kết quả
-    later(() => {
-      setDrawn((prev) => prev.map((s, i) => (i === nextIdx ? { ...s, flipped: true } : s)));
-    }, 380);
-    later(() => {
-      setDrawn((prev) => prev.map((s, i) => (i === nextIdx ? { ...s, revealed: true } : s)));
-      setBusy(false);
-    }, 1150);
+    setPhase("shuffling");
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motion === "reduced";
+    const shuffleMs = reduced ? 80 : 1050;
+    later(() => setPhase("ritual"), shuffleMs);
+    nextPool.forEach((entry, index) => {
+      const arrival = shuffleMs + (reduced ? 0 : index * 850);
+      later(() => setDrawn(previous => [...previous, { entry, flipped: false, revealed: false }]), arrival);
+      later(() => setDrawn(previous => previous.map((slot, i) => i === index ? { ...slot, flipped: true } : slot)), arrival + (reduced ? 20 : 420));
+      later(() => setDrawn(previous => previous.map((slot, i) => i === index ? { ...slot, revealed: true } : slot)), arrival + (reduced ? 40 : 1350));
+    });
   };
 
   const resetToSetup = () => {
@@ -116,177 +111,50 @@ export function TarotClient() {
     timersRef.current = [];
     setPool([]);
     setDrawn([]);
-    setBusy(false);
     setPhase("setup");
   };
 
-  useEffect(() => {
-    if (complete) later(() => interpRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 250);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [complete]);
-
-  const title = spread.frames ? `${spread.name} — ${spread.frames.find((f) => f.id === frameId)?.label ?? ""}` : spread.name;
-
   /* ------------------------------ Render ------------------------------ */
   return (
-    <section className="mx-auto w-full max-w-5xl px-5 py-14">
-      <SectionTitle
-        eyebrow="Tarot"
-        title="AstroX Tarot"
-        sub="Chọn bộ bài, đặt câu hỏi và kiểu trải bài để AstroX giúp bạn tìm ra câu trả lời nhé."
-      />
-
+    <section className={styles.page}>
+      <h1 className="sr-only">Tarot</h1>
       {phase === "setup" ? (
-        <>
-          {/* ------------------------- Chọn bộ bài ------------------------- */}
-          <GlassCard className="mt-8 p-5 sm:p-6">
-            <p className="font-display text-base font-extrabold text-muc">Chọn bộ bài bạn muốn dùng</p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {TAROT_DECKS.map((d) => {
-                const available = d.status === "available";
-                const active = d.id === deckId;
-                return (
-                  <button
-                    key={d.id}
-                    type="button"
-                    aria-disabled={!available}
-                    aria-pressed={available ? active : undefined}
-                    onClick={() => {
-                      if (!available) {
-                        show("Bộ bài này sắp ra mắt — hãy đón chờ nhé.", "info");
-                        return;
-                      }
-                      setDeckId(d.id);
-                    }}
-                    className={`glass flex flex-col rounded-[var(--radius-card)] p-3 text-left transition-all duration-200 ${
-                      available ? "hover:-translate-y-0.5" : "cursor-not-allowed opacity-60"
-                    } ${active ? "gold-ring" : ""}`}
-                  >
-                    <span className="flex items-start justify-between gap-2">
-                      <Chip tone={available ? "ngoc" : "neutral"}>{available ? "Mặc định" : "Sắp ra mắt"}</Chip>
-                    </span>
-                    {available ? (
-                      <img
-                        src={d.back}
-                        alt={`Mặt sau bộ ${d.name}`}
-                        width={110}
-                        height={193}
-                        loading="lazy"
-                        className="mx-auto mt-3 h-36 w-auto rounded-lg object-cover shadow-[var(--shadow-glass)]"
-                      />
-                    ) : (
-                      <span className="mx-auto mt-3 grid h-36 w-full place-items-center rounded-lg bg-kem-2 text-3xl" aria-hidden="true">
-                        🂠
-                      </span>
-                    )}
-                    <span className="mt-3 block font-display text-sm font-extrabold text-muc">{d.name}</span>
-                    <span className="block text-[12.5px] font-semibold text-muc-2">{d.nameVi}</span>
-                    <span className="mt-1 block text-[11.5px] leading-snug text-muc-2">{d.desc}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </GlassCard>
-
-          {/* ----------------------- Câu hỏi + kiểu trải ----------------------- */}
-          <GlassCard className="mt-4 p-5 sm:p-6">
-            <label htmlFor="tarot-question" className="block text-[12.5px] font-bold text-muc">
-              Câu hỏi bạn đang băn khoăn <span className="font-medium text-muc-2">(tuỳ chọn)</span>
-            </label>
-            <textarea
-              id="tarot-question"
-              rows={3}
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Ví dụ: Mối quan hệ này nên tiếp tục theo hướng nào?"
-              className="glass mt-2 w-full resize-y rounded-2xl px-4 py-3 text-sm font-semibold text-muc outline-none placeholder:font-normal placeholder:text-muc-2/60"
-            />
-
-            <p className="mt-5 font-display text-base font-extrabold text-muc">Chọn kiểu trải bài</p>
-            <div className="mt-3">
-              <div className="-mx-1 max-w-full overflow-x-auto px-1 pb-1">
-                <TopicTabs
-                  items={TAROT_SPREADS.map((s) => ({ id: s.id, label: s.name }))}
-                value={spreadId}
-                onChange={(id) => {
-                  setSpreadId(id);
-                  const s = tarotSpreadById(id);
-                  if (s?.frames) setFrameId(s.frames[0].id);
-                }}
-                ariaLabel="Kiểu trải bài"
-                />
-              </div>
-            </div>
-            <p className="mt-3 text-[13px] font-semibold text-muc-2">
-              {spread.desc} <Chip tone="sen" className="ml-1">{spread.count} lá</Chip>
-            </p>
-            {spread.frames ? (
-              <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Khung diễn giải cho trải 3 lá">
-                {spread.frames.map((f) => {
-                  const active = f.id === frameId;
-                  return (
-                    <button
-                      key={f.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => setFrameId(f.id)}
-                      className={`rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-all duration-200 hover:-translate-y-0.5 ${
-                        active ? "bg-son text-white shadow-[var(--shadow-pop)]" : "glass text-muc-2 hover:text-muc"
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-
-            {cardsErr ? (
-              <div role="alert" className="mt-4 rounded-2xl bg-son-tint px-4 py-3">
-                <p className="text-sm font-semibold text-son-deep">Không tải được dữ liệu lá bài.</p>
-                <div className="mt-2">
-                  <Btn size="sm" variant="ghost" onClick={fetchCards}>
-                    Thử lại
-                  </Btn>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <Btn size="lg" arrow onClick={startDraw} disabled={!cardsData}>
-                {cardsData ? "Trải bài" : "Đang tải bộ bài…"}
-              </Btn>
-              <span className="text-[12px] text-muc-2">
-                {deck.name} · {title}
-              </span>
-            </div>
-          </GlassCard>
-        </>
+        <div className={styles.setup}>
+          <DeckPicker value={deckId} onChange={setDeckId} />
+          <div className={styles.controls}>
+            <label className={styles.question} htmlFor="tarot-question">Điều bạn đang nghĩ tới <span>Tuỳ chọn</span></label>
+            <textarea id="tarot-question" rows={2} value={question} onChange={e => setQuestion(e.target.value)} placeholder="Viết câu hỏi của bạn…" className={styles.textarea} />
+            <div className={styles.sectionLabel}>Kiểu trải bài <span>{spread.count} lá</span></div>
+            <div className={styles.spreadChoices} role="group" aria-label="Kiểu trải bài">{TAROT_SPREADS.map(s => <button type="button" key={s.id} aria-pressed={spreadId === s.id} onClick={() => { setSpreadId(s.id); if (s.frames) setFrameId(s.frames[0].id); }}>
+              <SpreadDiagram id={s.id} />
+              <span>{({one:"Một lá",three:"Ba lá",cross5:"Thánh giá",relationship5:"Tình yêu",celtic10:"Celtic Cross"} as Record<string,string>)[s.id]}</span>
+              <small>{s.count} lá</small>
+            </button>)}</div>
+            <p className={styles.spreadDescription} aria-live="polite">{spread.desc}</p>
+            {spread.frames && <label className={styles.frame}>Góc nhìn<select value={frameId} onChange={event => setFrameId(event.target.value)}>{spread.frames.map(frame => <option key={frame.id} value={frame.id}>{frame.label}</option>)}</select></label>}
+            {cardsErr && <div role="alert" className={styles.error}>Không tải được bộ bài. <button onClick={fetchCards}>Thử lại</button></div>}
+            <button className={styles.start} onClick={startDraw} disabled={!cardsData || deck.status !== "available"}>{deck.status !== "available" ? "Bộ bài đang được chuẩn bị" : cardsData ? "Bắt đầu trải bài" : "Đang tải bộ bài…"}<span aria-hidden="true">↗</span></button>
+          </div>
+        </div>
+      ) : phase === "shuffling" ? (
+        <div className={styles.shuffleStage} role="status"><div className={styles.shuffleStack}>{[0,1,2].map(i=><img key={i} src={deck.back} width={220} height={385} alt="" />)}</div><p><LoadingWhisper kind="shuffle"/></p></div>
       ) : (
         /* ============================ BÀN TRẢI ============================ */
-        <div ref={boardRef} className="mt-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="font-display text-xl font-extrabold text-muc">{title}</p>
-            <div className="flex items-center gap-2">
-              <span className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-bold text-muc-2">
-                <img src={deck.back} alt="" width={20} height={35} className="h-7 w-4 rounded-[3px] object-cover" loading="lazy" />
-                {deck.nameVi}
-              </span>
-              <Btn variant="ghost" size="sm" onClick={resetToSetup}>
-                Trải bài khác
-              </Btn>
-            </div>
+        <div ref={boardRef} className={styles.ritual}>
+          <div className={styles.ritualHeader}>
+            <button onClick={resetToSetup} aria-label="Trải bài khác">←</button>
+            <div><span>{deck.nameVi}</span><h2>{spread.name}</h2></div>
+            <span className={styles.ritualCount}>{drawn.filter(card => card.revealed).length}<i> / {spread.count}</i></span>
           </div>
-
-          <GlassCard className="mt-4 p-5 sm:p-7">
-            {/* Quạt bài úp — bấm lá phát sáng để rút */}
+          <ReadingQuestion>{question}</ReadingQuestion>
+          <div className={styles.readingTable} data-tarot-table>
+            <div className={styles.tableHeading}><span>{complete ? "NHỮNG LÁ BÀI CỦA BẠN" : "MỘT KHOẢNG LẶNG CHO BẠN"}</span><p>{complete ? "Lắng nghe điều được hé mở" : "Những lá bài đang được mở"}</p></div>
+            {/* Quạt bài minh hoạ cho quá trình tự rút. */}
             <TarotFan
               deck={deck}
-              remaining={pool.length - drawn.length}
-              drawnCount={drawn.length}
+              remaining={pool.length - drawn.filter(card => card.revealed).length}
+              drawnCount={drawn.filter(card => card.revealed).length}
               total={spread.count}
-              disabled={busy || complete}
-              onDraw={drawNext}
             />
 
             {/* Bàn trải — vị trí theo kiểu trải */}
@@ -296,7 +164,7 @@ export function TarotClient() {
                 : `Đã rút ${drawn.length} trên ${spread.count} lá.`}
             </p>
 
-            <div className="mt-8">
+            <div className={styles.placedCards}>
               {spread.layout === "cross5" ? (
                 <div className="mx-auto grid w-fit grid-cols-3 place-items-center gap-x-3 gap-y-5 sm:gap-x-6">
                   <TarotCardSlot deck={deck} slot={drawn[3]} label={positionLabels[3]} index={3} selecting={drawn.length === 4} className="col-start-2 row-start-1" />
@@ -324,7 +192,7 @@ export function TarotClient() {
                         {drawn[1] ? (
                           <>
                             <TarotCardSlot deck={deck} slot={drawn[1]} label={positionLabels[1]} index={1} overlay />
-                            <p aria-live="polite" className="mt-2 w-[150px] text-center text-[10.5px] font-semibold leading-snug text-muc-2 sm:w-[190px]">
+                            <p aria-live="polite" className="mt-2 w-[var(--tarot-card-width,100px)] text-center text-[10.5px] font-semibold leading-snug text-muc-2 sm:w-[190px]">
                               Lá cắt ngang — {positionLabels[1]}: {labelCross(drawn[1].entry)}
                             </p>
                           </>
@@ -348,12 +216,12 @@ export function TarotClient() {
                 </div>
               )}
             </div>
-          </GlassCard>
+          </div>
 
           {/* --------------------- Luận giải AI --------------------- */}
-          <GlassCard className="mt-4 p-5 sm:p-6">
-            <p className="font-display text-base font-extrabold text-muc">Luận giải bằng trí tuệ nhân tạo</p>
-            <div ref={interpRef} className="mt-4">
+          {complete && <GlassCard className={`${styles.readingEnter} mt-4 p-5 sm:p-6`}>
+
+            <div ref={interpRef}>
               {complete ? (
                 <InterpretationPanel
                   spread={spread}
@@ -368,14 +236,8 @@ export function TarotClient() {
                 <p className="text-sm text-muc-2">Rút đủ {spread.count} lá để AstroX bắt đầu luận giải.</p>
               )}
             </div>
-          </GlassCard>
+          </GlassCard>}
 
-          <div className="glass mt-6 rounded-[var(--radius-card)] p-4">
-            <p className="text-[12px] leading-relaxed text-muc-2">
-              Không có lá bài tốt hay xấu tuyệt đối — mỗi lá phản ánh một xu hướng năng lượng tại thời điểm rút bài,
-              không phải một định mệnh cố định.
-            </p>
-          </div>
         </div>
       )}
     </section>
@@ -383,6 +245,28 @@ export function TarotClient() {
 }
 
 /** Nhãn gọn cho lá cắt ngang (Celtic Cross). */
-function labelCross(entry: { reversed: boolean }): string {
-  return entry.reversed ? "ngược" : "xuôi";
+function labelCross(entry: DrawnCard): string {
+  return `${tarotCardById(entry.id)?.nameEn ?? entry.id} — ${entry.reversed ? "ngược" : "xuôi"}`;
+}
+
+function SpreadDiagram({id}: {id:string}) {
+  // A shared card face keeps all five diagrams in the same visual family.
+  const layouts: Record<string, {x:number;y:number;r?:number}[]> = {
+    one: [{x:42,y:24}],
+    three: [{x:19,y:26,r:-10},{x:42,y:21},{x:65,y:26,r:10}],
+    cross5: [{x:42,y:3},{x:17,y:27},{x:42,y:27},{x:67,y:27},{x:42,y:51}],
+    relationship5: [{x:17,y:11,r:-8},{x:67,y:11,r:8},{x:42,y:28},{x:23,y:51,r:8},{x:61,y:51,r:-8}],
+    celtic10: [{x:33,y:27},{x:33,y:27,r:90},{x:33,y:2},{x:9,y:27},{x:33,y:52},{x:57,y:27},{x:81,y:1},{x:81,y:21},{x:81,y:41},{x:81,y:61}],
+  };
+  return <svg className={styles.spreadDiagram} viewBox="0 0 108 88" fill="none" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <ellipse cx="54" cy="79" rx={id === "one" ? 15 : 39} ry="2.5" fill="currentColor" fillOpacity=".06" stroke="none" />
+    {layouts[id].map(({x,y,r=0},i)=><g key={i} transform={`translate(${x} ${y}) rotate(${r} 8 12)`}>
+      <rect x="1" y="1.5" width="16" height="24" rx="2.8" fill="currentColor" fillOpacity=".08" stroke="none" />
+      <rect width="16" height="24" rx="2.5" fill="var(--spread-card-fill)" />
+      <rect x="2.5" y="2.5" width="11" height="19" rx="1" strokeOpacity=".35" strokeWidth=".6" />
+      <path d="M8 7.5 9.3 10.7 12 12 9.3 13.3 8 16.5 6.7 13.3 4 12 6.7 10.7Z" fill="currentColor" fillOpacity=".12" strokeWidth=".65" />
+      <circle cx="8" cy="4.6" r=".65" fill="currentColor" stroke="none" />
+      <circle cx="8" cy="19.4" r=".65" fill="currentColor" stroke="none" />
+    </g>)}
+  </svg>;
 }

@@ -74,7 +74,9 @@ export async function executeProviderChain(config, input, readSecret, {fetchImpl
       const attempt={providerId:p.id,model:p.model,protocol:p.protocol,status:0,outcome:'failed'}; const attemptStarted=now(); attempts.push(attempt);
       try {
         const body=p.protocol==='anthropic' ? {model:p.model,messages:messages.filter(m=>m.role!=='system'),system:messages.filter(m=>m.role==='system').map(m=>m.content).join('\n'),max_tokens:p.maxTokens,temperature:p.temperature,stream:false} : p.protocol==='responses' ? {model:p.model,input:messages,max_output_tokens:p.maxTokens,temperature:p.temperature,stream:false} : {model:p.model,messages,max_tokens:p.maxTokens,temperature:p.temperature,stream:false};
-        const response=await fetchImpl(url,{method:'POST',headers:p.protocol==='anthropic'?{'x-api-key':key,'anthropic-version':'2023-06-01','Content-Type':'application/json'}:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal,redirect:'manual'});
+        // Preserve the existing Muse connection's low-reasoning setting.
+        if(new URL(url).hostname==='opencode.ai' && p.protocol==='responses' && p.model.startsWith('muse-spark-')) body.reasoning={effort:'low'};
+        const response=await fetchImpl(url,{method:'POST',headers:{...(p.protocol==='anthropic'?{'x-api-key':key,'anthropic-version':'2023-06-01','Content-Type':'application/json'}:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'}),...(new URL(url).hostname==='opencode.ai'?{'x-opencode-session':'astrox-web','User-Agent':'AstroX/1.0'}:{})},body:JSON.stringify(body),signal:controller.signal,redirect:'manual'});
         attempt.status=response.status;
         if(response.status>=300&&response.status<400) { await response.body?.cancel(); fail('PROVIDER_REDIRECT',502,attempts); }
         if(!response.ok) { await response.body?.cancel();
@@ -133,6 +135,6 @@ export async function createPaymentRequest(config,snapshot,{apiKey,checksumKey},
 export async function testProvider(config,providerId,readSecret,options={}) {
   const provider=providerRoutes(config.ai.providers).find(p=>p.id===providerId);
   if(!provider) fail('UNKNOWN_PROVIDER',404);
-  const testConfig={...config,ai:{...config.ai,enabled:true,systemPrompt:'',providers:[{...provider,enabled:true,maxTokens:32,retries:0,timeoutMs:Math.min(provider.timeoutMs,15000)}],chain:[providerId],maxAttempts:1,totalTimeoutMs:15000}};
+  const testConfig={...config,ai:{...config.ai,enabled:true,systemPrompt:'',providers:[{...provider,enabled:true,maxTokens:provider.protocol==='responses'?512:32,retries:0,timeoutMs:Math.min(provider.timeoutMs,15000)}],chain:[providerId],maxAttempts:1,totalTimeoutMs:15000}};
   return executeProviderChain(testConfig,{messages:[{role:'user',content:'Reply with OK.'}]},readSecret,options);
 }

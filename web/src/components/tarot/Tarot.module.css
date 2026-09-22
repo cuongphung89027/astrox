@@ -44,7 +44,7 @@
 }
 
 .deckArt img:nth-child(2) { z-index: 0; }
-.deckVideo { position: relative; z-index: 2; height: 290px; width: 166px; object-fit: cover; border-radius: 12px; background: #244d40; outline: 1px solid #b8a77c80; box-shadow: 0 18px 38px #15382c40, 0 0 0 5px #fffaf060; }
+.deckVideo { height: 290px; width: 166px; object-fit: cover; border-radius: 12px; background: #244d40; outline: 1px solid #b8a77c80; box-shadow: 0 18px 38px #15382c40, 0 0 0 5px #fffaf060; }
 @media(max-width:750px) {
   .deckArt { height: 250px; }
   .deckArt img { height: 185px; }
@@ -216,3 +216,141 @@ html[data-motion="reduced"] .deckArt > img, html[data-motion="reduced"] .deckVid
 .deckVideo { height: clamp(180px, 65cqw, 290px); width: auto; aspect-ratio: 220 / 385; }
 .deckNavigation > button:disabled { opacity: 1; color: #87917c; background: #ebeede; border-color: #c8cfbd; }
 .deckSlide { overflow: hidden; }
+
+/* ------------------- Nút âm thanh video giới thiệu ------------------- */
+.deckVideoWrap { position: relative; z-index: 2; }
+.deckSound {
+  position: absolute; right: 7px; bottom: 7px; z-index: 3; display: grid; place-items: center;
+  width: 32px; height: 32px; border: 1px solid #ffffff59; border-radius: 50%;
+  background: #1d4136d9; color: #f2ecd8; cursor: pointer; backdrop-filter: blur(4px);
+  box-shadow: 0 5px 14px #15382c45;
+  transition: background 180ms, border-color 180ms, transform 180ms;
+}
+.deckSound:hover { background: #2d5849; border-color: #ffffff8c; transform: translateY(-1px); }
+.deckSound:active { transform: scale(.92); }
+.deckSound:focus-visible { outline: 2px solid #9d8752; outline-offset: 2px; }
+.deckSound svg { width: 15px; height: 15px; }
+@media(max-width:750px) {
+  .deckSound { width: 28px; height: 28px; right: 5px; bottom: 5px; }
+  .deckSound svg { width: 13px; height: 13px; }
+}
+
+/* ------------------- Lối vào nhật ký ở màn chọn bài ------------------- */
+.historyLink {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  width: 100%; margin-top: 12px; padding: 13px 16px;
+  border: 1px dashed #b9c5a6; border-radius: 14px; color: #4e6147;
+  font-size: 13.5px; font-weight: 600; text-decoration: none; background: transparent;
+  cursor: pointer; transition: background 180ms, border-color 180ms;
+}
+.historyLink:hover { background: #ffffff75; border-color: #9fb08a; }
+.historyLink:focus-visible { outline: 2px solid #ac935b; outline-offset: 3px; }
+.historyLink > span:last-child { font-size: 11.5px; font-weight: 500; color: #8a967a; white-space: nowrap; }
+
+/* ------------------------- Nhật ký trải bài ------------------------- */
+.history { max-width: 780px; margin-inline: auto; }
+.historyRows { list-style: none; margin-top: 6px; }
+.historyRow {
+  display: grid; grid-template-columns: minmax(0, 1fr) 32px; align-items: center;
+  border-bottom: 1px solid #dce3d050;
+  animation: historyRowIn 380ms var(--ease-viet, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--i, 0) * 34ms);
+}
+.historyRow:last-child { border-bottom: 0; }
+@keyframes historyRowIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.historyOpen {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) 22px; align-items: center; gap: 14px;
+  min-width: 0; padding: 14px 4px; border: 0; background: none; text-align: left; cursor: pointer;
+}
+.historyOpen:focus-visible { outline: 2px solid #ac935b; outline-offset: -2px; border-radius: 12px; }
+.historyFan { display: flex; align-items: center; flex-shrink: 0; }
+.historyFan img {
+  width: 40px; aspect-ratio: 220 / 385; border-radius: 4px; object-fit: cover;
+  box-shadow: 0 3px 9px #244d4026, 0 0 0 2px #fffdf6;
+}
+.historyFan img + img { margin-left: -12px; }
+.historyFan img:first-of-type { transform: rotate(-5deg); }
+.historyFan img:nth-of-type(3) { transform: rotate(5deg); }
+.historyFanReversed { rotate: 180deg; }
+.historyFan b {
+  display: grid; place-items: center; min-width: 26px; height: 26px; margin-left: 6px;
+  border-radius: 999px; background: #ecf0e3; color: #698367; font-size: 10.5px; font-weight: 700;
+}
+.historyInfo { min-width: 0; display: grid; gap: 3px; }
+.historyInfo strong {
+  font-size: 13.5px; font-weight: 600; color: var(--color-muc, #26190f);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.historyInfo small { font-size: 11px; color: #8a967a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.historyInfo time { font-size: 10.5px; color: #a9a58d; font-variant-numeric: tabular-nums; }
+.historyChevron {
+  display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid #ccd8c0;
+  border-radius: 50%; background: #fffdf6; color: #7d8f70; font-size: 12px;
+  transition: background 180ms, color 180ms, border-color 180ms, transform 180ms;
+}
+.historyOpen:hover .historyChevron { background: #244d40; color: #fff2d1; border-color: #244d40; transform: translate(1px, -1px); }
+.historyRemove {
+  width: 30px; height: 30px; border: 0; border-radius: 50%; background: none;
+  color: #a3ab92; font-size: 17px; line-height: 1; cursor: pointer;
+  transition: color 180ms, background 180ms;
+}
+.historyRemove:hover { color: #a44739; background: #ffe9e2; }
+.historyRemove:focus-visible { outline: 2px solid #ac935b; outline-offset: 2px; }
+.historySkeletons { display: grid; gap: 10px; margin-top: 12px; }
+.historySkeletons span { height: 92px; border-radius: 16px; }
+.historyEmpty { display: flex; flex-direction: column; align-items: center; padding: 34px 18px 26px; text-align: center; }
+.historyEmpty img {
+  width: 96px; height: auto; border-radius: 8px; transform: rotate(4deg); opacity: .96;
+  box-shadow: 0 14px 26px #244d4026, 0 0 0 4px #fffaf0; margin-bottom: 26px;
+}
+.historyEmpty h3 { font-family: var(--font-display); font-size: 24px; font-weight: 400; color: #244d40; }
+.historyEmpty p { max-width: 340px; font-size: 12.5px; line-height: 1.8; color: #6f7a63; margin-top: 8px; }
+.historyEmpty button {
+  margin-top: 18px; padding: 12px 18px; border-radius: 13px; background: #244d40; color: #fff5df;
+  font-size: 13.5px; cursor: pointer; transition: background 180ms, transform 180ms;
+}
+.historyEmpty button:hover { background: #32614e; }
+.historyEmpty button:active { transform: scale(.97); }
+.historyEmpty button:focus-visible { outline: 2px solid #a38b53; outline-offset: 3px; }
+
+/* Chi tiết một lượt trải — dải lá bài trên nền bàn trải tối, cùng motif bàn ritual. */
+.historyTable {
+  position: relative; isolation: isolate; overflow: hidden; margin-top: 8px; padding: 26px 12px 24px;
+  border-radius: 26px; border: 1px solid #476653;
+  background: radial-gradient(ellipse at 50% 20%, #426a56, transparent 65%), #173e33;
+  box-shadow: 0 14px 40px #163d3315;
+}
+.historyTable::before {
+  content: ""; position: absolute; z-index: -1; width: 260px; height: 260px;
+  border: 1px solid #d9cd9e10; border-radius: 50%; top: -70px; left: calc(50% - 130px);
+  box-shadow: 0 0 0 20px #d9cd9e04, 0 0 0 21px #d9cd9e06; pointer-events: none;
+}
+.historyTableNote { text-align: center; font-size: 9px; letter-spacing: .2em; color: #c8cba9; margin-bottom: 18px; }
+.historyStrip { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px 12px; }
+.historyCard {
+  display: flex; flex-direction: column; align-items: center; width: clamp(64px, 17vw, 104px);
+  animation: historyCardIn 420ms var(--ease-viet, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+@keyframes historyCardIn { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+.historyCard img {
+  width: 100%; aspect-ratio: 220 / 385; border-radius: 8px; object-fit: cover;
+  box-shadow: 0 10px 22px #06281e59; outline: 1px solid #b8a77c33;
+}
+.historyCardReversed { rotate: 180deg; }
+.historyCard figcaption { margin-top: 8px; text-align: center; color: #e8ebd8; }
+.historyCard figcaption b { display: block; font-size: 10.5px; font-weight: 600; line-height: 1.35; }
+.historyCard figcaption span { display: block; margin-top: 2px; font-size: 9px; line-height: 1.4; color: #b9c6ad; }
+.historyCard figcaption i {
+  display: inline-block; margin-top: 3px; padding: 1.5px 7px; border: 1px solid #d2c08b59;
+  border-radius: 999px; font-style: normal; font-size: 8.5px; letter-spacing: .08em; color: #d2c08b;
+}
+@media(min-width:768px) { .historyTable { padding: 32px 28px; } }
+@media(max-width:480px) {
+  .historyOpen { gap: 10px; padding: 12px 2px; }
+  .historyFan img { width: 34px; }
+  .historyFan img + img { margin-left: -10px; }
+  .historyStrip { gap: 12px 10px; }
+}
+@media(prefers-reduced-motion:reduce) { .historyRow, .historyCard { animation: none; } }
+html[data-motion="reduced"] .historyRow, html[data-motion="reduced"] .historyCard { animation: none; }

@@ -35,7 +35,7 @@ const VIEWPORTS = [
 
 const ROUTES = [
   "/", "/trangchu", "/tuvi", "/cunghoangdao", "/kinhdich", "/battu",
-  "/thansohoc", "/tarot", "/tuonghop", "/hoso",
+  "/thansohoc", "/tarot", "/tarot?history=1", "/tuonghop", "/hoso",
   // Alias cũ — redirect server-side, cần giữ sạch layout mọi viewport:
   "/hoangdao", "/thanso",
   // /topup & /profile là MODAL (TopupPanel/ProfileModal), không phải route.
@@ -257,7 +257,7 @@ async function auditOne([w, h], route) {
       if (entry.issues.length) entry.ok = false;
       if (SHOTS) {
         await page.screenshot({
-          path: join(OUT_DIR, "shots", `${w}x${h}-${route === "/" ? "home" : route.slice(1)}.png`),
+          path: join(OUT_DIR, "shots", `${w}x${h}-${route === "/" ? "home" : route.slice(1).replace(/[?&=]/g, "-")}.png`),
         });
       }
     }

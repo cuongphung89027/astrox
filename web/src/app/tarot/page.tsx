@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { TarotClient } from "@/components/tarot/TarotClient";
 
 export const metadata: Metadata = {
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <TarotClient />;
+  return <Suspense fallback={<div role="status" className="p-6 text-center">Đang mở Tarot…</div>}><TarotClient /></Suspense>;
 }

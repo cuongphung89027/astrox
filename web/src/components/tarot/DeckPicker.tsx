@@ -1,25 +1,20 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TAROT_DECKS } from "@/lib/tarot";
 import styles from "./Tarot.module.css";
 
 export function DeckPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const video = useRef<HTMLVideoElement>(null);
+  // Video giới thiệu mặc định tắt tiếng — người dùng bật lại bằng nút loa.
+  const [soundOn, setSoundOn] = useState(false);
   useEffect(() => {
     const element = video.current;
     if (!element) return;
     if (value !== "raccoon") { element.pause(); return; }
-    element.muted = false;
-    const play = () => { void element.play().catch(() => { /* Retry on the next user gesture when sound autoplay is blocked. */ }); };
-    play();
-    document.addEventListener("pointerdown", play);
-    document.addEventListener("keydown", play);
-    return () => {
-      document.removeEventListener("pointerdown", play);
-      document.removeEventListener("keydown", play);
-      element.pause();
-    };
-  }, [value]);
+    element.muted = !soundOn;
+    void element.play().catch(() => { /* autoplay tắt tiếng không bị chặn — bỏ qua lỗi hiếm gặp */ });
+    return () => element.pause();
+  }, [value, soundOn]);
   const rail = useRef<HTMLDivElement>(null);
   const index = TAROT_DECKS.findIndex(deck => deck.id === value);
   const go = (next: number) => {
@@ -39,7 +34,21 @@ export function DeckPicker({ value, onChange }: { value: string; onChange: (id: 
       {TAROT_DECKS.map((deck, i) => <article key={deck.id} className={styles.deckSlide} aria-label={`${i + 1} / ${TAROT_DECKS.length}: ${deck.nameVi}`}>
         {deck.status === "available" ? <div className={styles.deckArt}>
           {[-1,1].map(side => <img key={side} src={deck.back} alt="" width={220} height={385} style={{transform: `translateX(calc(${side} * var(--deck-side-offset))) rotate(${side * 13}deg)`}} />)}
-          <video ref={video} className={styles.deckVideo} src="/assets/tarot/raccoon/intro.mp4" poster={deck.back} autoPlay loop playsInline preload="metadata" aria-label="Giới thiệu bộ bài Raccoon Tarot" disablePictureInPicture controlsList="nodownload noremoteplayback" />
+          <div className={styles.deckVideoWrap}>
+            <video ref={video} className={styles.deckVideo} src="/assets/tarot/raccoon/intro.mp4" poster={deck.back} autoPlay loop playsInline muted={!soundOn} preload="metadata" aria-label="Giới thiệu bộ bài Raccoon Tarot" disablePictureInPicture controlsList="nodownload noremoteplayback" />
+            <button type="button" className={styles.deckSound} aria-pressed={soundOn} onClick={() => setSoundOn(on => !on)} aria-label={soundOn ? "Tắt tiếng video giới thiệu bộ bài" : "Bật tiếng video giới thiệu bộ bài"} title={soundOn ? "Tắt tiếng" : "Bật tiếng"}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M11 5 6.5 9H3.5v6h3L11 19z" />
+                {soundOn ? <>
+                  <path d="M14.5 9.5a4 4 0 0 1 0 5" />
+                  <path d="M17.2 7a7.6 7.6 0 0 1 0 10" />
+                </> : <>
+                  <path d="m16 9.5 5 5" />
+                  <path d="m21 9.5-5 5" />
+                </>}
+              </svg>
+            </button>
+          </div>
         </div> : <div className={`${styles.teaserArt} ${styles.shibaTeaser}`} aria-hidden="true"><i /><i /><div className={styles.sealedCard}><span>ASTROX COLLECTION</span><div className={styles.teaserSeal}>柴</div><small>MỘT NGƯỜI BẠN MỚI</small></div></div>}
         <div className={styles.deckCaption}><span>{deck.status === "available" ? "SẴN SÀNG KHÁM PHÁ" : "SẮP RA MẮT"}</span><h2>{deck.nameVi}</h2></div>
         <p className={styles.deckHint}>{deck.id === "raccoon" ? "Vuốt để khám phá các bộ bài" : "Sau lớp bài úp, một chú Shiba đang chờ."}</p>

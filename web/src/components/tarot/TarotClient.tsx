@@ -10,6 +10,8 @@
 import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
 import { ReadingQuestion } from "@/components/kit/ReadingQuestion";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GlassCard } from "@/components/kit";
 import { useToast } from "@/components/motion/toast";
 import { useProfile } from "@/lib/use-store";
@@ -27,14 +29,19 @@ import {
   type TarotCard,
 } from "@/lib/tarot";
 import { InterpretationPanel } from "./InterpretationPanel";
+import { TarotHistory } from "./TarotHistory";
 import { TarotCardSlot, type DrawnSlot } from "./TarotCardSlot";
 import { TarotFan } from "./TarotFan";
 import styles from "./Tarot.module.css";
 import { DeckPicker } from "./DeckPicker";
+import { readTarotHistory } from "@/lib/tarot-history";
 
 export function TarotClient() {
   const profile = useProfile();
   const { show } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const inHistory = searchParams.get("history") === "1";
 
   const [deckId, setDeckId] = useState("raccoon");
   const [spreadId, setSpreadId] = useState("three");
@@ -46,6 +53,7 @@ export function TarotClient() {
   const [phase, setPhase] = useState<"setup" | "shuffling" | "ritual">("setup");
   const [pool, setPool] = useState<DrawnCard[]>([]);
   const [drawn, setDrawn] = useState<DrawnSlot[]>([]);
+  const [historyCount, setHistoryCount] = useState(0);
 
   const timersRef = useRef<number[]>([]);
   const boardRef = useRef<HTMLDivElement | null>(null);
@@ -71,6 +79,12 @@ export function TarotClient() {
   useEffect(() => {
     if (!peekTarotCards()) fetchCards();
   }, [fetchCards]);
+
+  // Đếm số lượt đã lưu sau mount (localStorage chỉ có ở client).
+  useEffect(() => {
+    const timer = setTimeout(() => setHistoryCount(readTarotHistory().length), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Dọn timer khi rời trang
   useEffect(() => {
@@ -112,6 +126,7 @@ export function TarotClient() {
     setPool([]);
     setDrawn([]);
     setPhase("setup");
+    setHistoryCount(readTarotHistory().length);
   };
 
   /* ------------------------------ Render ------------------------------ */
@@ -119,6 +134,9 @@ export function TarotClient() {
     <section className={styles.page}>
       <h1 className="sr-only">Tarot</h1>
       {phase === "setup" ? (
+        inHistory ? (
+          <TarotHistory onClose={() => router.push("/tarot")} onCountChange={setHistoryCount} />
+        ) : (
         <div className={styles.setup}>
           <DeckPicker value={deckId} onChange={setDeckId} />
           <div className={styles.controls}>
@@ -134,8 +152,13 @@ export function TarotClient() {
             {spread.frames && <label className={styles.frame}>Góc nhìn<select value={frameId} onChange={event => setFrameId(event.target.value)}>{spread.frames.map(frame => <option key={frame.id} value={frame.id}>{frame.label}</option>)}</select></label>}
             {cardsErr && <div role="alert" className={styles.error}>Không tải được bộ bài. <button onClick={fetchCards}>Thử lại</button></div>}
             <button className={styles.start} onClick={startDraw} disabled={!cardsData || deck.status !== "available"}>{deck.status !== "available" ? "Bộ bài đang được chuẩn bị" : cardsData ? "Bắt đầu trải bài" : "Đang tải bộ bài…"}<span aria-hidden="true">↗</span></button>
+            {historyCount > 0 && <Link href="/tarot?history=1" className={styles.historyLink}>
+              <span>Nhật ký trải bài</span>
+              <span>{historyCount} lượt đã luận giải <i aria-hidden="true">↗</i></span>
+            </Link>}
           </div>
         </div>
+        )
       ) : phase === "shuffling" ? (
         <div className={styles.shuffleStage} role="status"><div className={styles.shuffleStack}>{[0,1,2].map(i=><img key={i} src={deck.back} width={220} height={385} alt="" />)}</div><p><LoadingWhisper kind="shuffle"/></p></div>
       ) : (

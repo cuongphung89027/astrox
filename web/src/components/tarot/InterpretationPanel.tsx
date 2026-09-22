@@ -21,7 +21,8 @@ import { runAiPrompt } from "@/lib/api";
 import { profileContextText } from "@/lib/numerology";
 import { readAiCache, writeAiCache } from "@/lib/state";
 import type { Profile } from "@/lib/types";
-import { buildTarotPrompt, tarotCacheKey, type DrawnCard, type TarotDeck, type TarotSpread } from "@/lib/tarot";
+import { buildTarotPrompt, tarotCacheKey, tarotCardById, type DrawnCard, type TarotDeck, type TarotSpread } from "@/lib/tarot";
+import { pushTarotHistory } from "@/lib/tarot-history";
 
 interface InterpretationPanelProps {
   spread: TarotSpread;
@@ -50,11 +51,31 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
     const cacheKey = tarotCacheKey(
       JSON.stringify({ question, deckId: deck.id, spreadId: spread.id, frameId: frameLabel ?? "", cards: drawn, promptVersion: `${PROMPT_VERSION}:english-card-names` }),
     );
+    // Lưu vào nhật ký lượt trải (xem lại trong "Nhật ký trải bài" ở màn chọn bài).
+    const remember = (result: string) => {
+      pushTarotHistory({
+        id: cacheKey,
+        savedAt: Date.now(),
+        question,
+        deckId: deck.id,
+        spreadId: spread.id,
+        spreadName: spread.name,
+        frameLabel: frameLabel ?? "",
+        cards: drawn.map((card, i) => ({
+          id: card.id,
+          reversed: card.reversed,
+          position: positionLabels[i] ?? "",
+          nameEn: tarotCardById(card.id)?.nameEn ?? card.id,
+        })),
+        text: result,
+      });
+    };
     await refreshPromptRevision();
-      const cached = readAiCache("tarot", cacheKey, force);
+    const cached = readAiCache("tarot", cacheKey, force);
     if (cached) {
       setText(cached);
       setState("done");
+      remember(cached);
       return;
     }
     if (!requireProfile()) {

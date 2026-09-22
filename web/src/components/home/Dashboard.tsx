@@ -45,7 +45,8 @@ export function Dashboard() {
   }, [profile]);
   const menh = chart ? menhPalace(chart) : null;
   const tarotCount = Object.values(cache?.tarot || {}).filter(entry => entry.text).length;
-  const name = loggedIn ? displayName || profile?.name : undefined;
+  // Tên gọi người dùng tự đặt ưu tiên trước tên từ kênh đăng nhập (Zalo/Supabase).
+  const name = loggedIn ? profile?.name || displayName : undefined;
   const greeting = now ? now.getHours() < 11 ? "Chào buổi sáng" : now.getHours() < 18 ? "Chào buổi chiều" : "Chào buổi tối" : "Xin chào";
   return <div className={styles.page}>
     <header className={`${styles.header} ${!loggedIn ? styles.guestHeader : ""}`}>

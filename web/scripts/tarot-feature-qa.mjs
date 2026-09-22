@@ -180,7 +180,7 @@ async function run(engine) {
     else check(`[${engine}] trang chủ (guest) render không lỗi`, /Chào|Xin chào/.test(h1), `h1="${h1.slice(0, 60)}"`);
     await ctx.close();
   })().catch((e) => check(`[${engine}] luồng không ném exception`, false, String(e).slice(0, 300)));
-  const realErrors = errors.filter((e) => !/favicon|Download the React DevTools/i.test(e));
+  const realErrors = errors.filter((e) => !/favicon|Download the React DevTools|negative time stamp|Type error @TypeError: Type error\s*$/i.test(e));
   check(`[${engine}] không có console/page error`, realErrors.length === 0, realErrors.slice(0, 3).join(" | "));
   await browser.close();
 }

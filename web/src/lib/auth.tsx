@@ -122,9 +122,32 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Lưu ref code giới thiệu từ URL (?ref=XXXX) — sống 7 ngày, đính vào login Zalo. */
+function captureReferral() {
+  try {
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref && /^[A-Z0-9]{4,10}$/.test(ref)) {
+      localStorage.setItem("astrox_ref", JSON.stringify({ ref, exp: Date.now() + 7 * 86400000 }));
+      history.replaceState(null, "", window.location.pathname);
+    }
+  } catch { /* storage bị chặn — bỏ qua */ }
+}
+function storedReferral(): string {
+  try {
+    const raw = localStorage.getItem("astrox_ref");
+    if (!raw) return "";
+    const { ref, exp } = JSON.parse(raw);
+    if (typeof ref !== "string" || !/^[A-Z0-9]{4,10}$/.test(ref) || Number(exp) < Date.now()) return "";
+    return ref;
+  } catch {
+    return "";
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [localPreview, setLocalPreview] = useState<boolean | null>(null);
   useEffect(() => {
+    captureReferral();
     setLocalPreview(process.env.NODE_ENV === "development" &&
       ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname));
   }, []);
@@ -265,7 +288,10 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
         setSupabaseName(null);
       },
       zaloLogin: () => {
-        if (AUTH_API_BASE) window.location.href = `${AUTH_API_BASE}/auth/zalo/login`;
+        if (AUTH_API_BASE) {
+          const ref = storedReferral();
+          window.location.href = `${AUTH_API_BASE}/auth/zalo/login${ref ? `?ref=${ref}` : ""}`;
+        }
       },
     }),
     [supabaseEmail, supabaseName, astroxUser, loggedIn, ready, displayName, moduleAccess, refreshModuleAccess, client],

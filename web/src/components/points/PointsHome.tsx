@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { usePointsBalance } from "@/lib/points";
-import { loadPointsHistory, loadTopupHistory, type PointTxn, type TopupOrder } from "@/lib/api";
+import { fetchRewardsSummary, loadPointsHistory, loadTopupHistory, rewardsCheckin, type PointTxn, type RewardsSummary, type TopupOrder } from "@/lib/api";
 import { FeatureIcon } from "@/components/kit/FeatureIcon";
 import { NumberPopIn, ShimmerText, useInView, useToast } from "@/components/motion";
 import { TopupPanel } from "@/components/topup/TopupPanel";
@@ -55,6 +55,8 @@ const REASON_LABELS: Record<string, string> = {
   attendance: "Điểm danh hàng ngày",
   milestone: "Thưởng chuỗi điểm danh",
   admin_adjust: "Điều chỉnh từ AstroX",
+  ai_service: "Luận giải dịch vụ trả phí",
+  ai_service_refund: "Hoàn Point luận giải",
   unlock: "Mở khóa dịch vụ",
 };
 
@@ -112,6 +114,8 @@ export function PointsHome() {
 
   const [topupOpen, setTopupOpen] = useState(false);
   const [rewards, setRewards] = useState<RewardsInfo | null | undefined>(undefined);
+  const [summary, setSummary] = useState<RewardsSummary | null>(null);
+  const [checkingIn, setCheckingIn] = useState(false);
   const [history, setHistory] = useState<HistoryState>({ status: "loading", txns: [], nextCursor: null });
   const [orders, setOrders] = useState<TopupOrder[] | null>(null);
   const [historyEpoch, setHistoryEpoch] = useState(0);
@@ -158,6 +162,9 @@ export function PointsHome() {
   useEffect(() => {
     if (!loggedIn || !astroxUser || preview) return;
     let alive = true;
+    fetchRewardsSummary()
+      .then((s) => { if (alive) setSummary(s); })
+      .catch(() => { if (alive) setSummary(null); });
     loadPointsHistory()
       .then((p) => {
         if (alive) setHistory({ status: "ready", txns: p.transactions, nextCursor: p.nextCursor });
@@ -231,9 +238,39 @@ export function PointsHome() {
     }
   };
 
-  const referralLink = astroxUser && typeof window !== "undefined" ? `${window.location.origin}/?ref=${astroxUser.id}` : "";
+  const referralCode = summary?.referral.code || "";
+  const referralLink = referralCode && typeof window !== "undefined" ? `${window.location.origin}/?ref=${referralCode}` : astroxUser && typeof window !== "undefined" ? `${window.location.origin}/?ref=${astroxUser.id}` : "";
   const referralOpen = Boolean(rewards?.enabled && rewards.registrationEnabled);
   const adsOpen = Boolean(rewards?.enabled && rewards.ads.enabled);
+  const attendanceOpen = Boolean(summary?.enabled && summary.attendance.enabled) || preview;
+  const attendanceToday = preview ? true : Boolean(summary?.attendance.today);
+
+  const checkin = async () => {
+    if (checkingIn) return;
+    if (preview) { toast.show("Tài khoản xem thử — điểm danh chỉ hoạt động khi đăng nhập thật.", "info"); return; }
+    setCheckingIn(true);
+    try {
+      const r = await rewardsCheckin();
+      if ("error" in r) {
+        if (r.error === "already_checked_in") {
+          toast.show("Hôm nay bạn đã điểm danh rồi.", "info");
+          setSummary((s) => (s ? { ...s, attendance: { ...s.attendance, today: true } } : s));
+        } else if (r.error === "attendance_disabled") {
+          toast.show("Điểm danh đang tạm khoá.", "error");
+        } else {
+          toast.show("Không điểm danh được — thử lại sau.", "error");
+        }
+      } else {
+        const bonus = r.milestones.length ? ` — mốc ngày ${r.milestones.join(", ")}!` : "";
+        toast.show(`Điểm danh thành công +${r.points.toLocaleString("vi-VN")} Point${bonus}`, "success");
+        void refresh();
+        reloadHistory();
+        setSummary((s) => (s ? { ...s, attendance: { ...s.attendance, today: true, streak: r.streak, lastDay: r.day } } : s));
+      }
+    } finally {
+      setCheckingIn(false);
+    }
+  };
 
   const copyReferral = async () => {
     if (!referralLink) return;
@@ -326,6 +363,46 @@ export function PointsHome() {
             </h2>
           </header>
           <div className={`${styles.earnGrid} ax-stagger-line`}>
+            {/* Điểm danh hàng ngày */}
+            <article className={styles.earnCard}>
+              <span className={`${styles.earnIcon} ${attendanceOpen ? styles.earnIconOn : ""}`}>
+                <FeatureIcon name="calendar" size={22} />
+              </span>
+              <div className={styles.earnBody}>
+                <h3>Điểm danh hàng ngày</h3>
+                <p className={styles.earnLine}>
+                  {!attendanceOpen ? (
+                    <span className={styles.miniSkeleton} aria-label="Đang tải mức thưởng" />
+                  ) : (
+                    <>
+                      <b>+{(preview ? 2 : summary?.attendance.daily ?? 0).toLocaleString("vi-VN")}</b> Point mỗi ngày
+                      {(summary?.attendance.milestones?.length || 0) > 0 && summary && (
+                        <> · mốc {summary.attendance.milestones.map((m) => `ngày ${m.day} (+${m.points})`).join(", ")}</>
+                      )}
+                    </>
+                  )}
+                </p>
+                {attendanceOpen ? (
+                  <>
+                    <div className={styles.checkinRow}>
+                      <span className={styles.streakChip} aria-label="Chuỗi điểm danh">
+                        Chuỗi <b>{summary?.attendance.streak ?? 0}</b> ngày
+                      </span>
+                      <button type="button" className={styles.adBtn} onClick={checkin} disabled={checkingIn || (attendanceToday && !preview)}>
+                        {!preview && attendanceToday ? "Đã điểm danh hôm nay ✓" : checkingIn ? "Đang ghi…" : "Điểm danh ngay"}
+                      </button>
+                    </div>
+                    <p className={styles.earnNote}>Điểm liên tiếp mỗi ngày để nhận thêm thưởng mốc — bỏ một ngày thì chuỗi tính lại.</p>
+                  </>
+                ) : (
+                  <p className={styles.earnNote}>
+                    <span className={styles.soonChip}>Sắp mở</span>
+                    Điểm danh hàng ngày đang được bật lại — theo dõi thông báo từ AstroX.
+                  </p>
+                )}
+              </div>
+            </article>
+
             {/* Giới thiệu bạn bè */}
             <article className={styles.earnCard}>
               <span className={`${styles.earnIcon} ${referralOpen ? styles.earnIconOn : ""}`}>
@@ -353,7 +430,9 @@ export function PointsHome() {
                         {copied ? "Đã chép ✓" : "Sao chép"}
                       </button>
                     </div>
-                    <p className={styles.earnNote}>Thưởng tự động cộng vào ví khi bạn bè hoàn tất đăng ký.</p>
+                    <p className={styles.earnNote}>
+                      Thưởng tự động cộng vào ví khi bạn bè hoàn tất đăng ký{!preview && summary ? ` — đã mời ${summary.referral.invited} người · nhận ${summary.referral.earned.toLocaleString("vi-VN")} Point` : ""}.
+                    </p>
                   </>
                 ) : (
                   <p className={styles.earnNote}>

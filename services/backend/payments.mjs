@@ -3,6 +3,7 @@
 import {equal} from '../admin/crypto.mjs';
 import {runtimeSettings} from './config.mjs';
 import {readSession} from './auth.mjs';
+import {firstTopupStatements} from './rewards.mjs';
 import {json,bodyJson,trustedOrigin} from './http.mjs';
 const sortObj=o=>Object.fromEntries(Object.keys(o).sort().map(k=>[k,o[k]]));
 function queryValue(v){if(Array.isArray(v))return JSON.stringify(v.map(x=>x&&typeof x==='object'?sortObj(x):x));if(v==null||v==='undefined'||v==='null')return '';if(typeof v==='object')return JSON.stringify(sortObj(v));return String(v);}
@@ -72,7 +73,9 @@ export async function handlePayosWebhook(env,request){
   env.DB.prepare("INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,user_id,points,'topup_payos',?,? FROM topup_orders_zalo WHERE id=? AND status IN ('pending') ON CONFLICT(reason,reference_id,user_id) DO NOTHING").bind(crypto.randomUUID(),ref,now,order.id),
   env.DB.prepare('UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1').bind(order.points,now,order.user_id),
   env.DB.prepare("UPDATE topup_orders_zalo SET status='paid',paid_at=? WHERE id=? AND status IN ('pending') AND EXISTS(SELECT 1 FROM zalo_point_ledger WHERE reason='topup_payos' AND reference_id=? AND user_id=?)").bind(now,order.id,ref,order.user_id),
-  env.DB.prepare('UPDATE promotion_codes SET redeemed_count=redeemed_count+1 WHERE id=(SELECT promo_id FROM topup_promo_map WHERE order_code=?) AND changes()=1').bind(Number(d.orderCode))
+  env.DB.prepare('UPDATE promotion_codes SET redeemed_count=redeemed_count+1 WHERE id=(SELECT promo_id FROM topup_promo_map WHERE order_code=?) AND changes()=1').bind(Number(d.orderCode)),
+  // Thưởng inviter khi invitee nạp lần đầu (cấu hình rewards admin đã publish).
+  ...await firstTopupStatements(env,settings,order)
  ]);
  return json(env,request,{ok:true});
 }

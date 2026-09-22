@@ -44,7 +44,7 @@ export async function handleAdmin(request,env){try{
  if(!['GET','HEAD'].includes(method)&&(request.headers.get('origin')!==new URL(request.url).origin||!await equal(request.headers.get('x-admin-csrf')||'',user.csrf)))return json({error:'Phiên xác thực thao tác không hợp lệ.'},403);
  if(path==='session'&&method==='GET')return json({user:{email:user.email,capabilities:user.capabilities},csrf:user.csrf});
  if(path==='logout'&&method==='POST'){if(user.sid)await sql(env,'DELETE FROM admin_sessions WHERE id=?',user.sid).run();return json({ok:true,...(!local(request,env)?{redirect:'/cdn-cgi/access/logout'}:{})},200,{'Set-Cookie':cookieValue('',local(request,env),true)});}
- const needed=path==='members'?'access.manage':path==='audit'?'audit.read':path==='secrets'?'secrets.write':path==='publish'||path==='rollback'?'config.publish':path.startsWith('data/')?({ai:'config.read','ai-metrics':'config.read',users:'users.read',wallet:'wallet.read',reports:'reports.read',rewards:'reports.read'}[path.slice(5)]):method==='GET'?'config.read':'config.write';if(needed&&!user.capabilities.includes(needed))return json({error:'Bạn không có quyền thực hiện thao tác này.'},403);
+ const needed=path==='members'?'access.manage':path==='audit'?'audit.read':path==='secrets'?'secrets.write':path==='publish'||path==='rollback'?'config.publish':path.startsWith('data/')?({ai:'config.read','ai-metrics':'config.read',users:'users.read',wallet:'wallet.read',reports:'reports.read',rewards:'reports.read','login-diagnostics':'audit.read'}[path.slice(5)]):method==='GET'?'config.read':'config.write';if(needed&&!user.capabilities.includes(needed))return json({error:'Bạn không có quyền thực hiện thao tác này.'},403);
  await state(env);
  if(path==='members'&&method==='GET'){
  const roles=((await readPublished(env))?.config||defaultConfig()).access.roles;
@@ -99,6 +99,30 @@ export async function handleAdmin(request,env){try{
  if(path==='history'&&method==='GET')return json({versions:(await sql(env,'SELECT id,created_at,actor,note FROM admin_versions ORDER BY id DESC LIMIT 100').all()).results});
  if(path==='audit'&&method==='GET')return json({events:(await sql(env,'SELECT * FROM admin_audit ORDER BY id DESC LIMIT 200').all()).results.map(e=>({...e,detail:JSON.parse(e.detail)}))});
  if(path==='secrets'&&method==='PUT'){const b=await body(request);if(typeof b.ref!=='string'||! /^(provider:[a-zA-Z0-9_-]{1,80}|payos:apiKey|payos:checksumKey|zalo:appSecret|ads:verificationKey)$/.test(b.ref)||typeof b.value!=='string'||!b.value.trim()||b.value.length>16000)return json({error:'Khóa hoặc tham chiếu không hợp lệ.'},422);await saveSecret(env,user.email,b.ref,b.value);return json({ok:true});}
+ if(path==='data/wallet/adjust'&&method==='POST'){
+  if(!user.capabilities.includes('wallet.adjust'))return json({error:'Bạn không có quyền thực hiện thao tác này.'},403);
+  const b=await body(request);const userId=typeof b.userId==='string'?b.userId.trim():'';const delta=Number(b.delta);const note=typeof b.note==='string'?b.note.trim().slice(0,200):'';
+  if(!userId||!Number.isSafeInteger(delta)||delta===0||Math.abs(delta)>100000)return json({error:'Số Point phải là số nguyên khác 0, tối đa ±100.000.'},422);
+  if(!env.ASTROX_BACKEND)return json({error:'Chưa kết nối backend nghiệp vụ.'},503);
+  const r=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/admin/wallet/adjust',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({userId,delta,reason:note||`Điều chỉnh bởi ${user.email}`})}));
+  if(!r.ok)return json({error:'Backend từ chối điều chỉnh — kiểm tra user id và số dư.'},502);
+  await recordAudit(env,user.email,'wallet.adjust',userId,{delta,note});return json({ok:true});
+ }
+ if(path==='data/users/status'&&method==='POST'){
+  if(!user.capabilities.includes('access.manage'))return json({error:'Bạn không có quyền thực hiện thao tác này.'},403);
+  const b=await body(request);const userId=typeof b.userId==='string'?b.userId.trim():'';const status=String(b.status||'');
+  if(!userId||!['active','suspended'].includes(status))return json({error:'Trạng thái không hợp lệ.'},422);
+  if(!env.ASTROX_BACKEND)return json({error:'Chưa kết nối backend nghiệp vụ.'},503);
+  const r=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/admin/users/status',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({userId,status})}));
+  const d=await r.json().catch(()=>null);
+  if(!r.ok||!d?.ok)return json({error:'Không cập nhật được người dùng — kiểm tra user id.'},502);
+  await recordAudit(env,user.email,'users.status',userId,{status});return json({ok:true});
+ }
+ if(path==='data/login-diagnostics'&&method==='GET'){
+  if(!env.ASTROX_BACKEND)return json({unavailable:true,rows:[],error:'Chưa kết nối backend nghiệp vụ. Không có dữ liệu để hiển thị.'},503);
+  const r=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/admin/login-diagnostics'));
+  if(!r.ok)return json({error:'Backend nghiệp vụ chưa sẵn sàng.'},502);return json(await r.json());
+ }
  if(/^data\/(users|wallet|reports|rewards)$/.test(path)&&method==='GET'){if(!env.ASTROX_BACKEND){const data=await legacyData(env,path.slice(5));if(data)return json(data);return json({unavailable:true,error:'Chưa kết nối backend nghiệp vụ. Không có dữ liệu để hiển thị.'},503);}const r=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/admin/'+path.slice(5),{headers:{'x-admin-actor':user.email}}));if(!r.ok)return json({error:'Backend nghiệp vụ chưa sẵn sàng.'},502);return json(await r.json());}
  if(path==='test-provider'||path.startsWith('integrations/')){const {handleAdminRuntime}=await import('./integration-api.mjs');return handleAdminRuntime(path,request,env,{email:user.email,capabilities:user.capabilities});}
  return json({error:'Không tìm thấy API.'},404);

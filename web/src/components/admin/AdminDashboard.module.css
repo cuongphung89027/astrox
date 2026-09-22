@@ -1621,3 +1621,17 @@
 .dailyChart meter { width: 100%; height: 20px; accent-color: #214d42; }
 @media(max-width:900px) { .metricCards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media(max-width:500px) { .metricCards { grid-template-columns: 1fr; } .dailyChart > div { grid-template-columns: 75px minmax(30px,1fr) 70px; gap: 8px; font-size: 10px; } }
+
+/* Ô nhập ngang trong các form thao tác dữ liệu (điều chỉnh Point, khoá user). */
+.inlineInput {
+  min-width: 180px;
+  flex: 1 1 180px;
+  max-width: 320px;
+  padding: 9px 12px;
+  border: 1px solid #ccd8c0;
+  border-radius: 10px;
+  background: #fffdf6;
+  font-size: 12.5px;
+  color: var(--color-muc, #26190f);
+}
+.inlineInput:focus-visible { outline: 2px solid #b69753; outline-offset: 1px; }

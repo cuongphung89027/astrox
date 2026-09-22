@@ -53,6 +53,7 @@ type View =
   | "users"
   | "wallet"
   | "reports"
+  | "diagnostics"
   | "audit";
 const navigation: [View, string, string, string][] = [
   ["overview", "Tổng quan", "◈", ""],
@@ -67,6 +68,7 @@ const navigation: [View, string, string, string][] = [
   ["wallet", "Ví & giao dịch", "▱", "THANH TOÁN & VÍ"],
   ["users", "Người dùng", "◎", "NGƯỜI DÙNG & THƯỞNG"],
   ["zalo", "Đăng nhập Zalo", "⇥", "NGƯỜI DÙNG & THƯỞNG"],
+  ["diagnostics", "Chẩn đoán đăng nhập", "⚑", "NGƯỜI DÙNG & THƯỞNG"],
   ["rewards", "Thưởng & giới thiệu", "☀", "NGƯỜI DÙNG & THƯỞNG"],
   ["reports", "Báo cáo", "↗", "HỆ THỐNG"],
   ["walletbackend", "Kết nối backend ví", "⇄", "HỆ THỐNG"],
@@ -240,6 +242,8 @@ export function AdminDashboard() {
   const [serviceSearch, setServiceSearch] = useState("");
   const [serviceStatus, setServiceStatus] = useState("");
   const [dataRevision, setDataRevision] = useState(0);
+  const [adjust, setAdjust] = useState({ userId: "", delta: "", note: "" });
+  const [blockId, setBlockId] = useState("");
   const [reportKind, setReportKind] = useState<"reports" | "rewards" | "ai">(
     "reports",
   );
@@ -303,12 +307,12 @@ export function AdminDashboard() {
   useEffect(() => {
     if (!session) return;
     let active = true;
-    if (["users", "wallet", "reports"].includes(view)) {
+    if (["users", "wallet", "reports", "diagnostics"].includes(view)) {
       adminRequest<{
         available: boolean;
         rows: Record<string, unknown>[];
         message?: string;
-      }>(`data/${view === "reports" ? reportKind : view}`)
+      }>(`data/${view === "reports" ? reportKind : view === "diagnostics" ? "login-diagnostics" : view}`)
         .then((data) => {
           if (active) {
             setRows(data.rows || []);
@@ -2008,17 +2012,115 @@ export function AdminDashboard() {
               ))}
             </div>
           )}
-          {["users", "wallet", "reports", "audit"].includes(view) && (
+          {["users", "wallet", "reports", "diagnostics", "audit"].includes(view) && (
             <div className={s.rowActions}>
               <button className={s.secondary} onClick={refreshData}>
                 Làm mới dữ liệu
               </button>
             </div>
           )}
+          {view === "wallet" && session.user.capabilities.includes("wallet.adjust") && (
+            <Card
+              title="Điều chỉnh Point"
+              description="Cộng/trừ Point thủ công — ghi sổ cái 'Điều chỉnh từ AstroX', người dùng thấy trong lịch sử ví."
+            >
+              <div className={s.rowActions} style={{ flexWrap: "wrap", gap: 8 }}>
+                <input
+                  className={s.inlineInput}
+                  placeholder="user_id (sao chép từ bảng dưới)"
+                  value={adjust.userId}
+                  onChange={(e) => setAdjust((a) => ({ ...a, userId: e.target.value.trim() }))}
+                />
+                <input
+                  className={s.inlineInput}
+                  placeholder="±Point (vd 50 hoặc -20)"
+                  inputMode="numeric"
+                  value={adjust.delta}
+                  onChange={(e) => setAdjust((a) => ({ ...a, delta: e.target.value.trim().replace(/[^0-9-]/g, "") }))}
+                />
+                <input
+                  className={s.inlineInput}
+                  placeholder="Lý do (tuỳ chọn)"
+                  value={adjust.note}
+                  onChange={(e) => setAdjust((a) => ({ ...a, note: e.target.value }))}
+                />
+                <button
+                  className={s.primary}
+                  disabled={busy || !adjust.userId || !/^-?[1-9][0-9]{0,5}$/.test(adjust.delta)}
+                  onClick={() =>
+                    act(async () => {
+                      await adminRequest("data/wallet/adjust", session.csrf, { userId: adjust.userId, delta: Number(adjust.delta), note: adjust.note }, "POST");
+                      setAdjust({ userId: "", delta: "", note: "" });
+                      setMessage("Đã điều chỉnh Point.");
+                      refreshData();
+                    })
+                  }
+                >
+                  Áp dụng
+                </button>
+              </div>
+            </Card>
+          )}
+          {view === "users" && session.user.capabilities.includes("access.manage") && (
+            <Card
+              title="Khoá / mở tài khoản"
+              description="Khoá: user không đăng nhập được nữa và mọi phiên hiện tại mất hiệu lực tức thì."
+            >
+              <div className={s.rowActions} style={{ flexWrap: "wrap", gap: 8 }}>
+                <input
+                  className={s.inlineInput}
+                  placeholder="user_id (sao chép từ bảng dưới)"
+                  value={blockId}
+                  onChange={(e) => setBlockId(e.target.value.trim())}
+                />
+                <button
+                  className={s.secondary}
+                  disabled={busy || !blockId}
+                  onClick={() => {
+                    if (!confirm(`Khoá tài khoản ${blockId}?`)) return;
+                    void act(async () => {
+                      await adminRequest("data/users/status", session.csrf, { userId: blockId, status: "suspended" }, "POST");
+                      setMessage(`Đã khoá ${blockId}.`);
+                      setBlockId("");
+                      refreshData();
+                    });
+                  }}
+                >
+                  Khoá tài khoản
+                </button>
+                <button
+                  className={s.secondary}
+                  disabled={busy || !blockId}
+                  onClick={() =>
+                    act(async () => {
+                      await adminRequest("data/users/status", session.csrf, { userId: blockId, status: "active" }, "POST");
+                      setMessage(`Đã mở khoá ${blockId}.`);
+                      setBlockId("");
+                      refreshData();
+                    })
+                  }
+                >
+                  Mở khoá
+                </button>
+              </div>
+            </Card>
+          )}
           {["users", "wallet", "reports"].includes(view) && (
             <Card
               title={title || ""}
               description="Chỉ hiển thị dữ liệu trả về từ backend thực tế."
+            >
+              {rows.length ? (
+                <DataTable rows={rows} />
+              ) : (
+                <Empty>{remoteMessage}</Empty>
+              )}
+            </Card>
+          )}
+          {view === "diagnostics" && (
+            <Card
+              title="Lỗi đăng nhập Zalo gần đây"
+              description="Backend ghi mỗi lần đăng nhập thất bại — phục vụ truy vết khi người dùng báo lỗi."
             >
               {rows.length ? (
                 <DataTable rows={rows} />

@@ -290,3 +290,62 @@ export async function promoCheck(code: string): Promise<{ ok: boolean; bonus?: n
     return { ok: false, error: "network" };
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Rewards — điểm danh + giới thiệu (engine backend, cấu hình admin)   */
+/* ------------------------------------------------------------------ */
+
+export interface RewardsSummary {
+  enabled: boolean;
+  attendance: {
+    enabled: boolean;
+    daily: number;
+    lastDay: string | null;
+    streak: number;
+    claimed: number[];
+    today: boolean;
+    milestones: { day: number; points: number }[];
+  };
+  referral: {
+    enabled: boolean;
+    code: string;
+    invited: number;
+    earned: number;
+    registrationInviter: number;
+    firstTopupEnabled: boolean;
+    firstTopupInviter: number;
+  };
+}
+
+export async function fetchRewardsSummary(): Promise<RewardsSummary> {
+  const res = await fetch(`${AUTH_API_BASE}/api/rewards/summary`, { credentials: "include" });
+  if (res.status === 401) throw new Error("unauthorized");
+  if (!res.ok) throw new Error("rewards_failed");
+  return await res.json();
+}
+
+export async function rewardsCheckin(): Promise<{ ok: boolean; day: string; streak: number; points: number; milestones: number[] } | { error: string }> {
+  const res = await fetch(`${AUTH_API_BASE}/api/rewards/checkin`, { method: "POST", credentials: "include" });
+  const d = await res.json().catch(() => ({}));
+  if (res.ok && d?.ok) return d;
+  return { error: d?.error || "checkin_failed" };
+}
+
+/** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */
+type PriceInfo = { status: string; points: number };
+let priceCache: Promise<Record<string, PriceInfo>> | null = null;
+export function servicePrices(): Promise<Record<string, PriceInfo>> {
+  if (!priceCache) {
+    priceCache = fetch("/api/site-config")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const map: Record<string, PriceInfo> = {};
+        for (const s of d?.config?.billing?.services || []) {
+          if (s && typeof s.id === "string" && s.id) map[s.id] = { status: String(s.status || ""), points: Number(s.points) || 0 };
+        }
+        return map;
+      })
+      .catch(() => ({}));
+  }
+  return priceCache;
+}

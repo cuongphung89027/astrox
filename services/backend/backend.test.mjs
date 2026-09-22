@@ -12,6 +12,7 @@ async function fixture(){
  const env=testEnv();
  for(const q of readFileSync(new URL('./test/legacy-schema.sql',import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
  for(const q of readFileSync(new URL('../../migrations/backend.sql',import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
+ for(const q of readFileSync(new URL('../../migrations/rewards.sql',import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
  Object.assign(env,{SESSION_SECRET:'test-session-secret',PAYOS_CLIENT_ID:'client',PAYOS_API_KEY:'test-api',PAYOS_CHECKSUM_KEY:'test-checksum',ZALO_APP_ID:'123456',ZALO_APP_SECRET:'test-zalo',ZALO_REDIRECT_URI:'https://api.example.com/auth/zalo/callback'});
  await env.DB.prepare("INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES('u1','User','active','2026-01-01','2026-01-01')").run();
  await env.DB.prepare("INSERT INTO zalo_point_accounts VALUES('u1',10,'2026-01-01')").run();
@@ -19,7 +20,7 @@ async function fixture(){
  return env;
 }
 async function published(env,change){await state(env);const c=defaultConfig();c.billing.enabled=true;c.integrations.payos={enabled:true,clientId:'client',returnUrl:'https://theastrox.space/hoso',cancelUrl:'https://theastrox.space/hoso',expiryMinutes:30};c.billing.packages=[{id:'new',name:'New',amountVnd:60000,mode:'fixed',fixedPoints:70,bonus:5,enabled:true,featured:false}];change?.(c);await saveDraft(env,'test',c,0);await publish(env,'test',c,1,'test');return c;}
-test('imports legacy packages and connection readiness without keys or customer data',async()=>{const env=await fixture(),s=await legacySnapshot(env);assert.equal(s.packages[0].points,55);assert.equal(s.integrations.zalo.appId,'123456');assert.ok(s.inheritedSecrets.includes('payos:apiKey'));assert.ok(!JSON.stringify(s).includes('test-api'));assert.equal(capabilities(env).features.paidAi,false);assert.equal(capabilities(env).features.rewards,false)});
+test('imports legacy packages and connection readiness without keys or customer data',async()=>{const env=await fixture(),s=await legacySnapshot(env);assert.equal(s.packages[0].points,55);assert.equal(s.integrations.zalo.appId,'123456');assert.ok(s.inheritedSecrets.includes('payos:apiKey'));assert.ok(!JSON.stringify(s).includes('test-api'));assert.equal(capabilities(env).features.paidAi,true);assert.equal(capabilities(env).features.rewards,true)});
 test('published configuration wins over legacy tables and retains env credentials',async()=>{const env=await fixture();await published(env);const s=await runtimeSettings(env);assert.equal(s.packages[0].amount_vnd,60000);assert.equal(s.packages[0].points,75);assert.equal(s.env.PAYOS_API_KEY,'test-api');assert.equal(s.revision,1)});
 test('legacy session signature remains valid, expired and missing-secret sessions fail closed',async()=>{const env=await fixture();const cookie=(await sessionCookie(env,'u1')).split(';')[0];assert.equal((await readSession(env,new Request('https://api.example.com',{headers:{cookie}}))).sub,'u1');assert.equal(await readSession({...env,SESSION_SECRET:''},new Request('https://api.example.com',{headers:{cookie}})),null);const expired=(await sessionCookie(env,'u1',Date.now()-31*86400000)).split(';')[0];assert.equal(await readSession(env,new Request('https://api.example.com',{headers:{cookie:expired}})),null)});
 test('Zalo identity is obtained from provider and client identity cannot substitute for verification',async()=>{const verified=await verifyZaloUser('test-token',async()=>Response.json({id:'provider-id',name:'Verified'}));assert.equal(verified.id,'provider-id');await assert.rejects(()=>verifyZaloUser('test-token',async()=>Response.json({error:-1})),/zalo_identity_unverified/)});
@@ -108,3 +109,113 @@ test('admin rewards view serves the same ledger rows as user points history',asy
  const page=await (await publicFetch(new Request('https://api.example.com/api/points/history',{headers:{cookie}}),env)).json();
  assert.equal(page.transactions[0].id,credit.id);
 });
+
+// ------------------------- Rewards engine (22/09/2026) -------------------------
+const rewardsOn=c=>{c.rewards={...c.rewards,enabled:true,registrationEnabled:true,attendanceEnabled:true,firstTopupEnabled:true};};
+async function seedInviter(env,code='ASTROX',userId='u1'){await env.DB.prepare('INSERT INTO referral_codes(user_id,code,created_at) VALUES(?,?,?)').bind(userId,code,'2026-01-01').run();}
+async function addUser(env,id){await env.DB.prepare("INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES(?,'New','active','2026-01-02','2026-01-02')").bind(id).run();await env.DB.prepare("INSERT OR IGNORE INTO zalo_point_accounts VALUES(?,0,'2026-01-02')").bind(id).run();}
+async function balance(env,id){return (await env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(id).first())?.balance??null;}
+const cookieOf=async env=>({cookie:(await sessionCookie(env,'u1')).split(';')[0]});
+
+test('capabilities advertise rewards and paid-AI as backend features',async()=>{const env=await fixture();assert.equal(capabilities(env).features.paidAi,true);assert.equal(capabilities(env).features.rewards,true)});
+
+test('registration referral credits both sides once and maps the invitee',async()=>{
+ const {creditRegistration}=await import('./rewards.mjs');
+ const env=await fixture();await published(env,rewardsOn);await seedInviter(env);await addUser(env,'u2');
+ await creditRegistration(env,'u2','ASTROX');
+ assert.equal(await balance(env,'u2'),5);assert.equal(await balance(env,'u1'),15);
+ await creditRegistration(env,'u2','ASTROX'); // idempotent
+ assert.equal(await balance(env,'u2'),5);assert.equal(await balance(env,'u1'),15);
+ const ref=await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?').bind('u2').first();
+ assert.equal(ref.inviter_id,'u1');
+});
+
+test('registration rewards ignore bad codes, self-referral and disabled config',async()=>{
+ const {creditRegistration}=await import('./rewards.mjs');
+ const env=await fixture();await published(env,rewardsOn);await seedInviter(env,'OWN');await addUser(env,'u2');
+ await creditRegistration(env,'u2','NOPE7');await creditRegistration(env,'u1','OWN');
+ assert.equal((await env.DB.prepare("SELECT COUNT(*) n FROM zalo_point_ledger WHERE reason='referral'").first()).n,0);
+ const off=await fixture();await published(off,c=>{rewardsOn(c);c.rewards.registrationEnabled=false;});await seedInviter(off);await addUser(off,'u3');
+ const {creditRegistration:cr}=await import('./rewards.mjs');await cr(off,'u3','ASTROX');
+ assert.equal((await off.DB.prepare("SELECT COUNT(*) n FROM zalo_point_ledger WHERE reason='referral'").first()).n,0);
+});
+
+test('limited referral budget stops inviter rewards',async()=>{
+ const {creditRegistration}=await import('./rewards.mjs');
+ const env=await fixture();await published(env,c=>{rewardsOn(c);c.rewards.referralMode='limited';c.rewards.referralLimit=1;c.rewards.referralWindow='lifetime';});
+ await seedInviter(env);await addUser(env,'u2');await addUser(env,'u3');
+ await creditRegistration(env,'u2','ASTROX');
+ assert.equal(await balance(env,'u2'),5);assert.equal(await balance(env,'u1'),15);
+ await creditRegistration(env,'u3','ASTROX'); // inviter đã đạt hạn mức
+ assert.equal(await balance(env,'u3'),0);assert.equal(await balance(env,'u1'),15);
+});
+
+test('check-in pays daily + milestone for user and inviter, and rejects duplicates',async()=>{
+ const {handleRewardsCheckin}=await import('./rewards.mjs');
+ const env=await fixture();await published(env,rewardsOn);await addUser(env,'u2');
+ await env.DB.prepare('INSERT INTO user_referrals(user_id,inviter_id,created_at) VALUES(?,?,?)').bind('u2','u1','2026-01-01').run();
+ const req=async()=>handleRewardsCheckin(env,new Request('https://api.example.com/api/rewards/checkin',{method:'POST',headers:await cookieOfUserId(env,'u2')}));
+ // Seed chuỗi 2 ngày kết thúc hôm qua → lần claim hôm nay là ngày 3: user +2+3, inviter +2.
+ const {vietnamDay}=await import('../rewards/rules.ts');
+ const yesterday=vietnamDay(new Date(Date.now()-86400000));
+ await env.DB.prepare("INSERT INTO user_attendance(user_id,last_day,streak,claimed_milestones,updated_at) VALUES(?,?,2,'[]',?)").bind('u2',yesterday,'2026-01-01').run();
+ const claim=await req();assert.equal(claim.status,200);const t=await claim.json();
+ assert.equal(t.points,5);assert.equal(t.streak,3);assert.deepEqual(t.milestones,[3]);
+ assert.equal(await balance(env,'u2'),5);assert.equal(await balance(env,'u1'),12); // 10 gốc + 2 inviter
+ const dup=await req();assert.equal(dup.status,409);assert.equal(await balance(env,'u2'),5);
+ const fresh=await fixture();await published(fresh,rewardsOn);await addUser(fresh,'u9');
+ const first=await (async()=>{const {handleRewardsCheckin:h}=await import('./rewards.mjs');return h(fresh,new Request('https://api.example.com/api/rewards/checkin',{method:'POST',headers:await cookieOfUserId(fresh,'u9')}));})();
+ assert.equal((await first.json()).points,2);assert.equal(await balance(fresh,'u9'),2);
+});
+
+test('first paid topup rewards the inviter exactly once via the PayOS webhook',async()=>{
+ const env=await fixture();await published(env,c=>{rewardsOn(c);c.integrations.payos.enabled=true;});await addUser(env,'u2');
+ await env.DB.prepare('INSERT INTO user_referrals(user_id,inviter_id,created_at) VALUES(?,?,?)').bind('u1','u2','2026-01-01').run();
+ await order(env);
+ await handlePayosWebhook(env,await webhook(env));
+ assert.equal(await balance(env,'u1'),65);assert.equal(await balance(env,'u2'),10); // inviter +10
+ await handlePayosWebhook(env,await webhook(env));
+ assert.equal(await balance(env,'u2'),10); // webhook lặp không thưởng thêm
+});
+
+test('admin wallet adjust writes ledger and refuses overdraft; user block kills sessions',async()=>{
+ const {internalFetch}=await import('./handler.mjs');
+ const env=await fixture();
+ const plus=await internalFetch(new Request('https://astrox-internal/internal/admin/wallet/adjust',{method:'POST',body:JSON.stringify({userId:'u1',delta:50,reason:'test'})}),env);
+ assert.equal(plus.status,200);assert.equal(await balance(env,'u1'),60);
+ const over=await internalFetch(new Request('https://astrox-internal/internal/admin/wallet/adjust',{method:'POST',body:JSON.stringify({userId:'u1',delta:-1000,reason:'over'})}),env);
+ assert.equal(over.status,409);
+ const block=await internalFetch(new Request('https://astrox-internal/internal/admin/users/status',{method:'POST',body:JSON.stringify({userId:'u1',status:'suspended'})}),env);
+ assert.equal(block.status,200);
+ assert.equal(await readSession(env,new Request('https://api.example.com',{headers:await cookieOf(env)})),null);
+ const diag=await internalFetch(new Request('https://astrox-internal/internal/admin/login-diagnostics'),env);
+ assert.equal(diag.status,200);
+});
+
+test('paid AI charges idempotently, rejects insufficient balance and refunds on failure',async()=>{
+ const {internalFetch}=await import('./handler.mjs');
+ const env=await fixture();await published(env,c=>{const s=c.billing.services.find(x=>x.id==='tarot');s.status='paid';s.points=30;});
+ const {cookie}=await cookieOf(env);
+ const chargeReq=chargeId=>new Request('https://astrox-internal/internal/ai/charge',{method:'POST',headers:{cookie},body:JSON.stringify({serviceId:'tarot',revision:1})});
+ const poor=await internalFetch(chargeReq(),env);assert.equal(poor.status,402);assert.equal((await poor.json()).error,'insufficient_points');
+ await env.DB.prepare("UPDATE zalo_point_accounts SET balance=100 WHERE user_id='u1'").run();
+ const ok=await internalFetch(chargeReq(),env);const okBody=await ok.json();
+ assert.equal(ok.status,200);assert.equal(okBody.points,30);assert.equal(await balance(env,'u1'),70);
+ const refund=await internalFetch(new Request('https://astrox-internal/internal/ai/refund',{method:'POST',headers:{cookie},body:JSON.stringify({chargeId:okBody.chargeId})}),env);
+ assert.equal(refund.status,200);assert.equal(await balance(env,'u1'),100);
+ const again=await internalFetch(new Request('https://astrox-internal/internal/ai/refund',{method:'POST',headers:{cookie},body:JSON.stringify({chargeId:okBody.chargeId})}),env);
+ assert.equal((await again.json()).refunded,false);assert.equal(await balance(env,'u1'),100); // hoàn 2 lần không nhân đôi
+ const stale=await internalFetch(new Request('https://astrox-internal/internal/ai/charge',{method:'POST',headers:{cookie},body:JSON.stringify({serviceId:'tarot',revision:999})}),env);
+ assert.equal(stale.status,409);
+});
+
+test('public routing also hides new internal write endpoints',async()=>{
+ const {publicFetch}=await import('./handler.mjs');const env=await fixture();
+ for(const [path,method] of [['/internal/ai/charge','POST'],['/internal/admin/wallet/adjust','POST'],['/internal/admin/users/status','POST']]){
+  const r=await publicFetch(new Request('https://api.example.com'+path,{method,body:JSON.stringify({})}),env);
+  assert.equal(r.status,404,path);
+ }
+ const summary=await publicFetch(new Request('https://api.example.com/api/rewards/summary'),env);
+ assert.equal(summary.status,401); // guest chặn ở auth, không phải 404
+});
+async function cookieOfUserId(env,userId){return {cookie:(await sessionCookie(env,userId)).split(';')[0]};}

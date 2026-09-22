@@ -1,7 +1,7 @@
 import {readPublished,readSecret} from '../admin/store.mjs';
 import {quotePackage} from '../admin/config.ts';
 export const secretBindings={'payos:apiKey':'PAYOS_API_KEY','payos:checksumKey':'PAYOS_CHECKSUM_KEY','zalo:appSecret':'ZALO_APP_SECRET'};
-export function capabilities(env){return {configVersioned:true,features:{payos:true,zalo:true,packages:true,services:true,paidAi:false,rewards:false},inheritedSecrets:Object.entries(secretBindings).filter(([,name])=>Boolean(env[name])).map(([ref])=>ref)};}
+export function capabilities(env){return {configVersioned:true,features:{payos:true,zalo:true,packages:true,services:true,paidAi:true,rewards:true},inheritedSecrets:Object.entries(secretBindings).filter(([,name])=>Boolean(env[name])).map(([ref])=>ref)};}
 export async function legacySnapshot(env){
  const packages=(await env.DB.prepare('SELECT id,amount_vnd,points,label,active,sort_order FROM topup_packages ORDER BY sort_order,amount_vnd').all()).results;
  const modules=(await env.DB.prepare('SELECT id,slug,name,access_mode,enabled FROM modules').all()).results;

@@ -63,11 +63,26 @@ export async function handleConfiguredAi(request,env){
   if(service.status==='paid'){
    if(!c.billing.enabled)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
    if(!env.ASTROX_BACKEND)throw new RuntimeError('BACKEND_UNAVAILABLE',503);
+   // Trừ Point qua worker (idempotent theo chargeId), chạy provider chain tại đây,
+   // hoàn Point nếu chain lỗi — user không mất Point cho lượt luận giải hỏng.
    const headers=new Headers({'content-type':'application/json','x-astrox-config-revision':String(published.revision)});
    for(const name of ['cookie','authorization']){const value=request.headers.get(name);if(value)headers.set(name,value)}
-   attempts=[{providerId:'',model:'',outcome:'delegated'}];
-   const response=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/ai',{method:'POST',headers,body:JSON.stringify(input),signal:AbortSignal.timeout(Math.min(c.ai.totalTimeoutMs+5000,125000))}));
-   outcome=response.ok?'success':`BACKEND_HTTP_${response.status}`;return response;
+   const chargeResponse=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/ai/charge',{method:'POST',headers,body:JSON.stringify({serviceId:input.serviceId,revision:published.revision}),signal:AbortSignal.timeout(15000)}));
+   const charge=await chargeResponse.json().catch(()=>null);
+   if(!chargeResponse.ok){
+    const insufficient=charge?.error==='insufficient_points';
+    attempts=[{providerId:'',model:'',outcome:insufficient?'insufficient_points':'charge_failed'}];outcome=insufficient?'INSUFFICIENT_POINTS':`CHARGE_HTTP_${chargeResponse.status}`;
+    return json({error:insufficient?`Không đủ Point — cần ${charge?.needed} Point cho lượt luận giải này. Nạp thêm Point rồi thử lại.`:'Không trừ được Point cho lượt luận giải này. Thử lại sau.',code:insufficient?'insufficient_points':'charge_failed'},insufficient?402:502);
+   }
+   const chargeId=String(charge?.chargeId||'');
+   try{
+    const result=await executeProviderChain(c,{messages:input.messages,serviceId:input.serviceId},ref=>readSecret(env,ref),{allowHosts:hosts(env),healthStore:providerHealth(env)});attempts=result.attempts;outcome='success';
+    const {choices,model,usage}=result;return json({choices,model,usage,configRevision:published.revision,chargedPoints:charge.points});
+   }catch(e){
+    attempts=[...(e.attempts||attempts),{providerId:'',model:'',outcome:'refunded'}];outcome=e.code||'failed';
+    if(chargeId)await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/ai/refund',{method:'POST',headers:{'content-type':'application/json',cookie:request.headers.get('cookie')||''},body:JSON.stringify({chargeId}),signal:AbortSignal.timeout(10000)})).catch(()=>{});
+    return json({error:diagnostic(e.code)},e.status||503);
+   }
   }
 
   const result=await executeProviderChain(c,{messages:input.messages,serviceId:input.serviceId},ref=>readSecret(env,ref),{allowHosts:hosts(env),healthStore:providerHealth(env)});attempts=result.attempts;outcome='success';

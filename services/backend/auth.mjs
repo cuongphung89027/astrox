@@ -1,5 +1,6 @@
 import {equal} from '../admin/crypto.mjs';
 import {json,trustedOrigin} from './http.mjs';
+import {creditRegistration} from './rewards.mjs';
 const enc=new TextEncoder();
 // Zalo chặn login ở nhiều tầng (consent, token exchange, verify) mà không bao giờ quay lại callback,
 // nên mọi nhánh lỗi phải để lại dấu vết trong D1 để truy vết production.
@@ -26,7 +27,10 @@ export async function verifyZaloUser(token,fetchImpl=fetch){
 export async function zaloLogin(env,request,settings){
  if(!settings.zalo.enabled||!env.ZALO_APP_ID||!env.ZALO_APP_SECRET||!env.SESSION_SECRET)return json(env,request,{error:'zalo_not_configured'},503);
  const state=crypto.randomUUID(),verifier=base64(crypto.getRandomValues(new Uint8Array(32)));const challenge=base64(await crypto.subtle.digest('SHA-256',enc.encode(verifier)));
- await env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind(state,verifier,new Date().toISOString()).run();
+ const ref=new URL(request.url).searchParams.get('ref')||'';
+ // Ref code giới thiệu bám theo phiên OAuth để sống sót qua callback/finish.
+ const refStatements=/^[A-Z0-9]{4,10}$/.test(ref)?[env.DB.prepare('INSERT INTO oauth_referrals(id,ref,created_at) VALUES(?,?,?)').bind(state,ref,new Date().toISOString())]:[];
+ await env.DB.batch([env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind(state,verifier,new Date().toISOString()),...refStatements]);
  const url=new URL('https://oauth.zaloapp.com/v4/permission');url.search=new URLSearchParams({app_id:env.ZALO_APP_ID,redirect_uri:env.ZALO_REDIRECT_URI,code_challenge:challenge,state}).toString();
  return new Response(null,{status:302,headers:{location:url.href,'cache-control':'no-store','set-cookie':`astrox_oauth=${state}; HttpOnly; Secure; SameSite=Lax; Path=/auth/zalo; Max-Age=600`}});
 }
@@ -34,6 +38,7 @@ export async function zaloCallback(env,request,settings,fetchImpl=fetch){
  const url=new URL(request.url),state=url.searchParams.get('state'),code=url.searchParams.get('code');const cookie=(request.headers.get('cookie')||'').match(/(?:^|;\s*)astrox_oauth=([^;]+)/)?.[1];
  if(!state||!code||!cookie||!await equal(state,cookie)){await diag(env,'callback_rejected',{has_state:!!state,has_code:!!code,has_cookie:!!cookie,zalo_error:url.searchParams.get('error')||null,zalo_error_description:(url.searchParams.get('error_description')||'').slice(0,200)||null});return json(env,request,{error:'invalid_oauth_state'},400);}
  const row=await env.DB.prepare("DELETE FROM oauth_states WHERE id=? AND julianday(created_at)>julianday('now','-10 minutes') RETURNING code_verifier").bind(state).first();if(!row){await diag(env,'state_expired_or_missing',{});return json(env,request,{error:'invalid_or_expired_state'},400);}
+ const refRow=await env.DB.prepare('DELETE FROM oauth_referrals WHERE id=? RETURNING ref').bind(state).first();const ref=refRow?.ref||null;
  const r=await fetchImpl('https://oauth.zaloapp.com/v4/access_token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded',secret_key:env.ZALO_APP_SECRET},body:new URLSearchParams({code,app_id:env.ZALO_APP_ID,grant_type:'authorization_code',code_verifier:row.code_verifier}),redirect:'manual',signal:AbortSignal.timeout(15000)});
  const tokens=await r.json().catch(()=>null);if(!r.ok||!tokens?.access_token){await diag(env,'token_exchange_failed',{status:r.status,body:redact(tokens)});return json(env,request,{error:'token_exchange_failed'},502);}
  let me;try{me=await verifyZaloUser(tokens.access_token,fetchImpl);}
@@ -41,12 +46,16 @@ export async function zaloCallback(env,request,settings,fetchImpl=fetch){
  // từng né bằng cách đẩy bước này về trình duyệt user. Escrow token dưới id một-lần-dùng
  // rồi trả về finish page; trình duyệt phải submit lại đúng token đã escrow mới được tính.
  catch(e){const pendingId=crypto.randomUUID();await diag(env,'server_verify_failed_fallback',{reason:String(e?.message||'').slice(0,250)});
-  await env.DB.prepare('INSERT INTO zalo_pending_tokens(id,access_token,created_at) VALUES(?,?,?)').bind(pendingId,tokens.access_token,new Date().toISOString()).run();
+  const pendingStatements=[env.DB.prepare('INSERT INTO zalo_pending_tokens(id,access_token,created_at) VALUES(?,?,?)').bind(pendingId,tokens.access_token,new Date().toISOString())];
+  if(ref)pendingStatements.push(env.DB.prepare('INSERT INTO oauth_referrals(id,ref,created_at) VALUES(?,?,?)').bind(pendingId,ref,new Date().toISOString()));
+  await env.DB.batch(pendingStatements);
   return new Response(null,{status:302,headers:{location:`/auth/zalo/finish?id=${pendingId}`,'cache-control':'no-store'}});}
- return await completeZaloLogin(env,request,settings,me);
+ return await completeZaloLogin(env,request,settings,me,ref);
 }
-async function completeZaloLogin(env,request,settings,me){
+async function completeZaloLogin(env,request,settings,me,ref=null){
  const now=new Date().toISOString(),candidate=crypto.randomUUID();
+ // Người dùng mới hay đã có từ trước — quyết định thưởng đăng ký giới thiệu.
+ const existing=await env.DB.prepare("SELECT user_id FROM zalo_identities WHERE provider='zalo' AND provider_subject=?").bind(String(me.id)).first();
  // Identity insert and user creation commit together; unique identity prevents races.
  await env.DB.batch([
   env.DB.prepare("INSERT INTO app_users(id,display_name,avatar_url,status,created_at,updated_at) SELECT ?,?,?,'active',?,? WHERE NOT EXISTS(SELECT 1 FROM zalo_identities WHERE provider='zalo' AND provider_subject=?)").bind(candidate,String(me.name||'Zalo User').slice(0,200),String(me.picture?.data?.url||'').slice(0,2000),now,now,String(me.id)),
@@ -55,6 +64,7 @@ async function completeZaloLogin(env,request,settings,me){
  ]);
  const identity=await env.DB.prepare("SELECT user_id FROM zalo_identities WHERE provider='zalo' AND provider_subject=?").bind(String(me.id)).first();
  const user=await env.DB.prepare("SELECT id FROM app_users WHERE id=? AND status='active'").bind(identity.user_id).first();if(!user)return json(env,request,{error:'account_disabled'},403);
+ if(ref&&!existing)await creditRegistration(env,identity.user_id,ref);
  const cookies=[['set-cookie',await sessionCookie(env,user.id)],['set-cookie','astrox_oauth=; HttpOnly; Secure; SameSite=Lax; Path=/auth/zalo; Max-Age=0']];
  if(request.method==='GET'){const headers=new Headers({location:settings.zalo.returnUrl,'cache-control':'no-store'});for(const [k,v] of cookies)headers.append(k,v);return new Response(null,{status:302,headers});}
  const r=json(env,request,{ok:true,redirect:settings.zalo.returnUrl||'/'});for(const [k,v] of cookies)r.headers.append(k,v);return r;
@@ -73,8 +83,9 @@ export async function zaloFinish(env,request,settings){
  const token=String(body?.token||''),me=body?.me;
  const row=await env.DB.prepare("DELETE FROM zalo_pending_tokens WHERE id=? AND julianday(created_at)>julianday('now','-15 minutes') RETURNING access_token").bind(String(body?.id||'')).first();
  if(!row){await diag(env,'finish_invalid_pending',{});return json(env,request,{error:'invalid_or_expired_session',message:'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'},400);}
+ const refRow=await env.DB.prepare('DELETE FROM oauth_referrals WHERE id=? RETURNING ref').bind(String(body?.id||'')).first();const ref=refRow?.ref||null;
  if(!token||!await equal(token,row.access_token)){await diag(env,'finish_token_mismatch',{});return json(env,request,{error:'verification_failed'},401);}
  if(!me||typeof me.id!=='string'||!me.id||me.id.length>64){await diag(env,'finish_invalid_identity',{me:redact(me)});return json(env,request,{error:'verification_failed'},400);}
- return await completeZaloLogin(env,request,settings,me);
+ return await completeZaloLogin(env,request,settings,me,ref);
 }
 export function logout(env,request){if(!trustedOrigin(env,request))return json(env,request,{error:'invalid_origin'},403);const r=json(env,request,{ok:true});r.headers.set('set-cookie','astrox_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');return r;}

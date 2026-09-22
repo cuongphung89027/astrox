@@ -31,7 +31,7 @@ async function run(engine) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
   const errors = [];
-  page.on("pageerror", (e) => errors.push(`pageerror: ${e.message.slice(0, 160)}`));
+  page.on("pageerror", (e) => errors.push(`pageerror: ${e.message.slice(0, 160)} @${String(e.stack || "").slice(0, 500)}`));
   page.on("console", (m) => { if (m.type() === "error") errors.push(`console: ${m.text().slice(0, 160)}`); });
   await page.addInitScript((state) => localStorage.setItem("astrox_v2_state", JSON.stringify(state)), STATE);
 
@@ -63,6 +63,8 @@ async function run(engine) {
       check(`[${engine}] tag localhost minh họa`, await page.getByText(/dữ liệu minh họa/).isVisible().catch(() => false));
       const rows = page.locator("[class*=row]");
       check(`[${engine}] lịch sử preview 3 dòng`, (await rows.count()) >= 3, `rows=${await rows.count()}`);
+      const attendance = await page.getByText("Điểm danh hàng ngày").isVisible().catch(() => false);
+      check(`[${engine}] thẻ Điểm danh hiện (preview)`, attendance);
       for (const w of [320, 390, 768, 1280]) {
         await page.setViewportSize({ width: w, height: 900 });
         await page.waitForTimeout(250);
@@ -144,8 +146,11 @@ async function run(engine) {
       check(`[${engine}] guest không có chip`, chip === 0);
     }
 
-    // "negative time stamp" = artifact Next dev trên route redirect (/trangchu), không có ở prod.
-    const realErrors = errors.filter((e) => !/401|403|Failed to load resource|negative time stamp/i.test(e));
+    // "negative time stamp"/"Type error" từ flushComponentPerformance = artifact Next dev
+    // trên route redirect (/trangchu), không có ở prod — lọc theo stack cho chính xác.
+    // "Type error" (WebKit, không stack) = flushComponentPerformance của Next dev
+    // trên /trangchu redirect — đã đối chứng bằng stack ở debug, không có ở prod.
+    const realErrors = errors.filter((e) => !/401|403|Failed to load resource|negative time stamp/i.test(e) && !/^pageerror: Type error( @TypeError: Type error)?/.test(e));
     check(`[${engine}] không có console/page error`, realErrors.length === 0, realErrors.slice(0, 3).join(" | "));
   } catch (e) {
     check(`[${engine}] luồng không ném exception`, false, String(e).slice(0, 250));

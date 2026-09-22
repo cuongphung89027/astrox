@@ -59,11 +59,15 @@ export function AuthMenu() {
     <img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedAvatar(avatarUrl)}/>
   ) : <FeatureIcon name="profile" size={23}/>;
   if (!loggedIn) return <button type="button" onClick={zaloLogin} className="rounded-full bg-son px-4 py-1.5 text-sm font-semibold text-white">Đăng nhập</button>;
-  return <div ref={wrap} className={styles.wrap} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) close(); }}>
+  return <div ref={wrap} className={styles.wrap} onBlur={e => {
+    // WebKit trả relatedTarget=null khi click phần tử trong menu — coi như chưa rời,
+    // click ngoài vẫn đóng qua listener pointerdown dưới đó.
+    if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) close();
+  }}>
     <button ref={trigger} type="button" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open} aria-controls={present ? id : undefined} aria-label={`Tài khoản ${name}`} className={styles.trigger}>{avatar}</button>
     {present && <div ref={menu} id={id} role="menu" aria-label="Menu tài khoản" className={styles.panel} data-open={open} inert={!open}>
       <div className={styles.identity}><span className={styles.avatar}>{avatar}</span><div><span className={styles.status}>{preview ? "Xem thử · localhost" : "Đã đăng nhập"}</span><h2>{name}</h2></div></div>
-      {astroxUser && <div className={styles.wallet}><button role="menuitem" className={styles.walletInfo} onClick={() => go("/hoso?section=points")} aria-label="Mở Ví AstroX Point"><div><span><FeatureIcon name="wallet" size={17}/>AstroX Point</span><p>{preview ? "1.000" : status === "error" && points === null ? "Chưa tải được" : points === null ? "…" : points.toLocaleString("vi-VN")}<small>{preview ? "minh họa" : !preview && points !== null ? "Point" : ""}</small></p></div></button><button role="menuitem" disabled={preview} onClick={() => { close(); setTopupOpen(true); }} aria-label="Nạp Point"><FeatureIcon name="explore" size={19}/></button></div>}
+      {astroxUser && <div className={styles.wallet}><button role="menuitem" className={styles.walletInfo} onClick={() => go("/hoso?section=points")} aria-label="Mở Ví AstroX Point"><div><span><FeatureIcon name="wallet" size={17}/>AstroX Point</span><p>{preview ? "1.000" : status === "error" && points === null ? "Chưa tải được" : points === null ? "…" : points.toLocaleString("vi-VN")}<small>{preview ? "minh họa" : !preview && points !== null ? "Point" : ""}</small></p></div></button><button role="menuitem" className={styles.walletPlus} disabled={preview} onClick={() => { close(); setTopupOpen(true); }} aria-label="Nạp Point"><FeatureIcon name="explore" size={19}/></button></div>}
       <div className={styles.links}>
         <button role="menuitem" onClick={() => go("/hoso")}><FeatureIcon name="profile" size={20}/><span>Hồ sơ của bạn</span><i>↗</i></button>
         <button role="menuitem" onClick={() => go("/hoso?section=account")}><FeatureIcon name="wallet" size={20}/><span>Quản lý tài khoản</span><i>↗</i></button>

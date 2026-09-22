@@ -347,7 +347,7 @@ export interface PromptProfile {
 function formatDobVi(iso?: string): string {
   if (!iso) return "";
   const p = iso.split("-");
-  return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : iso;
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
 }
 
 export function profileContextText(profile: PromptProfile | null): string {

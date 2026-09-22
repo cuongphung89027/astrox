@@ -1,8 +1,8 @@
-/** Định dạng ngày sinh ISO (YYYY-MM-DD) → DD-MM-YYYY như app cũ. */
+/** Định dạng ngày sinh ISO (YYYY-MM-DD) → DD/MM/YYYY. */
 export function formatDob(iso: string): string {
   if (!iso) return "—";
   const p = iso.split("-");
-  return `${p[2]}-${p[1]}-${p[0]}`;
+  return `${p[2]}/${p[1]}/${p[0]}`;
 }
 
 /** 12 can giờ chuẩn của app cũ — dùng cho step giờ sinh trong hồ sơ. */

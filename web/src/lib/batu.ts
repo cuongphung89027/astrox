@@ -332,7 +332,7 @@ export function buildBatuChart(input: BatuInput): BatuChart {
 
 export function buildBatuPromptBody(taskText: string, chart: BatuChart, profile: Profile | null): string {
   const profileLine = profile
-    ? managedPrompt("batu.buildBatuPromptBody.0", [profile.name, profile.gender, profile.dob.split("-").reverse().join("-"), profile.hourChi, profile.place])
+    ? managedPrompt("batu.buildBatuPromptBody.0", [profile.name, profile.gender, profile.dob.split("-").reverse().join("/"), profile.hourChi, profile.place])
     : "";
   const chartLine = managedPrompt("batu.buildBatuPromptBody.1", [JSON.stringify(chart)]);
   return managedPrompt("batu.buildBatuPromptBody.2", [profileLine, chartLine, taskText]);

@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { openLoginDialog } from "@/lib/login-dialog";
 import { useProfile } from "@/lib/use-store";
 import { useProfileModal } from "@/components/profile/ProfileModal";
 import { FeatureIcon } from "@/components/kit/FeatureIcon";
@@ -13,13 +14,13 @@ import styles from "./Batu.module.css";
 const ORDER = ["year","month","day","time"] as const;
 const TABS = ["Mệnh bàn","Luận giải","Đại vận"];
 export function BatuClient() {
- const {isModuleAllowed,zaloLogin}=useAuth();
+ const {isModuleAllowed}=useAuth();
  const profile=useProfile();const {open}=useProfileModal();
  const [tab,setTab]=useState(0);
  const [activeElement,setActiveElement]=useState<WxKey|null>(null);
  const calculated=useMemo(()=>{if(!profile)return {chart:null,error:""};try{return {chart:buildBatuChart(profile),error:""};}catch(e){return {chart:null,error:e instanceof Error?e.message:"Không lập được mệnh bàn."};}},[profile]);
  const {chart,error}=calculated;
- if(!isModuleAllowed("batu"))return <section className={styles.page}><div className={styles.welcome}><FeatureIcon name="battu" size={40}/><h2>Mở Bát Tự của bạn</h2><button className={styles.primary} onClick={zaloLogin}>Đăng nhập bằng Zalo ↗</button></div></section>;
+ if(!isModuleAllowed("batu"))return <section className={styles.page}><div className={styles.welcome}><FeatureIcon name="battu" size={40}/><h2>Mở Bát Tự của bạn</h2><button className={styles.primary} onClick={openLoginDialog}>Đăng nhập ↗</button></div></section>;
  return <section className={styles.page}>
   <h1 className="sr-only">Bát Tự</h1>
   {!chart ? <div className={styles.welcome}>

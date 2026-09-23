@@ -46,7 +46,7 @@ const NAV: NavItem[] = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const mobileTitle = !isHome ? NAV.find(item => item.href !== "/" && (pathname === item.href || pathname.startsWith(`${item.href}/`)))?.label ?? (pathname === "/tuonghop" ? "Tương Hợp" : "") : "";
+  const mobileTitle = !isHome ? NAV.find(item => item.href !== "/" && (pathname === item.href || pathname.startsWith(`${item.href}/`)))?.label ?? (pathname === "/tuonghop" ? "Tương Hợp" : pathname === "/dieukhoan" ? "Điều khoản" : "") : "";
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {

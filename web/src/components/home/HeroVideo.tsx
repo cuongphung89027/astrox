@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { TextsReveal } from "@/components/motion";
 import { useAuth } from "@/lib/auth";
+import { openLoginDialog } from "@/lib/login-dialog";
 import { useProfile } from "@/lib/use-store";
 
 const HERO_WORDS = ["Tử Vi", "Kinh Dịch", "Cung Hoàng Đạo", "Thần Số Học", "Tarot", "All in one."];
@@ -31,7 +32,7 @@ const WASH_MS = 8000;
 const WORD_EXIT_MS = 860;
 
 export function HeroVideo() {
-  const { loggedIn, zaloLogin } = useAuth();
+  const { loggedIn } = useAuth();
   const profile = useProfile();
   const [mounted, setMounted] = useState(false);
   const [showCue, setShowCue] = useState(true);
@@ -175,7 +176,7 @@ export function HeroVideo() {
               ) : (
                 <button
                   type="button"
-                  onClick={zaloLogin}
+                  onClick={openLoginDialog}
                   className="inline-flex items-center justify-center rounded-full bg-son px-6 py-3 text-base font-semibold text-white shadow-[var(--shadow-pop)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
                 >
                   Đăng nhập

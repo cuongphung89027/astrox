@@ -77,6 +77,7 @@ async function run(engine) {
 
   const ROUTES = [
     { path: "/trangchu", label: "trangchu" },
+    { path: "/dieukhoan", label: "dieukhoan" },
     { path: "/hoso?section=points", label: "points", extra: async () => check(`[${engine}][points] thẻ Điểm danh`, await page.getByText("Điểm danh hàng ngày").isVisible().catch(() => false)) },
   ];
   if (isLocal) ROUTES.push({ path: "/tarot", label: "tarot", extra: async () => {

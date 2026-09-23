@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
+import { openLoginDialog } from "@/lib/login-dialog";
 import { useAppState } from "@/lib/use-store";
 import { cacheFingerprint } from "@/lib/state";
 import { periodCacheKey, TUVI_TOPICS, buildZiweiChart, menhPalace } from "@/lib/tuvi";
@@ -26,7 +27,7 @@ export function Dashboard() {
   const router = useRouter();
   const state = useAppState();
   const { profile } = state;
-  const { loggedIn, ready, displayName, zaloLogin } = useAuth();
+  const { loggedIn, ready, displayName } = useAuth();
   const { open } = useProfileModal();
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -51,7 +52,7 @@ export function Dashboard() {
   return <div className={styles.page}>
     <header className={`${styles.header} ${!loggedIn ? styles.guestHeader : ""}`}>
       <div><p>{now?.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" }) || "Hôm nay"}</p><h1>{greeting}{name ? <>, <span>{name}.</span></> : "."}</h1></div>
-      {loggedIn ? <button className={styles.avatar} aria-label="Mở hồ sơ" onClick={() => router.push("/hoso")}>{name?.slice(0,1).toUpperCase() || <FeatureIcon name="profile" size={26} />}</button> : <div className={styles.guestLogin}><span>{ready ? "Chưa đăng nhập" : "Đang kiểm tra đăng nhập…"}</span><button onClick={zaloLogin} disabled={!ready}>Đăng nhập bằng Zalo <span aria-hidden="true">↗</span></button></div>}
+      {loggedIn ? <button className={styles.avatar} aria-label="Mở hồ sơ" onClick={() => router.push("/hoso")}>{name?.slice(0,1).toUpperCase() || <FeatureIcon name="profile" size={26} />}</button> : <div className={styles.guestLogin}><span>{ready ? "Chưa đăng nhập" : "Đang kiểm tra đăng nhập…"}</span><button onClick={openLoginDialog} disabled={!ready}>Đăng nhập <span aria-hidden="true">↗</span></button></div>}
     </header>
     {!profile && <button className={styles.profilePrompt} onClick={() => open()}><span>Hoàn tất hồ sơ <small>Để xem nội dung dành riêng cho bạn</small></span><span aria-hidden="true">↗</span></button>}
     {profile && <div className={styles.dashboardGrid}>

@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { openLoginDialog } from "@/lib/login-dialog";
 import { useProfile } from "@/lib/use-store";
 import { usePointsBalance, refreshPoints } from "@/lib/points";
 import { FeatureIcon } from "@/components/kit/FeatureIcon";
@@ -9,7 +10,7 @@ import { TopupPanel } from "@/components/topup/TopupPanel";
 import styles from "./AuthMenu.module.css";
 
 export function AuthMenu() {
-  const { loggedIn, displayName, astroxUser, zaloLogin, logout } = useAuth();
+  const { loggedIn, displayName, astroxUser, logout } = useAuth();
   const profile = useProfile();
   // Tên gọi người dùng tự đặt ưu tiên trước tên từ kênh đăng nhập (Zalo/Supabase).
   const name = profile?.name || displayName;
@@ -58,7 +59,7 @@ export function AuthMenu() {
     // eslint-disable-next-line @next/next/no-img-element -- Remote account avatar.
     <img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedAvatar(avatarUrl)}/>
   ) : <FeatureIcon name="profile" size={23}/>;
-  if (!loggedIn) return <button type="button" onClick={zaloLogin} className="rounded-full bg-son px-4 py-1.5 text-sm font-semibold text-white">Đăng nhập</button>;
+  if (!loggedIn) return <button type="button" onClick={openLoginDialog} className="rounded-full bg-son px-4 py-1.5 text-sm font-semibold text-white">Đăng nhập</button>;
   return <div ref={wrap} className={styles.wrap} onBlur={e => {
     // WebKit trả relatedTarget=null khi click phần tử trong menu — coi như chưa rời,
     // click ngoài vẫn đóng qua listener pointerdown dưới đó.

@@ -2,6 +2,7 @@
 import {useMemo,useState} from "react";
 import {useProfile} from "@/lib/use-store";
 import {useAuth} from "@/lib/auth";
+import {openLoginDialog} from "@/lib/login-dialog";
 import {useProfileModal} from "@/components/profile/ProfileModal";
 import {FeatureIcon} from "@/components/kit/FeatureIcon";
 import {ReadingQuestion} from "@/components/kit/ReadingQuestion";
@@ -12,12 +13,12 @@ import {BirthGrid,NumberCycles} from "./NumberDiagrams";
 import styles from "./Numerology.module.css";
 const TABS=['Của bạn','Biểu đồ','Chu kỳ','Luận giải'];
 export function NumerologyClient(){
- const profile=useProfile();const {open}=useProfileModal();const {isModuleAllowed,zaloLogin}=useAuth();
+ const profile=useProfile();const {open}=useProfileModal();const {isModuleAllowed}=useAuth();
  const [tab,setTab]=useState(0),[topicId,setTopicId]=useState<string|null>(null);
  const calculated=useMemo(()=>{if(!profile)return {chart:null,error:''};try{return {chart:buildNumerologyChart({fullName:profile.fullName?.trim()||profile.name,dob:profile.dob}),error:''};}catch(e){return {chart:null,error:e instanceof Error?e.message:'Không tính được chỉ số.'};}},[profile]);
  const {chart,error}=calculated;const topic=NUMEROLOGY_TOPICS.find(t=>t.id===topicId);
  const choose=(id:string)=>{setTopicId(id);setTab(3);};
- if(!isModuleAllowed('numerology'))return <section className={styles.page}><div className={styles.welcome}><FeatureIcon name="numerology" size={40}/><h2>Mở Thần Số Học của bạn</h2><button className={styles.primary} onClick={zaloLogin}>Đăng nhập bằng Zalo ↗</button></div></section>;
+ if(!isModuleAllowed('numerology'))return <section className={styles.page}><div className={styles.welcome}><FeatureIcon name="numerology" size={40}/><h2>Mở Thần Số Học của bạn</h2><button className={styles.primary} onClick={openLoginDialog}>Đăng nhập ↗</button></div></section>;
  return <section className={styles.page}><h1 className="sr-only">Thần Số Học</h1>{!chart?<div className={styles.welcome}><div className={styles.emptyOrbit} aria-hidden="true"><FeatureIcon name="numerology" size={80}/><i/><b/></div><span className={styles.eyebrow}>DẤU ẤN NHỮNG CON SỐ</span><h2>Mỗi con số.<br/>Một phần của bạn.</h2><p>Khám phá từ họ tên đầy đủ và ngày sinh.</p>{error&&<p role="alert">{error}</p>}<button className={styles.primary} onClick={()=>open()}>{profile?'Chỉnh sửa hồ sơ':'Bổ sung hồ sơ'}<span>↗</span></button></div>:<>
   <header className={styles.profile}><div><span className={styles.eyebrow}>DẤU ẤN CỦA</span><h2>{profile?.name}</h2></div><button onClick={()=>open()} aria-label="Chỉnh sửa hồ sơ Thần Số Học"><FeatureIcon name="settings" size={20}/></button></header>
   <nav className={styles.tabs} role="tablist" aria-label="Thần Số Học">{TABS.map((label,i)=><button key={label} id={`num-tab-${i}`} role="tab" aria-selected={tab===i} aria-controls={`num-panel-${i}`} tabIndex={tab===i?0:-1} onClick={()=>setTab(i)} onKeyDown={e=>{if(['ArrowRight','ArrowLeft','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?0:e.key==='End'?3:(i+(e.key==='ArrowRight'?1:3))%4;setTab(next);document.getElementById(`num-tab-${next}`)?.focus();}}}>{label}</button>)}</nav>

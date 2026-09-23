@@ -46,6 +46,11 @@
 .exploreGrid a:hover span { color: #8f7a44; }
 .exploreGrid a:focus-visible { outline: 2px solid #b79d64; outline-offset: 2px; border-radius: 4px; }
 .aboutBottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; padding-top: 16px; font-size: 11px; color: #8a967a; }
+.termsLink { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; padding: 0 2px; border-bottom: 1px solid #dce3d060; font-size: 12.5px; color: #3f5f4e; text-decoration: none; }
+.termsLink span { color: #b0a074; flex-shrink: 0; }
+.termsLink:hover { color: #24483a; }
+.termsLink:hover span { color: #8f7a44; }
+.termsLink:focus-visible { outline: 2px solid #b79d64; outline-offset: 2px; border-radius: 4px; }
 .credit strong { color: #5c6d54; font-weight: 500; }
 @media(max-width:767px) { .logo img { width: 56px; height: 56px; } .brand { gap: 13px; } .tagline { font-size: 17px; } }
 @media(max-width:767px) { .layout { grid-template-columns: minmax(0,1fr); gap: 20px; } .identity { padding: 18px 16px; gap: 12px; } .identity h2 { font-size: 20px; } .avatar { width: 44px; height: 44px; border-radius: 14px; font-size: 26px; } .section { padding: 18px 16px; } }

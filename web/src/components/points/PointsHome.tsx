@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { openLoginDialog } from "@/lib/login-dialog";
 import { usePointsBalance } from "@/lib/points";
 import { fetchRewardsSummary, loadPointsHistory, loadTopupHistory, rewardsCheckin, type PointTxn, type RewardsSummary, type TopupOrder } from "@/lib/api";
 import { FeatureIcon } from "@/components/kit/FeatureIcon";
@@ -107,7 +108,7 @@ interface HistoryState {
 }
 
 export function PointsHome() {
-  const { loggedIn, ready, astroxUser, zaloLogin } = useAuth();
+  const { loggedIn, ready, astroxUser } = useAuth();
   const preview = astroxUser?.id === "localhost-preview";
   const { points, status, refresh } = usePointsBalance(!preview);
   const toast = useToast();
@@ -301,7 +302,7 @@ export function PointsHome() {
         <PointCoin size={44} className={styles.gateCoin} />
         <h3>Ví AstroX Point</h3>
         <p>Đăng nhập bằng Zalo để xem số dư, nạp Point, kiếm Point miễn phí và lưu lại toàn bộ lịch sử giao dịch.</p>
-        <button type="button" className={styles.gateLogin} onClick={zaloLogin}>
+        <button type="button" className={styles.gateLogin} onClick={openLoginDialog}>
           Đăng nhập bằng Zalo
         </button>
       </section>

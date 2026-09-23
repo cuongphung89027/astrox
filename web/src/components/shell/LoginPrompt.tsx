@@ -57,6 +57,13 @@ export function LoginPrompt() {
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
+  // Native <dialog> có thể bị đóng ngoài luồng React (script/extension) —
+  // sync store để nút Đăng nhập lần sau vẫn mở lại được thay vì no-op.
+  function handleNativeClose() {
+    if (open) closeLoginDialog();
+    document.body.style.overflow = "";
+  }
+
   function close() {
     setError("");
     closeLoginDialog();
@@ -73,7 +80,7 @@ export function LoginPrompt() {
   }
 
   return (
-    <dialog ref={dialogRef} className={styles.dialog} aria-labelledby="login-prompt-title" aria-describedby="login-prompt-description"
+    <dialog ref={dialogRef} className={styles.dialog} aria-labelledby="login-prompt-title" aria-describedby="login-prompt-description" onClose={handleNativeClose}
       onCancel={event => { event.preventDefault(); close(); }}
       onClick={event => { if (event.target === event.currentTarget) {
         const rect = event.currentTarget.getBoundingClientRect();

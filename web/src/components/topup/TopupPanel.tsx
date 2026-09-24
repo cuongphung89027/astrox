@@ -1,347 +1,157 @@
 "use client";
 
-/**
- * Panel nạp AstroX Point (modal glass, max-w-lg) — port từ pm-step "topup"
- * của app cũ: gói nạp PayOS + mã khuyến mãi + lịch sử giao dịch.
- *
- * Chỉ dùng được với tài khoản AstroX (Zalo, cookie astrox_session); tài khoản
- * Supabase-only sẽ thấy ghi chú chuyển hướng (AuthMenu đã lọc trước, đây là
- * lớp phòng khi panel được mở từ nơi khác).
- */
-import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
-import { useCallback, useEffect, useRef, useState } from "react";
-import {usePointsBalance} from "@/lib/points";
+import { useEffect, useRef, useState } from "react";
+import { usePointsBalance } from "@/lib/points";
 import { useAuth } from "@/lib/auth";
-import {
-  createTopup,
-  loadTopupHistory,
-  loadTopupPackages,
-  promoCheck,
-  type TopupOrder,
-  type TopupPackage,
-} from "@/lib/api";
+import { PointCoin } from "@/components/points/PointCoin";
+import { createTopup, loadTopupHistory, loadTopupPackages, promoCheck, type TopupOrder, type TopupPackage } from "@/lib/api";
+import styles from "./TopupPanel.module.css";
 
-const PANEL_STYLE = `
-@keyframes ax-tp-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes ax-tp-pop {
-  from { opacity: 0; transform: translateY(12px) scale(0.97); }
-  to { opacity: 1; transform: none; }
-}
-.ax-tp-fade { animation: ax-tp-fade 0.18s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.ax-tp-pop { animation: ax-tp-pop 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
-@media (prefers-reduced-motion: reduce) {
-  .ax-tp-fade, .ax-tp-pop { animation: none; }
-}
-`;
-
-interface PromoStatus {
-  kind: "ok" | "err";
-  text: string;
-}
-
-function formatVnd(n: number): string {
-  return `${n.toLocaleString("vi-VN")}đ`;
-}
-
-function HistoryStatus({ status }: { status: string }) {
-  if (status === "paid") return <span className="shrink-0 font-semibold text-ngoc-deep">Đã nạp</span>;
-  if (status === "pending") return <span className="shrink-0 font-semibold text-kim-deep">Chờ thanh toán</span>;
-  return <span className="shrink-0 font-semibold text-muc/50">Đã huỷ</span>;
-}
+const vnd = (value: number) => `${value.toLocaleString("vi-VN")} ₫`;
+const number = (value: number) => value.toLocaleString("vi-VN");
+const packageNote = (label?: string) => label?.replace(/^[\d.\s]+[đ₫]\s*(?:[·•–-]\s*)?/u, "").trim();
 
 export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { astroxUser } = useAuth();
+  // A fresh session prevents selection, promo or private history leaking across accounts/reopens.
+  return open ? <TopupSession key={astroxUser?.id ?? "guest"} onClose={onClose} /> : null;
+}
 
-  const {points:balance,refresh:refreshBalance}=usePointsBalance(!!astroxUser&&astroxUser.id!=="localhost-preview");
-  const [packages, setPackages] = useState<TopupPackage[]>([]);
+function TopupSession({ onClose }: { onClose: () => void }) {
+  const { astroxUser } = useAuth();
+  const eligible = !!astroxUser && astroxUser.id !== "localhost-preview";
+  const { points: balance, refresh: refreshBalance } = usePointsBalance(eligible);
+  const [packages, setPackages] = useState<TopupPackage[] | null>(null);
   const [pkgError, setPkgError] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
   const [history, setHistory] = useState<TopupOrder[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
-
   const [promo, setPromo] = useState("");
-  const [promoStatus, setPromoStatus] = useState<PromoStatus | null>(null);
+  const [applied, setApplied] = useState<{ code: string; bonus: number } | null>(null);
+  const [promoMessage, setPromoMessage] = useState("");
   const [promoChecking, setPromoChecking] = useState(false);
-
-  const [buying, setBuying] = useState<number | null>(null); // amount_vnd đang xử lý
+  const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState("");
-
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const lastFocusedRef = useRef<HTMLElement | null>(null);
-
-  // Focus + Escape + trả focus khi đóng.
-  useEffect(() => {
-    if (!open) {
-      const el = lastFocusedRef.current;
-      lastFocusedRef.current = null;
-      if (el && el.isConnected) el.focus();
-      return;
-    }
-    const ae = typeof document !== "undefined" ? document.activeElement : null;
-    if (ae instanceof HTMLElement && ae !== document.body) lastFocusedRef.current = ae;
-    const t = setTimeout(() => panelRef.current?.focus(), 0);
-    return () => clearTimeout(t);
-  }, [open]);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const alive = useRef(true);
+  const requestLock = useRef(false);
+  const promoRevision = useRef(0);
+  const promoLock = useRef(false);
+  const chosen = packages?.find(pkg => pkg.amount_vnd === selected);
+  const unappliedPromo = !!promo.trim() && !applied;
 
   useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
-  const scope=String(open)+":"+String(astroxUser?.id||"guest"),[previousScope,setPreviousScope]=useState(scope);
-  if(scope!==previousScope){setPreviousScope(scope);setBuyError("");setPackages([]);setPkgError(false);setHistory(null);setHistoryError(false);}
-  // Fetch public packages; load private history only for the current account.
-  useEffect(() => {
-    if (!open) return;
-    let alive = true;
-    if(astroxUser)void refreshBalance();
-    loadTopupPackages()
-      .then((pkgs) => {
-        if (alive) setPackages(pkgs);
-      })
-      .catch(() => {
-        if (alive) setPkgError(true);
-      });
-    if(astroxUser)loadTopupHistory()
-      .then((orders) => {
-        if (alive) setHistory(orders);
-      })
-      .catch(() => {
-        if (alive) setHistoryError(true);
-      });
+    alive.current = true;
+    const prior = document.activeElement;
+    const dialog = dialogRef.current;
+    dialog?.showModal();
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      alive = false;
+      alive.current = false;
+      dialog?.close();
+      document.body.style.overflow = overflow;
+      if (prior instanceof HTMLElement && prior.isConnected) prior.focus();
     };
-  }, [open, astroxUser,refreshBalance]);
+  }, []);
 
-  const buy = useCallback(
-    async (amountVnd: number) => {
-      if (!astroxUser || buying !== null) return;
-      setBuyError("");
-      setBuying(amountVnd);
-      const code = promo.trim().toUpperCase();
-      const r = await createTopup(amountVnd, code || undefined);
-      setBuying(null);
-      if (r.checkoutUrl) {
-        window.location.href = r.checkoutUrl; // sang PayOS (VietQR)
+  useEffect(() => {
+    let current = true;
+    loadTopupPackages().then(value => { if (current) setPackages(value); }).catch(() => { if (current) setPkgError(true); });
+    return () => { current = false; };
+  }, [reload]);
+
+  useEffect(() => {
+    if (!eligible) return;
+    let current = true;
+    void refreshBalance();
+    loadTopupHistory().then(value => { if (current) setHistory(value); }).catch(() => { if (current) setHistoryError(true); });
+    return () => { current = false; };
+  }, [eligible, refreshBalance]);
+
+  async function applyPromo() {
+    const code = promo.trim().toUpperCase();
+    if (!code || promoLock.current || requestLock.current || !eligible) return;
+    promoLock.current = true;
+    const revision = promoRevision.current;
+    setPromoChecking(true);
+    setApplied(null);
+    setPromoMessage("");
+    try {
+      const result = await promoCheck(code);
+      if (!alive.current || revision !== promoRevision.current) return;
+      if (result.ok) {
+        setApplied({ code, bonus: result.bonus ?? 0 });
+        setPromoMessage(`Mã ${code}: thêm ${number(result.bonus ?? 0)} Point khi nạp thành công.`);
+      } else {
+        setPromoMessage(result.error === "network" ? "Chưa kết nối được. Bạn thử lại nhé." : result.error === "promo_expired" ? "Mã đã hết hạn." : result.error === "promo_exhausted" ? "Mã đã hết lượt sử dụng." : "Mã không hợp lệ. Kiểm tra lại hoặc xóa mã để tiếp tục.");
+      }
+    } catch {
+      if (alive.current && revision === promoRevision.current) setPromoMessage("Chưa kiểm tra được mã. Bạn thử lại nhé.");
+    } finally {
+      promoLock.current = false;
+      if (alive.current) setPromoChecking(false);
+    }
+  }
+
+  async function buy() {
+    if (!chosen || !eligible || requestLock.current || unappliedPromo || promoChecking) return;
+    requestLock.current = true;
+    setBuying(true);
+    setBuyError("");
+    try {
+      const result = await createTopup(chosen.amount_vnd, applied?.code);
+      if (!alive.current) return;
+      if (result.checkoutUrl) {
+        window.location.assign(result.checkoutUrl);
         return;
       }
-      setBuyError(
-        r.error === "promo"
-          ? "Mã khuyến mãi không hợp lệ hoặc đã hết hiệu lực."
-          : r.error === "payos"
-            ? "Hệ thống thanh toán đang bảo trì."
-            : "Không tạo được lệnh nạp. Thử lại.",
-      );
-    },
-    [astroxUser, buying, promo],
-  );
-
-  const applyPromo = useCallback(async () => {
-    const code = promo.trim().toUpperCase();
-    if (!code) {
-      setPromoStatus({ kind: "err", text: "Nhập mã trước khi áp dụng." });
-      return;
+      if (result.error === "promo") {
+        setApplied(null);
+        setPromoMessage("Mã không còn hợp lệ. Kiểm tra lại hoặc xóa mã để tiếp tục.");
+      }
+      setBuyError(result.error === "promo" ? "Vui lòng kiểm tra lại mã ưu đãi." : result.error === "payos" ? "Thanh toán đang bảo trì. Bạn quay lại sau nhé." : "Chưa tạo được đơn nạp. Vui lòng thử lại.");
+    } catch {
+      if (alive.current) setBuyError("Kết nối bị gián đoạn. Kiểm tra lịch sử nạp trước khi thử lại để tránh tạo đơn trùng.");
+    } finally {
+      requestLock.current = false;
+      if (alive.current) setBuying(false);
     }
-    setPromoChecking(true);
-    setPromoStatus(null);
-    const r = await promoCheck(code);
-    setPromoChecking(false);
-    if (r.ok) {
-      setPromoStatus({ kind: "ok", text: `✓ ${code}: +${r.bonus ?? 0} Point thưởng cho mỗi lần nạp.` });
-    } else {
-      setPromoStatus({
-        kind: "err",
-        text:
-          r.error === "promo_expired"
-            ? "Mã đã hết hạn."
-            : r.error === "promo_exhausted"
-              ? "Mã đã hết lượt dùng."
-              : "Mã không tồn tại hoặc đã tắt.",
-      });
-    }
-  }, [promo]);
+  }
 
-  if (!open) return null;
-
-  const onPanelKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== "Tab" || !panelRef.current) return;
-    const focusables = Array.from(
-      panelRef.current.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      ),
-    );
-    if (focusables.length === 0) return;
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="ax-tp-title"
-      onKeyDown={onPanelKeyDown}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      className="ax-tp-fade fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-muc/40 p-4 backdrop-blur-sm sm:p-5"
-    >
-      <style>{PANEL_STYLE}</style>
-      <div
-        ref={panelRef}
-        tabIndex={-1}
-        className="ax-tp-pop glass-strong gold-ring my-auto w-full max-w-lg rounded-[var(--radius-card)] p-6 outline-none sm:p-7"
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p id="ax-tp-title" className="font-display text-xl font-extrabold tracking-tight">
-              Nạp AstroX Point
-            </p>
-            <p className="mt-0.5 text-xs font-medium text-muc-2">
-              Số dư hiện tại:{" "}
-              <span className="font-display font-extrabold text-kim-deep">
-                {astroxUser ? (balance === null ? "—" : `${balance.toLocaleString("vi-VN")} Point`) : "—"}
-              </span>
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng trang nạp Point"
-            className="grid size-8 shrink-0 place-items-center rounded-full bg-white/60 text-muc-2 transition-colors hover:bg-white hover:text-son"
-          >
-            ✕
-          </button>
-        </div>
-
-        {!astroxUser ? (
-          <p className="mt-5 rounded-xl bg-kim-tint px-4 py-3 text-sm font-medium text-kim-deep">
-            Nạp Point hiện dành cho tài khoản đăng nhập bằng Zalo.
-          </p>
-        ) : null}
-          <>
-            {/* Gói nạp công khai */}
-            <div className="mt-5 grid grid-cols-2 gap-2.5">
-              {pkgError ? (
-                <p className="col-span-full text-[13px] font-medium text-son">Không tải được gói nạp. Thử lại sau.</p>
-              ) : packages.length === 0 ? (
-                <p className="col-span-full text-[13px] font-medium text-muc-2"><LoadingWhisper kind="packages"/></p>
-              ) : (
-                packages.map((p) => {
-                  const busy = buying === p.amount_vnd;
-                  return (
-                    <button
-                      key={p.amount_vnd}
-                      type="button"
-                      onClick={() => buy(p.amount_vnd)}
-                      disabled={!astroxUser || buying !== null}
-                      className={`rounded-2xl border-2 bg-white/60 px-3.5 py-3.5 text-center transition-all ${
-                        busy
-                          ? "border-son/40 opacity-60"
-                          : "border-transparent hover:-translate-y-0.5 hover:border-kim/60 hover:bg-white/85"
-                      } disabled:cursor-not-allowed`}
-                    >
-                      <span className="block font-display text-xl font-extrabold text-kim-deep">
-                        {busy ? "Đang tạo…" : `${p.points.toLocaleString("vi-VN")} Point`}
-                      </span>
-                      <span className="mt-0.5 block text-[13px] font-semibold text-muc">
-                        {formatVnd(p.amount_vnd)}
-                      </span>
-                      {p.label ? (
-                        <span className="mt-1.5 inline-block rounded-full bg-ngoc-tint px-2.5 py-0.5 text-[10.5px] font-bold text-ngoc-deep">
-                          {p.label}
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Mã khuyến mãi */}
-            <div className="mt-5 border-t border-white/80 pt-4">
-              <label htmlFor="ax-tp-promo" className="mb-1.5 block text-xs font-semibold text-muc-2">
-                Mã khuyến mãi (tùy chọn)
-              </label>
-              <div className="flex gap-2">
-                <input
-                  id="ax-tp-promo"
-                  value={promo}
-                  onChange={(e) => setPromo(e.target.value)}
-                  placeholder="VD: TET2026"
-                  autoCapitalize="characters"
-                  className="min-w-0 flex-1 rounded-xl border border-white/80 bg-white/70 px-3.5 py-2.5 text-[15px] uppercase text-muc outline-none transition-colors placeholder:normal-case placeholder:text-muc/40 focus:border-son"
-                />
-                <button
-                  type="button"
-                  onClick={applyPromo}
-                  disabled={promoChecking}
-                  className="shrink-0 rounded-xl bg-white/80 px-4 py-2.5 text-sm font-bold text-muc transition-colors hover:bg-white disabled:opacity-50"
-                >
-                  {promoChecking ? "Đang kiểm tra…" : "Áp dụng"}
-                </button>
-              </div>
-              {promoStatus ? (
-                <p
-                  role="status"
-                  className={`mt-2 min-h-[18px] text-xs font-semibold ${
-                    promoStatus.kind === "ok" ? "text-ngoc-deep" : "text-son"
-                  }`}
-                >
-                  {promoStatus.text}
-                </p>
-              ) : (
-                <p className="mt-2 min-h-[18px]" aria-hidden="true" />
-              )}
-            </div>
-
-            {/* Lịch sử */}
-            <div className="mt-2 border-t border-white/80 pt-4">
-              <p className="text-[13.5px] font-bold">Lịch sử nạp gần đây</p>
-              <div className="mt-2 grid gap-1.5 text-[13px]">
-                {historyError ? (
-                  <p className="font-medium text-son">Không tải được lịch sử.</p>
-                ) : history === null ? (
-                  <p className="font-medium text-muc-2"><LoadingWhisper kind="payment"/></p>
-                ) : history.length === 0 ? (
-                  <p className="font-medium text-muc-2">Chưa có giao dịch nào.</p>
-                ) : (
-                  history.map((o, i) => (
-                    <div
-                      key={`${o.points}-${o.amount_vnd}-${o.status}-${i}`}
-                      className="flex items-center justify-between gap-3 border-b border-white/70 pb-1.5 last:border-b-0 last:pb-0"
-                    >
-                      <span className="font-semibold text-muc">
-                        {o.points.toLocaleString("vi-VN")} Point · {formatVnd(o.amount_vnd)}
-                      </span>
-                      <HistoryStatus status={o.status} />
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Lỗi tạo lệnh */}
-            {buyError ? (
-              <p role="alert" className="mt-3 min-h-[18px] text-[13px] font-semibold text-son">
-                {buyError}
-              </p>
-            ) : null}
-          </>
-
+  return <dialog ref={dialogRef} className={styles.dialog} aria-labelledby="ax-tp-title" aria-describedby="ax-tp-description" onCancel={onClose} onClick={event => {
+    if (event.target !== event.currentTarget) return;
+    const box = event.currentTarget.getBoundingClientRect();
+    if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) onClose();
+  }}>
+    <div className={styles.frame}>
+      <header className={styles.hero}>
+        <p className={styles.eyebrow}>VÍ ASTROX / POINT</p>
+        <h2 id="ax-tp-title">Nạp AstroX Point</h2>
+        <button type="button" className={styles.close} aria-label="Đóng trang nạp Point" onClick={onClose}><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg></button>
+        <div className={styles.wallet}><div><p>Số dư hiện tại</p><div className={styles.balance}>{eligible && balance !== null ? number(balance) : "—"}<small>Point</small></div></div><PointCoin size={62} className={styles.coin} /></div>
+      </header>
+      <div className={styles.body}>
+        <div className={styles.sectionTitle}><h3>Chọn gói nạp</h3><span id="ax-tp-description">Chọn gói trước khi thanh toán</span></div>
+        {!eligible && <p className={styles.message}>{astroxUser ? "Chế độ xem thử không hỗ trợ thanh toán." : "Đăng nhập bằng Zalo để nạp Point. Bạn vẫn có thể xem các gói bên dưới."}</p>}
+        {pkgError ? <div role="alert"><p className={`${styles.message} ${styles.error}`}>Chưa tải được gói nạp.</p><button className={styles.retry} type="button" onClick={() => { setPkgError(false); setPackages(null); setReload(value => value + 1); }}>Thử lại</button></div> : packages === null ? <div className={styles.packages} role="status" aria-label="Đang tải gói nạp">{[0,1,2,3].map(key => <div key={key} className={styles.skeleton} aria-hidden="true" />)}</div> : packages.length === 0 ? <p className={styles.message}>Hiện chưa có gói nạp khả dụng. Bạn quay lại sau nhé.</p> : <fieldset className={styles.packages} aria-label="Gói nạp Point">
+          {packages.map(pkg => <label className={styles.package} key={pkg.amount_vnd}>
+            <input type="radio" name="astrox-topup-package" value={pkg.amount_vnd} checked={selected === pkg.amount_vnd} disabled={buying} onChange={() => { setSelected(pkg.amount_vnd); setBuyError(""); }} aria-label={`${number(pkg.points)} Point, ${vnd(pkg.amount_vnd)}`} />
+            <span className={styles.packageTop}><span className={styles.pointValue}>{number(pkg.points)}<small>Point</small></span><span className={styles.check} aria-hidden="true">✓</span></span>
+            <span className={styles.price}>{vnd(pkg.amount_vnd)}</span>{packageNote(pkg.label) && <span className={styles.badge}>{packageNote(pkg.label)}</span>}
+          </label>)}
+        </fieldset>}
+        <details className={styles.details}><summary>Bạn có mã ưu đãi?</summary><div className={styles.promoRow}><input aria-label="Mã ưu đãi" value={promo} disabled={!eligible || buying} placeholder="Nhập mã của bạn" autoCapitalize="characters" autoComplete="off" onChange={event => { promoRevision.current += 1; setPromo(event.target.value); setApplied(null); setPromoMessage(""); setBuyError(""); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); void applyPromo(); } }} /><button type="button" onClick={() => void applyPromo()} disabled={!eligible || !promo.trim() || promoChecking || buying}>{promoChecking ? "Đang kiểm tra…" : "Áp dụng"}</button></div>{promoMessage && <p role="status" className={`${styles.message} ${applied ? styles.success : styles.error}`}>{promoMessage}</p>}</details>
+        <details className={styles.details}><summary>Lịch sử nạp gần đây</summary>{!eligible ? <p className={styles.message}>Đăng nhập để xem giao dịch của bạn.</p> : historyError ? <p className={`${styles.message} ${styles.error}`}>Chưa tải được lịch sử. Hãy mở lại cửa sổ để thử lại.</p> : history === null ? <p role="status" className={styles.message}>Đang tải giao dịch…</p> : history.length === 0 ? <p className={styles.message}>Chưa có giao dịch nào. Lần nạp đầu tiên sẽ xuất hiện ở đây.</p> : <ul className={styles.history}>{history.map((order,index) => <li key={order.order_code ?? index}><div>{number(order.points)} Point<small>{vnd(order.amount_vnd)}{order.order_code ? ` · #${order.order_code}` : ""}</small></div><span className={styles.historyStatus}>{order.status === "paid" ? "Đã nạp" : order.status === "pending" ? "Chờ thanh toán" : order.status === "cancelled" || order.status === "canceled" ? "Đã hủy" : order.status === "expired" ? "Đã hết hạn" : "Đang cập nhật"}</span></li>)}</ul>}</details>
       </div>
+      <footer className={styles.footer}>
+        <div className={styles.summary} aria-live="polite"><div><p>{chosen ? "Bạn sẽ nhận" : "Sẵn sàng khám phá?"}</p><small>{chosen ? `${number(chosen.points + (applied?.bonus ?? 0))} Point${applied ? ` · gồm ${number(applied.bonus)} Point ưu đãi` : ""}` : "Chọn một gói Point ở trên"}</small></div><strong>{chosen ? vnd(chosen.amount_vnd) : "—"}</strong></div>
+        {unappliedPromo && <p className={styles.message}>Áp dụng mã ưu đãi hoặc xóa mã để tiếp tục.</p>}
+        {buyError && <p role="alert" className={`${styles.message} ${styles.error}`}>{buyError}</p>}
+        <button className={styles.pay} type="button" disabled={!eligible || !chosen || buying || promoChecking || unappliedPromo} onClick={() => void buy()}>{buying ? "Đang tạo đơn nạp…" : "Tiếp tục thanh toán"}<span aria-hidden="true">↗</span></button>
+        <p className={styles.note}>Thanh toán qua PayOS · Point được cộng sau khi giao dịch được xác nhận.</p>
+      </footer>
     </div>
-  );
+  </dialog>;
 }

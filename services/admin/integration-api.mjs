@@ -1,3 +1,4 @@
+import {limitAi} from './ai-rate-limit.mjs';
 import {renderServicePrompt} from './prompt-engine.ts';
 import {backendStatus,connectionSecretAvailable} from './backend.mjs';
 import {state,readPublished,readSecret,recordAudit,sql} from './store.mjs';
@@ -58,30 +59,39 @@ export async function handleConfiguredAi(request,env){
   if(!service||!['free','paid'].includes(service.status))throw new RuntimeError('SERVICE_UNAVAILABLE',403);
   const root=c.billing.services.find(s=>s.id===service.module);if(root&&!['free','paid'].includes(root.status))throw new RuntimeError('SERVICE_UNAVAILABLE',403);
   const engine={tuvi:'iztro',zodiac:'astronomy',batu:'lunar',numerology:'numerology',kinhdich:'kinhdich',tarot:'tarot'}[service.module];if(engine&&c.engines?.[engine]?.enabled===false)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
+  const requestHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({serviceId:input.serviceId,messages:input.messages,promptDescriptor:input.promptDescriptor,compact:input.compact})))),b=>b.toString(16).padStart(2,'0')).join('');
   if(input.promptDescriptor){try{input.messages=[{role:'user',content:renderServicePrompt(input.promptDescriptor,input.serviceId,c.prompts)}]}catch{throw new RuntimeError('INVALID_MESSAGES',400)}}
   if(input.compact)input.messages.push({role:'user',content:c.prompts.templates['shared.compact']});
+  const limited=await limitAi(request,env);if(limited)return limited;
   if(service.status==='paid'){
    if(!c.billing.enabled)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
    if(!env.ASTROX_BACKEND)throw new RuntimeError('BACKEND_UNAVAILABLE',503);
-   // Trừ Point qua worker (idempotent theo chargeId), chạy provider chain tại đây,
-   // hoàn Point nếu chain lỗi — user không mất Point cho lượt luận giải hỏng.
+   if(!/^[a-zA-Z0-9_-]{8,120}$/.test(input.operationId||''))throw new RuntimeError('INVALID_MESSAGES',400);
    const headers=new Headers({'content-type':'application/json','x-astrox-config-revision':String(published.revision)});
    for(const name of ['cookie','authorization']){const value=request.headers.get(name);if(value)headers.set(name,value)}
-   const chargeResponse=await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/ai/charge',{method:'POST',headers,body:JSON.stringify({serviceId:input.serviceId,revision:published.revision}),signal:AbortSignal.timeout(15000)}));
+   const backend=async(path,body)=>env.ASTROX_BACKEND.fetch(new Request(`https://astrox-internal/internal/ai/${path}`,{method:'POST',headers,body:JSON.stringify(body),signal:AbortSignal.timeout(15000)}));
+   const chargeResponse=await backend('charge',{serviceId:input.serviceId,revision:published.revision,operationId:input.operationId,requestHash});
    const charge=await chargeResponse.json().catch(()=>null);
    if(!chargeResponse.ok){
-    const insufficient=charge?.error==='insufficient_points';
-    attempts=[{providerId:'',model:'',outcome:insufficient?'insufficient_points':'charge_failed'}];outcome=insufficient?'INSUFFICIENT_POINTS':`CHARGE_HTTP_${chargeResponse.status}`;
-    return json({error:insufficient?`Không đủ Point — cần ${charge?.needed} Point cho lượt luận giải này. Nạp thêm Point rồi thử lại.`:'Không trừ được Point cho lượt luận giải này. Thử lại sau.',code:insufficient?'insufficient_points':'charge_failed'},insufficient?402:502);
+    const code=charge?.error||'charge_failed';outcome=code;
+    const messages={unauthorized:'Vui lòng đăng nhập lại trước khi dùng dịch vụ trả phí.',insufficient_points:`Không đủ Point — cần ${charge?.needed} Point cho lượt luận giải này.`,operation_in_progress:'Lượt luận giải này đang được xử lý. Vui lòng chờ rồi thử lại.',operation_refunded:'Lượt trước đã được hoàn Point. Bạn có thể thử một lượt mới.',operation_conflict:'Thông tin của lượt luận giải đã thay đổi. Vui lòng tải lại trang.',result_expired:'Lượt này đã xử lý trước đó. Hãy kiểm tra bài đã lưu hoặc liên hệ hỗ trợ.',revision_mismatch:'Cấu hình vừa thay đổi. Vui lòng thử lại.'};
+    return json({error:messages[code]||'Chưa xác nhận được giao dịch Point. Vui lòng thử lại.',code},[400,401,402,403,409,410].includes(chargeResponse.status)?chargeResponse.status:503);
    }
+   if(charge?.replayed&&charge.response){outcome='replayed';return json(charge.response);}
    const chargeId=String(charge?.chargeId||'');
+   if(!chargeId)throw new RuntimeError('BACKEND_UNAVAILABLE',503);
    try{
-    const result=await executeProviderChain(c,{messages:input.messages,serviceId:input.serviceId},ref=>readSecret(env,ref),{allowHosts:hosts(env),healthStore:providerHealth(env)});attempts=result.attempts;outcome='success';
-    const {choices,model,usage}=result;return json({choices,model,usage,configRevision:published.revision,chargedPoints:charge.points});
+    const result=await executeProviderChain(c,{messages:input.messages,serviceId:input.serviceId},ref=>readSecret(env,ref),{allowHosts:hosts(env),healthStore:providerHealth(env)});attempts=result.attempts;
+    const {choices,model,usage}=result,response={choices,model,usage,configRevision:published.revision,chargedPoints:charge.points};
+    const saved=await backend('complete',{chargeId,response});
+    if(!saved.ok||!(await saved.json().catch(()=>null))?.ok)throw new RuntimeError('RESULT_PERSIST_FAILED',503);
+    outcome='success';return json(response);
    }catch(e){
-    attempts=[...(e.attempts||attempts),{providerId:'',model:'',outcome:'refunded'}];outcome=e.code||'failed';
-    if(chargeId)await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/ai/refund',{method:'POST',headers:{'content-type':'application/json',cookie:request.headers.get('cookie')||''},body:JSON.stringify({chargeId}),signal:AbortSignal.timeout(10000)})).catch(()=>{});
-    return json({error:diagnostic(e.code)},e.status||503);
+    let refunded=false;
+    for(let retry=0;retry<2&&!refunded;retry++)try{const r=await backend('refund',{chargeId});refunded=r.ok&&(await r.json().catch(()=>null))?.ok===true;}catch{}
+    attempts=[...(e.attempts||attempts),{providerId:'',model:'',outcome:refunded?'refunded':'refund_pending'}];outcome=refunded?(e.code||'failed'):'refund_pending';
+    if(!refunded)console.error(JSON.stringify({event:'ai.refund_pending',chargeId}));
+    return json({error:refunded?`${diagnostic(e.code)} Point đã được hoàn lại.`:'Chưa xác nhận được kết quả của lượt này. Hệ thống đang đối soát Point; vui lòng thử lại sau.',code:refunded?'operation_refunded':'refund_pending'},e.status||503);
    }
   }
 

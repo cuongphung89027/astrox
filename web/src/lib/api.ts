@@ -4,6 +4,7 @@
  * Lớp gọi API — port từ callAiText/runAiPrompt/aiHedgeRace + topup của
  * index.html. Toàn bộ chạy client-side (static export).
  */
+import {pendingAiOperation,finishAiOperation} from "./ai-operation";
 import { promptDescriptor } from "./managed-prompts";
 import { AI_BASE, AUTH_API_BASE, DEFAULT_MODEL } from "./config";
 import { getState, setState, setPromptRevision, recordPromptResult } from "./state";
@@ -41,12 +42,20 @@ function aiParts(parts: AiPart[]) {
 }
 
 async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): Promise<string> {
+  // Fetch per operation; never persist the credential in localStorage.
+  const auth=await fetch(`${AUTH_API_BASE}/api/ai/session`,{method:"POST",credentials:"include",signal});
+  if(!auth.ok&&auth.status!==401)throw new Error("Chưa xác minh được phiên đăng nhập. Vui lòng thử lại.");
+  const ticket=auth.ok?await auth.json():null;
+  const headers:Record<string,string>={"Content-Type":"application/json"};
+  if(typeof ticket?.token==="string")headers.Authorization=`Bearer ${ticket.token}`;
+  const operation=await pendingAiOperation(ticket?.userId||"guest",body);
+  body={...body,operationId:operation.id};
   let res: Response | undefined;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       res = await fetch(AI_BASE, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ ...body, model: DEFAULT_MODEL }),
         signal,
       });
@@ -57,6 +66,10 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
         continue;
       }
       throw new Error("Không kết nối được máy chủ AstroX. Kiểm tra kết nối mạng và thử lại.");
+    }
+    if(res&&!res.ok){
+      const failure=await res.clone().json().catch(()=>null);
+      if(failure?.code==="operation_refunded"){finishAiOperation(operation.key);break;}
     }
     if (
       res &&
@@ -90,9 +103,9 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
   const content = typeof choice?.message?.content === "string" ? choice.message.content : "";
   if (content && content.trim() !== "") {
     if(Number.isSafeInteger(data.configRevision))recordPromptResult(content,data.configRevision);
-    if (finish !== "length") return content;
+    if (finish !== "length") {finishAiOperation(operation.key);return content;}
     const ceiling = Math.max(Number(body.max_tokens) || 0, 2400);
-    if (content.length / ceiling >= AI_PARTIAL_MIN_RATIO) return content;
+    if (content.length / ceiling >= AI_PARTIAL_MIN_RATIO) {finishAiOperation(operation.key);return content;}
     throw new Error("AstroX dừng sớm (length).");
   }
   throw new Error(finish && finish !== "stop" ? `AstroX dừng sớm (${finish}).` : "AstroX không trả về nội dung.");
@@ -110,7 +123,7 @@ export async function callAiText(opts: {
   const compact = opts.compact === true;
   const AI_TOKEN_CEILING = compact ? 1500 : 16000;
   const maxTokens = opts.maxTokens ? Math.max(opts.maxTokens, AI_TOKEN_CEILING) : AI_TOKEN_CEILING;
-  const state = getState();
+  getState();
   const body = {
     operationId: crypto.randomUUID(),
     promptDescriptor: promptDescriptor(opts.parts?.[0]?.text || ""),

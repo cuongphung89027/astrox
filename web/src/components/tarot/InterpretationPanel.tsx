@@ -1,5 +1,5 @@
 "use client";
-import { refreshPromptRevision } from "@/lib/state";
+import { cacheFingerprint, refreshPromptRevision } from "@/lib/state";
 
 /**
  * InterpretationPanel — AI tổng hợp trải bài: prompt port từ
@@ -57,6 +57,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
   }, []);
 
   const load = useCallback(async () => {
+    const fingerprint = cacheFingerprint();
     const force = forceRef.current;
     forceRef.current = false;
     const cacheKey = tarotCacheKey(
@@ -66,6 +67,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
     const remember = (result: string) => {
       pushTarotHistory({
         id: cacheKey,
+        fingerprint,
         savedAt: Date.now(),
         question,
         deckId: deck.id,
@@ -82,6 +84,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
       });
     };
     await refreshPromptRevision();
+    if (cacheFingerprint() !== fingerprint) return;
     const cached = readAiCache("tarot", cacheKey, force);
     if (cached) {
       setText(cached);
@@ -106,7 +109,9 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
         profileContext: profile ? profileContextText(profile) : undefined,
       });
       const result = await runAiPrompt(prompt, { temperature: 0.8, serviceId: spread.id === "three" ? `tarot--three--${spread.frames?.find(f=>f.label===frameLabel)?.id || "ppf"}` : `tarot--${spread.id}` });
-      writeAiCache("tarot", cacheKey, result, { module: "tarot", topic: spread.id });
+      if (cacheFingerprint() === fingerprint) writeAiCache("tarot", cacheKey, result, { module: "tarot", topic: spread.id });
+      remember(result);
+      if (cacheFingerprint() !== fingerprint) return;
       setText(result);
       setState("done");
     } catch (e) {

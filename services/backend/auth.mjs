@@ -19,6 +19,28 @@ export async function readSession(env,request){
  const user=await env.DB.prepare("SELECT id FROM app_users WHERE id=? AND status='active'").bind(p.sub).first();return user?p:null;
  }catch{return null;}
 }
+// A short-lived, audience-bound credential bridges the API host-only session to
+// same-origin Pages AI. It cannot authenticate payments or normal account APIs.
+export async function aiSession(env,request){
+ if(!trustedOrigin(env,request))return json(env,request,{error:'invalid_origin'},403);
+ const session=await readSession(env,request);
+ if(!session)return json(env,request,{error:'unauthorized'},401);
+ const now=Date.now(),exp=now+300000;
+ const body=base64(enc.encode(JSON.stringify({sub:session.sub,aud:'astrox-ai',iat:now,exp})));
+ return json(env,request,{token:`${body}.${await hmac(env.SESSION_SECRET,'ai:'+body)}`,expiresAt:exp,userId:session.sub});
+}
+export async function readAiSession(env,request,now=Date.now()){
+ const authorization=request.headers.get('authorization');
+ if(!authorization)return readSession(env,request);
+ try{
+  const match=/^Bearer ([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/.exec(authorization);if(!match)return null;
+  const [,body,sig]=match;
+  if(!await equal(sig,await hmac(env.SESSION_SECRET,'ai:'+body)))return null;
+  const p=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(body.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))));
+  if(p.aud!=='astrox-ai'||typeof p.sub!=='string'||!Number.isFinite(p.iat)||!Number.isFinite(p.exp)||p.exp<=now||p.iat>now+60000||p.exp-p.iat>300000)return null;
+  return await env.DB.prepare("SELECT id FROM app_users WHERE id=? AND status='active'").bind(p.sub).first()?p:null;
+ }catch{return null;}
+}
 export async function verifyZaloUser(token,fetchImpl=fetch){
  if(typeof token!=='string'||!token)throw new Error('zalo_identity_unverified:missing_token');
  const r=await fetchImpl('https://graph.zalo.me/v2.0/me?fields=id,name,picture',{headers:{access_token:token},redirect:'manual',signal:AbortSignal.timeout(15000)});const me=await r.json().catch(()=>null);
@@ -42,14 +64,9 @@ export async function zaloCallback(env,request,settings,fetchImpl=fetch){
  const r=await fetchImpl('https://oauth.zaloapp.com/v4/access_token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded',secret_key:env.ZALO_APP_SECRET},body:new URLSearchParams({code,app_id:env.ZALO_APP_ID,grant_type:'authorization_code',code_verifier:row.code_verifier}),redirect:'manual',signal:AbortSignal.timeout(15000)});
  const tokens=await r.json().catch(()=>null);if(!r.ok||!tokens?.access_token){await diag(env,'token_exchange_failed',{status:r.status,body:redact(tokens)});return json(env,request,{error:'token_exchange_failed'},502);}
  let me;try{me=await verifyZaloUser(tokens.access_token,fetchImpl);}
- // Zalo từ chối /me gọi từ IP edge quốc tế (error -501) dù token hợp lệ — worker legacy
- // từng né bằng cách đẩy bước này về trình duyệt user. Escrow token dưới id một-lần-dùng
- // rồi trả về finish page; trình duyệt phải submit lại đúng token đã escrow mới được tính.
- catch(e){const pendingId=crypto.randomUUID();await diag(env,'server_verify_failed_fallback',{reason:String(e?.message||'').slice(0,250)});
-  const pendingStatements=[env.DB.prepare('INSERT INTO zalo_pending_tokens(id,access_token,created_at) VALUES(?,?,?)').bind(pendingId,tokens.access_token,new Date().toISOString())];
-  if(ref)pendingStatements.push(env.DB.prepare('INSERT INTO oauth_referrals(id,ref,created_at) VALUES(?,?,?)').bind(pendingId,ref,new Date().toISOString()));
-  await env.DB.batch(pendingStatements);
-  return new Response(null,{status:302,headers:{location:`/auth/zalo/finish?id=${pendingId}`,'cache-control':'no-store'}});}
+ // Identity is trusted only when verified by the provider on the server.
+ catch(e){await diag(env,'server_verify_failed',{reason:String(e?.message||'').slice(0,250)});
+  return json(env,request,{error:'zalo_identity_unverified',message:'Zalo chưa xác minh được danh tính. Vui lòng thử đăng nhập lại sau.'},502);}
  return await completeZaloLogin(env,request,settings,me,ref);
 }
 async function completeZaloLogin(env,request,settings,me,ref=null){
@@ -69,23 +86,8 @@ async function completeZaloLogin(env,request,settings,me,ref=null){
  if(request.method==='GET'){const headers=new Headers({location:settings.zalo.returnUrl,'cache-control':'no-store'});for(const [k,v] of cookies)headers.append(k,v);return new Response(null,{status:302,headers});}
  const r=json(env,request,{ok:true,redirect:settings.zalo.returnUrl||'/'});for(const [k,v] of cookies)r.headers.append(k,v);return r;
 }
-const FINISH_PAGE=(id,token)=>`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Đang hoàn tất đăng nhập…</title></head><body style="font-family:system-ui,sans-serif;text-align:center;padding-top:40vh;color:#333"><p id="st">Đang hoàn tất đăng nhập…</p><script>window.__AX_T__=${JSON.stringify(token)};(async()=>{const st=document.getElementById('st'),id=${JSON.stringify(id)};try{const me=await(await fetch('https://graph.zalo.me/v2.0/me?fields=id,name,picture&access_token='+encodeURIComponent(window.__AX_T__),{cache:'no-store'})).json();if(!me||!me.id||me.error)throw new Error('me_error:'+JSON.stringify(me&&me.error?me.error:me).slice(0,200));const done=await(await fetch('/auth/zalo/finish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id,token:window.__AX_T__,me})})).json();if(!done||!done.ok)throw new Error('finish_error:'+JSON.stringify(done).slice(0,200));location.replace(done.redirect||'/');}catch(e){st.textContent='Không xác minh được danh tính từ Zalo. Vui lòng đăng nhập lại.';try{await fetch('/auth/zalo/finish',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id,error:String(e.message).slice(0,300)})})}catch(_){}}})();</script></body></html>`;
-export async function zaloFinish(env,request,settings){
- const url=new URL(request.url),id=url.searchParams.get('id');
- if(request.method==='GET'){
-  if(!id)return json(env,request,{error:'missing_id'},400);
-  const row=await env.DB.prepare("SELECT access_token FROM zalo_pending_tokens WHERE id=? AND julianday(created_at)>julianday('now','-15 minutes')").bind(id).first();
-  if(!row)return json(env,request,{error:'invalid_or_expired_session',message:'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'},400);
-  return new Response(FINISH_PAGE(id,row.access_token),{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store, no-cache, must-revalidate','content-security-policy':"default-src 'none'; script-src 'unsafe-inline'; connect-src 'self' https://graph.zalo.me"}});
- }
- let body;try{body=await request.json()}catch{return json(env,request,{error:'bad_request'},400)}
- if(body?.error){await diag(env,'finish_page_error',{error:String(body.error).slice(0,250)});return json(env,request,{error:'zalo_identity_unverified',message:'Không xác minh được danh tính từ Zalo. Vui lòng đăng nhập lại.'},502);}
- const token=String(body?.token||''),me=body?.me;
- const row=await env.DB.prepare("DELETE FROM zalo_pending_tokens WHERE id=? AND julianday(created_at)>julianday('now','-15 minutes') RETURNING access_token").bind(String(body?.id||'')).first();
- if(!row){await diag(env,'finish_invalid_pending',{});return json(env,request,{error:'invalid_or_expired_session',message:'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.'},400);}
- const refRow=await env.DB.prepare('DELETE FROM oauth_referrals WHERE id=? RETURNING ref').bind(String(body?.id||'')).first();const ref=refRow?.ref||null;
- if(!token||!await equal(token,row.access_token)){await diag(env,'finish_token_mismatch',{});return json(env,request,{error:'verification_failed'},401);}
- if(!me||typeof me.id!=='string'||!me.id||me.id.length>64){await diag(env,'finish_invalid_identity',{me:redact(me)});return json(env,request,{error:'verification_failed'},400);}
- return await completeZaloLogin(env,request,settings,me,ref);
+// Retired insecure browser-verification fallback. Old links cannot mint sessions.
+export async function zaloFinish(env,request){
+ return json(env,request,{error:'restart_login',message:'Vui lòng đăng nhập lại để xác minh danh tính.'},410);
 }
 export function logout(env,request){if(!trustedOrigin(env,request))return json(env,request,{error:'invalid_origin'},403);const r=json(env,request,{ok:true});r.headers.set('set-cookie','astrox_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');return r;}

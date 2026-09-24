@@ -10,6 +10,7 @@
  * hoặc qua `wrangler pages secret put DEVQUOTE_API_KEY`):
  *   DEVQUOTE_API_KEY
  */
+import {limitAi} from "../../services/admin/ai-rate-limit.mjs";
 import { handleConfiguredAi } from "../../services/admin/integration-api.mjs";
 
 const ENDPOINT = "https://opencode.ai/zen/go/v1/responses";
@@ -37,6 +38,9 @@ export async function onRequestPost(context) {
   // legacy credentials when the configured service is disabled or failing.
   const configured = await handleConfiguredAi(request, env);
   if (configured) return configured;
+
+  const limited = await limitAi(request, env);
+  if (limited) return limited;
 
   const key = env.DEVQUOTE_API_KEY;
   if (!key) return json(500, { error: "Máy chủ chưa cấu hình DEVQUOTE_API_KEY trong Environment Variables." });

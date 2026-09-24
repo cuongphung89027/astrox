@@ -61,23 +61,12 @@ test('failed Zalo callbacks persist diagnostics without leaking tokens',async()=
  await env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind('st2','v',new Date().toISOString()).run();
  const zaloFetch=async(url)=>url.includes('access_token')?Response.json({access_token:'secret-access-token',refresh_token:'secret-refresh'}):Response.json({error:-501});
  const fallback=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=st2&code=x',{headers:{cookie:'astrox_oauth=st2'}}),{zalo:{returnUrl:'https://theastrox.space/'}},zaloFetch);
- assert.equal(fallback.status,302);
- const finishUrl=new URL(fallback.headers.get('location'),'https://api.example.com'),pendingId=finishUrl.searchParams.get('id');
+ assert.equal(fallback.status,502);
  row=await env.DB.prepare('SELECT stage,detail FROM login_diagnostics ORDER BY id DESC LIMIT 1').first();
- assert.equal(row.stage,'server_verify_failed_fallback');assert.ok(!row.detail.includes('secret'));
- const page=await zaloFinish(env,new Request(finishUrl.href),{zalo:{returnUrl:'https://theastrox.space/'}});
- assert.equal(page.status,200);assert.ok((await page.text()).includes('graph.zalo.me'));
- const forged=await zaloFinish(env,new Request('https://api.example.com/auth/zalo/finish',{method:'POST',body:JSON.stringify({id:pendingId,token:'wrong-token',me:{id:'zp-new',name:'Fake'}})}),{zalo:{}});
- assert.equal(forged.status,401);
- const consumed=await zaloFinish(env,new Request('https://api.example.com/auth/zalo/finish',{method:'POST',body:JSON.stringify({id:pendingId,token:'secret-access-token',me:{id:'zp-new',name:'Real User'}})}),{zalo:{}});
- assert.equal(consumed.status,400);
- await env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind('st3','v',new Date().toISOString()).run();
- const fallback2=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=st3&code=x',{headers:{cookie:'astrox_oauth=st3'}}),{zalo:{returnUrl:'https://theastrox.space/'}},zaloFetch);
- const pid2=new URL(fallback2.headers.get('location'),'https://api.example.com').searchParams.get('id');
- const done=await zaloFinish(env,new Request('https://api.example.com/auth/zalo/finish',{method:'POST',body:JSON.stringify({id:pid2,token:'secret-access-token',me:{id:'zp-new',name:'Real User'}})}),{zalo:{returnUrl:'https://theastrox.space/'}});
- assert.equal(done.status,200);assert.equal((await done.json()).ok,true);assert.ok(done.headers.get('set-cookie')?.includes('astrox_session='));
- const created=await env.DB.prepare("SELECT u.id,u.display_name FROM app_users u JOIN zalo_identities i ON i.user_id=u.id WHERE i.provider_subject='zp-new'").first();
- assert.equal(created.display_name,'Real User');assert.ok(await env.DB.prepare('SELECT user_id FROM zalo_point_accounts WHERE user_id=?').bind(created.id).first());
+ assert.equal(row.stage,'server_verify_failed');assert.ok(!row.detail.includes('secret'));
+ const retired=await zaloFinish(env,new Request('https://api.example.com/auth/zalo/finish'));
+ assert.equal(retired.status,410);assert.ok(!retired.headers.has('set-cookie'));
+
 });
 // Ví Point của người dùng và view Rewards của admin phải đọc cùng một ledger.
 test('points history is session-scoped, newest-first and cursor-paginated',async()=>{
@@ -194,9 +183,9 @@ test('admin wallet adjust writes ledger and refuses overdraft; user block kills 
 
 test('paid AI charges idempotently, rejects insufficient balance and refunds on failure',async()=>{
  const {internalFetch}=await import('./handler.mjs');
- const env=await fixture();await published(env,c=>{const s=c.billing.services.find(x=>x.id==='tarot');s.status='paid';s.points=30;});
+ const env=await fixture();await published(env,c=>{c.ai.enabled=true;const s=c.billing.services.find(x=>x.id==='tarot');s.status='paid';s.points=30;});
  const {cookie}=await cookieOf(env);
- const chargeReq=chargeId=>new Request('https://astrox-internal/internal/ai/charge',{method:'POST',headers:{cookie},body:JSON.stringify({serviceId:'tarot',revision:1})});
+ const chargeReq=chargeId=>new Request('https://astrox-internal/internal/ai/charge',{method:'POST',headers:{cookie},body:JSON.stringify({serviceId:'tarot',revision:1,operationId:'test-operation',requestHash:'a'.repeat(64)})});
  const poor=await internalFetch(chargeReq(),env);assert.equal(poor.status,402);assert.equal((await poor.json()).error,'insufficient_points');
  await env.DB.prepare("UPDATE zalo_point_accounts SET balance=100 WHERE user_id='u1'").run();
  const ok=await internalFetch(chargeReq(),env);const okBody=await ok.json();
@@ -205,7 +194,7 @@ test('paid AI charges idempotently, rejects insufficient balance and refunds on 
  assert.equal(refund.status,200);assert.equal(await balance(env,'u1'),100);
  const again=await internalFetch(new Request('https://astrox-internal/internal/ai/refund',{method:'POST',headers:{cookie},body:JSON.stringify({chargeId:okBody.chargeId})}),env);
  assert.equal((await again.json()).refunded,false);assert.equal(await balance(env,'u1'),100); // hoàn 2 lần không nhân đôi
- const stale=await internalFetch(new Request('https://astrox-internal/internal/ai/charge',{method:'POST',headers:{cookie},body:JSON.stringify({serviceId:'tarot',revision:999})}),env);
+ const stale=await internalFetch(new Request('https://astrox-internal/internal/ai/charge',{method:'POST',headers:{cookie},body:JSON.stringify({serviceId:'tarot',revision:999,operationId:'stale-operation',requestHash:'a'.repeat(64)})}),env);
  assert.equal(stale.status,409);
 });
 

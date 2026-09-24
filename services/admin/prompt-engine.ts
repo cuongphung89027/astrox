@@ -1,6 +1,7 @@
 import templates from './prompt-templates.ts';
 import originals from './original-prompts.ts';
 export type PromptNode = { id: string; values: (string | PromptNode)[] };
+export const COMPAT_INCLUSION_GUIDANCE = "Tôn trọng mọi cặp đôi, bao gồm LGBTQ+. Nam–Nam, Nữ–Nữ và Nam–Nữ được đối xử bình đẳng. Không suy đoán xu hướng tính dục từ giới tính; không giảm mức độ tương hợp chỉ vì hai người cùng giới. Dùng ‘bạn’, ‘người ấy’, ‘hai bạn’; không tự gán vai vợ/chồng hoặc vai trò nam/nữ. Giữ đúng định dạng trả lời đã yêu cầu.";
 export const ORIGINAL_SYSTEM_PROMPT = originals.system;
 export const PROMPT_TEMPLATES = templates;
 export const ORIGINAL_TOPICS = originals.topics;
@@ -10,7 +11,7 @@ export function renderPrompt(node: PromptNode, overrides: Record<string,string> 
  const entry=templates.find(t=>t.id===node.id);if(!entry || node.values.length!==entry.variables.length)throw new Error('INVALID_PROMPT');
  const text=overrides[node.id]??entry.template;
  const result=text.replace(/\{\{v(\d+)\}\}/g,(_,index)=>{const value=node.values[Number(index)];if(value===undefined)throw new Error('INVALID_PROMPT_VARIABLE');return typeof value==='string'?value:renderPrompt(value,overrides,depth+1);});
- if(result.length>100000)throw new Error('PROMPT_TOO_LARGE');return result;
+ if(result.length>100000)throw new Error('PROMPT_TOO_LARGE');return node.id==='compat.original'||node.id==='zodiac.compatPrompt.0' ? `${result}\n\n${COMPAT_INCLUSION_GUIDANCE}` : result;
 }
 export function originalTasks():Record<string,string>{
  const out:Record<string,string>={};

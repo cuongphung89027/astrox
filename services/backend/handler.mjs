@@ -1,7 +1,8 @@
+import {chargeAi,refundAi,completeAi} from './ai-operations.mjs';
 import {readPublished} from '../admin/store.mjs';
 import {publicConfig} from '../admin/config.ts';
 import {runtimeSettings,capabilities,legacySnapshot} from './config.mjs';
-import {readSession,zaloLogin,zaloCallback,zaloFinish,logout} from './auth.mjs';
+import {readSession,aiSession,zaloLogin,zaloCallback,zaloFinish,logout} from './auth.mjs';
 import {handlePayosWebhook,handleTopupCreate,handlePromoCheck} from './payments.mjs';
 import {handlePointsHistory} from './points.mjs';
 import {handleRewardsSummary,handleRewardsCheckin} from './rewards.mjs';
@@ -18,7 +19,7 @@ export async function publicFetch(request,env){
  try{
   const url=new URL(request.url),path=url.pathname,method=request.method;
   if(method==='OPTIONS')return new Response(null,{status:204,headers:corsHeaders(env,request)});
-  if(path==='/api/health')return json(env,request,{ok:true,service:'astrox-api',database:Boolean(env.DB),version:'2026-09-admin-bridge'});
+  if(path==='/api/health')return json(env,request,{ok:true,service:'astrox-api',database:Boolean(env.DB),version:'2026-09-24-critical-1'});
   // Internal APIs are never routed by the public handler, regardless of Host/header.
   if(path.startsWith('/internal/'))return json(env,request,{error:'not_found'},404);
   if(path==='/api/webhooks/payos'&&method==='POST'||path==='/api/payos/webhook'&&method==='POST')return await handlePayosWebhook(env,request);
@@ -27,6 +28,7 @@ export async function publicFetch(request,env){
   if(path==='/auth/zalo/finish'){const s=await runtimeSettings(env);return await zaloFinish(s.env,request,s);}
   if(path==='/auth/zalo/complete')return json(env,request,{error:'restart_login',message:'Vui lòng đăng nhập lại để xác minh danh tính.'},410);
   if(path==='/auth/logout'&&method==='POST')return logout(env,request);
+  if(path==='/api/ai/session'&&method==='POST')return await aiSession(env,request);
   if(path==='/api/me'&&method==='GET'){const session=await readSession(env,request);if(!session)return json(env,request,{user:null});const user=await env.DB.prepare('SELECT id,display_name,email,avatar_url FROM app_users WHERE id=?').bind(session.sub).first();const wallet=await env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(session.sub).first();return json(env,request,{user,points:wallet?.balance||0});}
   if(path==='/api/module-access'&&method==='GET')return await moduleAccess(env,request);
   if(path==='/api/site-config'&&method==='GET'){const p=await readPublished(env);return json(env,request,{config:p?publicConfig(p.config):null,revision:p?.revision??null});}
@@ -45,8 +47,9 @@ export async function internalFetch(request,env){
  const path=new URL(request.url).pathname;
  // Chỉ service binding (ASTROX_INTERNAL) mới vào được handler này; publicFetch
  // chặn mọi /internal/* ở trên. Các POST là thao tác ghi có xác thực riêng.
- if(path==='/internal/ai/charge'&&request.method==='POST')return await internalAiCharge(env,request);
- if(path==='/internal/ai/refund'&&request.method==='POST')return await internalAiRefund(env,request);
+ if(path==='/internal/ai/charge'&&request.method==='POST')return await chargeAi(env,request);
+ if(path==='/internal/ai/complete'&&request.method==='POST')return await completeAi(env,request);
+ if(path==='/internal/ai/refund'&&request.method==='POST')return await refundAi(env,request);
  if(path==='/internal/admin/users/status'&&request.method==='POST')return await internalUserStatus(env,request);
  if(path==='/internal/admin/wallet/adjust'&&request.method==='POST')return await internalWalletAdjust(env,request);
  if(path==='/internal/admin/login-diagnostics'&&request.method==='GET')
@@ -62,45 +65,6 @@ export async function internalFetch(request,env){
  };
  const kind=path.replace('/internal/admin/','');if(queries[kind])return Response.json({rows:(await env.DB.prepare(queries[kind]).all()).results,source:'astrox-api',readOnly:true});
  return Response.json({error:'not_found'},{status:404});
-}
-
-/** Trừ Point cho một lượt AI dịch vụ trả phí — idempotent theo chargeId. */
-async function internalAiCharge(env,request){
- const session=await readSession(env,request);
- if(!session)return Response.json({error:'unauthorized'},{status:401});
- const b=await request.json().catch(()=>null);
- const serviceId=String(b?.serviceId||''),revision=Number(b?.revision);
- if(!serviceId||!Number.isSafeInteger(revision))return Response.json({error:'bad_request'},{status:400});
- const published=await readPublished(env);
- if(!published||published.revision!==revision)return Response.json({error:'revision_mismatch'},{status:409});
- const service=published.config.billing.services.find(s=>s.id===serviceId);
- const price=service&&service.status==='paid'&&Number.isSafeInteger(service.points)&&service.points>0?service.points:0;
- if(!price)return Response.json({error:'service_not_paid'},{status:400});
- const chargeId=crypto.randomUUID(),now=new Date().toISOString();
- const batch=await env.DB.batch([
-  env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(session.sub,now),
-  env.DB.prepare("INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,?,?,'ai_service',?,? WHERE EXISTS(SELECT 1 FROM zalo_point_accounts WHERE user_id=? AND balance>=?) ON CONFLICT(reason,reference_id,user_id) DO NOTHING").bind(chargeId,session.sub,-price,chargeId,now,session.sub,price),
-  env.DB.prepare('UPDATE zalo_point_accounts SET balance=balance-?,updated_at=? WHERE user_id=? AND changes()=1').bind(price,now,session.sub),
- ]);
- if(!batch[2].meta.changes)return Response.json({error:'insufficient_points',needed:price},{status:402});
- return Response.json({ok:true,chargeId,points:price});
-}
-
-/** Hoàn Point khi provider chain lỗi sau khi đã trừ — idempotent theo chargeId. */
-async function internalAiRefund(env,request){
- const session=await readSession(env,request);
- if(!session)return Response.json({error:'unauthorized'},{status:401});
- const b=await request.json().catch(()=>null);
- const chargeId=String(b?.chargeId||'');
- if(!/^[0-9a-f-]{36}$/.test(chargeId))return Response.json({error:'bad_request'},{status:400});
- const charge=await env.DB.prepare("SELECT delta FROM zalo_point_ledger WHERE reason='ai_service' AND reference_id=? AND user_id=?").bind(chargeId,session.sub).first();
- if(!charge)return Response.json({error:'charge_not_found'},{status:404});
- const now=new Date().toISOString();
- const batch=await env.DB.batch([
-  env.DB.prepare("INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,?,?,'ai_service_refund',?,? WHERE EXISTS(SELECT 1 FROM zalo_point_ledger WHERE reason='ai_service' AND reference_id=? AND user_id=?) ON CONFLICT(reason,reference_id,user_id) DO NOTHING").bind(crypto.randomUUID(),session.sub,-charge.delta,chargeId,now,chargeId,session.sub),
-  env.DB.prepare('UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1').bind(-charge.delta,now,session.sub),
- ]);
- return Response.json({ok:true,refunded:batch[1].meta.changes===1});
 }
 
 /** Khoá/mở tài khoản — session hiện hữu tự mất hiệu lực vì readSession kiểm status. */

@@ -1,5 +1,5 @@
 const enc=new TextEncoder();
-export const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+export const b64=b=>{const bytes=new Uint8Array(b);let text='';for(let i=0;i<bytes.length;i+=8192)text+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(text);};
 export const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 export async function encryptionKey(env){const b=unb64(env.ADMIN_ENCRYPTION_KEY||'');if(b.length!==32)throw new Error('Encryption key unavailable');return crypto.subtle.importKey('raw',b,'AES-GCM',false,['encrypt','decrypt']);}
 export async function encrypt(env,ref,value){const iv=crypto.getRandomValues(new Uint8Array(12));const data=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(ref)},await encryptionKey(env),enc.encode(value));return b64(iv)+'.'+b64(data);}

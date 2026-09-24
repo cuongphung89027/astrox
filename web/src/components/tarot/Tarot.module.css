@@ -354,3 +354,5 @@ html[data-motion="reduced"] .deckArt > img, html[data-motion="reduced"] .deckVid
 }
 @media(prefers-reduced-motion:reduce) { .historyRow, .historyCard { animation: none; } }
 html[data-motion="reduced"] .historyRow, html[data-motion="reduced"] .historyCard { animation: none; }
+
+.recoveredNote { margin: 14px 0; color: #596b59; font-size: 13px; line-height: 1.8; }

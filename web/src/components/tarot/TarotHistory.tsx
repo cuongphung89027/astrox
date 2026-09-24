@@ -6,12 +6,14 @@
  * xem lại toàn bộ các lá + luận giải; xoá từng lượt. Đọc localStorage sau
  * mount để không lệch hydration với HTML tĩnh.
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { GlassCard } from "@/components/kit";
 import { useToast } from "@/components/motion/toast";
-import { readTarotHistory, removeTarotHistory, type TarotHistoryEntry } from "@/lib/tarot-history";
+import { removeTarotHistory, type TarotHistoryEntry } from "@/lib/tarot-history";
 import { TAROT_DECKS, tarotCardImage, tarotDeckById } from "@/lib/tarot";
 import { TarotReading } from "./TarotReading";
+import { useTarotHistory } from "@/lib/use-tarot-history";
+import { cacheFingerprint } from "@/lib/state";
 import styles from "./Tarot.module.css";
 
 const two = (n: number) => String(n).padStart(2, "0");
@@ -25,29 +27,19 @@ const dayTime = (ts: number) => {
 };
 const deckFor = (deckId: string) => tarotDeckById(deckId) ?? TAROT_DECKS[0];
 
-export function TarotHistory({ onClose, onCountChange }: { onClose: () => void; onCountChange?: (count: number) => void }) {
-  // null = đang đọc sau mount (tránh hydration mismatch với bản HTML tĩnh).
-  const [entries, setEntries] = useState<TarotHistoryEntry[] | null>(null);
-  const [selected, setSelected] = useState<TarotHistoryEntry | null>(null);
+export function TarotHistory({ onClose }: { onClose: () => void }) {
+  const entries = useTarotHistory();
+  const [selection, setSelection] = useState<{id: string; fingerprint: string} | null>(null);
+  const selected = selection?.fingerprint === cacheFingerprint() ? entries.find(entry => entry.id === selection.id) : undefined;
+  const setSelected = (entry: TarotHistoryEntry | null) => setSelection(entry ? {id: entry.id, fingerprint: cacheFingerprint()} : null);
   const { show } = useToast();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const list = readTarotHistory();
-      setEntries(list);
-      onCountChange?.(list.length);
-    }, 0);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const remove = (entry: TarotHistoryEntry) => {
     if (!confirm("Xoá lượt trải này khỏi nhật ký?")) return;
-    const next = removeTarotHistory(entry.id);
-    setEntries(next);
-    onCountChange?.(next.length);
-    if (selected?.id === entry.id) setSelected(null);
-    show("Đã xoá lượt trải khỏi nhật ký.", "success");
+    try {
+      removeTarotHistory(entry.id);
+      if (selected?.id === entry.id) setSelected(null);
+      show("Đã xoá lượt trải khỏi nhật ký.", "success");
+    } catch { show("Chưa xoá được nhật ký. Vui lòng kiểm tra bộ nhớ trình duyệt.", "error"); }
   };
 
   /* ------------------------------ Xem 1 lượt ------------------------------ */
@@ -58,12 +50,12 @@ export function TarotHistory({ onClose, onCountChange }: { onClose: () => void; 
         <button onClick={() => setSelected(null)} aria-label="Quay lại danh sách lượt trải">←</button>
         <div>
           <span>{(selected.spreadName + (selected.frameLabel ? ` · ${selected.frameLabel}` : "")).toUpperCase()}</span>
-          <h2>Lượt trải ngày {day(selected.savedAt)}</h2>
+          <h2>{selected.savedAt > 0 ? `Lượt trải ngày ${day(selected.savedAt)}` : "Luận giải đã lưu"}</h2>
         </div>
-        <span className={styles.ritualCount}>{selected.cards.length}<i> lá</i></span>
+        {selected.cards.length > 0 && <span className={styles.ritualCount}>{selected.cards.length}<i> lá</i></span>}
       </header>
       {selected.question && <p className={styles.ritualQuestion}>{selected.question}</p>}
-      <div className={styles.historyTable}>
+      {selected.cards.length > 0 ? <div className={styles.historyTable}>
         <p className={styles.historyTableNote}>NHỮNG LÁ BÀI CỦA LƯỢT TRẢI NÀY</p>
         <div className={styles.historyStrip}>
           {selected.cards.map((card, i) => (
@@ -85,6 +77,7 @@ export function TarotHistory({ onClose, onCountChange }: { onClose: () => void; 
           ))}
         </div>
       </div>
+      : <p className={styles.recoveredNote}>Nội dung luận giải cũ vẫn được giữ lại. Bản lưu này không còn thông tin các lá bài.</p>}
       <GlassCard className={`${styles.readingEnter} mt-4 p-5 sm:p-6`}>
         <TarotReading text={selected.text} />
       </GlassCard>
@@ -99,13 +92,8 @@ export function TarotHistory({ onClose, onCountChange }: { onClose: () => void; 
       <span className={styles.ritualCount}>{entries?.length ?? 0}<i> lượt</i></span>
     </header>
 
-    {entries === null ? (
-      <div className={styles.historySkeletons} aria-hidden="true" role="status" aria-label="Đang tải nhật ký">
-        <span className="ax-skeleton" />
-        <span className="ax-skeleton" />
-        <span className="ax-skeleton" />
-      </div>
-    ) : entries.length === 0 ? (
+    <p className={styles.recoveredNote}>Tối đa 24 lượt gần đây trong hồ sơ này, lưu trên thiết bị của bạn.</p>
+    {entries.length === 0 ? (
       <div className={styles.historyEmpty}>
         <img src={TAROT_DECKS[0].back} alt="" width={220} height={385} aria-hidden="true" />
         <h3>Chưa có lượt trải nào được lưu</h3>
@@ -135,7 +123,7 @@ export function TarotHistory({ onClose, onCountChange }: { onClose: () => void; 
               <span className={styles.historyInfo}>
                 <strong>{entry.question || "Trải tổng quát"}</strong>
                 <small>{entry.spreadName}{entry.frameLabel ? ` · ${entry.frameLabel}` : ""}</small>
-                <time dateTime={new Date(entry.savedAt).toISOString()}>{dayTime(entry.savedAt)}</time>
+                {entry.savedAt > 0 && <time dateTime={new Date(entry.savedAt).toISOString()}>{dayTime(entry.savedAt)}</time>}
               </span>
               <span className={styles.historyChevron} aria-hidden="true">↗</span>
             </button>

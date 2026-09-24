@@ -34,7 +34,7 @@ import { TarotCardSlot, type DrawnSlot } from "./TarotCardSlot";
 import { TarotFan } from "./TarotFan";
 import styles from "./Tarot.module.css";
 import { DeckPicker } from "./DeckPicker";
-import { readTarotHistory } from "@/lib/tarot-history";
+import { useTarotHistoryCount } from "@/lib/use-tarot-history";
 
 export function TarotClient() {
   const profile = useProfile();
@@ -53,7 +53,7 @@ export function TarotClient() {
   const [phase, setPhase] = useState<"setup" | "shuffling" | "ritual">("setup");
   const [pool, setPool] = useState<DrawnCard[]>([]);
   const [drawn, setDrawn] = useState<DrawnSlot[]>([]);
-  const [historyCount, setHistoryCount] = useState(0);
+  const historyCount = useTarotHistoryCount();
 
   const timersRef = useRef<number[]>([]);
   const boardRef = useRef<HTMLDivElement | null>(null);
@@ -80,11 +80,6 @@ export function TarotClient() {
     if (!peekTarotCards()) fetchCards();
   }, [fetchCards]);
 
-  // Đếm số lượt đã lưu sau mount (localStorage chỉ có ở client).
-  useEffect(() => {
-    const timer = setTimeout(() => setHistoryCount(readTarotHistory().length), 0);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Dọn timer khi rời trang
   useEffect(() => {
@@ -126,7 +121,6 @@ export function TarotClient() {
     setPool([]);
     setDrawn([]);
     setPhase("setup");
-    setHistoryCount(readTarotHistory().length);
   };
 
   /* ------------------------------ Render ------------------------------ */
@@ -135,7 +129,7 @@ export function TarotClient() {
       <h1 className="sr-only">Tarot</h1>
       {phase === "setup" ? (
         inHistory ? (
-          <TarotHistory onClose={() => router.push("/tarot")} onCountChange={setHistoryCount} />
+          <TarotHistory onClose={() => router.push("/tarot")} />
         ) : (
         <div className={styles.setup}>
           <DeckPicker value={deckId} onChange={setDeckId} />

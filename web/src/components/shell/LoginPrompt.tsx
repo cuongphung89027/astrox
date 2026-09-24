@@ -6,7 +6,7 @@ import {usePathname} from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { closeLoginDialog, openLoginDialog, useLoginDialogOpen } from "@/lib/login-dialog";
 import { hasTermsConsent, saveTermsConsent, termsHref } from "@/lib/terms";
-import { ZaloWordmark } from "@/components/kit/BrandLogos";
+import { GoogleG, ZaloWordmark } from "@/components/kit/BrandLogos";
 import styles from "./LoginPrompt.module.css";
 
 /**
@@ -125,6 +125,11 @@ export function LoginPrompt() {
         <ZaloWordmark size={20} />
         <span>Tiếp tục với Zalo</span>
         <span className={styles.arrow} aria-hidden="true">↗</span>
+      </button>
+      <button type="button" className={styles.google} disabled>
+        <GoogleG size={20} />
+        <span>Google</span>
+        <small>Đang phát triển</small>
       </button>
       <button type="button" className={styles.later} onClick={close}>Khám phá trước</button>
       </div>

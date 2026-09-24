@@ -19,6 +19,8 @@
 .zalo:hover { background: #005bcf; box-shadow: 0 7px 20px #0068ef20; transform: translateY(-1px); }
 .zalo[aria-disabled="true"] { cursor: not-allowed; }
 .arrow { margin-left: auto; font-size: 17px; font-weight: 400; }
+.google { display: flex; align-items: center; gap: 13px; width: 100%; min-height: 50px; margin-top: 10px; padding: 13px 16px; border: 1px solid #d9dece; border-radius: 12px; background: #f9faf3; color: #62705e; font-size: 13px; cursor: not-allowed; }
+.google small { margin-left: auto; font-size: 10px; }
 .zalo > span:not(.arrow) { flex: 1; text-align: left; }
 .consentError { margin: 0 0 12px; font-size: 11px; line-height: 1.7; color: #a13f32; }
 .consentError:empty { display: none; }

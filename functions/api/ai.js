@@ -10,15 +10,13 @@
  * hoặc qua `wrangler pages secret put DEVQUOTE_API_KEY`):
  *   DEVQUOTE_API_KEY
  */
+import { executeProviderChain } from '../../services/admin/runtime.mjs';
 import { limitAi } from '../../services/admin/ai-rate-limit.mjs';
 import { handleConfiguredAi } from '../../services/admin/integration-api.mjs';
 
 const ENDPOINT = 'https://opencode.ai/zen/go/v1/responses';
 const DEFAULT_MODEL = 'muse-spark-1.3-contributor';
-const SESSION_ID = 'astrox-web';
 const MAX_BYTES = 900_000;
-const TIMEOUT_MS = 100_000;
-const MAX_ATTEMPTS = 2;
 const RETRYABLE_STATUS = new Set([429, 500, 501, 502, 503, 504]);
 
 function json(status, body) {
@@ -81,83 +79,53 @@ export async function onRequestPost(context) {
     return { role, content: text };
   });
 
-  const upstreamBody = {
-    model: DEFAULT_MODEL,
-    input,
-    max_output_tokens: Math.min(Number(payload.max_tokens) || 4000, 16000),
-  };
-  if (typeof payload.temperature === 'number') upstreamBody.temperature = payload.temperature;
-  upstreamBody.reasoning = { effort: 'low' };
-
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    try {
-      const upstream = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${key}`,
-          'Content-Type': 'application/json',
-          'x-opencode-session': SESSION_ID,
-        },
-        body: JSON.stringify(upstreamBody),
-        signal: controller.signal,
-      });
-      const text = await upstream.text();
-      if (RETRYABLE_STATUS.has(upstream.status) && attempt + 1 < MAX_ATTEMPTS) {
-        const retryAfter = Number(upstream.headers.get('Retry-After'));
-        const delay = Number.isFinite(retryAfter) && retryAfter > 0 && retryAfter <= 10 ? retryAfter * 1000 : 1000;
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-      if (!upstream.ok) {
-        let detail = '';
-        try {
-          const j = JSON.parse(text);
-          detail = j?.error?.message || j?.message || '';
-        } catch {
-          detail = text.slice(0, 300);
-        }
-        return json(upstream.status, { error: detail || 'Dịch vụ AstroX trả về lỗi.' });
-      }
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        return json(502, { error: 'Phản hồi AstroX không hợp lệ.' });
-      }
-      if (data?.error) return json(502, { error: data.error.message || 'Dịch vụ AstroX trả về lỗi.' });
-      const message = (data?.output || []).find(item => item.type === 'message');
-      const content = (message?.content || [])
-        .map(c => c?.text || '')
-        .join('')
-        .trim();
-      if (!content) {
-        const reason = data?.incomplete_details?.reason || 'empty';
-        return json(502, { error: `AstroX không trả về nội dung (${reason}). Vui lòng thử lại.` });
-      }
-      return new Response(
-        JSON.stringify({
-          choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }],
-          model: data.model || DEFAULT_MODEL,
-        }),
+  // Use the same guarded output contract even before an Admin config is published.
+  const config = {
+    ai: {
+      enabled: true,
+      systemPrompt: '',
+      chain: ['legacy'],
+      providers: [
         {
-          status: 200,
-          headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+          id: 'legacy',
+          name: 'Legacy',
+          baseUrl: ENDPOINT.replace(/\/responses$/, ''),
+          protocol: 'responses',
+          model: DEFAULT_MODEL,
+          enabled: true,
+          secretRef: 'legacy',
+          timeoutMs: 90000,
+          retries: 1,
+          maxTokens: Math.min(Number(payload.max_tokens) || 4000, 16000),
+          temperature: typeof payload.temperature === 'number' ? payload.temperature : 0.7,
         },
-      );
-    } catch (error) {
-      if (attempt + 1 >= MAX_ATTEMPTS) {
-        if (error?.name === 'AbortError')
-          return json(504, { error: 'Dịch vụ AstroX phản hồi quá lâu sau khi thử lại.' });
-        return json(502, { error: 'Không kết nối được dịch vụ AstroX sau khi thử lại.' });
-      }
-      await new Promise(resolve => setTimeout(resolve, 800));
-    } finally {
-      clearTimeout(timeout);
-    }
+      ],
+      totalTimeoutMs: 90000,
+      maxAttempts: 3,
+      cooldownSeconds: 0,
+      failureThreshold: 3,
+      retryStatuses: [...RETRYABLE_STATUS],
+    },
+    billing: { services: [{ id: 'legacy', module: 'legacy', prompt: '', chain: [] }] },
+  };
+  try {
+    const result = await executeProviderChain(config, { serviceId: 'legacy', messages: input }, async () => key, {
+      allowHosts: [new URL(ENDPOINT).hostname],
+    });
+    return json(200, {
+      choices: result.choices,
+      model: result.model,
+      usage: result.usage,
+      languagePolicyVersion: result.languagePolicyVersion,
+    });
+  } catch (error) {
+    return json(error?.status || 502, {
+      error:
+        error?.code === 'READING_LANGUAGE_INVALID'
+          ? 'Luận giải chưa đạt yêu cầu tiếng Việt. Vui lòng thử lại.'
+          : 'Không nhận được luận giải hợp lệ. Vui lòng thử lại.',
+    });
   }
-  return json(502, { error: 'Không nhận được phản hồi từ dịch vụ AstroX.' });
 }
 
 // Mọi phương thức khác /api/ai đều không được hỗ trợ (giữ đúng hành vi bản Netlify).

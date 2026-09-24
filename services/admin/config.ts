@@ -1,6 +1,6 @@
 import { defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES } from './prompt-engine.ts';
 import { providerRoutes } from './provider-models.ts';
-import { addMissingServices } from './catalog.ts';
+import { addMissingServices, addCouplesServices } from './catalog.ts';
 import { MODULES } from './modules.ts';
 /** Shared, non-secret contract. Secrets are stored by reference only. */
 export type Provider = {
@@ -591,6 +591,10 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
   const p = defaultPromptSettings();
   return {
     ...c,
+    billing:
+      c.billing && Array.isArray(c.billing.services)
+        ? { ...c.billing, services: addCouplesServices(c.billing.services) }
+        : c.billing,
     prompts: { templates: { ...p.templates, ...c.prompts?.templates }, tasks: { ...p.tasks, ...c.prompts?.tasks } },
     engines: { ...defaultConfig().engines, ...c.engines },
   };

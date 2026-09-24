@@ -150,3 +150,47 @@
  .modeNav button { padding:10px 16px; }
 }
 @media(max-width:380px) { .fieldRow { grid-template-columns:1fr; } }
+
+.evidenceList { display:grid; gap:14px; margin:16px 0; padding:0; list-style:none; }
+.evidenceList li { display:grid; gap:6px; padding:14px; background:#faf6e9; border-radius:12px; font-size:13px; line-height:1.7; overflow-wrap:anywhere; }
+.modeNav { flex-wrap:wrap; justify-content:center; }
+.formPair { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media(max-width:640px) { .formPair { grid-template-columns:1fr; } .modeNav button { padding:10px 12px; } }
+/* Mode changes replay presentation without discarding the form state. */
+.pairPage { animation:pairArrive .6s cubic-bezier(.16,1,.3,1) both; }
+.connectionEmblem { position:relative; width:180px; height:88px; margin:0 auto 22px; display:grid; place-items:center; }
+.connectionEmblem i { position:absolute; width:92px; height:72px; border:1px solid #a990525c; border-radius:50%; left:18px; transform:rotate(-28deg); animation:orbitMeetLeft 1.2s cubic-bezier(.16,1,.3,1) both; box-shadow:inset 0 0 22px #bda46909; }
+.connectionEmblem i:nth-child(2) { left:auto; right:18px; border-color:#547c5c66; transform:rotate(28deg); animation-name:orbitMeetRight; }
+.connectionEmblem span { color:#a28545; font-size:26px; z-index:1; text-shadow:0 0 24px #dfba5775; animation:starMeet .9s .15s both; }
+.connectionEmblem b { position:absolute; width:6px; height:6px; border-radius:50%; background:#a98d4b; left:36px; top:20px; box-shadow:0 0 0 5px #c0a25812; animation:starMeet 1s .3s both; }
+.connectionEmblem b:last-child { left:auto; right:36px; top:auto; bottom:20px; background:#52745b; }
+.pairPage .compatIntro h1 { letter-spacing:-.045em; }
+.pairPage .partnerCard { position:relative; background:linear-gradient(145deg,#fffcf5,#f0efdc); box-shadow:inset 0 1px 0 #fff,0 12px 36px #34513206; transition:border-color .25s,box-shadow .25s; animation:pairArrive .65s .08s both; }
+.pairPage .partnerCard:nth-child(2) { animation-delay:.17s; background:linear-gradient(145deg,#fffaf0,#eee8d4); }
+.pairPage .partnerCard:focus-within { border-color:#8a9c73; box-shadow:0 12px 40px #34513210,inset 0 1px 0 #fff; }
+.formField input,.formField select { transition:box-shadow .2s,border-color .2s,background .2s; }
+.formField input:focus-visible,.formField select:focus-visible { background:#fffef9; box-shadow:0 0 0 5px #a7bc8420; }
+.birthRow { grid-template-columns:1fr; }
+.modeNav { box-shadow:inset 0 1px 0 #fff,0 5px 20px #244d4006; }
+.modeNav button { transition:background .25s,color .25s,box-shadow .25s,transform .2s; }
+.modeNav button[aria-pressed=true] { box-shadow:0 4px 12px #244d4030,inset 0 1px 0 #ffffff25; animation:tabSettle .35s ease-out; }
+.primary { position:relative; overflow:hidden; border:1px solid #537762; transition:transform .2s,background .25s,box-shadow .25s; box-shadow:0 5px 16px #244d4018,inset 0 1px 0 #ffffff20; }
+.primary span { transition:transform .25s; }
+.primary:not(:disabled):active,.modeNav button:active { transform:scale(.98); }
+.compatResult { border-top:1px solid #c5ceaf; padding-top:28px; animation:pairArrive .65s both; }
+.compatResult .readingTitle { animation:pairArrive .65s .08s both; }
+.details[open] .evidenceList li { animation:evidenceArrive .45s both; }
+.evidenceList li:nth-child(2) { animation-delay:50ms; }
+.evidenceList li:nth-child(3) { animation-delay:100ms; }
+.evidenceList li { border:1px solid #d9ddc7; background:linear-gradient(125deg,#fffaf0,#edf0e3); }
+.evidenceList strong { font-weight:500; color:#35573f; }
+@keyframes pairArrive { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+@keyframes orbitMeetLeft { from { opacity:0; transform:translateX(-25px) rotate(-65deg) scale(.8); } to { opacity:1; transform:rotate(-28deg); } }
+@keyframes orbitMeetRight { from { opacity:0; transform:translateX(25px) rotate(65deg) scale(.8); } to { opacity:1; transform:rotate(28deg); } }
+@keyframes starMeet { from { opacity:0; transform:scale(.4) rotate(-60deg); } to { opacity:1; transform:none; } }
+@keyframes tabSettle { from { transform:scale(.94); } to { transform:scale(1); } }
+@keyframes evidenceArrive { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:none; } }
+@media(hover:hover) and (pointer:fine) { .primary:not(:disabled):hover { transform:translateY(-2px); background:#315c48; box-shadow:0 10px 24px #244d4026; } .primary:hover span { transform:translate(3px,-2px); } .modeNav button:not([aria-pressed=true]):hover { background:#dce4ce; } }
+@media(max-width:640px) { .connectionEmblem { height:72px; margin-bottom:15px; } .connectionEmblem i { width:85px; height:64px; } }
+@media(prefers-reduced-motion:reduce) { .page *,.page *::before,.page *::after,.pairPage,.modeNav button { animation:none!important; transition:none!important; } }
+:global(html[data-motion=reduced]) .page *, :global(html[data-motion=reduced]) .page *::before, :global(html[data-motion=reduced]) .page *::after, :global(html[data-motion=reduced]) .pairPage, :global(html[data-motion=reduced]) .modeNav button { animation:none!important; transition:none!important; }

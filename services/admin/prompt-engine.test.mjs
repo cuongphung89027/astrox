@@ -60,3 +60,8 @@ test('compatibility respects every gender pairing even with a published template
     assert.match(text, /vợ.*chồng/);
   }
 });
+
+test('new pair template overrides retain inclusive guidance', () => {
+  for (const id of ['compat.tuviPair.v1', 'compat.batuPair.v1'])
+    assert.match(renderPrompt({ id, values: ['{}'] }, { [id]: '{{v0}}' }), /LGBTQ\+/);
+});

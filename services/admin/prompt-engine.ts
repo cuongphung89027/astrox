@@ -22,7 +22,7 @@ export function renderPrompt(node: PromptNode, overrides: Record<string, string>
     return typeof value === 'string' ? value : renderPrompt(value, overrides, depth + 1);
   });
   if (result.length > 100000) throw new Error('PROMPT_TOO_LARGE');
-  return node.id === 'compat.original' || node.id === 'zodiac.compatPrompt.0'
+  return ['compat.original', 'zodiac.compatPrompt.0', 'compat.tuviPair.v1', 'compat.batuPair.v1'].includes(node.id)
     ? `${result}\n\n${COMPAT_INCLUSION_GUIDANCE}`
     : result;
 }

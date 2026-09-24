@@ -2,7 +2,9 @@
 import { useFeatureResult } from "@/lib/use-feature-result";
 import { trackFeature } from "@/lib/feature-telemetry";
 import { refreshPromptRevision } from "@/lib/state";
-import { managedPrompt } from "@/lib/managed-prompts";
+import { PairCompatibility } from "./PairCompatibility";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {LoadingWhisper} from "@/components/kit/LoadingWhisper";
 import {useEffect,useMemo,useRef,useState} from "react";
 import {AiText} from "@/components/kit";
@@ -56,91 +58,19 @@ function WesternCompatClient(){
 }
 
 export function CompatClient(){
- const profile=useProfile();
+ return <Suspense fallback={<ReadingLoader kind="compat"/>}><CompatModes/></Suspense>;
+}
+function CompatModes(){
+ const profile=useProfile(),params=useSearchParams();
  const scope=profile?cacheFingerprint():'guest';
- const [mode,setMode]=useState<'tuvi'|'western'>('tuvi');
+ const [selected,setMode]=useState<'tuvi'|'batu'|'western'|null>(null);
+ const requested=params.get('mode');
+ const mode=selected??(requested==='batu'||requested==='western'?requested:'tuvi');
  return <>
   <nav className={styles.modeNav} aria-label="Phương pháp tương hợp">
-   <button type="button" onClick={()=>setMode('tuvi')} aria-pressed={mode==='tuvi'}>Tử Vi</button>
-   <button type="button" onClick={()=>setMode('western')} aria-pressed={mode==='western'}>Cung hoàng đạo</button>
+   {([['tuvi','Tử Vi'],['batu','Bát Tự'],['western','Cung hoàng đạo']] as const).map(([id,label])=><button key={id} type="button" onClick={()=>setMode(id)} aria-pressed={mode===id}>{label}</button>)}
   </nav>
-  {mode==='tuvi'?<OriginalCompatibility key={scope}/>:<WesternCompatClient key={scope}/>}
+  <div hidden={mode==='western'}><PairCompatibility key={scope} mode={mode==='western'?'tuvi':mode}/></div>
+  <div hidden={mode!=='western'}><WesternCompatClient key={scope}/></div>
  </>;
-}
-function OriginalCompatibility(){
- const profile=useProfile();
- const {open}=useProfileModal();
- const [name,setName]=useState('');
- const [gender,setGender]=useState('');
- const [dob,setDob]=useState('');
- const [text,setText]=useState('');
- const [loading,setLoading]=useState(false);
- const [error,setError]=useState('');
- const markFresh = useFeatureResult(text, "compat--pair", !loading);
- const requestId=useRef(0);
- useEffect(()=>()=>{requestId.current+=1;},[]);
- const clearResult=()=>{setText('');setError('');};
- const run=async()=>{
-  if(loading)return;
-  if(!profile){open();return;}
-  if(!name.trim()||!gender||!dob){setError('Điền tên, giới tính và ngày sinh của người ấy.');return;}
-  const id=++requestId.current;
-  const fingerprint=cacheFingerprint();
-  const current=()=>id===requestId.current&&fingerprint===cacheFingerprint();
-  setLoading(true);setError('');setText('');
-  try{
-   await refreshPromptRevision();
-   if(!current())return;
-   const key=JSON.stringify(['original-tuvi',name.trim(),gender,dob,fingerprint]);
-   const cached=readAiCache('compatibility',key);
-   if(cached){setText(cached);return;}
-   const fmt=(d:string)=>d.split('-').reverse().join('-');
-   const prompt=managedPrompt('compat.original',[profile.name,profile.gender,fmt(profile.dob),profile.hourChi,profile.place,name.trim(),gender,fmt(dob)]);
-   const result=await runAiPrompt(prompt,{serviceId:'compat--pair'});
-   if(!current())return;
-   writeAiCache('compatibility',key,result,{module:'compat',topic:'pair'});markFresh(result);setText(result);
-  }catch(e){if(current())setError(e instanceof Error?e.message:'Không lấy được luận giải. Vui lòng thử lại.');}
-  finally{if(id===requestId.current)setLoading(false);}
- };
- const formatDate=(value:string)=>value.split('-').reverse().join('/');
- const today=new Date();
- const maxDate=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
- return <section className={styles.page}>
-  <header className={styles.compatIntro}>
-   <span className={styles.eyebrow}>HAI CON NGƯỜI. MỘT KẾT NỐI.</span>
-   <h1>Hiểu nhau hơn.</h1>
-   <p>Khám phá những điểm đồng điệu và cách hai bạn cùng dung hòa khác biệt qua góc nhìn Tử Vi.</p>
-  </header>
-  <form className={styles.compatForm} onSubmit={e=>{e.preventDefault();void run();}}>
-   <div className={styles.formPair}>
-    <section className={styles.profileCard} aria-labelledby="compat-you">
-     <span className={styles.eyebrow}>NGƯỜI THỨ NHẤT</span>
-     <div className={styles.personHeading}><h2 id="compat-you">Bạn</h2><FeatureIcon name="profile" size={28}/></div>
-     {profile?<>
-      <p className={styles.profileName}>{profile.name}</p>
-      <dl><div><dt>Giới tính</dt><dd>{profile.gender}</dd></div><div><dt>Ngày sinh</dt><dd>{formatDate(profile.dob)}</dd></div><div><dt>Giờ sinh</dt><dd>{profile.hourChi}</dd></div><div><dt>Nơi sinh</dt><dd>{profile.place}</dd></div></dl>
-      <button type="button" className={styles.editProfile} disabled={loading} onClick={()=>open()}>Chỉnh sửa hồ sơ ↗</button>
-     </>:<><p className={styles.profileHint}>Thêm thông tin sinh để bắt đầu tìm hiểu sự kết nối của hai bạn.</p><button type="button" className={styles.primary} onClick={()=>open()}>Bổ sung hồ sơ <span>↗</span></button></>}
-    </section>
-    <fieldset className={styles.partnerCard} disabled={loading}>
-     <legend className="sr-only">Thông tin người ấy</legend>
-     <span className={styles.eyebrow}>NGƯỜI THỨ HAI</span>
-     <div className={styles.personHeading}><h2>Người ấy</h2><FeatureIcon name="compat" size={28}/></div>
-     <label className={styles.formField}>Tên người ấy<input name="partnerName" autoComplete="off" required maxLength={100} placeholder="Tên bạn thường gọi" value={name} onChange={e=>{setName(e.target.value);clearResult();}}/></label>
-     <div className={styles.fieldRow}>
-      <label className={styles.formField}>Giới tính<select name="partnerGender" required value={gender} onChange={e=>{setGender(e.target.value);clearResult();}}><option value="" disabled>Chọn giới tính</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></label>
-      <label className={styles.formField}>Ngày sinh<input name="partnerDob" type="date" required min="1920-01-01" max={maxDate} value={dob} onChange={e=>{setDob(e.target.value);clearResult();}}/></label>
-     </div>
-     <p className={styles.fieldHint}>Ngày sinh dương lịch của người ấy.</p>
-    </fieldset>
-   </div>
-   <p className={styles.inclusiveNote}>Mọi kết nối đều đáng được trân trọng. AstroX chào đón các cặp đôi LGBTQ+ — hai bạn không cần khác giới để xem tương hợp.</p>
-   {error&&<p role="alert" className={styles.error}>{error}</p>}
-   <button type="submit" className={`${styles.primary} ${styles.compatSubmit}`} disabled={loading}>{loading?'Đang luận giải…':'Khám phá sự kết nối'}<span aria-hidden="true">↗</span></button>
-   <p className={styles.scope}>Một góc nhìn tham khảo để hiểu nhau, không quyết định giá trị hay tương lai của mối quan hệ.</p>
-  </form>
-  <section className={styles.compatResult} aria-label="Luận giải tương hợp" aria-busy={loading}>
-   {loading?<ReadingLoader kind="compat"/>:text?<><h2 className={styles.readingTitle}>Câu chuyện của hai bạn</h2><Reading raw={text}/><span className={styles.saved}>✓ Đã lưu luận giải</span></>:null}
-  </section>
- </section>;
 }

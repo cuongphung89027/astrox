@@ -133,3 +133,42 @@ test('high cardinality diagnostic groups remain bounded without losing totals', 
     650,
   );
 });
+test('language repairs report coverage, bounded repair cost and latency without counting correction as retry', () => {
+  const base = { id: 'language', service_id: 'tuvi', created_at: '2026-09-24T00:00:00Z', duration_ms: 150 };
+  const s = summarizeAi([
+    {
+      ...base,
+      status: 'success',
+      attempts: JSON.stringify([
+        { providerId: 'a', outcome: 'language_detected', language: 'detected', durationMs: 100 },
+        {
+          providerId: 'a',
+          outcome: 'success',
+          purpose: 'language_repair',
+          language: 'repaired',
+          durationMs: 50,
+          costUsd: 0.002,
+        },
+      ]),
+    },
+    {
+      ...base,
+      id: 'blocked',
+      status: 'READING_LANGUAGE_INVALID',
+      attempts: JSON.stringify([{ providerId: 'a', outcome: 'language_detected', language: 'detected' }]),
+    },
+  ]);
+  assert.deepEqual(s.language, {
+    checked: 2,
+    detected: 2,
+    repaired: 1,
+    blocked: 1,
+    repairAttempts: 1,
+    repairCostUsd: 0.002,
+    pricedRepairs: 1,
+    averageRepairMs: 50,
+    detectionRate: 100,
+  });
+  assert.equal(s.retries, 0);
+  assert.equal(summarizeAi([{ ...base, status: 'success', attempts: '[]' }]).language.detectionRate, null);
+});

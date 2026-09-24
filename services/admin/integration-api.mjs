@@ -147,6 +147,7 @@ export async function handleAdminRuntime(path, request, env, user) {
 function diagnostic(code) {
   return (
     {
+      READING_LANGUAGE_INVALID: 'Luận giải chưa đạt yêu cầu tiếng Việt. Vui lòng thử lại.',
       HOST_NOT_ALLOWED: 'Tên miền provider chưa nằm trong danh sách kết nối được phép của server.',
       SECRET_MISSING: 'Chưa lưu API key cho provider.',
       PROVIDER_REJECTED: 'Provider từ chối yêu cầu. Kiểm tra API key, model và giao thức.',
@@ -183,14 +184,16 @@ export async function handleConfiguredAi(request, env) {
     if (!service || !['free', 'paid'].includes(service.status)) throw new RuntimeError('SERVICE_UNAVAILABLE', 403);
     const root = c.billing.services.find(s => s.id === service.module);
     if (root && !['free', 'paid'].includes(root.status)) throw new RuntimeError('SERVICE_UNAVAILABLE', 403);
-    const engine = {
-      tuvi: 'iztro',
-      zodiac: 'astronomy',
-      batu: 'lunar',
-      numerology: 'numerology',
-      kinhdich: 'kinhdich',
-      tarot: 'tarot',
-    }[service.module];
+    const engine =
+      { 'compat--tuvi-pair': 'iztro', 'compat--batu-pair': 'lunar' }[input.serviceId] ||
+      {
+        tuvi: 'iztro',
+        zodiac: 'astronomy',
+        batu: 'lunar',
+        numerology: 'numerology',
+        kinhdich: 'kinhdich',
+        tarot: 'tarot',
+      }[service.module];
     if (engine && c.engines?.[engine]?.enabled === false) throw new RuntimeError('SERVICE_UNAVAILABLE', 403);
     const requestHash = Array.from(
       new Uint8Array(
@@ -286,8 +289,15 @@ export async function handleConfiguredAi(request, env) {
           { allowHosts: hosts(env), healthStore: providerHealth(env) },
         );
         attempts = result.attempts;
-        const { choices, model, usage } = result,
-          response = { choices, model, usage, configRevision: published.revision, chargedPoints: charge.points };
+        const { choices, model, usage, languagePolicyVersion } = result,
+          response = {
+            choices,
+            model,
+            usage,
+            languagePolicyVersion,
+            configRevision: published.revision,
+            chargedPoints: charge.points,
+          };
         const saved = await backend('complete', { chargeId, response });
         if (!saved.ok || !(await saved.json().catch(() => null))?.ok)
           throw new RuntimeError('RESULT_PERSIST_FAILED', 503);
@@ -326,8 +336,8 @@ export async function handleConfiguredAi(request, env) {
     );
     attempts = result.attempts;
     outcome = 'success';
-    const { choices, model, usage } = result;
-    return json({ choices, model, usage, configRevision: published.revision });
+    const { choices, model, usage, languagePolicyVersion } = result;
+    return json({ choices, model, usage, languagePolicyVersion, configRevision: published.revision });
   } catch (e) {
     attempts = e.attempts || attempts;
     outcome = e.code || 'failed';
@@ -358,6 +368,7 @@ export async function siteConfig(env) {
     return json({ error: 'config_unavailable' }, 503);
   }
 }
+
 export async function handlePublic(request, env) {
   const path = new URL(request.url).pathname;
   if (path === '/api/site-config' && request.method === 'GET') return siteConfig(env);

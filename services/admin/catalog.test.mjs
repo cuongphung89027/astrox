@@ -46,3 +46,22 @@ test('every catalog service and route belongs to a module in the shared registry
   }
   assert.equal(routeModule('/hoso'), '');
 });
+test('published old pair configuration gains distinct grounded services without changing its price or switches', async () => {
+  const { hydrateConfig } = await import('./config.ts');
+  const old = defaultConfig();
+  old.billing.services = old.billing.services.filter(s => !['compat--tuvi-pair', 'compat--batu-pair'].includes(s.id));
+  Object.assign(
+    old.billing.services.find(s => s.id === 'compat--pair'),
+    { status: 'paid', points: 35, chain: ['custom'] },
+  );
+  const next = hydrateConfig(old);
+  for (const id of ['compat--tuvi-pair', 'compat--batu-pair']) {
+    const service = next.billing.services.find(s => s.id === id);
+    assert.equal(service.status, 'paid');
+    assert.equal(service.points, 35);
+    assert.deepEqual(service.chain, ['custom']);
+  }
+  assert.ok(!old.billing.services.some(s => s.id === 'compat--batu-pair'));
+  next.billing.services.find(s => s.id === 'compat--batu-pair').status = 'hidden';
+  assert.equal(hydrateConfig(next).billing.services.find(s => s.id === 'compat--batu-pair').status, 'hidden');
+});

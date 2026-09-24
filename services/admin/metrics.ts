@@ -49,6 +49,8 @@ export type Attempt = {
   durationMs: number | null;
   usage: Usage;
   costUsd: number | null;
+  purpose: string;
+  language: string;
 };
 export function parseAttempts(raw: unknown): Attempt[] {
   let list: unknown = raw;
@@ -64,6 +66,8 @@ export function parseAttempts(raw: unknown): Attempt[] {
     .map(a => {
       const u = object(a.usage);
       return {
+        purpose: typeof a.purpose === 'string' ? a.purpose : '',
+        language: typeof a.language === 'string' ? a.language : '',
         providerId: String(a.providerId),
         model: typeof a.model === 'string' ? a.model : '',
         outcome: String(a.outcome || ''),
@@ -111,6 +115,7 @@ const providerStatuses = new Set([
   'INVALID_PROVIDER_RESPONSE',
   'PROVIDER_REFUSAL',
   'PROVIDER_REDIRECT',
+  'READING_LANGUAGE_INVALID',
 ]);
 export function createAiSummary(
   filters: { provider?: string; model?: string; service?: string } = {},
@@ -136,6 +141,17 @@ export function createAiSummary(
     delegated = 0;
   let totalTokens: number | null = null,
     completeUsageAttempts = 0;
+  const language = {
+    checked: 0,
+    detected: 0,
+    repaired: 0,
+    blocked: 0,
+    repairAttempts: 0,
+    repairCostUsd: null as number | null,
+    pricedRepairs: 0,
+  };
+  let repairDuration = 0,
+    repairTimed = 0;
   const durations: number[] = [];
   const daily = new Map<string, { day: string; requests: number; failed: number }>();
   const groups = new Map<
@@ -177,6 +193,21 @@ export function createAiSummary(
         errorCodes.set(code, (errorCodes.get(code) || 0) + 1);
       }
       if (all.some(a => a.outcome === 'delegated')) delegated++;
+      if (selected.some(a => a.language)) language.checked++;
+      if (selected.some(a => a.language === 'detected')) language.detected++;
+      if (selected.some(a => a.language === 'repaired')) language.repaired++;
+      if (row.status === 'READING_LANGUAGE_INVALID') language.blocked++;
+      for (const a of selected.filter(a => a.purpose === 'language_repair')) {
+        language.repairAttempts++;
+        if (a.costUsd !== null) {
+          language.repairCostUsd = (language.repairCostUsd ?? 0) + a.costUsd;
+          language.pricedRepairs++;
+        }
+        if (a.durationMs !== null) {
+          repairDuration += a.durationMs;
+          repairTimed++;
+        }
+      }
       const duration = count(row.duration_ms);
       if (collectDurations && duration !== null) durations.push(duration);
       const date = row.created_at.slice(0, 10),
@@ -195,7 +226,7 @@ export function createAiSummary(
       let hasUsage = false;
       for (const a of upstream) {
         attempts++;
-        if (seen.has(a.providerId)) retries++;
+        if (seen.has(a.providerId) && a.purpose !== 'language_repair') retries++;
         seen.add(a.providerId);
         if (a.outcome !== 'success') attemptErrors++;
         const rawKey = `${a.providerId}|${a.model}`,
@@ -238,6 +269,11 @@ export function createAiSummary(
   function finish() {
     durations.sort((a, b) => a - b);
     return {
+      language: {
+        ...language,
+        averageRepairMs: repairTimed ? repairDuration / repairTimed : null,
+        detectionRate: language.checked ? (language.detected / language.checked) * 100 : null,
+      },
       requests,
       failed,
       success,

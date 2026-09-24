@@ -733,6 +733,43 @@ if (!SERVICE_CATALOG.some(s => s.id === 'zodiac--su-nghiep-cung--tai-chinh'))
     route: '/cunghoangdao',
   });
 
+export const COUPLES_SERVICES = [
+  {
+    id: 'compat--tuvi-pair',
+    module: 'compat',
+    name: 'Cặp đôi Tử Vi',
+    group: 'Cặp đôi',
+    policy: 'profile',
+    route: '/tuonghop?mode=tuvi',
+  },
+  {
+    id: 'compat--batu-pair',
+    module: 'compat',
+    name: 'Cặp đôi Bát Tự',
+    group: 'Cặp đôi',
+    policy: 'profile',
+    route: '/tuonghop?mode=batu',
+  },
+] satisfies CatalogEntry[];
+SERVICE_CATALOG.push(...COUPLES_SERVICES);
+/** Add only new pair methods to saved configs; never override an existing service. */
+export function addCouplesServices(existing: ServicePrice[]): ServicePrice[] {
+  const inherited = existing.find(s => s.id === 'compat--pair') ?? existing.find(s => s.id === 'compat');
+  return [
+    ...existing,
+    ...COUPLES_SERVICES.filter(s => !existing.some(e => e.id === s.id)).map(({ id, module, name, policy }) => ({
+      id,
+      module,
+      name,
+      policy,
+      points: inherited?.points ?? 0,
+      status: inherited?.status ?? 'draft',
+      prompt: '',
+      chain: [...(inherited?.chain ?? [])],
+    })),
+  ];
+}
+
 export function addMissingServices(existing: ServicePrice[]): ServicePrice[] {
   const ids = new Set(existing.map(s => s.id));
   return [

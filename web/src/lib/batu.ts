@@ -1,3 +1,4 @@
+import { validateChartBirth, assertVietnameseChart } from "./birth-input";
 import { managedPrompt } from "./managed-prompts";
 /**
  * BÁT TỰ (Tứ Trụ) — module độc lập, port trung thực từ MODULE "BAT TU (Tu Tru)"
@@ -214,10 +215,6 @@ const CHI_MID_HOUR: Record<string, number> = {
 export function hourChiMidHour(hourChi: string): number {
   const label = String(hourChi || "").split(" (")[0].trim();
   if (CHI_MID_HOUR[label] !== undefined) return CHI_MID_HOUR[label];
-  // fallback: quét tên chi nằm trong chuỗi
-  for (const key of Object.keys(CHI_MID_HOUR)) {
-    if (label.includes(key)) return CHI_MID_HOUR[key];
-  }
   return -1;
 }
 
@@ -239,7 +236,7 @@ export interface BatuInput {
  * để tránh phụ thuộc múi giờ hệ thống (port 1:1 từ index.html).
  */
 export function buildBatuChart(input: BatuInput): BatuChart {
-  if (!input || !input.dob || !input.hourChi) throw new Error("Thiếu ngày giờ sinh.");
+  validateChartBirth(input);
   const mid = hourChiMidHour(input.hourChi);
   if (mid < 0) throw new Error("Không đọc được giờ sinh — hãy chọn lại can giờ.");
   const instant = new Date(`${input.dob}T${String(mid).padStart(2, "0")}:00:00+07:00`).getTime();
@@ -325,7 +322,7 @@ export function buildBatuPromptBody(taskText: string, chart: BatuChart, profile:
   const profileLine = profile
     ? managedPrompt("batu.buildBatuPromptBody.0", [profile.name, profile.gender, profile.dob.split("-").reverse().join("/"), profile.hourChi, profile.place])
     : "";
-  const chartLine = managedPrompt("batu.buildBatuPromptBody.1", [JSON.stringify(chart)]);
+  const chartLine = managedPrompt("batu.buildBatuPromptBody.1", [JSON.stringify(batuAiDto(chart))]);
   return managedPrompt("batu.buildBatuPromptBody.2", [profileLine, chartLine, taskText]);
 }
 
@@ -375,3 +372,9 @@ export const BATU_TOPICS: BatuTopic[] = [
       "Phân tích xu hướng sức khoẻ dựa trên sự dư/thiếu cân bằng Ngũ Hành trong lá số Bát Tự (hành nào vượng, hành nào thiếu) theo quan niệm Ngũ Hành tương ứng ngũ tạng trong văn hoá truyền thống. Nói rõ đây là góc nhìn văn hoá tham khảo, không thay thế chẩn đoán y khoa. ~220-370 từ.",
   },
 ];
+
+/** Public interpretation DTO: retain Vietnamese facts, never send raw library Han fields. */
+export function batuAiDto(chart: BatuChart) {
+  const pillar = (p: BatuPillar) => ({ label: p.label, viGan: p.viGan, viZhi: p.viZhi, wxKeyGan: p.wxKeyGan, wxKeyZhi: p.wxKeyZhi, yinYang: p.yinYang, animal: p.animal, shishenGan: p.shishenGan, shishenZhi: p.shishenZhi });
+  return assertVietnameseChart({ ...chart, pillars: { year: pillar(chart.pillars.year), month: pillar(chart.pillars.month), day: pillar(chart.pillars.day), time: pillar(chart.pillars.time) }, dayun: chart.dayun.map(d => ({startAge:d.startAge,endAge:d.endAge,startYear:d.startYear,endYear:d.endYear,viGanZhi:d.viGanZhi})) });
+}

@@ -9,7 +9,7 @@ import {confirmReading} from "./reading-consent";
 import {pendingAiOperation,finishAiOperation} from "./ai-operation";
 import { promptDescriptor } from "./managed-prompts";
 import { AI_BASE, AUTH_API_BASE, DEFAULT_MODEL } from "./config";
-import { getState, getAccountEpoch, setState, setPromptRevision, recordPromptResult } from "./state";
+import { getState, getAccountEpoch, setState, setPromptRevision, recordPromptResult, recordLanguageResult } from "./state";
 import type { AstroxUser } from "./types";
 import { routeModule } from "../../../services/admin/modules.ts";
 
@@ -117,6 +117,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
   const finish = choice?.finish_reason || choice?.finishReason;
   const content = typeof choice?.message?.content === "string" ? choice.message.content : "";
   if (content && content.trim() !== "") {
+    if(typeof data.languagePolicyVersion==='string')recordLanguageResult(content,data.languagePolicyVersion);
     if(Number.isSafeInteger(data.configRevision))recordPromptResult(content,data.configRevision);
     if (finish !== "length") {finishAiOperation(operation.key);void import("./points").then(m=>m.refreshPoints(true));return content;}
     const ceiling = Math.max(Number(body.max_tokens) || 0, 2400);

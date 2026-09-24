@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { openLoginDialog } from "@/lib/login-dialog";
@@ -23,6 +24,7 @@ export function BatuClient() {
  if(!isModuleAllowed("batu"))return <section className={styles.page}><div className={styles.welcome}><FeatureIcon name="battu" size={40}/><h2>Mở Bát Tự của bạn</h2><button className={styles.primary} onClick={openLoginDialog}>Đăng nhập ↗</button></div></section>;
  return <section className={styles.page}>
   <h1 className="sr-only">Bát Tự</h1>
+      <Link href="/tuonghop?mode=batu" style={{display:"inline-flex",alignItems:"center",minHeight:44,padding:"8px 16px",textDecoration:"underline",textUnderlineOffset:4}}>Xem cặp đôi ↗</Link>
   {!chart ? <div className={styles.welcome}>
     <div className={styles.emptyPillars} aria-hidden="true">{["年","月","日","時"].map((s,i)=><span key={s} style={{animationDelay:`${i*100}ms`}}>{s}</span>)}</div>
     <span className={styles.eyebrow}>TỨ TRỤ MỆNH LÝ</span><h2>Tứ trụ.<br/>Một dấu ấn riêng.</h2><p>Mở mệnh bàn từ ngày giờ sinh của bạn.</p>

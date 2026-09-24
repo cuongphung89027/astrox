@@ -5,13 +5,13 @@
  * click xem lại). Nhỏ gọn: hàng pill cuộn ngang trên mobile.
  */
 import styles from "./KinhDich.module.css";
-import { HAO_NAMES } from "@/lib/kinhdich";
+import { HAO_NAMES, KD_METHODS } from "@/lib/kinhdich";
 import type { KdHistoryEntry } from "@/lib/kinhdich";
 
 interface KdHistoryProps {
   entries: KdHistoryEntry[];
   onSelect: (entry: KdHistoryEntry) => void;
-  onRemove: (savedAt: number) => void;
+  onRemove: (id: string | number) => void;
 }
 
 function timeAgo(ts: number): string {
@@ -24,5 +24,5 @@ function timeAgo(ts: number): string {
 
 export function KdHistory({ entries, onSelect, onRemove }: KdHistoryProps) {
   if (entries.length === 0) return null;
-  return <section className={styles.history} aria-label="Lịch sử gieo quẻ gần đây"><h2>Quẻ gần đây</h2><ul>{entries.map(entry=><li key={entry.savedAt}><button onClick={()=>onSelect(entry)} aria-label={`Xem lại quẻ ${entry.name}`}><span>{entry.name}</span><small>{entry.question || HAO_NAMES[entry.movingPos]}</small><time>{timeAgo(entry.savedAt)}</time></button><button aria-label={`Xoá quẻ ${entry.name} khỏi lịch sử`} onClick={()=>onRemove(entry.savedAt)}>×</button></li>)}</ul></section>;
+  return <section className={styles.history} aria-label="Lịch sử gieo quẻ gần đây"><h2>Quẻ gần đây</h2><ul>{entries.map(entry=><li key={entry.id || entry.savedAt}><button onClick={()=>onSelect(entry)} aria-label={`Xem lại quẻ ${entry.name}`}><span>{entry.name}</span><small>{entry.question || HAO_NAMES[entry.movingPos]}</small><time>{entry.snapshot ? KD_METHODS[entry.snapshot.method || "numbers"] : "Ba số · bản cũ"} · {timeAgo(entry.savedAt)}</time></button><button aria-label={`Xoá quẻ ${entry.name} khỏi lịch sử`} onClick={()=>onRemove(entry.id || entry.savedAt)}>×</button></li>)}</ul></section>;
 }

@@ -18,6 +18,7 @@ export interface Profile {
 }
 
 export interface AiCacheEntry {
+  languagePolicyVersion?: string;
   configRevision?: number;
   text: string;
   module?: string;

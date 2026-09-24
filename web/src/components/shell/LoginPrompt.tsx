@@ -100,6 +100,16 @@ export function LoginPrompt() {
         <span className={styles.orbit} aria-hidden="true" />
       </header>
       <div className={styles.body}>
+      <button type="button" className={styles.zalo} onClick={proceedZalo} aria-disabled={!consent}>
+        <ZaloWordmark size={20} />
+        <span>Tiếp tục với Zalo</span>
+        <span className={styles.arrow} aria-hidden="true">↗</span>
+      </button>
+      <button type="button" className={styles.google} disabled>
+        <GoogleG size={20} />
+        <span>Google</span>
+        <small>Đang phát triển</small>
+      </button>
       <p className={styles.consentError} role={error ? "alert" : undefined}>{error}</p>
       <div className={styles.consent}>
         <input
@@ -114,23 +124,13 @@ export function LoginPrompt() {
         />
         <span id="login-consent-label">
           Tôi đồng ý với{" "}
-          <Link href={termsHref("terms")} onClick={close} aria-label="Điều khoản sử dụng">Điều khoản</Link>,{" "}
-          <Link href={termsHref("disclaimer")} onClick={close} aria-label="Tuyên bố miễn trừ trách nhiệm">Miễn trừ</Link>{" "}
-          và <Link href={termsHref("privacy")} onClick={close} aria-label="Thỏa thuận xử lý và bảo mật thông tin cá nhân">Bảo mật</Link>.
+          <Link href={termsHref("terms")} onClick={close} aria-label="Điều khoản sử dụng">Điều khoản sử dụng</Link>,{" "}
+          <Link href={termsHref("disclaimer")} onClick={close} aria-label="Tuyên bố miễn trừ trách nhiệm">Tuyên bố miễn trừ trách nhiệm</Link>{" "}
+          và <Link href={termsHref("privacy")} onClick={close} aria-label="Thỏa thuận xử lý và bảo mật thông tin cá nhân">Thỏa thuận xử lý và bảo mật thông tin cá nhân</Link>.
         </span>
       </div>
 
       <p className={styles.privacyNote}>Không bao gồm quảng cáo, tiếp thị.</p>
-      <button type="button" className={styles.zalo} onClick={proceedZalo} aria-disabled={!consent}>
-        <ZaloWordmark size={20} />
-        <span>Tiếp tục với Zalo</span>
-        <span className={styles.arrow} aria-hidden="true">↗</span>
-      </button>
-      <button type="button" className={styles.google} disabled>
-        <GoogleG size={20} />
-        <span>Google</span>
-        <small>Đang phát triển</small>
-      </button>
       <button type="button" className={styles.later} onClick={close}>Khám phá trước</button>
       </div>
     </dialog>

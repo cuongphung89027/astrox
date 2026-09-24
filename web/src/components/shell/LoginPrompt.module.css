@@ -11,10 +11,10 @@
 .close { position: absolute; z-index: 2; right: 17px; top: 17px; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #f8f5e42e; border-radius: 50%; background: #ffffff05; font-size: 24px; font-weight: 300; line-height: 1; color: #e5ebd8; cursor: pointer; transition: background .2s, transform .2s; }
 .close:hover { background: #ffffff1c; transform: rotate(90deg); }
 .body { padding: 24px 28px 17px; }
-.consent { display: flex; align-items: flex-start; gap: 10px; margin: 0; text-align: left; font-size: 12px; line-height: 1.8; color: #62705e; cursor: pointer; }
+.consent { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0 0; text-align: left; font-size: 11px; line-height: 1.8; color: #798272; cursor: pointer; }
 .consent input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: #244e42; cursor: pointer; }
-.consent a { white-space: nowrap; color: #244e42; text-decoration: underline; text-decoration-color: #a2b292; text-underline-offset: 3px; }
-.privacyNote { margin: 7px 0 22px 28px; font-size: 10px; color: #6c7865; line-height: 1.6; }
+.consent a { white-space: normal; color: #244e42; text-decoration: underline; text-decoration-color: #a2b292; text-underline-offset: 3px; }
+.privacyNote { margin: 7px 0 8px 28px; font-size: 10px; color: #798272; line-height: 1.6; }
 .zalo { display: flex; align-items: center; justify-content: center; gap: 13px; width: 100%; min-height: 50px; padding: 13px 16px; border: 0; border-radius: 12px; background: #0068ef; color: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, transform .2s, box-shadow .2s; }
 .zalo:hover { background: #005bcf; box-shadow: 0 7px 20px #0068ef20; transform: translateY(-1px); }
 .zalo[aria-disabled="true"] { cursor: not-allowed; }
@@ -22,7 +22,7 @@
 .google { display: flex; align-items: center; gap: 13px; width: 100%; min-height: 50px; margin-top: 10px; padding: 13px 16px; border: 1px solid #d9dece; border-radius: 12px; background: #f9faf3; color: #62705e; font-size: 13px; cursor: not-allowed; }
 .google small { margin-left: auto; font-size: 10px; }
 .zalo > span:not(.arrow) { flex: 1; text-align: left; }
-.consentError { margin: 0 0 12px; font-size: 11px; line-height: 1.7; color: #a13f32; }
+.consentError { margin: 12px 0 0; font-size: 11px; line-height: 1.7; color: #a13f32; }
 .consentError:empty { display: none; }
 .later { display: block; min-height: 44px; width: 100%; margin-top: 6px; background: transparent; border: 0; font-size: 12px; color: #62715d; cursor: pointer; transition: color .2s; }
 .later:hover { color: #244e42; }

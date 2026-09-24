@@ -4,6 +4,7 @@
  * Lớp gọi API — port từ callAiText/runAiPrompt/aiHedgeRace + topup của
  * index.html. Toàn bộ chạy client-side (static export).
  */
+import {trackFeature} from "./feature-telemetry";
 import {confirmReading} from "./reading-consent";
 import {pendingAiOperation,finishAiOperation} from "./ai-operation";
 import { promptDescriptor } from "./managed-prompts";
@@ -61,6 +62,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
   assertOwner();
   const operation=await pendingAiOperation(ticket?.userId||"guest",body);
   body={...body,operationId:operation.id};
+  trackFeature("feature_start", String(body.serviceId || ""), "ai", operation.id);
   let res: Response | undefined;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {

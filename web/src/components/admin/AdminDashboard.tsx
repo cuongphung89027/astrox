@@ -32,10 +32,12 @@ import {
   routeLabel,
   belongsToProvider,
 } from "../../../../services/admin/provider-models";
+import { PreferencesEffect } from "@/components/profile/PreferencesEffect";
 import { AiMetrics } from "./AiMetrics";
+import { AdminInsights, type InsightView } from "./AdminInsights";
 import { AdminDataTable as DataTable } from "./AdminDataTable";
 
-type View =
+type View = InsightView | "setup"
   | "prompts"
   | "apis"
   | "overview"
@@ -56,27 +58,14 @@ type View =
   | "clientErrors"
   | "diagnostics"
   | "audit";
+const insightViews: View[] = ['overview','usage','growth','finance','attention','support'];
+const configViews: View[] = ['setup','services','prompts','apis','providers','content','billing','payos','zalo','rewards','walletbackend','operations','access'];
 const navigation: [View, string, string, string][] = [
-  ["overview", "Tổng quan", "◈", ""],
-  ["services", "Dịch vụ & giá", "☷", "DỊCH VỤ & NỘI DUNG"],
-  ["prompts", "Kho prompt", "▤", "DỊCH VỤ & NỘI DUNG"],
-  ["apis", "Cài đặt API", "⇄", "HỆ THỐNG"],
-  ["providers", "Cài đặt AI", "✧", "DỊCH VỤ & NỘI DUNG"],
-  ["aiMetrics", "Thống kê AI", "↗", "DỊCH VỤ & NỘI DUNG"],
-  ["content", "Nội dung & thông báo", "▤", "DỊCH VỤ & NỘI DUNG"],
-  ["billing", "Gói nạp & ưu đãi", "◇", "THANH TOÁN & VÍ"],
-  ["payos", "Thanh toán PayOS", "⇄", "THANH TOÁN & VÍ"],
-  ["wallet", "Ví & giao dịch", "▱", "THANH TOÁN & VÍ"],
-  ["users", "Người dùng", "◎", "NGƯỜI DÙNG & THƯỞNG"],
-  ["zalo", "Đăng nhập Zalo", "⇥", "NGƯỜI DÙNG & THƯỞNG"],
-  ["diagnostics", "Chẩn đoán đăng nhập", "⚑", "NGƯỜI DÙNG & THƯỞNG"],
-  ["rewards", "Thưởng & giới thiệu", "☀", "NGƯỜI DÙNG & THƯỞNG"],
-  ["clientErrors", "Lỗi giao diện", "⚑", "HỆ THỐNG"],
-  ["reports", "Báo cáo", "↗", "HỆ THỐNG"],
-  ["walletbackend", "Kết nối backend ví", "⇄", "HỆ THỐNG"],
-  ["operations", "Vận hành", "⚙", "HỆ THỐNG"],
-  ["access", "Phân quyền", "⌘", "HỆ THỐNG"],
-  ["audit", "Nhật ký & phiên bản", "◷", "HỆ THỐNG"],
+ ['overview','Tổng quan','◈','TỔNG QUAN'],['attention','Việc cần xử lý','⚑','TỔNG QUAN'],
+ ['usage','Sử dụng tính năng','↗','NGƯỜI DÙNG & SỬ DỤNG'],['support','Hỗ trợ người dùng','◎','NGƯỜI DÙNG & SỬ DỤNG'],['users','Danh sách tài khoản','☷','NGƯỜI DÙNG & SỬ DỤNG'],
+ ['finance','Tài chính & Point','◇','POINT & TĂNG TRƯỞNG'],['growth','Điểm danh & tăng trưởng','☀','POINT & TĂNG TRƯỞNG'],['wallet','Ví & giao dịch','▱','POINT & TĂNG TRƯỞNG'],['billing','Gói nạp & ưu đãi','◇','POINT & TĂNG TRƯỞNG'],['rewards','Cài đặt phần thưởng','☀','POINT & TĂNG TRƯỞNG'],['payos','Thanh toán PayOS','⇄','POINT & TĂNG TRƯỞNG'],
+ ['services','Dịch vụ & giá','☷','DỊCH VỤ & AI'],['prompts','Kho prompt','▤','DỊCH VỤ & AI'],['providers','Cài đặt AI','✧','DỊCH VỤ & AI'],['aiMetrics','Thống kê AI','↗','DỊCH VỤ & AI'],
+ ['setup','Trạng thái cấu hình','◈','VẬN HÀNH & CÀI ĐẶT'],['apis','Cài đặt API','⇄','VẬN HÀNH & CÀI ĐẶT'],['content','Nội dung & thông báo','▤','VẬN HÀNH & CÀI ĐẶT'],['zalo','Đăng nhập Zalo','⇥','VẬN HÀNH & CÀI ĐẶT'],['diagnostics','Chẩn đoán đăng nhập','⚑','VẬN HÀNH & CÀI ĐẶT'],['clientErrors','Lỗi giao diện','⚑','VẬN HÀNH & CÀI ĐẶT'],['reports','Báo cáo','↗','VẬN HÀNH & CÀI ĐẶT'],['walletbackend','Kết nối backend ví','⇄','VẬN HÀNH & CÀI ĐẶT'],['operations','Vận hành','⚙','VẬN HÀNH & CÀI ĐẶT'],['access','Phân quyền','⌘','VẬN HÀNH & CÀI ĐẶT'],['audit','Nhật ký & phiên bản','◷','VẬN HÀNH & CÀI ĐẶT'],
 ];
 const fmt = (n: number) => new Intl.NumberFormat("vi-VN").format(n);
 const uid = (prefix: string) => `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -219,6 +208,7 @@ function AdminLogo() {
 }
 
 export function AdminDashboard() {
+  const [expandedGroups,setExpandedGroups]=useState<string[]>(['TỔNG QUAN','NGƯỜI DÙNG & SỬ DỤNG','POINT & TĂNG TRƯỞNG']);
   const [promptSamples,setPromptSamples]=useState<Record<string,string>>({});
 
   const [session, setSession] = useState<AdminSession | null>(null),
@@ -360,7 +350,7 @@ export function AdminDashboard() {
     setRemoteMessage("Đang tải dữ liệu…");
     setView(id);
     setDrawer(false);
-    history.pushState({}, "", `/admin?view=${id}`);
+    const url = new URL(location.href); url.searchParams.set("view", id); history.pushState({}, "", url);
   };
   const act = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -527,6 +517,7 @@ export function AdminDashboard() {
   );
   return (
     <div className={s.shell}>
+      <PreferencesEffect />
       {drawer && (
         <button
           className={s.overlay}
@@ -564,22 +555,16 @@ export function AdminDashboard() {
           <AdminLogo />
         </a>
         <nav aria-label="Điều hướng quản trị">
-          {navigation.map(([id, label, icon, group], i) => (
-            <div key={id}>
-              {group && group !== navigation[i - 1]?.[3] && (
-                <p className={s.navLabel}>{group}</p>
-              )}
-              <button
-                className={view === id ? s.active : ""}
-                onClick={() => go(id)}
-                aria-current={view === id ? "page" : undefined}
-              >
-                <span aria-hidden>{icon}</span>
-                {label}
-                {view === id && <i />}
+          {[...new Set(navigation.map(item=>item[3]))].map(group=>{
+            const activeGroup=navigation.some(([id,,,g])=>id===view&&g===group);
+            const expanded=expandedGroups.includes(group)||activeGroup;
+            return <section className={s.navGroup} key={group}>
+              <button className={s.groupToggle} aria-expanded={expanded} onClick={()=>setExpandedGroups(groups=>expanded?groups.filter(g=>g!==group):[...groups,group])} disabled={activeGroup}>
+                {group}<i aria-hidden="true">{expanded?'−':'+'}</i>
               </button>
-            </div>
-          ))}
+              {expanded&&<div className={s.navItems}>{navigation.filter(item=>item[3]===group).map(([id,label,icon])=><button key={id} className={view===id?s.active:''} onClick={()=>go(id)} aria-current={view===id?'page':undefined}><span aria-hidden>{icon}</span>{label}{view===id&&<i/>}</button>)}</div>}
+            </section>;
+          })}
         </nav>
         <Link className={s.back} href="/">
           ↗ Xem website AstroX
@@ -634,9 +619,9 @@ export function AdminDashboard() {
                 <span>.</span>
               </h1>
             </div>
-            <span className={s.status}>
+            {(configViews.includes(view) || dirty) && <span className={s.status}>
               {dirty ? "● Có thay đổi chưa lưu" : "✓ Bản nháp đã đồng bộ"}
-            </span>
+            </span>}
           </header>
           {error && (
             <div role="alert" className={s.error}>
@@ -648,7 +633,7 @@ export function AdminDashboard() {
               {message}
             </div>
           )}
-          {snapshot.revision === 0 && snapshot.publishedRevision === null && snapshot.integration.wallet && session.user.capabilities.includes("access.manage") && (
+          {configViews.includes(view) && snapshot.revision === 0 && snapshot.publishedRevision === null && snapshot.integration.wallet && session.user.capabilities.includes("access.manage") && (
             <div className={s.info}>
               <p>Đã tìm thấy backend AstroX hiện có. Nhập gói nạp, Zalo, PayOS và dịch vụ vào bản nháp để kiểm tra trước khi áp dụng.</p>
               <button disabled={busy || dirty} onClick={() => void act(async () => {
@@ -659,13 +644,14 @@ export function AdminDashboard() {
             </div>
           )}
           {view === "aiMetrics" && <AiMetrics config={config} />}
+          {insightViews.includes(view) && <AdminInsights view={view as InsightView} session={session} config={config} onNavigate={go} />}
           <fieldset
             disabled={
-              busy || (!canWrite && view !== "overview" && view !== "access")
+              busy || (!canWrite && view !== "setup" && view !== "access")
             }
             className={s.editor}
           >
-            {view === "overview" && (
+            {view === "setup" && (
               <>
                 <div className={s.overviewGrid}>
                   <section className={s.readiness}>
@@ -2179,7 +2165,7 @@ export function AdminDashboard() {
             </>
           )}
         </div>
-        {(view !== "aiMetrics" || dirty) && (
+        {(configViews.includes(view) || dirty) && (
           <div className={s.savebar}>
             <div>
               <strong>

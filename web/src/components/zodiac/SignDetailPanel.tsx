@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureResult } from "@/lib/use-feature-result";
 import { refreshPromptRevision } from "@/lib/state";
 import styles from "./Zodiac.module.css";
 import { ReadingLoader } from "@/components/kit/ReadingLoader";
@@ -44,6 +45,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
 
   const topic = ZODIAC_DEEP_TOPICS.find((t) => `${t.id}::${t.subId}` === topicId) ?? ZODIAC_DEEP_TOPICS[0];
 
+  const markFresh = useFeatureResult(text, `zodiac--${topic.id}--${topic.subId}`, !loading);
   const load = useCallback(
     async (force: boolean) => {
       // Tải tự động: chỉ chạy khi đã có hồ sơ (không bật modal).
@@ -71,7 +73,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
         const result = await runAiPrompt(q, { withChartImage: false, serviceId: `zodiac--${topic.id}--${topic.subId}` });
         if (req !== reqRef.current) return;
         writeAiCache("zodiacTopics", cacheKey, result, { module: "zodiac", topic: topic.id });
-        setText(result);
+        markFresh(result); setText(result);
       } catch (e) {
         if (req !== reqRef.current) return;
         const msg = e instanceof Error ? e.message : "Không lấy được phân tích.";
@@ -81,7 +83,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
         if (req === reqRef.current) setLoading(false);
       }
     },
-    [profile, natalChart, topic, sign, toast],
+    [markFresh, profile, natalChart, topic, sign, toast],
   );
 
   const scope=topic.id+topic.subId+sign.id+JSON.stringify(profile),[previousScope,setPreviousScope]=useState<string|null>(null);

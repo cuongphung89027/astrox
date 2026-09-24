@@ -1,4 +1,5 @@
 "use client";
+import { trackFeature } from "@/lib/feature-telemetry";
 
 /**
  * KinhDichClient — điều phối trang /kinhdich (Mai Hoa Dịch Số).
@@ -73,6 +74,7 @@ export function KinhDichClient() {
   const applyCast = useCallback(
     (s1: number, s2: number, s3: number) => {
       const result = castHexagram(s1, s2, s3);
+      trackFeature("result_view", "kinhdich", "calculation");
       setCast(result);
       setCastCount((c) => c + 1);
       setPhase("result");
@@ -93,6 +95,7 @@ export function KinhDichClient() {
 
   const startRitual = useCallback(
     (s1: number, s2: number, s3: number) => {
+      trackFeature("feature_start", "kinhdich", "calculation");
       setNumbers([s1, s2, s3]);
       if (motionOff()) {
         // Giảm chuyển động: bỏ nghi thức, vào thẳng kết quả (toán pháp giữ nguyên).
@@ -133,6 +136,7 @@ export function KinhDichClient() {
   const onSelectHistory = useCallback((entry: KdHistoryEntry) => {
     setQuestion(entry.question);
     const result = castHexagram(entry.s1, entry.s2, entry.s3);
+    trackFeature("result_view", "kinhdich", "saved");
     setCast(result);
     setCastCount((c) => c + 1);
     setPhase("result");

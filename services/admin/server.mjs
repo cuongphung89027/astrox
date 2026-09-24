@@ -1,5 +1,6 @@
+import {readInsights,readSupport,readIssues,updateIssue} from './insights.mjs';
 import {backendStatus,connectionSecretAvailable,importLegacyConfig} from './backend.mjs';
-import {summarizeAi,parseAttempts} from './metrics.ts';
+import {aiReport} from './ai-report.mjs';
 import {CAPABILITIES,validateConfig,defaultConfig} from './config.ts';
 import {state,sql,readPublished,readSecret,saveSecret,saveDraft,publish,recordAudit,auditStatement} from './store.mjs';
 import {b64,unb64,equal,token,untoken,sign} from './crypto.mjs';
@@ -66,19 +67,12 @@ export async function handleAdmin(request,env){try{
  await env.DB.batch([sql(env,'INSERT INTO admin_members(email,role_id,created_at,updated_at) VALUES(?,?,?,?) ON CONFLICT(email) DO UPDATE SET role_id=excluded.role_id,updated_at=excluded.updated_at',email,roleId,now,now),auditStatement(env,user.email,method==='DELETE'?'member.remove':'member.assign',email,{roleId})]);
  return json({ok:true});
  }
+ if(path==='data/insights'&&method==='GET')return json(await readInsights(env,new URL(request.url).searchParams,user));
+ if(path==='data/support'&&method==='GET')return json(await readSupport(env,new URL(request.url).searchParams,user));
+ if(path==='data/issues'&&method==='GET')return json(await readIssues(env,new URL(request.url).searchParams,user));
+ if(path==='data/issues'&&method==='POST')return json(await updateIssue(env,await body(request),user));
  if(path==='data/client-errors'&&method==='GET')return json({available:true,rows:(await sql(env,'SELECT day,path,kind,count,last_at FROM client_error_counts WHERE day>=? ORDER BY last_at DESC LIMIT 400',Math.floor(Date.now()/86400000)-30).all()).results});
- if(path==='data/ai-metrics'&&method==='GET'){
-  const params=new URL(request.url).searchParams;
-  const endText=params.get('to')||new Date().toISOString().slice(0,10),startText=params.get('from')||new Date(Date.now()-6*86400000).toISOString().slice(0,10);
-  const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
-  if(!validDate(startText)||!validDate(endText))return json({error:'Ngày không hợp lệ.'},422);
-  const from=new Date(startText),to=new Date(Date.parse(endText)+86400000);
-  if(to<=from||to-from>90*86400000)return json({error:'Chọn khoảng thời gian từ 1 đến 90 ngày.'},422);
-  const all=(await sql(env,'SELECT id,service_id,created_at,status,attempts,duration_ms FROM admin_ai_requests WHERE created_at>=? AND created_at<? ORDER BY created_at DESC LIMIT 5001',from.toISOString(),to.toISOString()).all()).results;
-  const rows=all.slice(0,5000),attempts=rows.flatMap(r=>parseAttempts(r.attempts));
-  const filters={provider:params.get('provider')||'',model:params.get('model')||'',service:params.get('service')||''};
-  return json({summary:summarizeAi(rows,filters),from:startText,to:endText,truncated:all.length>5000,loaded:rows.length,options:{providers:[...new Set(attempts.map(a=>a.providerId.split(':')[0]).filter(Boolean))],models:[...new Set(attempts.map(a=>a.model).filter(Boolean))],services:[...new Set(rows.map(r=>r.service_id).filter(Boolean))]}});
- }
+ if(path==='data/ai-metrics'&&method==='GET')return json(await aiReport(env,new URL(request.url).searchParams));
  if(path==='data/ai'&&method==='GET'){
  const rows=(await sql(env,'SELECT id,service_id,config_revision,created_at,status,attempts,duration_ms FROM admin_ai_requests ORDER BY created_at DESC LIMIT 200').all()).results;
  return json({available:true,rows:rows.map(r=>{let attempts=[];try{const parsed=JSON.parse(r.attempts||'[]');if(Array.isArray(parsed))attempts=parsed.map(a=>Object.fromEntries(['providerId','status','durationMs','outcome','errorCode'].filter(k=>['string','number'].includes(typeof a[k])).map(k=>[k,a[k]])))}catch{}return {...r,attempts};})});

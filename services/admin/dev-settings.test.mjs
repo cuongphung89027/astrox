@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {devSettings} from './dev-settings.mjs';
+test('local settings preserve defaults and allow isolated exact loopback host/port only',()=>{const defaults=devSettings({});assert.equal(defaults.port,8789);assert.ok(defaults.dataDir.endsWith('/.dev-admin'));const qa=devSettings({ADMIN_PORT:'8790',ADMIN_DATA_DIR:'/tmp/astrox-admin-upgrade-qa'});assert.equal(qa.dataDir,'/tmp/astrox-admin-upgrade-qa');assert.equal(qa.acceptsHost('127.0.0.1:8790'),true);for(const host of ['localhost:8789','evil:8790','127.0.0.1:8790.evil','localhost','[::1]:8790'])assert.equal(qa.acceptsHost(host),false);for(const port of ['0','65536','8790evil','NaN'])assert.throws(()=>devSettings({ADMIN_PORT:port}));});

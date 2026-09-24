@@ -1,4 +1,6 @@
 "use client";
+import { useFeatureResult } from "@/lib/use-feature-result";
+import { trackFeature } from "@/lib/feature-telemetry";
 import { refreshPromptRevision } from "@/lib/state";
 import { managedPrompt } from "@/lib/managed-prompts";
 import {LoadingWhisper} from "@/components/kit/LoadingWhisper";
@@ -32,6 +34,7 @@ function WesternCompatClient(){
  const [picker,setPicker]=useState<'a'|'b'|null>(null),[phase,setPhase]=useState<'choose'|'joining'|'result'>('choose');
  const [checked,setChecked]=useState<{a:string;b:string}|null>(null);
  const [raw,setRaw]=useState(''),[error,setError]=useState(''),[loading,setLoading]=useState(false);
+ const markFresh = useFeatureResult(raw, "compat--pair", phase === "result" && !loading && !!profile);
  const req=useRef(0);
  const a=signById(aId),b=signById(bId),ca=checked?signById(checked.a):undefined,cb=checked?signById(checked.b):undefined;
  const analysis=useMemo(()=>ca&&cb?compatAnalysis(ca,cb):null,[ca,cb]);
@@ -39,10 +42,11 @@ function WesternCompatClient(){
  const scope=key+JSON.stringify(profile),[previousScope,setPreviousScope]=useState<string|null>(null);
  if(scope!==previousScope){setPreviousScope(scope);setLoading(false);setError('');setRaw(key&&profile?readAiCache('compatibility',key):'');}
  useEffect(()=>()=>{req.current++;},[scope]);
+ useEffect(()=>{if(phase==='result')trackFeature("result_view","compat","calculation");},[phase]);
  useEffect(()=>{if(phase!=='joining')return;const timer=setTimeout(()=>setPhase('result'),1100);return()=>clearTimeout(timer);},[phase]);
- const check=()=>{if(!a||!b)return;window.scrollTo({top:0,behavior:"instant"});setChecked({a:a.id,b:b.id});const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.dataset.motion==='reduced';setPhase(reduced?'result':'joining');};
+ const check=()=>{if(!a||!b)return;trackFeature("feature_start","compat","calculation");window.scrollTo({top:0,behavior:"instant"});setChecked({a:a.id,b:b.id});const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.dataset.motion==='reduced';setPhase(reduced?'result':'joining');};
  const reset=()=>{req.current++;setLoading(false);setChecked(null);setPhase('choose');setRaw('');setError('');};
- const run=async()=>{if(!ca||!cb||!analysis)return;if(!profile){open();return;}await refreshPromptRevision();const cached=readAiCache('compatibility',key);if(cached){setRaw(cached);return;}const id=++req.current;setLoading(true);setError('');try{const text=await runAiPrompt(compatPrompt(ca,cb,analysis,profile),{withChartImage:false,temperature:.6,serviceId:"compat--pair"});if(id!==req.current)return;writeAiCache('compatibility',key,text,{module:'compatibility',topic:'pair'});setRaw(text);}catch(e){if(id===req.current)setError(e instanceof Error?e.message:'Không lấy được luận giải.');}finally{if(id===req.current)setLoading(false);}};
+ const run=async()=>{if(!ca||!cb||!analysis)return;if(!profile){open();return;}await refreshPromptRevision();const cached=readAiCache('compatibility',key);if(cached){setRaw(cached);return;}const id=++req.current;setLoading(true);setError('');try{const text=await runAiPrompt(compatPrompt(ca,cb,analysis,profile),{withChartImage:false,temperature:.6,serviceId:"compat--pair"});if(id!==req.current)return;writeAiCache('compatibility',key,text,{module:'compatibility',topic:'pair'});markFresh(text);setRaw(text);}catch(e){if(id===req.current)setError(e instanceof Error?e.message:'Không lấy được luận giải.');}finally{if(id===req.current)setLoading(false);}};
  const person=(sign:ZodiacSign|undefined,side:'a'|'b')=><button className={styles.person} onClick={()=>setPicker(side)} aria-label={`Chọn cung ${side==='a'?'người thứ nhất':'người thứ hai'}${sign?`: ${sign.name}`:''}`}><span>{side==='a'?'BẠN':'NGƯỜI ẤY'}</span><div className={styles.signSeal}>{sign?<b>{sign.symbol}{"\uFE0E"}</b>:<FeatureIcon name="profile" size={35}/>}</div><h3>{sign?.name??'Chọn cung'}</h3><small>{sign?`${sign.element} · Thay đổi`:'Chạm để chọn'}<i aria-hidden="true">⌄</i></small></button>;
  return <section className={styles.page}><h1 className="sr-only">Tương Hợp</h1>{phase==='choose'?<div className={styles.choose}><header className={styles.intro}><span className={styles.eyebrow}>HAI DẤU ẤN. MỘT KẾT NỐI.</span><h2>Gặp nhau ở đâu?</h2></header><div className={styles.pair}>{person(a,'a')}<span className={styles.pairLink} aria-hidden="true"><FeatureIcon name="compat" size={21}/></span>{person(b,'b')}</div><p className={styles.scope}>Đối chiếu theo cung Mặt Trời của hai người.</p><button className={styles.primary} disabled={!a||!b} onClick={check}>Khám phá sự kết nối <span>↗</span></button>{!profile&&<button className={styles.profileLink} onClick={()=>open()}>Dùng cung từ hồ sơ của bạn ↗</button>}</div>:ca&&cb&&analysis?<>
   <header className={styles.resultNav}><button onClick={reset} aria-label="Chọn lại hai cung">←</button><span>{phase==='joining'?'ĐANG KẾT NỐI':'HAI BẠN'}</span></header>
@@ -72,6 +76,7 @@ function OriginalCompatibility(){
  const [text,setText]=useState('');
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState('');
+ const markFresh = useFeatureResult(text, "compat--pair", !loading);
  const requestId=useRef(0);
  useEffect(()=>()=>{requestId.current+=1;},[]);
  const clearResult=()=>{setText('');setError('');};
@@ -93,7 +98,7 @@ function OriginalCompatibility(){
    const prompt=managedPrompt('compat.original',[profile.name,profile.gender,fmt(profile.dob),profile.hourChi,profile.place,name.trim(),gender,fmt(dob)]);
    const result=await runAiPrompt(prompt,{serviceId:'compat--pair'});
    if(!current())return;
-   writeAiCache('compatibility',key,result,{module:'compat',topic:'pair'});setText(result);
+   writeAiCache('compatibility',key,result,{module:'compat',topic:'pair'});markFresh(result);setText(result);
   }catch(e){if(current())setError(e instanceof Error?e.message:'Không lấy được luận giải. Vui lòng thử lại.');}
   finally{if(id===requestId.current)setLoading(false);}
  };

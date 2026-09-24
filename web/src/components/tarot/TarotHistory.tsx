@@ -6,7 +6,8 @@
  * xem lại toàn bộ các lá + luận giải; xoá từng lượt. Đọc localStorage sau
  * mount để không lệch hydration với HTML tĩnh.
  */
-import { useState } from "react";
+import { trackFeature } from "@/lib/feature-telemetry";
+import { useEffect, useRef, useState } from "react";
 import { GlassCard } from "@/components/kit";
 import { useToast } from "@/components/motion/toast";
 import { removeTarotHistory, type TarotHistoryEntry } from "@/lib/tarot-history";
@@ -31,6 +32,13 @@ export function TarotHistory({ onClose }: { onClose: () => void }) {
   const entries = useTarotHistory();
   const [selection, setSelection] = useState<{id: string; fingerprint: string} | null>(null);
   const selected = selection?.fingerprint === cacheFingerprint() ? entries.find(entry => entry.id === selection.id) : undefined;
+  const lastReported = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selected) { lastReported.current = null; return; }
+    if (lastReported.current === selected.id) return;
+    lastReported.current = selected.id;
+    trackFeature("result_view", "tarot", "saved");
+  }, [selected]);
   const setSelected = (entry: TarotHistoryEntry | null) => setSelection(entry ? {id: entry.id, fingerprint: cacheFingerprint()} : null);
   const { show } = useToast();
   const remove = (entry: TarotHistoryEntry) => {

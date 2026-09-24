@@ -30,3 +30,11 @@ test('changed paid price or free-to-paid change cannot charge without new confir
  const env=testEnv();await state(env);const c=defaultConfig();c.ai.enabled=true;c.billing.enabled=true;c.billing.services[0].status='paid';c.billing.services[0].points=10;await publish(env,'owner',c,0,'publish');let calls=0;env.ASTROX_BACKEND={fetch:async()=>{calls++;return Response.json({});}};
  for(const expectedPoints of [0,5]){const r=await handleConfiguredAi(request('/api/ai',{serviceId:'tuvi',operationId:'price-test',expectedPoints,messages:[{role:'user',content:'test'}]}),env);assert.equal(r.status,409);assert.equal((await r.json()).code,'price_changed');}assert.equal(calls,0);
 });
+test('blocked price and rate outcomes persist separately from provider failures',async()=>{
+ const env=testEnv();await state(env);const c=defaultConfig();c.ai.enabled=true;c.billing.enabled=true;c.billing.services[0].status='paid';c.billing.services[0].points=10;await publish(env,'owner',c,0,'metrics');env.AI_IP_PER_MINUTE=1;
+ const input={serviceId:'tuvi',operationId:'metrics-operation',expectedPoints:0,messages:[{role:'user',content:'test'}]};
+ assert.equal((await handleConfiguredAi(request('/api/ai',input),env)).status,409);
+ assert.equal((await handleConfiguredAi(request('/api/ai',input),env)).status,429);
+ const rows=(await env.DB.prepare('SELECT status,attempts FROM admin_ai_requests ORDER BY created_at').all()).results;
+ assert.deepEqual(rows.map(r=>r.status),['price_changed','rate_limited']);assert.ok(rows.every(r=>r.attempts==='[]'));
+});

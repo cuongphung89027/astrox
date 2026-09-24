@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureResult } from "@/lib/use-feature-result";
 import { refreshPromptRevision } from "@/lib/state";
 import { ReadingLoader } from "@/components/kit/ReadingLoader";
 import { SavedReading, ReadingInvitation } from "@/components/kit/SavedReading";
@@ -42,6 +43,7 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
   /** Cache key gắn với chart hiện tại — đổi ngày giờ sinh là đổi key. */
   const cacheKey = useMemo(() => stableHash(`${topic.id}::${JSON.stringify(chart)}`), [topic, chart]);
 
+  const markFresh = useFeatureResult(text, `batu--${topic.id}`, reading && aiState === "done");
   const [cacheIdentity,setCacheIdentity]=useState<string|null>(null);
   if(cacheIdentity!==cacheKey){
     setCacheIdentity(cacheKey);
@@ -68,14 +70,14 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
       const out = await runAiPrompt(prompt, {serviceId: `batu--${topic.id}`});
       writeAiCache("batuTopics", cacheKey, out, { module: "batu", topic: topic.id });
       if(id!==request.current)return;
-      setText(out);
+      markFresh(out); setText(out);
       setAiState("done");
     } catch (e) {
       if(id!==request.current)return;
       setErrorMsg(e instanceof Error ? e.message : "Không lấy được phân tích.");
       setAiState("error");
     }
-  }, [cacheKey, chart, profile, requireProfile, topic]);
+  }, [markFresh, cacheKey, chart, profile, requireProfile, topic]);
 
   const pickTopic = useCallback((id: string) => {
     setReading(true);

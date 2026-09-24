@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureResult } from "@/lib/use-feature-result";
 import { refreshPromptRevision } from "@/lib/state";
 
 /**
@@ -29,6 +30,7 @@ export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayM
   const requireProfile = useRequireProfile();
   const { show } = useToast();
   const [text, setText] = useState<string>(() => readAiCache(group, cacheKey));
+  const markFresh = useFeatureResult(text, period ? `tuvi--period--${period}` : `tuvi--${cacheKey.replace("::", "--")}`);
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -80,7 +82,7 @@ export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayM
           });
           if (abortRef.current !== ctrl || ctrl.signal.aborted) return;
         }
-        setText(result);
+        markFresh(result); setText(result);
       } catch (e) {
         if (abortRef.current !== ctrl) return;
         const msg = ctrl.signal.aborted
@@ -94,7 +96,7 @@ export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayM
         if (abortRef.current === ctrl) { setLoading(false); setCompleting(false); }
       }
     },
-    [group, cacheKey, prompt, topic, period, requireProfile, show, revealDelayMs],
+    [markFresh, group, cacheKey, prompt, topic, period, requireProfile, show, revealDelayMs],
   );
 
   return { text, loading, completing, error, run };

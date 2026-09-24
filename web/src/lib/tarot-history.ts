@@ -6,6 +6,7 @@
  * đủ dữ liệu để dựng lại lượt trải (câu hỏi, kiểu trải, khung, các lá + chiều,
  * toàn văn luận giải) nên xem lại không phụ thuộc cards.json hay aiCache.
  */
+import { trackFeature } from "./feature-telemetry";
 import { accountStorageKey, notifyDataDirty, cacheFingerprint, getState, subscribe } from "./state";
 
 export interface TarotHistoryCard {
@@ -80,9 +81,12 @@ export function readTarotHistory(): TarotHistoryEntry[] {
 export function pushTarotHistory(entry: TarotHistoryEntry): TarotHistoryEntry[] {
   const fingerprint = entry.fingerprint || cacheFingerprint();
   const next = { ...entry, fingerprint };
-  const stored = storedEntries().filter(e => !(e.id === entry.id && (e.fingerprint === fingerprint || !e.fingerprint)));
+  const previous = storedEntries();
+  const alreadySaved = previous.some(e => e.id === entry.id && (e.fingerprint === fingerprint || !e.fingerprint));
+  const stored = previous.filter(e => !(e.id === entry.id && (e.fingerprint === fingerprint || !e.fingerprint)));
   try {
     localStorage.setItem(accountStorageKey(TAROT_HISTORY_KEY), JSON.stringify([next, ...stored]));
+    if (!alreadySaved) trackFeature("result_save", "tarot", "saved");
     const deleted = deletedEntries();
     if (Array.isArray(deleted[fingerprint])) {
       deleted[fingerprint] = deleted[fingerprint].filter(id => id !== entry.id);

@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureResult } from "@/lib/use-feature-result";
 import { refreshPromptRevision } from "@/lib/state";
 import styles from "./Zodiac.module.css";
 import { ReadingLoader } from "@/components/kit/ReadingLoader";
@@ -52,6 +53,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
   /** Chống race: chỉ nhận kết quả của request mới nhất khi đổi cung/kỳ nhanh. */
   const reqRef = useRef(0);
 
+  const markFresh = useFeatureResult(text, `zodiac--period--${period}`, !loading && !!profile);
   const load = useCallback(
     async (force: boolean) => {
       // Tải tự động: chỉ chạy khi đã có hồ sơ (không bật modal).
@@ -77,7 +79,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
         const result = await runAiPrompt(q, { withChartImage: false, compact: true, serviceId: `zodiac--period--${period}` });
         if (req !== reqRef.current) return;
         writeAiCache(group, key, result, { module: "zodiac", period });
-        setText(result);
+        markFresh(result); setText(result);
       } catch (e) {
         if (req !== reqRef.current) return;
         const msg = e instanceof Error ? e.message : "Không lấy được dự báo.";
@@ -87,7 +89,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
         if (req === reqRef.current) setLoading(false);
       }
     },
-    [sign, period, profile, natalChart, toast],
+    [markFresh, sign, period, profile, natalChart, toast],
   );
 
   const scope=sign.id+period+JSON.stringify(profile),[previousScope,setPreviousScope]=useState<string|null>(null);

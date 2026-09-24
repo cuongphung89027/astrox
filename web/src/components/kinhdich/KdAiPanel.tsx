@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureResult } from "@/lib/use-feature-result";
 import { refreshPromptRevision } from "@/lib/state";
 
 /**
@@ -37,6 +38,7 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
   const requireProfile = useRequireProfile();
   const { open: openProfile } = useProfileModal();
 
+  const markFresh = useFeatureResult(text, "kinhdich--interpretation", state === "done" && !!profile);
   const interpret = useCallback(async () => {
     if (!requireProfile()) return;
     const q = question.trim() || "(không có câu hỏi cụ thể — luận giải tổng quát)";
@@ -54,13 +56,13 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
       const prompt = buildKdPrompt(result, q, profile);
       const out = await runAiPrompt(prompt, { withChartImage: false, temperature: 0.75, serviceId: "kinhdich--interpretation" });
       writeAiCache("kinhDich", key, out, { module: "kinh-dich", topic: "interpretation" });
-      setText(out);
+      markFresh(out); setText(out);
       setState("done");
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : "Không lấy được luận giải.");
       setState("error");
     }
-  }, [requireProfile, question, result, profile]);
+  }, [markFresh, requireProfile, question, result, profile]);
 
   const done = state === "done";
   useEffect(() => {

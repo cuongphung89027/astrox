@@ -1062,10 +1062,12 @@
 @media (max-width: 850px) {
   .sidebar {
     transform: translateX(-100%);
-    transition: transform 0.2s;
+    visibility: hidden;
+    transition: transform 0.2s, visibility 0.2s;
     width: 252px;
   }
   .sidebar.open {
+    visibility: visible;
     transform: translateX(0);
   }
   .main {
@@ -1635,3 +1637,13 @@
   color: var(--color-muc, #26190f);
 }
 .inlineInput:focus-visible { outline: 2px solid #b69753; outline-offset: 1px; }
+
+/* Operational workspace navigation */
+.sidebar nav .groupToggle{font-size:8px;font-weight:650;letter-spacing:1px;margin-top:15px;min-height:36px;padding:8px 12px;color:#617255;border-radius:8px}
+.sidebar nav .groupToggle:disabled{opacity:1;cursor:default}
+.sidebar nav .groupToggle i{font-size:14px;font-style:normal;width:auto;height:auto;background:transparent;border-radius:0;color:#8c9a7a}
+.navItems{animation:admin-nav-in .24s ease both}
+.sidebar nav .navItems button{min-height:42px;transition:background .2s,transform .2s,color .2s}
+.sidebar nav .navItems button:hover{transform:translateX(2px)}
+@keyframes admin-nav-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.navItems{animation:none}.sidebar nav .navItems button{transition:none}}

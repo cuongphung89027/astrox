@@ -1,4 +1,5 @@
 "use client";
+import { trackFeature } from "@/lib/feature-telemetry";
 
 /**
  * TarotClient — nghi thức trải bài Tarot, port tinh thần từ view "tarot" của
@@ -95,6 +96,13 @@ export function TarotClient() {
   };
 
   /* --------------------- Nghi thức rút bài --------------------- */
+  const drawResultId = useRef<string | null>(null);
+  useEffect(() => {
+    if (drawResultId.current && drawn.length === spread.count && drawn.every(slot => slot.revealed)) {
+      trackFeature("result_view", "tarot", "calculation", drawResultId.current);
+      drawResultId.current = null;
+    }
+  }, [drawn, spread.count]);
   const startDraw = () => {
     if (deck.status !== "available") return;
     if (!cardsData || cardsData.length === 0) {
@@ -103,7 +111,9 @@ export function TarotClient() {
     }
     timersRef.current.forEach((t) => clearTimeout(t));
     timersRef.current = [];
+    trackFeature("feature_start", "tarot", "calculation");
     const nextPool = drawCards(cardsData, spread.count);
+    drawResultId.current = crypto.randomUUID();
     setPool(nextPool);
     setDrawn([]);
     setPhase("shuffling");
@@ -119,6 +129,7 @@ export function TarotClient() {
   };
 
   const resetToSetup = () => {
+    drawResultId.current = null;
     timersRef.current.forEach((t) => clearTimeout(t));
     timersRef.current = [];
     setPool([]);

@@ -1,4 +1,5 @@
 "use client";
+import { useFeatureResult } from "@/lib/use-feature-result";
 import { cacheFingerprint, refreshPromptRevision } from "@/lib/state";
 
 /**
@@ -44,6 +45,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
   const [state, setState] = useState<AiState>("idle");
   const [errMsg, setErrMsg] = useState("");
   const [price, setPrice] = useState<number | null>(null);
+  const markFresh = useFeatureResult(text, spread.id === "three" ? `tarot--three--${spread.frames?.find(f=>f.label===frameLabel)?.id || "ppf"}` : `tarot--${spread.id}`, state === "done" && !!profile);
   const forceRef = useRef(false);
 
   // Giá dịch vụ trả phí (nếu admin bật tarot = paid) — hiện chip để user biết trước.
@@ -112,7 +114,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
       if (cacheFingerprint() === fingerprint) writeAiCache("tarot", cacheKey, result, { module: "tarot", topic: spread.id });
       remember(result);
       if (cacheFingerprint() !== fingerprint) return;
-      setText(result);
+      markFresh(result); setText(result);
       setState("done");
     } catch (e) {
       setErrMsg(e instanceof Error ? e.message : "Không lấy được luận giải.");

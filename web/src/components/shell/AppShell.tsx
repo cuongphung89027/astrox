@@ -11,6 +11,7 @@
  * - Mobile (<lg): BOTTOM DOCK glass 4 mục + "Thêm" mở sheet (BottomDock).
  * - Logo: /assets/logo.png (logo AstroX chính thức, có sẵn wordmark).
  */
+import {FeatureReporting} from "./FeatureReporting";
 import {RuntimeReporting} from "./RuntimeReporting";
 import {PaidReadingConsent} from "@/components/kit/PaidReadingConsent";
 import Link from "next/link";
@@ -76,6 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <ToastProvider>
       <PreferencesEffect />
       <RuntimeReporting/>
+      <FeatureReporting/>
       <div className="flex min-h-dvh flex-col">
         <header
           ref={headerRef}

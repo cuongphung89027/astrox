@@ -62,9 +62,9 @@ export async function handleConfiguredAi(request,env){
   const requestHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({serviceId:input.serviceId,messages:input.messages,promptDescriptor:input.promptDescriptor,compact:input.compact})))),b=>b.toString(16).padStart(2,'0')).join('');
   if(input.promptDescriptor){try{input.messages=[{role:'user',content:renderServicePrompt(input.promptDescriptor,input.serviceId,c.prompts)}]}catch{throw new RuntimeError('INVALID_MESSAGES',400)}}
   if(input.compact)input.messages.push({role:'user',content:c.prompts.templates['shared.compact']});
-  const limited=await limitAi(request,env);if(limited)return limited;
+  const limited=await limitAi(request,env);if(limited){outcome=limited.status===429?'rate_limited':'ai_safety_unavailable';return limited;}
   if(service.status==='paid'){
-   if(input.expectedPoints!==undefined&&input.expectedPoints!==service.points)return json({error:'Giá vừa thay đổi. Vui lòng xem lại và xác nhận giá mới.',code:'price_changed'},409);
+   if(input.expectedPoints!==undefined&&input.expectedPoints!==service.points){outcome='price_changed';return json({error:'Giá vừa thay đổi. Vui lòng xem lại và xác nhận giá mới.',code:'price_changed'},409);}
    if(!c.billing.enabled)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
    if(!env.ASTROX_BACKEND)throw new RuntimeError('BACKEND_UNAVAILABLE',503);
    if(!/^[a-zA-Z0-9_-]{8,120}$/.test(input.operationId||''))throw new RuntimeError('INVALID_MESSAGES',400);

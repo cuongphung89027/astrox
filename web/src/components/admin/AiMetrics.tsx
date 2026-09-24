@@ -11,15 +11,32 @@ type Result = {
   to: string;
   loaded: number;
   truncated: boolean;
+  coverage: "full-period";
+  timezone: "UTC" | "Asia/Ho_Chi_Minh";
+  generatedAt: string;
+  optionsTruncated: boolean;
   options: { providers: string[]; models: string[]; services: string[] };
 };
 const date = (days = 0) =>
-  new Date(Date.now() - days * 86400000).toISOString().slice(0, 10);
+  new Date(Date.now() + 7 * 3600000 - days * 86400000).toISOString().slice(0, 10);
 const number = (n: number | null, suffix = "") =>
   n === null
     ? "Chưa có dữ liệu"
     : new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(n) +
       suffix;
+const validDate = (value: string | null): value is string =>
+  Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value);
+const urlFilters = () => {
+  const params = new URLSearchParams(window.location.search);
+  const rawTo = params.get("to"), rawFrom = params.get("from");
+  const to = validDate(rawTo) && rawTo <= date() ? rawTo : date();
+  const from = validDate(rawFrom) && rawFrom <= to && Date.parse(to) - Date.parse(rawFrom) < 90 * 86400000
+    ? rawFrom : new Date(Date.parse(to) - 6 * 86400000).toISOString().slice(0, 10);
+  return { from, to, provider: (params.get("provider") || "").slice(0, 200),
+    model: (params.get("model") || "").slice(0, 200), service: (params.get("service") || "").slice(0, 200),
+    timezone: "Asia/Ho_Chi_Minh" };
+};
 export function AiMetrics({ config }: { config: AdminConfig }) {
   const [filters, setFilters] = useState({
     from: date(6),
@@ -27,15 +44,25 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
     provider: "",
     model: "",
     service: "",
+    timezone: "Asia/Ho_Chi_Minh",
   });
-  const [query, setQuery] = useState(() =>
-    new URLSearchParams(filters).toString(),
-  );
+  const [query, setQuery] = useState<string | null>(null);
+  useEffect(() => {
+    const restore = () => {
+      const next = urlFilters();
+      setFilters(next);
+      setQuery(new URLSearchParams(next).toString());
+    };
+    const timer = setTimeout(restore, 0);
+    window.addEventListener("popstate", restore);
+    return () => { clearTimeout(timer); window.removeEventListener("popstate", restore); };
+  }, []);
   const [refresh, setRefresh] = useState(0),
     [result, setResult] = useState<Result | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(true);
   useEffect(() => {
+    if (query === null) return;
     let active = true;
     const timer = setTimeout(() => {
       setBusy(true);
@@ -46,7 +73,6 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
         })
         .catch((e) => {
           if (active) {
-            setResult(null);
             setError(e.message);
           }
         })
@@ -71,6 +97,13 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
         className={s.dataToolbar}
         onSubmit={(e) => {
           e.preventDefault();
+          const url = new URL(window.location.href);
+          for (const [key, value] of Object.entries(filters)) {
+            if (value) url.searchParams.set(key, value);
+            else url.searchParams.delete(key);
+          }
+          url.searchParams.set("view", "aiMetrics");
+          window.history.pushState({}, "", url);
           setQuery(new URLSearchParams(filters).toString());
           setRefresh((n) => n + 1);
         }}
@@ -81,6 +114,7 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
             type="date"
             required
             value={filters.from}
+            max={date()}
             onChange={(e) => setFilters({ ...filters, from: e.target.value })}
           />
         </label>
@@ -91,6 +125,7 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
             required
             value={filters.to}
             min={filters.from}
+            max={date()}
             onChange={(e) => setFilters({ ...filters, to: e.target.value })}
           />
         </label>
@@ -111,7 +146,7 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
               }
             >
               <option value="">Tất cả</option>
-              {values.map((value) => (
+              {[...new Set([...values, filters[key]].filter(Boolean))].map((value) => (
                 <option key={value} value={value}>
                   {key === "provider"
                     ? config.ai.providers.find((p) => p.id === value)?.name ||
@@ -130,25 +165,33 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
         </button>
       </form>
       <p className={s.help}>
-        Ngày theo UTC · tối đa 90 ngày. Thống kê các request qua AI gateway đã
+        Ngày theo giờ Việt Nam (UTC+7) · tối đa 90 ngày. Tổng hợp toàn bộ request qua AI gateway đã
         nối Admin; không bao gồm API cũ hoặc các lượt đọc cache trong trình
         duyệt.
       </p>
       {error && (
-        <p className={s.error} role="alert">
-          {error}
-        </p>
+        <div className={s.error} role="alert">
+          <p>{error}</p>
+          <button type="button" disabled={busy} onClick={() => setRefresh((n) => n + 1)}>
+            {busy ? "Đang thử lại…" : "Thử lại"}
+          </button>
+        </div>
       )}
       {result && summary && (
         <div aria-busy={busy}>
           <p className={s.help} role="status">
-            {result.from} → {result.to} · {result.loaded} bản ghi đã tải ·{" "}
-            {summary.requests} request khớp bộ lọc
+            {result.from} → {result.to} · {number(summary.requests)} request khớp bộ lọc, toàn kỳ ·{" "}
+            Cập nhật {new Date(result.generatedAt).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}
+            {busy ? " · Đang cập nhật…" : error ? " · Dữ liệu của lần tải trước" : ""}
           </p>
           {result.truncated && (
             <p className={s.error} role="alert">
-              Khoảng thời gian vượt 5.000 bản ghi. Chỉ thống kê 5.000 request
-              mới nhất; hãy thu hẹp ngày để xem số liệu đầy đủ.
+              Báo cáo chưa bao phủ toàn kỳ. Hãy tải lại trước khi sử dụng số liệu.
+            </p>
+          )}
+          {result.optionsTruncated && (
+            <p className={s.info}>
+              Mỗi danh sách bộ lọc hiển thị tối đa 500 giá trị. Tổng số request vẫn được tính toàn kỳ.
             </p>
           )}
           <div className={s.metricCards}>
@@ -156,12 +199,12 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
               [
                 "Request",
                 number(summary.requests),
-                `${summary.success} thành công · ${summary.failed} lỗi`,
+                `${summary.success} thành công · ${summary.failed} lỗi · ${summary.blocked} bị chặn`,
               ],
               [
                 "Tỷ lệ request lỗi",
                 number(summary.errorRate, "%"),
-                "Request lỗi / tổng request",
+                `${summary.failed} lỗi / ${summary.completedRequests} lượt thành công hoặc lỗi; loại lượt bị chặn`,
               ],
               [
                 "Lần gọi provider",
@@ -171,7 +214,27 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
               [
                 "Tỷ lệ lỗi provider",
                 number(summary.attemptErrorRate, "%"),
-                "Lần gọi lỗi / tổng lần gọi; không tính circuit skip",
+                "Lần gọi lỗi / tổng lần gọi thực tế; loại bỏ circuit skip và đối soát Point",
+              ],
+              [
+                "Trả lại kết quả đã xử lý",
+                number(summary.replayed),
+                "Được tính thành công; không gọi provider mới",
+              ],
+              [
+                "Request bị chặn",
+                number(summary.blocked),
+                "Giới hạn lượt, giá đổi, quyền hoặc trạng thái dịch vụ; không tính là lỗi",
+              ],
+              [
+                "Lỗi hoàn tất dịch vụ",
+                number(summary.serviceFailures),
+                "Lỗi xử lý, lưu kết quả hoặc đối soát; tách khỏi lỗi provider",
+              ],
+              [
+                "Request lỗi phía AI",
+                number(summary.providerFailures),
+                "Request kết thúc bằng mã lỗi provider hoặc vượt ngân sách gọi AI",
               ],
               [
                 "Request fallback",
@@ -226,8 +289,8 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
             ))}
           </div>
           <p className={s.info}>
-            Cache kết quả AstroX: chưa thu thập vì hiện nằm trong trình duyệt.
-            Các chỉ số cache phía trên là token do provider báo.
+            Lượt đọc cache trong trình duyệt không nằm trong báo cáo gateway này.
+            Các chỉ số cache phía trên là token do provider báo; lượt trả lại kết quả đã xử lý là replay từ backend.
           </p>
           {summary.delegated > 0 && (
             <p className={s.info}>
@@ -268,6 +331,9 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
                 <h2>Theo provider & model</h2>
               </div>
             </header>
+            {summary.groupsTruncated && (
+              <p className={s.help}>Hiển thị 500 nhóm provider/model; các nhóm còn lại được cộng vào “Khác”. Tổng vẫn đầy đủ.</p>
+            )}
             {summary.groups.length ? (
               <AdminDataTable
                 rows={summary.groups.map((g) => ({
@@ -289,6 +355,9 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
                   <h2>Lỗi request</h2>
                 </div>
               </header>
+              {summary.errorsTruncated && (
+                <p className={s.help}>Hiển thị 100 mã lỗi; các mã còn lại được cộng vào “other”.</p>
+              )}
               <AdminDataTable rows={summary.errors} />
             </section>
           )}

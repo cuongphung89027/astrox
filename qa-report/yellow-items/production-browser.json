@@ -1,0 +1,15 @@
+{
+  "statuses": {
+    "privateCloud": 401,
+    "aiSession": 401,
+    "retiredLogin": 410
+  },
+  "errors": [],
+  "checks": [
+    "public prices loaded from live config",
+    "no forced login on pricing/terms",
+    "approved support SLA visible",
+    "390px no overflow"
+  ],
+  "noRealPayment": true
+}

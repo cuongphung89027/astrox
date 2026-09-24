@@ -1,0 +1,19 @@
+{
+  "release": "2026-09-24-yellow-1",
+  "health": {
+    "ok": true,
+    "service": "astrox-api",
+    "database": true,
+    "version": "2026-09-24-yellow-1"
+  },
+  "config_revision": 1,
+  "service_status_counts": {
+    "free": 77
+  },
+  "checks": [
+    "pricing HTML",
+    "support SLA in terms",
+    "sitemap",
+    "robots"
+  ]
+}

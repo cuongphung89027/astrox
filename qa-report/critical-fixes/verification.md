@@ -1,5 +1,6 @@
 # C1–C4 verification — 2026-09-23
 
+> Cập nhật 24/09/2026: bản sửa đã lên production. Tài liệu này giữ bằng chứng của đợt trước triển khai; xem bảng mới tại [bảng production](../2026-09-24-production-status.md).
 ## Implemented
 
 - C2: retired `/auth/zalo/finish` with HTTP 410. Callback verifies identity with the provider on the server; failure returns 502 and never escrows/exposes tokens or accepts client `me`. Normal verified callback is regression-tested.

@@ -1,5 +1,6 @@
 # AstroX — bảng mới sau khi xử lý 4 lỗi đỏ
 
+> Cập nhật 24/09/2026: bản sửa đã lên production. Tài liệu này giữ bằng chứng của đợt trước triển khai; xem bảng mới tại [2026-09-24-production-status.md](2026-09-24-production-status.md).
 Cập nhật ngày 23/09/2026. Bốn lỗi đỏ C1–C4 đã được sửa trong bản phát triển và kiểm thử. **Chưa triển khai lên website thật, chưa bật thu phí và chưa tạo giao dịch tiền thật.** Các mục còn lại kế thừa báo cáo đã kiểm chứng; đây không phải một đợt rà soát lại toàn bộ website.
 
 ✅ = đã sửa/đã có trong mã nguồn. 🟡 = còn việc cần làm. ⏳ = cần kiểm tra thực tế. 🔵 = tuỳ chọn phát triển.

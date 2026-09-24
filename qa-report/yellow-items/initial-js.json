@@ -1,0 +1,14 @@
+{
+  "critical_production_before": {
+    "script_files": 12,
+    "raw_bytes": 1434509,
+    "gzip_bytes": 432145
+  },
+  "yellow_candidate": {
+    "script_files": 11,
+    "raw_bytes": 954766,
+    "gzip_bytes": 284734
+  },
+  "ssr_body_contains_tarot": true,
+  "ssr_body_contains_intro": true
+}

@@ -149,7 +149,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </footer>}
 
-        <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-5 px-5 py-5 pb-32 text-sm text-muc-2 lg:pb-5"><Link href="/banggia">Bảng giá</Link><Link href="/dieukhoan">Điều khoản & bảo mật</Link><a href="mailto:hoangcuong89027@gmail.com">Hỗ trợ</a></div>
+        <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-5 px-5 py-5 pb-32 text-sm text-muc-2 lg:pb-5"><Link href="/banggia">Bảng giá</Link><Link href="/dieukhoan">Điều khoản & bảo mật</Link><a href="mailto:tsonniverse@gmail.com">Hỗ trợ</a></div>
         <PaidReadingConsent/>
         <BottomDock key={pathname} />
         <LoginPrompt />

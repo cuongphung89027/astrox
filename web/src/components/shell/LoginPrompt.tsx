@@ -15,7 +15,7 @@ import styles from "./LoginPrompt.module.css";
  * một lần mỗi lượt ghé thăm để mời khách (giữ hành vi cũ).
  *
  * Bắt buộc tích đồng ý với bộ điều khoản (Điều khoản sử dụng · Miễn trừ trách
- * nhiệm · Bảo mật thông tin cá nhân theo ND13) trước khi sang Zalo. Đồng ý được
+ * nhiệm · Bảo mật thông tin cá nhân) trước khi sang Zalo. Đồng ý được
  * ghi nhớ theo TERMS_VERSION — đổi phiên bản điều khoản thì hỏi lại.
  */
 export function LoginPrompt() {
@@ -124,7 +124,7 @@ export function LoginPrompt() {
           <Link href={termsHref("terms")} onClick={close}>Điều khoản sử dụng</Link>,{" "}
           <Link href={termsHref("disclaimer")} onClick={close}>Tuyên bố miễn trừ trách nhiệm</Link>{" "}
           và <Link href={termsHref("privacy")} onClick={close}>Thoả thuận xử lý và bảo mật thông tin cá nhân</Link>{" "}
-          theo Nghị định 13/2023/NĐ-CP của Chính phủ.
+          cho các mục đích được thông báo; không bao gồm đồng ý quảng cáo hoặc tiếp thị.
         </span>
       </label>
 

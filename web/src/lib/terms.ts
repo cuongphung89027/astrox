@@ -4,7 +4,7 @@
  * TERMS_VERSION đổi khi nội dung trang /dieukhoan thay đổi materially —
  * khi đó người dùng phải tích đồng ý lại lần nữa (checkbox reset về bỏ trống).
  */
-export const TERMS_VERSION = "2026-09-24-r3";
+export const TERMS_VERSION = "2026-09-24-r4";
 const TERMS_CONSENT_KEY = "astrox_terms_consent_v1";
 
 export const TERMS_PATH = "/dieukhoan";

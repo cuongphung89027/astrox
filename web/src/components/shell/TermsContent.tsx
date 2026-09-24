@@ -1,179 +1,131 @@
-/**
- * Trang "Các điều khoản & Thoả thuận" — 3 văn bản độc lập, ràng buộc đồng thời:
- *   01 Điều khoản sử dụng dịch vụ (khung hợp đồng sử dụng AstroX)
- *   02 Tuyên bố miễn trừ trách nhiệm (bản chất tham khảo của nội dung)
- *   03 Thoả thuận xử lý & bảo mật thông tin cá nhân theo ND 13/2023/NĐ-CP
- *
- * Anchor id các khối được tham chiếu từ popup đăng nhập (lib/terms.ts) — đổi id
- * phải đổi cả hai chỗ. Ngày hiệu lực & phiên bản: 24/09/2026 · 1.2.
- */
 import Link from "next/link";
-import { SectionTitle } from "@/components/kit/SectionTitle";
+import { TermsNavigation } from "./TermsNavigation";
 import styles from "./TermsContent.module.css";
 
-const CONTACT_EMAIL = "hoangcuong89027@gmail.com";
+const CONTACT_EMAIL = "tsonniverse@gmail.com";
+const Contact = () => <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
 
 export function TermsContent() {
-  return (
-    <div className={styles.page}>
-      <SectionTitle
-        as="h1"
-        eyebrow="AstroX · Pháp lý"
-        title="Các điều khoản & Thoả thuận"
-        sub="Ba văn bản ràng buộc việc bạn sử dụng AstroX: Điều khoản sử dụng dịch vụ, Tuyên bố miễn trừ trách nhiệm và Thoả thuận xử lý, bảo mật thông tin cá nhân theo Nghị định 13/2023/NĐ-CP. Mỗi văn bản có hiệu lực độc lập và được áp dụng đồng thời."
-      />
-      <p className={styles.meta}>Phiên bản 1.2 · Có hiệu lực từ ngày 24/09/2026</p>
-
-      <nav className={styles.toc} aria-label="Mục lục điều khoản">
-        <ol>
-          <li><Link href="#dieu-khoan-su-dung"><b>01</b><span>Điều khoản sử dụng dịch vụ</span><small>Định nghĩa · Point &amp; thanh toán · quy tắc sử dụng · sở hữu trí tuệ · giới hạn trách nhiệm · chấm dứt</small></Link></li>
-          <li><Link href="#mien-tru-trach-nhiem"><b>02</b><span>Tuyên bố miễn trừ trách nhiệm</span><small>Bản chất tham khảo của nội dung chiêm tinh · nội dung AI · không thay thế tư vấn chuyên môn</small></Link></li>
-          <li><Link href="#thoa-thuan-bao-mat"><b>03</b><span>Thoả thuận xử lý và bảo mật thông tin cá nhân</span><small>Theo Nghị định 13/2023/NĐ-CP của Chính phủ</small></Link></li>
-        </ol>
-      </nav>
-
-      <section id="dieu-khoan-su-dung" className={styles.section} aria-labelledby="terms-title">
-        <header className={styles.sectionHead}><b aria-hidden="true">01</b><h2 id="terms-title">Điều khoản sử dụng dịch vụ</h2></header>
-        <div className={styles.body}>
-          <h3>1.1. Định nghĩa</h3>
-          <dl className={styles.dataList}>
-            <div><dt>AstroX / chúng tôi</dt><dd>Đơn vị vận hành website AstroX tại theastrox.space, là bên cung cấp dịch vụ.</dd></div>
-            <div><dt>Dịch vụ</dt><dd>Toàn bộ website, tính năng lập và luận giải lá số Tử Vi, Bát Tự, Kinh Dịch, Thần Số Học, Cung Hoàng Đạo, Tarot, tính năng vận trình, ví AstroX Point và các nội dung số đi kèm.</dd></div>
-            <div><dt>Người dùng / bạn</dt><dd>Cá nhân truy cập, đăng ký hoặc sử dụng bất kỳ phần nào của Dịch vụ.</dd></div>
-            <div><dt>AstroX Point (Point)</dt><dd>Đơn vị ảo dùng để mở khoá các tính năng trả phí trong Dịch vụ, mua bằng tiền Việt Nam Đồng theo gói công bố.</dd></div>
-            <div><dt>Nội dung</dt><dd>Văn bản, hình ảnh, sơ đồ, luận giải, dữ liệu và mọi tài liệu hiển thị hoặc tạo ra trong Dịch vụ.</dd></div>
-          </dl>
-          <h3>1.2. Chấp nhận và cập nhật điều khoản</h3>
-          <p>Khi truy cập, tạo tài khoản, mua Point hoặc sử dụng bất kỳ tính năng nào của Dịch vụ, bạn xác nhận đã đọc, hiểu và đồng ý bị ràng buộc bởi toàn bộ bộ điều khoản này, bao gồm cả Tuyên bố miễn trừ trách nhiệm (mục 02) và Thoả thuận xử lý và bảo mật thông tin cá nhân (mục 03). Nếu không đồng ý, bạn phải ngừng sử dụng Dịch vụ.</p>
-          <p>Chúng tôi có thể cập nhật bộ điều khoản này theo thời gian; bản hiện hành luôn là bản công bố tại trang này. Với thay đổi ảnh hưởng quyền lợi vật chất của người dùng đã thanh toán (giá, cách tính Point, phạm vi dịch vụ), chúng tôi thông báo trong ứng dụng trước khi áp dụng. Việc bạn tiếp tục sử dụng Dịch vụ sau khi bản cập nhật có hiệu lực được coi là chấp nhận bản cập nhật.</p>
-          <h3>1.3. Mô tả Dịch vụ</h3>
-          <p>Dịch vụ cung cấp công cụ lập lá số và nội dung luận giải trên nền dữ liệu thiên văn, lịch pháp và di sản văn hoá cổ truyền Việt Nam – phương Đông, kết hợp mô hình trí tuệ nhân tạo (AI) để tạo phần luận giải. Dịch vụ mang tính tham khảo, khám phá bản thân và giải trí; mọi giới hạn về bản chất nội dung được quy định tại Tuyên bố miễn trừ trách nhiệm (mục 02).</p>
-          <h3>1.4. Điều kiện sử dụng và độ tuổi</h3>
-          <p>Bạn khẳng định rằng mình đã đủ 15 tuổi; nếu dưới 16 tuổi, việc sử dụng Dịch vụ phải có sự đồng ý của cha mẹ hoặc người giám hộ, và việc xử lý dữ liệu cá nhân của người dưới 16 tuổi tuân theo mục 3.10. Bạn chịu trách nhiệm tuân thủ pháp luật nơi bạn sử dụng Dịch vụ và không sử dụng Dịch vụ ở những nơi bị pháp luật cấm.</p>
-          <h3>1.5. Tài khoản và bảo mật đăng nhập</h3>
-          <p>Tài khoản AstroX hiện được tạo và đăng nhập qua Zalo; các phương thức khác (Google…) sẽ được bổ sung khi sẵn sàng. Bạn chịu trách nhiệm (a) bảo mật thiết bị, phiên đăng nhập và quyền truy cập tài khoản của mình; (b) mọi hoạt động phát sinh qua tài khoản của bạn, kể cả do người khác sử dụng trái phép; (c) thông báo ngay cho chúng tôi qua email ở cuối trang khi phát hiện truy cập trái phép. Bạn không được chia sẻ, cho thuê, mua bán hoặc chuyển nhượng tài khoản cho người khác.</p>
-          <h3>1.6. AstroX Point, giá và thanh toán</h3>
-          <p><strong>Bản chất Point.</strong> Point là tài sản số nội bộ của Dịch vụ: không phải tiền, không phải tiền điện tử hay phương tiện thanh toán theo nghĩa của pháp luật, không sinh lãi, không có giá trị pháp lý bên ngoài Dịch vụ. Point không chuyển nhượng giữa các tài khoản và không quy đổi ra tiền mặt.</p>
-          <p><strong>Mua Point.</strong> Point được mua theo các gói công bố trong ứng dụng, đơn vị Việt Nam Đồng, thanh toán qua cổng thanh toán của đối tác. Giá hiển thị tại thời điểm xác nhận mua là tổng số tiền bạn phải thanh toán cho gói tương ứng.</p>
-          <p><strong>Giao dịch nội dung số.</strong> Luận giải trả phí là nội dung số được cung cấp ngay theo yêu cầu của bạn và không thể thu hồi sau khi hoàn thành. Theo quy định của pháp luật về bảo vệ quyền lợi người tiêu dùng đối với giao dịch từ xa, quyền hủy giao dịch không áp dụng cho các giao dịch này sau khi Point đã được trừ và kết quả đã được cung cấp.</p>
-          <p><strong>Lỗi kỹ thuật và hoàn Point.</strong> Nếu một lượt sử dụng bị trừ Point nhưng bạn không nhận được kết quả do lỗi kỹ thuật của chúng tôi, số Point tương ứng được hoàn lại; nếu không thể hoàn tự động, bạn liên hệ email dưới đây kèm tài khoản, thời điểm giao dịch để được xử lý. Yêu cầu báo lỗi nên được gửi trong thời gian sớm nhất để tiện đối chiếu.</p>
-          <p><strong>Hoàn tiền.</strong> Tiền đã nạp để mua Point không được hoàn lại, trừ trường hợp (a) lỗi kỹ thuật thuộc trách nhiệm của chúng tôi mà không thể khắc phục; hoặc (b) các trường hợp pháp luật bắt buộc. Việc hoàn trả (nếu có) được thực hiện qua phương thức thanh toán gốc trong thời gian hợp lý.</p>
-          <p><strong>Thời hạn phản hồi hỗ trợ.</strong> AstroX phản hồi ban đầu trong vòng 2 ngày làm việc kể từ khi nhận được yêu cầu hỗ trợ, hoàn Point hoặc hoàn tiền qua email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Ngày làm việc là từ thứ Hai đến thứ Sáu, không bao gồm ngày nghỉ lễ tại Việt Nam. Thời hạn này là thời gian phản hồi ban đầu; thời gian hoàn tất xử lý phụ thuộc vào việc xác minh giao dịch và phương thức thanh toán. Chúng tôi thông báo tình trạng và thời gian dự kiến khi cần xác minh thêm.</p>
-          <p><strong>Chống lạm dụng.</strong> Với dấu hiệu gian lận, thanh toán bằng nguồn vốn bất hợp pháp, khiếu nại đảo ngược giao dịch (chargeback) trái quy định hoặc sai sót của hệ thống trong việc ghi có Point, chúng tôi có quyền tạm giữ số Point/đơn giao dịch liên quan trong thời gian cần thiết để xác minh, và phối hợp cơ quan có thẩm quyền khi được yêu cầu theo pháp luật.</p>
-          <p><strong>Ưu đãi Point.</strong> Point tặng kèm (khuyến mãi nạp, điểm danh, giới thiệu bạn bè, xem quảng cáo…) do chúng tôi cấp kèm điều kiện, giới hạn được công bố ngay tại tính năng tương ứng; có thể được điều chỉnh hoặc ngừng cấp, không quy đổi thành tiền và không thuộc đối tượng hoàn tiền.</p>
-          <h3>1.7. Quy tắc sử dụng chấp thuận</h3>
-          <p>Khi sử dụng Dịch vụ, bạn không được:</p>
-          <ul>
-            <li>Gửi yêu cầu tự động hoặc thu thập dữ liệu bằng công cụ (bot, script, crawler) ngoài giao diện và phạm vi cho phép của Dịch vụ;</li>
-            <li>Cố gắng vượt qua, vô hiệu hoá hoặc lách các cơ chế kiểm soát chi phí, giới hạn sử dụng và các cơ chế bảo vệ kỹ thuật của Dịch vụ;</li>
-            <li>Tạo nhiều tài khoản hoặc lạm dụng chương trình ưu đãi (giới thiệu, điểm danh, quảng cáo) để trục lợi;</li>
-            <li>Tấn công, quá tải, quét lỗ hổng hoặc can thiệp vào hạ tầng, mã nguồn, dữ liệu của Dịch vụ, bao gồm dịch ngược mã nguồn hoặc tạo sản phẩm phái sinh từ Dịch vụ;</li>
-            <li>Xâm phạm quyền sở hữu trí tuệ của AstroX hoặc bên thứ ba; sao chép, thu thập lại hoặc phát tán Nội dung vì mục đích thương mại mà không có sự chấp thuận bằng văn bản;</li>
-            <li>Mạo danh AstroX, nhân viên hoặc người dùng khác; nhập nội dung bất hợp pháp, xâm phạm quyền của người khác qua các tính năng nhập liệu (câu hỏi, hồ sơ);</li>
-            <li>Sử dụng Dịch vụ cho mục đích trái pháp luật Việt Nam.</li>
-          </ul>
-          <p>Khi phát hiện vi phạm, chúng tôi có quyền áp dụng biện pháp phù hợp gồm: cảnh báo, hạn chế tính năng, tạm ngừng hoặc khoá tài khoản, từ chối/thu hồi ưu đãi Point trục lợi, và lưu lại chứng cứ hợp lệ để xử lý theo pháp luật.</p>
-          <h3>1.8. Quyền sở hữu trí tuệ và giấy phép</h3>
-          <p>Nền tảng, mã nguồn, logo, bộ nhận diện, hoạ tiết, cấu trúc dữ liệu và các Nội dung do AstroX tạo lập là tài sản sở hữu trí tuệ của AstroX hoặc bên cấp phép; được bảo hộ theo pháp luật sở hữu trí tuệ Việt Nam. Không nội dung nào trong đó được hiểu là chuyển nhượng quyền sở hữu cho bạn.</p>
-          <p>Hồ sơ, câu hỏi và dữ liệu bạn tự nhập vào Dịch vụ thuộc quyền của bạn. Bạn cấp cho AstroX giấy phép giới hạn, không độc quyền, miễn phí trong phạm vi cần thiết để vận hành Dịch vụ theo mục 03 (xử lý tạo luận giải, lưu lịch sử, đồng bộ tài khoản).</p>
-          <p>Luận giải AstroX tạo ra cho bạn được cấp cho bạn quyền sử dụng cá nhân, không chuyển nhượng; bạn không được bán lại hoặc xuất bản thương mại các luận giải này.</p>
-          <h3>1.9. Sự cố, bảo trì và thay đổi Dịch vụ</h3>
-          <p>Dịch vụ được cung cấp theo trạng thái hiện hữu và mức khả năng cho phép. Chúng tôi có thể gián đoạn, hạn chế hoặc tạm ngừng Dịch vụ để bảo trì, nâng cấp, khắc phục sự cố hoặc do nguyên nhân thuộc bên thứ ba (nhà cung cấp đăng nhập, cổng thanh toán, nhà cung cấp AI, hạ tầng mạng) ngoài kiểm soát hợp lý của chúng tôi; sẽ cố gắng thông báo trước khi gián đoạn có kế hoạch. Chúng tôi có quyền bổ sung, điều chỉnh hoặc ngừng cung cấp một tính năng; với thay đổi lớn ảnh hưởng quyền lợi đã thanh toán, thông báo được gửi trong ứng dụng.</p>
-          <h3>1.10. Giới hạn trách nhiệm</h3>
-          <p>Trong phạm vi pháp luật cho phép, tổng trách nhiệm bồi thường của AstroX đối với mọi khiếu nại phát sinh từ hoặc liên quan đến Dịch vụ không vượt quá tổng số tiền bạn đã thanh toán cho Dịch vụ trong vòng 03 (ba) tháng tính đến thời điểm phát sinh khiếu nại. AstroX không chịu trách nhiệm về các thiệt hại gián tiếp, mất dữ liệu ngoài Dịch vụ, mất lợi nhuận, mất cơ hội kinh doanh hoặc thiệt hại phát sinh từ hành vi của bên thứ ba.</p>
-          <p>AstroX không chịu trách nhiệm với sự chậm trễ hoặc không thể thực hiện nghĩa vụ do trường hợp bất khả kháng (thiên tai, dịch bệnh, chiến tranh, đứt gãy hạ tầng viễn thông quy mô lớn, quyết định của cơ quan có thẩm quyền) hoặc do lỗi của bên thứ ba cung cấp dịch vụ trung gian.</p>
-          <h3>1.11. Bồi hoàn của người dùng</h3>
-          <p>Trong trường hợp hành vi vi phạm điều khoản của bạn gây thiệt hại cho AstroX (bao gồm chi phí điều tra, xử lý, thiệt hại uy tín), bạn có nghĩa vụ bồi hoàn theo quy định pháp luật, trong phạm vi pháp luật cho phép thỏa thuận.</p>
-          <h3>1.12. Chấm dứt</h3>
-          <p><strong>Theo yêu cầu của bạn:</strong> bạn có thể ngừng sử dụng Dịch vụ bất cứ lúc nào và yêu cầu xoá tài khoản cùng dữ liệu cá nhân theo mục 3.8.</p>
-          <p><strong>Theo quyết định của chúng tôi:</strong> chúng tôi có thể tạm ngừng hoặc chấm dứt tài khoản khi bạn vi phạm bộ điều khoản này (thông báo trước trừ trường hợp ảnh hưởng an ninh, gian lận thanh toán), hoặc chấm dứt cung cấp Dịch vụ vì lý do kinh doanh, kỹ thuật hoặc pháp lý — trong trường hợp này chúng tôi thông báo trong thời gian hợp lý và xử lý Point chưa sử dụng theo phương thức phù hợp.</p>
-          <p><strong>Hệ quả:</strong> khi chấm dứt, giấy phép sử dụng Nội dung cấp cho bạn chấm dứt; chúng tôi vẫn có quyền lưu dữ liệu theo yêu cầu pháp luật; các điều khoản có bản chất tồn tại sau chấm dứt (nghĩa vụ đã phát sinh, giới hạn trách nhiệm, luật áp dụng) tiếp tục hiệu lực.</p>
-          <h3>1.13. Thông báo</h3>
-          <p>Thông báo từ chúng tôi đến bạn được thực hiện qua email, thông báo trong ứng dụng hoặc hiển thị ngay trên Dịch vụ và được coi là hợp lệ kể từ thời điểm gửi/hiển thị.</p>
-          <h3>1.14. Luật áp dụng và giải quyết tranh chấp</h3>
-          <p>Bộ điều khoản này và quan hệ giữa bạn và AstroX chịu sự điều chỉnh của pháp luật Việt Nam. Tranh chấp được ưu tiên giải quyết bằng thương lượng trong 30 ngày; nếu không thành, tranh chấp được đưa ra Tòa án nhân dân có thẩm quyền theo quy định của pháp luật tố tụng dân sự Việt Nam.</p>
-          <h3>1.15. Điều khoản chung</h3>
-          <p>Nếu một điều khoản bất kỳ bị cơ quan có thẩm quyền tuyên vô hiệu, phần còn lại của bộ điều khoản vẫn có hiệu lực. Đây là toàn bộ thỏa thuận giữa bạn và AstroX về việc sử dụng Dịch vụ, thay thế mọi thỏa thuận trước đó. Việc chúng tôi không thực hiện một quyền nào đó trong một trường hợp cụ thể không được coi là từ bỏ quyền đó. Chúng tôi có thể chuyển nhượng quyền và nghĩa vụ theo bộ điều khoản này cho bên tiếp nhận vận hành Dịch vụ.</p>
+  return <div className={styles.page} data-legal-document>
+    <header className={styles.hero}>
+      <p className={styles.eyebrow}>ASTROX / THÔNG TIN PHÁP LÝ</p>
+      <h1>Điều khoản<br /><span>&amp; thỏa thuận.</span></h1>
+      <p className={styles.intro}>Những điều cần biết để bạn an tâm khám phá AstroX — từ cách sử dụng dịch vụ đến quyền riêng tư của mình.</p>
+      <div className={styles.meta}><span>Phiên bản 2.0</span><span>Cập nhật &amp; hiệu lực: 24.09.2026</span><span>03 văn bản</span></div>
+    </header>
+    <div className={styles.layout}>
+      <TermsNavigation />
+      <div className={styles.documents}>
+        <div className={styles.overview}>
+          <p className={styles.eyebrow}>TRƯỚC KHI BẮT ĐẦU</p>
+          <p>AstroX giúp bạn khám phá bản thân qua nội dung tham khảo. Hãy đọc phạm vi dịch vụ, kiểm tra giá trước khi xác nhận và chỉ chia sẻ dữ liệu cần thiết.</p>
+          <a href="#lien-he-phap-ly">Cần giải đáp? Liên hệ AstroX <span aria-hidden="true">↗</span></a>
         </div>
-      </section>
-
-      <section id="mien-tru-trach-nhiem" className={styles.section} aria-labelledby="disclaimer-title">
-        <header className={styles.sectionHead}><b aria-hidden="true">02</b><h2 id="disclaimer-title">Tuyên bố miễn trừ trách nhiệm</h2></header>
-        <div className={styles.body}>
-          <p className={styles.lead}>Tuyên bố này là một phần không thể tách rời của Điều khoản sử dụng dịch vụ và làm rõ bản chất pháp lý của toàn bộ nội dung AstroX cung cấp.</p>
-          <h3>2.1. Bản chất tham khảo và giải trí</h3>
-          <p>Các nội dung trên AstroX — lá số, luận giải Tử Vi, Bát Tự, Kinh Dịch, Thần Số Học, Cung Hoàng Đạo, Tarot và vận trình — được xây dựng trên dữ liệu thiên văn, lịch pháp và di sản văn hoá cổ truyền, nhằm mục đích tham khảo, khám phá bản thân và giải trí. Đây không phải dịch vụ dự báo chắc chắn về tương lai, không phải công cụ chẩn đoán, và không tạo ra bất kỳ cam kết nào về kết quả của bất kỳ quyết định nào của bạn.</p>
-          <h3>2.2. Không thay thế tư vấn chuyên môn</h3>
-          <p>Nội dung của Dịch vụ không thay thế tư vấn y khoa, tâm lý, tâm thần, pháp lý, tài chính, đầu tư hay bất kỳ tư vấn chuyên môn nào. Với các vấn đề thuộc lĩnh vực này, bạn cần trực tiếp tham khảo bác sĩ, luật sư, chuyên gia tài chính hoặc chuyên gia tâm lý có chứng chỉ hành nghề phù hợp. Trong trường hợp khẩn cấp về sức khỏe hoặc an toàn tính mạng, hãy gọi ngay dịch vụ cấp cứu tại địa phương (tại Việt Nam: số 115) thay vì sử dụng Dịch vụ.</p>
-          <h3>2.3. Sức khỏe tâm thần và các tình huống khủng hoảng</h3>
-          <p>AstroX không phải công cụ trị liệu tâm lý và không được thiết kế cho người đang trong tình trạng khủng hoảng tâm thần nghiêm trọng. Nếu bạn đang trải qua suy nghĩ tự gây tổn hại, trầm cảm nặng hoặc khủng hoảng, hãy tìm sự hỗ trợ khẩn cấp từ cơ sở y tế hoặc dịch vụ hỗ trợ tâm thần tại địa phương, và chia sẻ với người thân tin cậy.</p>
-          <h3>2.4. Nội dung được hỗ trợ bởi trí tuệ nhân tạo</h3>
-          <p>Một phần luận giải được tạo ra với sự hỗ trợ của mô hình trí tuệ nhân tạo dựa trên thông tin hồ sơ bạn cung cấp. Nội dung do AI tạo ra có thể chứa sai sót, mâu thuẫn hoặc thông tin không chính xác, và không được kiểm chứng như một công bố khoa học. Hãy đối chiếu với hiểu biết và hoàn cảnh thực tế của bạn trước khi tin theo bất kỳ nhận định nào.</p>
-          <h3>2.5. Quyết định của bạn thuộc về bạn</h3>
-          <p>Bạn tự chịu trách nhiệm về mọi quyết định và hành động của mình, bao gồm các quyết định về tài chính, đầu tư, kinh doanh, nghề nghiệp, hôn nhân, gia đình và sức khỏe, dù có hay không có tham khảo nội dung của Dịch vụ. Việc tiếp tục hoặc ngừng một hành động “theo luận giải” là lựa chọn của bạn và không tạo nghĩa vụ nào cho AstroX.</p>
-          <h3>2.6. Độ chính xác của dữ liệu đầu vào</h3>
-          <p>Kết quả lập lá số và luận giải phụ thuộc độ chính xác của thông tin bạn cung cấp (họ tên, ngày sinh, giờ sinh, nơi sinh). Chúng tôi tính toán trên thư viện thiên văn và lịch pháp có kiểm chứng, nhưng không thể bảo đảm dữ liệu bạn nhập là chính xác, và kết quả có thể sai lệch khi dữ liệu đầu vào sai.</p>
-          <h3>2.7. Tính khả dụng của Dịch vụ</h3>
-          <p>Dịch vụ được cung cấp “nguyên trạng” và ở mức khả năng kỹ thuật cho phép. Chúng tôi không bảo đảm Dịch vụ hoạt động liên tục, không lỗi hoặc không gián đoạn; các gián đoạn từ bên thứ ba (đăng nhập Zalo, cổng thanh toán, nhà cung cấp AI, hạ tầng mạng) nằm ngoài khả năng kiểm soát hợp lý của chúng tôi.</p>
-          <h3>2.8. Phương thức và nội dung của bên thứ ba</h3>
-          <p>Dịch vụ sử dụng phương thức đăng nhập, thanh toán và xử lý của bên thứ ba; tính khả dụng, bảo mật và hành vi của các bên này chịu điều chỉnh bởi điều khoản riêng của họ. Các liên kết hoặc tham chiếu tới nội dung bên ngoài (nếu có) không có nghĩa là chúng tôi bảo chứng cho nội dung đó.</p>
-          <h3>2.9. Giới hạn trách nhiệm</h3>
-          <p>Trong phạm vi pháp luật cho phép, AstroX từ chối mọi trách nhiệm với thiệt hại trực tiếp hoặc gián tiếp phát sinh từ việc sử dụng, tin tưởng hoặc hành động dựa trên nội dung của Dịch vụ. Trách nhiệm của chúng tôi (nếu phát sinh) được giới hạn theo mục 1.10 của Điều khoản sử dụng dịch vụ.</p>
-          <h3>2.10. Cập nhật Tuyên bố</h3>
-          <p>Chúng tôi có thể cập nhật Tuyên bố này để phản ánh thay đổi của Dịch vụ hoặc yêu cầu pháp luật; bản hiện hành luôn là bản công bố tại trang này.</p>
-        </div>
-      </section>
-
-      <section id="thoa-thuan-bao-mat" className={styles.section} aria-labelledby="privacy-title">
-        <header className={styles.sectionHead}><b aria-hidden="true">03</b><h2 id="privacy-title">Thoả thuận xử lý và bảo mật thông tin cá nhân</h2></header>
-        <div className={styles.body}>
-          <p className={styles.lead}>Thoả thuận này được lập theo <strong>Nghị định số 13/2023/NĐ-CP ngày 03/4/2023 của Chính phủ về bảo vệ dữ liệu cá nhân</strong> (“ND13”) và các quy định pháp luật hiện hành về bảo vệ dữ liệu cá nhân. Việc bạn tích đồng ý tại hộp thoại đăng nhập thể hiện sự đồng ý đó theo Điều 7 ND13.</p>
-          <h3>3.1. Bên kiểm soát và xử lý dữ liệu cá nhân</h3>
-          <p>Bên kiểm soát, xử lý dữ liệu cá nhân trên AstroX là đơn vị vận hành AstroX. Liên hệ về dữ liệu cá nhân: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
-          <h3>3.2. Dữ liệu cá nhân chúng tôi thu thập</h3>
-          <dl className={styles.dataList}>
-            <div><dt>Hồ sơ chiêm tinh</dt><dd>Tên gọi, họ tên đầy đủ (tuỳ chọn), giới tính, ngày sinh, giờ sinh, nơi sinh — do bạn tự nhập để lập lá số.</dd></div>
-            <div><dt>Tài khoản</dt><dd>Danh tính từ nhà cung cấp đăng nhập: mã định danh Zalo, tên hiển thị, ảnh đại diện.</dd></div>
-            <div><dt>Giao dịch</dt><dd>Đơn nạp AstroX Point, số tiền, trạng thái giao dịch, số dư và lịch sử Point.</dd></div>
-            <div><dt>Nội dung bạn tạo</dt><dd>Câu hỏi đặt cho Tarot/Kinh Dịch, luận giải đã lưu, nhật ký trải bài, cài đặt hiển thị.</dd></div>
-            <div><dt>Dữ liệu kỹ thuật</dt><dd>Nhật ký truy cập, thông tin trình duyệt và thiết bị phục vụ vận hành, bảo mật dịch vụ.</dd></div>
-          </dl>
-          <h3>3.3. Mục đích và cơ sở xử lý</h3>
-          <p>Dữ liệu được xử lý để: cung cấp và cá nhân hoá dịch vụ (cơ sở: thực hiện thoả thuận sử dụng dịch vụ); tạo luận giải theo hồ sơ (cơ sở: sự đồng ý của bạn); xử lý thanh toán và chống gian lận (cơ sở: thực hiện hợp đồng, nghĩa vụ pháp lý); bảo mật và cải tiến dịch vụ (cơ sở: lợi ích chính đáng của đơn vị vận hành). Chúng tôi không xử lý dữ liệu cá nhân vì mục đích nào khác ngoài các mục đích nêu trên.</p>
-          <h3>3.4. Chia sẻ dữ liệu và bên thứ ba</h3>
-          <p>Chúng tôi chỉ chia sẻ dữ liệu ở mức tối thiểu cần thiết với: <strong>Zalo</strong> (đăng nhập OAuth — xác thực danh tính), <strong>cổng thanh toán</strong> (xử lý giao dịch nạp Point), <strong>nhà cung cấp mô hình trí tuệ nhân tạo</strong> (xử lý nội dung cần luận giải để trả kết quả), và <strong>đơn vị hạ tầng Cloudflare</strong> (lưu trữ, phân phối nội dung). Chúng tôi không bán, không cho thuê dữ liệu cá nhân của bạn cho bất kỳ bên thứ ba nào.</p>
-          <h3>3.5. Thời gian lưu trữ</h3>
-          <p>Dữ liệu được lưu trong thời gian tài khoản còn hoạt động và nhu cầu phục vụ dịch vụ, trừ khi phải lưu lâu hơn theo yêu cầu pháp luật (ví dụ: hồ sơ giao dịch). Khi tài khoản bị xoá theo yêu cầu của bạn, dữ liệu cá nhân liên quan được xoá hoặc ẩn danh trong thời hạn hợp lý.</p>
-          <h3>3.6. Cookie và lưu trữ trên thiết bị</h3>
-          <p>AstroX dùng cookie phiên đăng nhập và lưu cục bộ trên thiết bị của bạn (hồ sơ, cài đặt hiển thị, lịch sử trải bài, trạng thái đồng ý điều khoản) để dịch vụ hoạt động mà không cần đăng nhập lại. Bạn có thể xoá các dữ liệu này qua trình duyệt; một số tính năng cá nhân hoá sẽ cần thiết lập lại.</p>
-          <h3>3.7. Quyền của bạn theo ND13</h3>
-          <ul>
-            <li>Quyền biết về việc xử lý dữ liệu cá nhân của mình;</li>
-            <li>Quyền tiếp cận, truy xuất bản sao dữ liệu cá nhân;</li>
-            <li>Quyền cho phép, rút lại sự đồng ý xử lý dữ liệu;</li>
-            <li>Quyền mở/đóng quyền tiếp cận dữ liệu theo từng chủ thể;</li>
-            <li>Quyền chỉnh sửa, cập nhật, điều chỉnh dữ liệu;</li>
-            <li>Quyền yêu cầu xoá dữ liệu cá nhân (trừ dữ liệu phải lưu theo pháp luật);</li>
-            <li>Quyền hạn chế, phản đối việc xử lý dữ liệu;</li>
-            <li>Quyền khiếu nại, báo cáo vi phạm; quyền yêu cầu bồi thường thiệt hại theo pháp luật;</li>
-            <li>Quyền tự bảo vệ theo Điều 9 ND13.</li>
-          </ul>
-          <h3>3.8. Cách thực hiện quyền</h3>
-          <p>Bạn gửi yêu cầu thực hiện các quyền trên qua email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>, kèm thông tin tài khoản và nội dung yêu cầu. Chúng tôi xác nhận và phản hồi trong thời hạn hợp lý, tối đa không quá 30 ngày kể từ khi nhận được yêu cầu đầy đủ. Rút lại sự đồng ý có thể khiến một số tính năng không tiếp tục hoạt động (ví dụ: luận giải cá nhân hoá).</p>
-          <h3>3.9. Bảo mật dữ liệu</h3>
-          <p>Dữ liệu được lưu trữ và truyền tải qua kết nối mã hoá; quyền truy cập quản trị được giới hạn và ghi nhận nhật ký. Trong trường hợp xảy ra sự cố làm rò rỉ dữ liệu cá nhân, chúng tôi thông báo cho bạn và cơ quan có thẩm quyền theo quy định ND13.</p>
-          <h3>3.10. Người dưới 16 tuổi</h3>
-          <p>Theo ND13: người từ đủ 16 tuổi tự mình đồng ý việc xử lý dữ liệu cá nhân; người từ đủ 7 đến dưới 16 tuổi cần đồng ý của cha mẹ hoặc người giám hộ; dưới 7 tuổi do cha mẹ hoặc người giám hộ thực hiện. Nếu bạn là cha mẹ/người giám hộ và cho rằng con mình đã cung cấp dữ liệu mà không được phép, hãy liên hệ email trên để xoá dữ liệu.</p>
-          <h3>3.11. Thay đổi thoả thuận</h3>
-          <p>Khi thoả thuận này thay đổi, chúng tôi cập nhật tại trang này và phiên bản mới sẽ được yêu cầu xác nhận lại khi cần thiết theo ND13.</p>
-        </div>
-      </section>
-
-      <footer className={styles.footer}>
-        <p>Điều khoản &amp; thoả thuận này áp dụng cho toàn bộ dịch vụ AstroX. Để lưu giữ, bạn có thể in hoặc lưu trang này dưới dạng PDF.</p>
-        <p>Liên hệ: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> · Phiên bản 1.2 — 24/09/2026</p>
-        <Link className={styles.backHome} href="/">← Về trang chủ AstroX</Link>
-      </footer>
+        <section id="dieu-khoan-su-dung" className={styles.section} aria-labelledby="terms-title">
+          <header className={styles.sectionHead}><span className={styles.sectionNumber}>01 / SỬ DỤNG DỊCH VỤ</span><h2 id="terms-title">Điều khoản sử dụng</h2><p>Phạm vi dịch vụ, thanh toán và trách nhiệm của mỗi bên.</p></header>
+          <div className={styles.body}>
+            <h3>1.1. Ai vận hành AstroX?</h3>
+            <p>AstroX tại theastrox.space do cá nhân <strong>Ngô Thái Sơn</strong> vận hành và đại diện, là bên cung cấp dịch vụ trong văn bản này (“AstroX”, “chúng tôi”). Địa chỉ liên hệ: <strong>KĐT Vinhomes Ocean Park, Gia Lâm, TP. Hà Nội</strong>. Email hỗ trợ, giao dịch và dữ liệu cá nhân: <Contact />.</p>
+            <h3>1.2. Dịch vụ và việc giao kết</h3>
+            <p>AstroX cung cấp công cụ và nội dung tham khảo về Tử Vi, Bát Tự, Kinh Dịch, Thần Số Học, Cung Hoàng Đạo, Tarot, vận trình và tương hợp, có thể sử dụng trí tuệ nhân tạo (AI). Phạm vi từng tính năng, điều kiện miễn phí hoặc số Point cần dùng được công bố trước khi bạn xác nhận sử dụng.</p>
+            <p>Bạn có thể đọc, lưu và yêu cầu giải thích điều khoản trước khi chấp nhận. Thỏa thuận sử dụng được xác lập khi bạn chủ động xác nhận đồng ý; giao dịch trả phí chỉ phát sinh khi bạn xác nhận giao dịch tương ứng. Chỉ truy cập trang không đồng nghĩa với đồng ý mọi hoạt động xử lý dữ liệu. Mục 02 làm rõ giới hạn nội dung; mục 03 giải thích cách xử lý dữ liệu và quyền của bạn.</p>
+            <h3>1.3. Độ tuổi, hồ sơ và tài khoản</h3>
+            <p>Dịch vụ dành cho người từ đủ 15 tuổi. Người dưới 16 tuổi cần sự đồng ý của người đại diện theo pháp luật theo mục 3.10; giao dịch của người chưa thành niên phải đáp ứng điều kiện về năng lực giao dịch theo pháp luật. Không nhập dữ liệu của người khác khi chưa có quyền hoặc sự đồng ý cần thiết.</p>
+            <p>Bạn cần cung cấp thông tin phù hợp, bảo vệ thiết bị và phiên đăng nhập, không mua bán, cho thuê hoặc chia sẻ tài khoản. Hãy báo ngay khi nghi ngờ truy cập trái phép. Trách nhiệm đối với sự cố được xác định theo nguyên nhân và quy định pháp luật, không mặc nhiên quy mọi truy cập trái phép thành lỗi của bạn. Phương thức đăng nhập khả dụng được hiển thị tại thời điểm sử dụng.</p>
+            <h3>1.4. AstroX Point và giá dịch vụ</h3>
+            <p>Point là đơn vị ghi nhận quyền sử dụng tính năng trong AstroX. Point không sinh lãi, không dùng để thanh toán ngoài AstroX, không có chức năng chuyển giữa người dùng hoặc rút tiền. Việc hoàn khoản đã thanh toán trong các trường hợp ở mục 1.5 không phải chức năng quy đổi Point thành tiền.</p>
+            <p>Giá gói nạp được thể hiện bằng Việt Nam Đồng; tổng tiền và số Point nhận được phải hiển thị trước khi xác nhận. Giá từng lượt được công bố tại <Link href="/banggia">bảng giá</Link> và màn hình xác nhận; tính năng miễn phí không bị trừ Point. Hình thức thanh toán, thời hạn đơn và trạng thái xử lý được hiển thị trong luồng giao dịch. Giao dịch được đối soát trước khi ghi nhận Point; không chuyển tiền theo thông tin ngoài luồng thanh toán chính thức.</p>
+            <p>Thay đổi giá áp dụng cho giao dịch mới sau khi công bố, không sửa giá lượt đã xác nhận. Point từ ưu đãi tuân theo điều kiện chương trình được thông báo trước khi tham gia; không tự động có giá trị hoàn tiền như khoản thực trả.</p>
+            <h3>1.5. Lỗi dịch vụ, hoàn Point và hoàn tiền</h3>
+            <p>Nếu đã trừ Point nhưng không cung cấp được kết quả do lỗi hệ thống, AstroX hoàn số Point của lượt lỗi; nếu chưa được hoàn tự động, hãy gửi yêu cầu để đối soát. Giao dịch trùng, thu sai, đã thanh toán nhưng không được cung cấp quyền sử dụng cũng được kiểm tra và khắc phục.</p>
+            <p>AstroX không có chính sách hoàn tiền chỉ vì đổi ý hoặc vì luận giải không phù hợp kỳ vọng cá nhân khi dịch vụ đã được cung cấp đúng mô tả. Quy định này không loại trừ quyền yêu cầu khắc phục, hủy giao dịch, hoàn tiền hoặc bồi thường theo pháp luật khi dịch vụ lỗi, không đúng cam kết hoặc có căn cứ hợp pháp khác.</p>
+            <p>Khi phải hoàn tiền, số tiền được xác định từ khoản thực trả và phần dịch vụ chưa được cung cấp hoặc giao dịch cần hoàn, có đối chiếu ưu đãi và các khoản đã hoàn để tránh hoàn trùng. Ưu tiên phương thức thanh toán ban đầu; phương thức khác cần bạn đồng ý. Không buộc nhận Point thay tiền nếu bạn có quyền được hoàn tiền. Thời hạn xử lý cụ thể được thông báo khi đối soát, không vượt thời hạn pháp luật áp dụng.</p>
+            <p><strong>AstroX phản hồi ban đầu trong vòng 2 ngày làm việc</strong> kể từ khi nhận yêu cầu hỗ trợ. Gửi mã giao dịch, thời điểm và mô tả lỗi tới <Contact />; không gửi mật khẩu, mã OTP hoặc thông tin thẻ đầy đủ. Nếu cần bổ sung chứng cứ hoặc thời gian đối soát, chúng tôi thông báo lý do và bước tiếp theo. Thời gian phản hồi ban đầu không đồng nghĩa với thời gian tiền về tài khoản.</p>
+            <h3>1.6. Điểm danh, giới thiệu và quảng cáo nhận thưởng</h3>
+            <p>Mức thưởng, điều kiện hợp lệ, giới hạn lượt và thời gian chương trình được hiển thị khi tính năng khả dụng. Một thao tác bấm, lời mời hoặc lượt xem chưa đủ điều kiện xác nhận không tự động tạo quyền nhận thưởng. Quảng cáo nhận thưởng là lựa chọn tự nguyện; không có quảng cáo phù hợp hoặc tính năng chưa mở thì không bảo đảm có lượt thưởng.</p>
+            <p>Không tạo tài khoản giả, tự giới thiệu, dùng bot, giả lập sự kiện hoàn thành quảng cáo, lặp yêu cầu để nhận trùng hoặc khai thác lỗi. AstroX có thể tạm giữ phần thưởng đang có dấu hiệu bất thường để xác minh; thông báo lý do trong phạm vi không làm lộ biện pháp bảo mật và cho phép bạn yêu cầu xem xét lại. Chỉ điều chỉnh hoặc thu hồi khoản ghi nhận sai, trùng hoặc có căn cứ vi phạm; không mặc nhiên tịch thu toàn bộ Point hợp lệ. Thay đổi chương trình áp dụng cho lượt tham gia tương lai và không xóa quyền lợi đã phát sinh hợp lệ.</p>
+            <h3>1.7. Quy tắc sử dụng và xử lý vi phạm</h3>
+            <ul><li>Không xâm nhập, làm gián đoạn, vượt giới hạn truy cập hoặc tìm cách lấy dữ liệu, khóa truy cập của người khác.</li><li>Không mạo danh, lừa đảo thanh toán, nhập nội dung trái pháp luật hoặc xâm phạm đời tư, quyền sở hữu trí tuệ.</li><li>Không thu thập hàng loạt, bán lại nội dung hay dùng tự động hóa gây quá tải hoặc né cơ chế tính phí khi chưa được cho phép. Quy định này không hạn chế các quyền được pháp luật cho phép.</li></ul>
+            <p>Biện pháp có thể gồm cảnh báo, giới hạn tính năng, tạm khóa để bảo vệ tài khoản hoặc chấm dứt khi có căn cứ vi phạm. Biện pháp phải tương xứng; trường hợp khẩn cấp có thể được áp dụng trước khi thông báo. Bạn có quyền phản hồi, cung cấp chứng cứ và khiếu nại; kết luận nội bộ không thay thế thẩm quyền giải quyết tranh chấp theo pháp luật.</p>
+            <h3>1.8. Nội dung và sở hữu trí tuệ</h3>
+            <p>Mã nguồn, thiết kế, nhãn hiệu và tài liệu do AstroX hoặc bên cấp phép sở hữu được bảo vệ trong phạm vi pháp luật công nhận. Bạn được sử dụng kết quả được cung cấp hợp lệ cho mục đích cá nhân; không bán lại, phân phối hàng loạt hoặc khai thác thương mại tài sản được bảo hộ khi chưa được phép. Nội dung AI có thể tương tự kết quả của người khác; AstroX không cam kết tính độc quyền hoặc khả năng được bảo hộ của mọi đầu ra AI.</p>
+            <p>Bạn giữ các quyền hợp pháp đối với nội dung mình cung cấp. AstroX chỉ được sử dụng nội dung đó trong phạm vi cần thiết để thực hiện chức năng bạn yêu cầu, lưu hoặc đồng bộ theo lựa chọn của bạn và các căn cứ xử lý hợp pháp tại mục 03. Điều này không chuyển quyền sở hữu dữ liệu của bạn cho AstroX, không mặc nhiên cho phép dùng nội dung riêng tư để quảng cáo.</p>
+            <h3>1.9. Khả năng cung cấp và trách nhiệm</h3>
+            <p>Dịch vụ có thể gián đoạn để bảo trì hoặc do sự cố hạ tầng, đăng nhập, thanh toán, AI. AstroX thông báo trước về bảo trì có kế hoạch khi có thể và khắc phục sự cố thuộc trách nhiệm của mình. Sử dụng nhà cung cấp thứ ba không tự động miễn nghĩa vụ của AstroX đối với bạn.</p>
+            <p>AstroX không bảo đảm dự đoán tương lai, kết quả đầu tư, sức khỏe hay quan hệ cá nhân. Trách nhiệm bồi thường, nếu có, được xác định theo căn cứ pháp luật, thiệt hại và quan hệ nhân quả. Không loại trừ các trách nhiệm bắt buộc đối với người tiêu dùng. Việc viện dẫn bất khả kháng phải đáp ứng điều kiện pháp luật và nghĩa vụ thông báo, hạn chế thiệt hại; không phải mọi sự cố của bên thứ ba đều là bất khả kháng.</p>
+            <p>Nếu hành vi vi phạm của bạn gây thiệt hại cho AstroX hoặc người khác, trách nhiệm bồi thường được xác định theo pháp luật và chứng cứ phù hợp. AstroX không tự đặt khoản phạt, chi phí điều tra hoặc thiệt hại uy tín không có căn cứ để trừ vào tài khoản.</p>
+            <h3>1.10. Thay đổi, chấm dứt và tranh chấp</h3>
+            <p>Phiên bản mới ghi rõ ngày hiệu lực và được thông báo khi ảnh hưởng đáng kể đến quyền lợi. Không hồi tố để làm giảm quyền đã phát sinh hoặc tự ý thay đổi giao dịch đã giao kết. Khi thay đổi điều kiện dịch vụ liên tục, bạn được lựa chọn ngừng sử dụng; quyền lợi đã thanh toán được giải quyết theo thỏa thuận hợp pháp và pháp luật. Sự đồng ý mới được lấy khi pháp luật yêu cầu.</p>
+            <p>Bạn có thể ngừng sử dụng và yêu cầu xóa tài khoản. Khi AstroX dừng cung cấp dịch vụ, chúng tôi thông báo và đối soát phần quyền sử dụng đã thanh toán nhưng chưa được cung cấp để xử lý hoặc hoàn tiền theo nghĩa vụ áp dụng. Khóa tài khoản không tự động làm mất mọi quyền khiếu nại hoặc hoàn tiền. Chuyển giao nghĩa vụ cho bên vận hành khác cần sự đồng ý của bạn trừ trường hợp pháp luật cho phép khác.</p>
+            <p>Pháp luật Việt Nam điều chỉnh thỏa thuận. Các bên ưu tiên trao đổi thiện chí qua kênh hỗ trợ, nhưng bạn không phải chờ hết một thời hạn thương lượng để thực hiện quyền khiếu nại, khởi kiện hoặc yêu cầu bảo vệ khẩn cấp. Tranh chấp được giải quyết tại cơ quan có thẩm quyền theo pháp luật. Điều khoản không hợp lệ được xử lý theo pháp luật; các phần còn lại tiếp tục áp dụng trong phạm vi có thể tách biệt.</p>
+          </div>
+        </section>
+        <section id="mien-tru-trach-nhiem" className={styles.section} aria-labelledby="disclaimer-title">
+          <header className={styles.sectionHead}><span className={styles.sectionNumber}>02 / HIỂU ĐÚNG NỘI DUNG</span><h2 id="disclaimer-title">Tuyên bố miễn trừ trách nhiệm</h2><p>Một góc nhìn để tham khảo, không phải lời khẳng định về tương lai.</p></header>
+          <div className={styles.body}>
+            <h3>2.1. Khám phá bản thân và giải trí</h3>
+            <p>Lá số, luận giải và các chỉ số trên AstroX dựa trên hệ thống diễn giải văn hóa, chiêm tinh, lịch pháp và nội dung có AI hỗ trợ. Chúng không phải kết luận khoa học về con người, không phải chẩn đoán và không bảo đảm một sự kiện sẽ xảy ra. Điểm số, mức độ tương hợp hoặc lời dự báo không đại diện cho giá trị hay phẩm chất của một người.</p>
+            <h3>2.2. Không thay thế chuyên gia</h3>
+            <p>Nội dung không thay thế tư vấn y tế, tâm lý, pháp lý, tài chính hoặc đầu tư. Không dùng luận giải làm căn cứ duy nhất để điều trị, ngừng thuốc, vay tiền, đầu tư hoặc đưa ra quyết định quan trọng. Hãy tìm người có chuyên môn phù hợp; khi có nguy hiểm tức thời với sức khỏe hoặc tính mạng, liên hệ dịch vụ khẩn cấp tại địa phương.</p>
+            <h3>2.3. Sai số, dữ liệu đầu vào và AI</h3>
+            <p>Thông tin sinh, múi giờ, cách quy đổi lịch, dữ liệu thiếu hoặc nhập sai có thể làm thay đổi kết quả. AI có thể tạo thông tin sai, thiếu ngữ cảnh, mâu thuẫn hoặc diễn đạt không phù hợp. AstroX không cam kết độ chính xác tuyệt đối, tính duy nhất hay sự phù hợp cho mọi hoàn cảnh. Bạn có thể báo nội dung bất thường qua <Contact /> để được xem xét.</p>
+            <h3>2.4. Quyền lựa chọn và sự tôn trọng</h3>
+            <p>Bạn tự cân nhắc quyết định của mình dựa trên thực tế và tư vấn phù hợp. Nội dung tương hợp không quyết định việc bắt đầu hoặc kết thúc một mối quan hệ. AstroX tôn trọng sự đa dạng giới và cộng đồng LGBTQ+; tương hợp không giới hạn ở cặp nam – nữ và không được dùng để suy đoán xu hướng tính dục hay phân biệt đối xử.</p>
+            <h3>2.5. Giới hạn của tuyên bố này</h3>
+            <p>AstroX không nhận nghĩa vụ bảo đảm kết quả cuộc sống chỉ vì bạn tham khảo nội dung. Tuy nhiên, tuyên bố này không xóa nghĩa vụ cung cấp dịch vụ đúng mô tả, bảo vệ dữ liệu, khắc phục giao dịch lỗi hoặc trách nhiệm bắt buộc khác. Liên kết, nội dung và quảng cáo của bên thứ ba không phải sự bảo chứng của AstroX; trách nhiệm cụ thể vẫn được xác định theo pháp luật và vai trò thực tế của mỗi bên.</p>
+          </div>
+        </section>
+        <section id="thoa-thuan-bao-mat" className={styles.section} aria-labelledby="privacy-title">
+          <header className={styles.sectionHead}><span className={styles.sectionNumber}>03 / DỮ LIỆU &amp; QUYỀN RIÊNG TƯ</span><h2 id="privacy-title">Thỏa thuận xử lý và bảo mật thông tin cá nhân</h2><p>Dữ liệu nào được sử dụng, vì sao và cách bạn thực hiện quyền của mình.</p></header>
+          <div className={styles.body}>
+            <h3>3.1. Bên phụ trách và phạm vi</h3>
+            <p>Ngô Thái Sơn, cá nhân vận hành AstroX tại địa chỉ nêu ở mục 1.1, là đầu mối chịu trách nhiệm đối với việc kiểm soát, xử lý dữ liệu trong phạm vi dịch vụ AstroX. Mọi yêu cầu về dữ liệu gửi tới <Contact />. Văn bản được xây dựng theo <a href="https://vanban.chinhphu.vn/?pageid=27160&docid=214590">Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15</a>, <a href="https://vanban.chinhphu.vn/?pageid=27160&docid=216387">Nghị định 356/2025/NĐ-CP</a> và quy định liên quan.</p>
+            <h3>3.2. Loại dữ liệu và mục đích</h3>
+            <dl className={styles.dataList}>
+              <div><dt>Tài khoản</dt><dd>Mã định danh, tên hiển thị, ảnh đại diện và thông tin do phương thức đăng nhập cung cấp: dùng để xác thực, quản lý tài khoản, hỗ trợ và đồng bộ.</dd></div>
+              <div><dt>Hồ sơ &amp; nội dung</dt><dd>Tên gọi, giới tính, ngày, giờ, nơi sinh; câu hỏi, dữ liệu người bạn muốn đối chiếu, kết quả và nhật ký bạn lưu: dùng để thực hiện tính năng bạn yêu cầu, lưu và đồng bộ lịch sử.</dd></div>
+              <div><dt>Giao dịch &amp; phần thưởng</dt><dd>Mã đơn, số tiền, trạng thái thanh toán, số dư và lịch sử Point, lượt điểm danh, giới thiệu, sự kiện thưởng: dùng để cung cấp quyền sử dụng, đối soát, xử lý lỗi và chống gian lận.</dd></div>
+              <div><dt>Thiết bị &amp; vận hành</dt><dd>Thông tin trình duyệt, kết nối, nhật ký lỗi, hoạt động truy cập và cài đặt: dùng để duy trì phiên, bảo mật, xử lý sự cố và vận hành tính năng.</dd></div>
+            </dl>
+            <p>Thông tin bạn nhập có thể chứa dữ liệu nhạy cảm như sức khỏe, đời sống riêng tư, xu hướng tính dục hoặc thông tin tài chính. Không đưa mật khẩu, OTP, giấy tờ định danh, thông tin thẻ hay chi tiết riêng tư không cần thiết vào câu hỏi. Chỉ cung cấp dữ liệu người khác khi có quyền hợp pháp; chọn giới tính trong tính năng tương hợp không phải khai báo xu hướng tính dục.</p>
+            <h3>3.3. Sự đồng ý và cách xử lý</h3>
+            <p>Tùy tính năng, dữ liệu có thể được tiếp nhận, tính toán, gửi tới nhà cung cấp xử lý, lưu, đồng bộ, truy xuất hoặc xóa. AstroX xử lý theo sự đồng ý phù hợp của bạn hoặc căn cứ khác được pháp luật cho phép trong trường hợp cụ thể; không mặc nhiên dùng “lợi ích chính đáng” làm căn cứ cho mọi mục đích.</p>
+            <p>Sự đồng ý phải tự nguyện, rõ mục đích và có thể kiểm chứng. Im lặng, truy cập website hoặc chấp nhận điều khoản sử dụng không phải sự đồng ý mặc định cho quảng cáo, tiếp thị hay mục đích không liên quan. Nếu bổ sung mục đích cần sự đồng ý, AstroX phải thông báo và lấy sự đồng ý tương ứng trước khi xử lý. Không cung cấp dữ liệu cần thiết có thể khiến tính năng liên quan không thực hiện được; không vì thế làm mất các quyền khác của bạn.</p>
+            <h3>3.4. Nhà cung cấp và việc chia sẻ</h3>
+            <p>Các nhóm bên tham gia có thể gồm Zalo hoặc nhà cung cấp xác thực đang được sử dụng; Cloudflare cho hạ tầng, phân phối và lưu trữ; nhà cung cấp AI xử lý dữ liệu đầu vào cần thiết để trả kết quả; đối tác thanh toán đối soát giao dịch. Tài khoản thuộc hệ thống xác thực Supabase, nếu được sử dụng, được xử lý qua hạ tầng tương ứng. Cơ quan có thẩm quyền được cung cấp dữ liệu khi có yêu cầu hợp pháp.</p>
+            <p>AstroX không bán hoặc cho thuê dữ liệu cá nhân. Việc cung cấp dữ liệu cho nhà xử lý phải phù hợp mục đích và giới hạn cần thiết; điều khoản riêng của nhà cung cấp không thay thế nghĩa vụ của AstroX. Hạ tầng và nhà cung cấp AI có thể xử lý dữ liệu ngoài Việt Nam; việc chuyển dữ liệu phải đáp ứng điều kiện pháp luật áp dụng. Bạn có thể yêu cầu thông tin về bên nhận và phạm vi xử lý liên quan đến dữ liệu của mình qua đầu mối ở mục 3.1.</p>
+            <h3>3.5. Cookie, lưu trên thiết bị và quảng cáo</h3>
+            <p>Cookie phiên và bộ nhớ trình duyệt được dùng cho đăng nhập, hồ sơ, cài đặt, lịch sử cục bộ và ghi nhớ lựa chọn điều khoản. Xóa dữ liệu trình duyệt có thể làm mất phần dữ liệu chỉ lưu trên thiết bị; thao tác này không đồng thời xóa dữ liệu đã được lưu trên máy chủ.</p>
+            <p>Nếu quảng cáo nhận thưởng được mở, thông tin về nhà cung cấp và xử lý dữ liệu liên quan phải được hiển thị trước khi bạn chọn xem. Từ chối quảng cáo không ngăn bạn dùng tính năng khác theo điều kiện thông thường. Việc đồng ý điều khoản ở bước đăng nhập không phải đồng ý cho theo dõi quảng cáo hoặc tiếp thị. Các lựa chọn cần sự đồng ý riêng phải được tách biệt.</p>
+            <h3>3.6. Thời gian lưu và bảo mật</h3>
+            <p>Dữ liệu tài khoản, hồ sơ và lịch sử được lưu trong thời gian cần cung cấp chức năng bạn sử dụng; bạn có thể yêu cầu xóa theo mục 3.8. Hồ sơ giao dịch, chứng cứ giải quyết tranh chấp và dữ liệu phải lưu theo luật chỉ được giữ trong phạm vi, thời hạn cần thiết cho nghĩa vụ đó. Khi không còn căn cứ lưu giữ, dữ liệu phải được xóa hoặc khử nhận dạng phù hợp; nếu chưa thể xóa một phần, AstroX giải thích căn cứ và phạm vi tiếp tục lưu.</p>
+            <p>AstroX sử dụng kết nối HTTPS và biện pháp kiểm soát truy cập để bảo vệ dữ liệu. Không có hệ thống nào bảo đảm an toàn tuyệt đối; rủi ro có thể gồm truy cập trái phép, lộ dữ liệu, mất dữ liệu hoặc gián đoạn. Khi xảy ra sự cố, AstroX có trách nhiệm xử lý, hạn chế ảnh hưởng và thực hiện thông báo theo quy định, không coi việc bạn chấp nhận văn bản này là từ bỏ quyền được bảo vệ.</p>
+            <h3>3.7. Quyền của bạn</h3>
+            <p>Theo điều kiện pháp luật áp dụng, bạn có quyền được biết về xử lý dữ liệu; đồng ý hoặc rút lại sự đồng ý; xem, sửa hoặc yêu cầu cung cấp dữ liệu; yêu cầu xóa, hạn chế hoặc phản đối xử lý; khiếu nại, tố cáo, khởi kiện, yêu cầu bồi thường và tự bảo vệ. AstroX không thu hẹp các quyền này chỉ vì bạn đã từng đồng ý sử dụng dịch vụ.</p>
+            <h3>3.8. Gửi yêu cầu và thời hạn</h3>
+            <p>Gửi email tới <Contact /> với nội dung yêu cầu và thông tin giúp xác định tài khoản. AstroX có thể yêu cầu xác minh phù hợp để tránh cung cấp hoặc xóa dữ liệu cho người không có quyền; không yêu cầu mật khẩu hay OTP. Chúng tôi phản hồi ban đầu trong <strong>2 ngày làm việc</strong> kể từ khi nhận yêu cầu hợp lệ và hướng dẫn bổ sung nếu chưa đủ thông tin.</p>
+            <dl className={styles.dataList}>
+              <div><dt>Xem, sửa hoặc cung cấp dữ liệu</dt><dd>Thực hiện trong 10 ngày; trường hợp cần yêu cầu bên xử lý hoặc bên thứ ba chỉnh sửa: 15 ngày.</dd></div>
+              <div><dt>Rút đồng ý, hạn chế hoặc phản đối</dt><dd>Thực hiện trong 15 ngày; trường hợp cần yêu cầu bên xử lý hoặc bên thứ ba ngừng xử lý: 20 ngày.</dd></div>
+              <div><dt>Xóa dữ liệu</dt><dd>Thực hiện trong 20 ngày; trường hợp cần yêu cầu bên xử lý hoặc bên thứ ba xóa: 30 ngày.</dd></div>
+            </dl>
+            <p>Các thời hạn thực hiện trên tính từ khi nhận yêu cầu hợp lệ và là ngày theo lịch, không phải tất cả đều là ngày làm việc. Nếu cần gia hạn trong trường hợp được pháp luật cho phép, AstroX thông báo lý do và chỉ gia hạn một lần trong giới hạn tương ứng: tối đa 10 ngày cho xem/sửa/cung cấp, 15 ngày cho rút đồng ý/hạn chế/phản đối và 20 ngày cho xóa. Trường hợp phải từ chối hoặc tiếp tục lưu theo luật, chúng tôi nêu rõ căn cứ.</p>
+            <h3>3.9. Hệ quả khi rút đồng ý</h3>
+            <p>Rút lại sự đồng ý không làm thay đổi tính hợp pháp của hoạt động đã thực hiện trước đó trên căn cứ hợp lệ. AstroX ngừng phần xử lý dựa trên sự đồng ý đã rút theo thời hạn pháp luật; phần xử lý được luật cho phép không cần đồng ý chỉ tiếp tục đúng phạm vi căn cứ đó. Một số chức năng cá nhân hóa hoặc đồng bộ có thể không còn thực hiện được, và chúng tôi giải thích ảnh hưởng liên quan.</p>
+            <h3>3.10. Trẻ em và người cần đại diện</h3>
+            <p>Người từ 15 đến dưới 16 tuổi cần người đại diện theo pháp luật đồng ý việc xử lý dữ liệu theo quy định. Khi xử lý để công bố, tiết lộ thông tin về đời sống riêng tư hoặc bí mật cá nhân của trẻ từ đủ 7 tuổi, cần cả sự đồng ý của trẻ và người đại diện theo pháp luật. AstroX không coi một ô đồng ý chung là bằng chứng đã xác minh tư cách người đại diện.</p>
+            <p>Người đại diện có thể liên hệ yêu cầu xem xét, ngừng xử lý hoặc xóa dữ liệu được cung cấp không hợp lệ. Dữ liệu của người mất, hạn chế năng lực hành vi hoặc có khó khăn trong nhận thức, làm chủ hành vi được xử lý theo quy định về đại diện và bảo vệ dữ liệu tương ứng. Không sử dụng thông tin trẻ em để quảng cáo hoặc công khai đời tư chỉ dựa vào sự đồng ý chung khi đăng nhập.</p>
+            <h3>3.11. Cập nhật văn bản</h3>
+            <p>AstroX ghi rõ phiên bản, ngày hiệu lực và thông báo thay đổi quan trọng. Mục đích xử lý mới không tự động được chấp thuận theo phiên bản cũ; phải thực hiện thông báo và lấy sự đồng ý mới khi pháp luật yêu cầu. Bạn có thể in hoặc lưu bản đang đọc để đối chiếu.</p>
+          </div>
+        </section>
+        <footer id="lien-he-phap-ly" className={styles.footer}>
+          <p className={styles.eyebrow}>CHÚNG TÔI SẴN SÀNG LẮNG NGHE</p>
+          <h2>Cần làm rõ một điều?</h2><p>Gửi câu hỏi, yêu cầu hỗ trợ hoặc yêu cầu về dữ liệu cá nhân tới:</p><Contact />
+          <p className={styles.contactMeta}>Ngô Thái Sơn · Đại diện AstroX<br />KĐT Vinhomes Ocean Park, Gia Lâm, TP. Hà Nội<br />Phản hồi ban đầu trong 2 ngày làm việc.</p>
+          <Link className={styles.backHome} href="/">← Về trang chủ AstroX</Link>
+        </footer>
+      </div>
     </div>
-  );
+  </div>;
 }

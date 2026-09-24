@@ -194,6 +194,11 @@ export function AiMetrics({ config }: { config: AdminConfig }) {
               Mỗi danh sách bộ lọc hiển thị tối đa 500 giá trị. Tổng số request vẫn được tính toàn kỳ.
             </p>
           )}
+          {summary.language&&<section aria-label="Chất lượng tiếng Việt" className={s.info}>
+            <strong>Chất lượng tiếng Việt</strong>
+            <p>{number(summary.language.checked)} lượt đã kiểm tra · {number(summary.language.detected)} phát hiện chữ Hán ({number(summary.language.detectionRate,'%')}) · {number(summary.language.repaired)} sửa thành công · {number(summary.language.blocked)} bị chặn.</p>
+            <p>Sửa ngôn ngữ: {number(summary.language.repairAttempts)} lần gọi · {number(summary.language.repairCostUsd,' USD')} ({number(summary.language.pricedRepairs)} lần có đủ dữ liệu giá) · trung bình {number(summary.language.averageRepairMs,' ms')}. Chi phí sửa đã nằm trong tổng chi phí; dữ liệu lịch sử chưa ghi chính sách không được coi là đã kiểm tra.</p>
+          </section>}
           <div className={s.metricCards}>
             {[
               [

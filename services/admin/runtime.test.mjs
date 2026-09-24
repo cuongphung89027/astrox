@@ -27,3 +27,34 @@ test('403 may be a policy refusal and must not bypass restrictions',async()=>{le
 test('trailing-dot internal endpoint rejected even if added to host allowlist',async()=>{const c=setup();c.ai.providers[0].baseUrl='https://metadata.google.internal./v1';await assert.rejects(executeProviderChain(c,input,async()=> 'key',{fetchImpl:good,allowHosts:['metadata.google.internal.']}),e=>e.code==='HOST_NOT_ALLOWED');});
 test('OpenCode inherited connection supplies routing session only to its host',async()=>{for(const host of ['opencode.ai','api.openai.com']){const c=setup();c.ai.providers[0].baseUrl=`https://${host}/v1`;let headers;await executeProviderChain(c,input,async()=> 'key',{allowHosts:[host],fetchImpl:async(u,o)=>{headers=o.headers;return good();}});assert.equal(headers['x-opencode-session'],host==='opencode.ai'?'astrox-web':undefined);}});
 test('OpenCode Muse retains low reasoning and diagnostic allows reasoning budget',async()=>{const {testProvider}=await import('./runtime.mjs');const c=setup();Object.assign(c.ai.providers[0],{baseUrl:'https://opencode.ai/zen/go/v1',model:'muse-spark-1.3-contributor',protocol:'responses',maxTokens:8000});let body;await testProvider(c,'a',async()=> 'key',{allowHosts:['opencode.ai'],fetchImpl:async(u,o)=>{body=JSON.parse(o.body);return Response.json({output:[{type:'message',content:[{type:'output_text',text:'OK'}]}]});}});assert.equal(body.reasoning.effort,'low');assert.equal(body.max_output_tokens,512);});
+
+test('reading service repairs only Han spans once with both attempts measured',async()=>{
+ let calls=0;const sent=[];const c=setup();
+ const result=await executeProviderChain(c,{...input,serviceId:'tuvi'},async()=>'key',options(async(u,o)=>{
+  sent.push(JSON.parse(o.body));calls++;
+  return Response.json({choices:[{message:{content:calls===1?'**Tử Vi**: 财星 ở cung Mệnh, năm 2026.':'{"translations":["sao Tài"]}'},finish_reason:'stop'}],usage:{prompt_tokens:10,completion_tokens:8}});
+ }));
+ assert.equal(calls,2);assert.equal(result.choices[0].message.content,'**Tử Vi**: sao Tài ở cung Mệnh, năm 2026.');
+ assert.equal(result.languagePolicyVersion,'vi-reading-1');assert.equal(result.attempts.length,2);
+ assert.equal(result.attempts[0].language,'detected');assert.equal(result.attempts[1].purpose,'language_repair');
+ assert.equal(result.attempts[1].language,'repaired');assert.equal(result.attempts[1].usage.input,10);
+ assert.ok(sent[0].messages.some(m=>m.content.includes('chữ Latin')));
+ assert.ok(!JSON.stringify(sent[1]).includes('2026'));
+});
+test('residual Han or invalid translation blocks the result without provider fallback',async()=>{
+ for(const fix of ['{"translations":["财星"]}','{"translations":["sao Tài 2030"]}']){
+ let calls=0;await assert.rejects(executeProviderChain(setup(),{...input,serviceId:'tuvi'},async()=>'key',options(async()=>{
+  return Response.json({choices:[{message:{content:++calls===1?'财星':fix},finish_reason:'stop'}]});
+ })),e=>e.code==='READING_LANGUAGE_INVALID');assert.equal(calls,2);
+ }
+});
+test('language repair respects configured total attempts and never bypasses a refusal',async()=>{
+ const c=setup();c.ai.maxAttempts=1;let calls=0;
+ await assert.rejects(executeProviderChain(c,{...input,serviceId:'tuvi'},async()=>'key',options(async()=>{calls++;return Response.json({choices:[{message:{content:'财星'},finish_reason:'stop'}]});})),e=>e.code==='READING_LANGUAGE_INVALID');assert.equal(calls,1);
+ const d=setup();calls=0;await assert.rejects(executeProviderChain(d,{...input,serviceId:'tuvi'},async()=>'key',options(async()=>++calls===1?Response.json({choices:[{message:{content:'财星'},finish_reason:'stop'}]}):Response.json({choices:[{message:{refusal:'No'},finish_reason:'stop'}]}))),e=>e.code==='PROVIDER_REFUSAL');assert.equal(calls,2);
+});
+test('health telemetry failure after repair cannot retry or repair the operation twice',async()=>{
+ const c=setup();c.ai.maxAttempts=4;let calls=0,writes=0;
+ const result=await executeProviderChain(c,{...input,serviceId:'tuvi'},async()=>'key',{...options(async()=>Response.json({choices:[{message:{content:++calls%2?'财星':'{"translations":["sao Tài"]}'},finish_reason:'stop'}]})),healthStore:{get:async()=>null,recordFailure:async()=>{},recordSuccess:async()=>{if(++writes===1)throw Error('telemetry unavailable');}}});
+ assert.equal(result.choices[0].message.content,'sao Tài');assert.equal(calls,2);assert.equal(result.attempts.filter(a=>a.purpose==='language_repair').length,1);
+});

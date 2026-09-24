@@ -150,3 +150,9 @@
  .modeNav button { padding:10px 16px; }
 }
 @media(max-width:380px) { .fieldRow { grid-template-columns:1fr; } }
+
+.evidenceList { display:grid; gap:14px; margin:16px 0; padding:0; list-style:none; }
+.evidenceList li { display:grid; gap:6px; padding:14px; background:#faf6e9; border-radius:12px; font-size:13px; line-height:1.7; overflow-wrap:anywhere; }
+.modeNav { flex-wrap:wrap; justify-content:center; }
+.formPair { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media(max-width:640px) { .formPair { grid-template-columns:1fr; } .modeNav button { padding:10px 12px; } }

@@ -1,6 +1,6 @@
 "use client";
 import { useFeatureResult } from "@/lib/use-feature-result";
-import { refreshPromptRevision } from "@/lib/state";
+import { cacheFingerprint, refreshPromptRevision } from "@/lib/state";
 
 /**
  * KdAiPanel — luận giải quẻ bằng AI (useRequireProfile → runAiPrompt, cache
@@ -8,7 +8,7 @@ import { refreshPromptRevision } from "@/lib/state";
  * LikeButton + "Gieo quẻ khác". Port prompt từ performCast của app cũ.
  */
 import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/kit";
 import { KdReading } from "./KdReading";
 import { LikeButton } from "@/components/motion";
@@ -29,7 +29,12 @@ interface KdAiPanelProps {
 
 type AiState = "idle" | "loading" | "done" | "error";
 
-export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
+export function KdAiPanel(props: KdAiPanelProps) {
+  useProfile(); // Subscribe so profile edits replace all result and request state.
+  return <KdAiPanelContent key={cacheFingerprint()} {...props} />;
+}
+
+export function KdAiPanelContent({ result, question, onReset }: KdAiPanelProps) {
   const [state, setState] = useState<AiState>("idle");
   const [text, setText] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -38,29 +43,51 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
   const requireProfile = useRequireProfile();
   const { open: openProfile } = useProfileModal();
 
+  const request = useRef(0);
+  const busy = useRef(false);
+  const controller = useRef<AbortController | null>(null);
+  useEffect(() => () => {
+    request.current++;
+    busy.current = false;
+    controller.current?.abort();
+  }, []);
   const markFresh = useFeatureResult(text, "kinhdich--interpretation", state === "done" && !!profile);
   const interpret = useCallback(async () => {
-    if (!requireProfile()) return;
-    const q = question.trim() || "(không có câu hỏi cụ thể — luận giải tổng quát)";
-    const key = kdCacheKey(result, q);
-    await refreshPromptRevision();
-      const cached = readAiCache("kinhDich", key);
-    if (cached) {
-      setText(cached);
-      setState("done");
-      return;
-    }
+    if (busy.current || !requireProfile()) return;
+    const scope = cacheFingerprint(), id = ++request.current;
+    const current = () => id === request.current && scope === cacheFingerprint();
+    const abort = new AbortController();
+    controller.current = abort;
+    busy.current = true;
     setElapsed(0);
+    setErrorMsg("");
     setState("loading");
     try {
+      const q = question.trim() || "(không có câu hỏi cụ thể — luận giải tổng quát)";
+      const key = kdCacheKey(result, q);
+      await refreshPromptRevision();
+      if (!current()) return;
+      const cached = readAiCache("kinhDich", key);
+      if (cached) {
+        setText(cached);
+        setState("done");
+        return;
+      }
       const prompt = buildKdPrompt(result, q, profile);
-      const out = await runAiPrompt(prompt, { withChartImage: false, temperature: 0.75, serviceId: "kinhdich--interpretation" });
+      const out = await runAiPrompt(prompt, { withChartImage: false, temperature: 0.75, serviceId: "kinhdich--interpretation", signal: abort.signal });
+      if (!current()) return;
       writeAiCache("kinhDich", key, out, { module: "kinh-dich", topic: "interpretation" });
       markFresh(out); setText(out);
       setState("done");
     } catch (e) {
+      if (!current()) return;
       setErrorMsg(e instanceof Error ? e.message : "Không lấy được luận giải.");
       setState("error");
+    } finally {
+      if (id === request.current) {
+        busy.current = false;
+        controller.current = null;
+      }
     }
   }, [markFresh, requireProfile, question, result, profile]);
 

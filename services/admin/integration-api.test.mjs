@@ -38,3 +38,22 @@ test('blocked price and rate outcomes persist separately from provider failures'
  const rows=(await env.DB.prepare('SELECT status,attempts FROM admin_ai_requests ORDER BY created_at').all()).results;
  assert.deepEqual(rows.map(r=>r.status),['price_changed','rate_limited']);assert.ok(rows.every(r=>r.attempts==='[]'));
 });
+
+test('paid reading language repair completes one charge; failed repair refunds without complete',async()=>{
+ const {saveSecret}=await import('./store.mjs');
+ for(const bad of [false,true]){
+  const env=testEnv();env.PROVIDER_ALLOWED_HOSTS='api.example.com';await state(env);
+  const c=defaultConfig();c.ai.enabled=true;c.billing.enabled=true;c.ai.chain=['language'];
+  c.billing.services[0].status='paid';c.billing.services[0].points=10;
+  c.ai.providers=[{id:'language',name:'Language',model:'model',protocol:'chat',baseUrl:'https://api.example.com/v1',enabled:true,timeoutMs:1000,retries:0,maxTokens:100,temperature:.5,secretRef:'provider:language'}];
+  await saveSecret(env,'owner','provider:language','test-key');await publish(env,'owner',c,0,'test');
+  const operations=[];let saved;env.ASTROX_BACKEND={fetch:async r=>{const p=new URL(r.url).pathname.split('/').at(-1);operations.push(p);if(p==='charge')return Response.json({ok:true,chargeId:'charge-language',points:10});if(p==='complete')saved=await r.json();return Response.json({ok:true});}};
+  let calls=0;const original=globalThis.fetch;globalThis.fetch=async()=>Response.json({choices:[{message:{content:++calls===1?'财星 năm 2026':JSON.stringify({translations:[bad?'财星':'sao Tài']})},finish_reason:'stop'}]});
+  try{
+   const response=await handleConfiguredAi(request('/api/ai',{operationId:'language-operation',expectedPoints:10,serviceId:'tuvi',messages:[{role:'user',content:'Luận giải'}]}),env);
+   assert.equal(response.status,bad?502:200);assert.equal(calls,2);
+   assert.deepEqual(operations,bad?['charge','refund']:['charge','complete']);
+   if(!bad){assert.equal(saved.response.choices[0].message.content,'sao Tài năm 2026');assert.equal(saved.response.languagePolicyVersion,'vi-reading-1');}
+  }finally{globalThis.fetch=original;}
+ }
+});

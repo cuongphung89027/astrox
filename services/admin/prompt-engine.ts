@@ -11,7 +11,7 @@ export function renderPrompt(node: PromptNode, overrides: Record<string,string> 
  const entry=templates.find(t=>t.id===node.id);if(!entry || node.values.length!==entry.variables.length)throw new Error('INVALID_PROMPT');
  const text=overrides[node.id]??entry.template;
  const result=text.replace(/\{\{v(\d+)\}\}/g,(_,index)=>{const value=node.values[Number(index)];if(value===undefined)throw new Error('INVALID_PROMPT_VARIABLE');return typeof value==='string'?value:renderPrompt(value,overrides,depth+1);});
- if(result.length>100000)throw new Error('PROMPT_TOO_LARGE');return node.id==='compat.original'||node.id==='zodiac.compatPrompt.0' ? `${result}\n\n${COMPAT_INCLUSION_GUIDANCE}` : result;
+ if(result.length>100000)throw new Error('PROMPT_TOO_LARGE');return ['compat.original','zodiac.compatPrompt.0','compat.tuviPair.v1','compat.batuPair.v1'].includes(node.id) ? `${result}\n\n${COMPAT_INCLUSION_GUIDANCE}` : result;
 }
 export function originalTasks():Record<string,string>{
  const out:Record<string,string>={};

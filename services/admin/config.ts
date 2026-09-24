@@ -1,6 +1,6 @@
 import {defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES} from './prompt-engine.ts';
 import { providerRoutes } from "./provider-models.ts";
-import { addMissingServices } from "./catalog.ts";
+import { addMissingServices, addCouplesServices } from "./catalog.ts";
 /** Shared, non-secret contract. Secrets are stored by reference only. */
 export type Provider = { id: string; name: string; baseUrl: string; protocol: 'responses' | 'chat' | 'anthropic'; model: string; enabled: boolean; timeoutMs: number; retries: number; maxTokens: number; temperature: number; secretRef: string; models?: ProviderModel[]; pricing?: {input:number;output:number;cacheRead:number;cacheWrite:number} };
 export type ProviderModel = Omit<Provider, 'secretRef' | 'models'>;
@@ -84,4 +84,4 @@ export function validateConfig(input: unknown): ConfigError[] {
 export function quotePackage(p:TopupPackage,rate:number){const base=p.mode==='fixed'?p.fixedPoints:rate>0?Math.floor(p.amountVnd/rate):0;return {base,bonus:p.bonus,total:base+p.bonus};}
 export function publicConfig(c:AdminConfig){return {engines:c.engines,availability:Object.fromEntries(c.billing.services.filter(s=>s.id===s.module).map(s=>[s.module,s.status])),billing:{enabled:c.billing.enabled,vndPerPoint:c.billing.vndPerPoint,packages:c.billing.packages.filter(p=>p.enabled).map(p=>({...p,...quotePackage(p,c.billing.vndPerPoint)})),services:c.billing.services.filter(s=>s.status!=='draft'&&s.status!=='hidden').map(({id,module,name,points,status,policy})=>({id,module,name,points,status,policy}))},rewards:{...c.rewards},content:c.content,maintenance:c.operations.maintenance};}
 
-export function hydrateConfig(c:AdminConfig):AdminConfig{const p=defaultPromptSettings();return {...c,prompts:{templates:{...p.templates,...c.prompts?.templates},tasks:{...p.tasks,...c.prompts?.tasks}},engines:{...defaultConfig().engines,...c.engines}};}
+export function hydrateConfig(c:AdminConfig):AdminConfig{const p=defaultPromptSettings();return {...c,billing:c.billing&&Array.isArray(c.billing.services)?{...c.billing,services:addCouplesServices(c.billing.services)}:c.billing,prompts:{templates:{...p.templates,...c.prompts?.templates},tasks:{...p.tasks,...c.prompts?.tasks}},engines:{...defaultConfig().engines,...c.engines}};}

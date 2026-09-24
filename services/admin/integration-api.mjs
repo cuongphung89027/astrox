@@ -43,7 +43,7 @@ export async function handleAdminRuntime(path,request,env,user){
   return json({ok:checks.every(c=>c.ok),checks,message:checks.every(c=>c.ok)?'Cấu hình sẵn sàng. Cần kiểm thử giao dịch/đăng nhập trên môi trường tích hợp.':'Chưa đủ điều kiện tích hợp. Kiểm tra các mục bên dưới.',scope:'configuration-only'});
  }catch(e){return json({error:e instanceof RuntimeError?diagnostic(e.code):'Không thể kiểm tra cấu hình.'},e.status||500)}
 }
-function diagnostic(code){return ({HOST_NOT_ALLOWED:'Tên miền provider chưa nằm trong danh sách kết nối được phép của server.',SECRET_MISSING:'Chưa lưu API key cho provider.',PROVIDER_REJECTED:'Provider từ chối yêu cầu. Kiểm tra API key, model và giao thức.',AI_DISABLED:'AI đang tạm tắt trong cấu hình.',PROVIDERS_EXHAUSTED:'Các provider đều chưa phản hồi thành công. Vui lòng thử lại sau.',AI_BUDGET_EXHAUSTED:'Yêu cầu vượt thời gian hoặc số lần thử cho phép.',INVALID_PROVIDER_RESPONSE:'Provider trả về dữ liệu không hợp lệ.',PROVIDER_REFUSAL:'Provider không thể xử lý nội dung này.',PROVIDER_REDIRECT:'Endpoint chuyển hướng không được chấp nhận.'})[code]||'Không thể hoàn tất yêu cầu. Kiểm tra cấu hình hoặc thử lại.'}
+function diagnostic(code){return ({READING_LANGUAGE_INVALID:'Luận giải chưa đạt yêu cầu tiếng Việt. Vui lòng thử lại.',HOST_NOT_ALLOWED:'Tên miền provider chưa nằm trong danh sách kết nối được phép của server.',SECRET_MISSING:'Chưa lưu API key cho provider.',PROVIDER_REJECTED:'Provider từ chối yêu cầu. Kiểm tra API key, model và giao thức.',AI_DISABLED:'AI đang tạm tắt trong cấu hình.',PROVIDERS_EXHAUSTED:'Các provider đều chưa phản hồi thành công. Vui lòng thử lại sau.',AI_BUDGET_EXHAUSTED:'Yêu cầu vượt thời gian hoặc số lần thử cho phép.',INVALID_PROVIDER_RESPONSE:'Provider trả về dữ liệu không hợp lệ.',PROVIDER_REFUSAL:'Provider không thể xử lý nội dung này.',PROVIDER_REDIRECT:'Endpoint chuyển hướng không được chấp nhận.'})[code]||'Không thể hoàn tất yêu cầu. Kiểm tra cấu hình hoặc thử lại.'}
 /** Returns null only when no admin configuration has ever been published. */
 export async function handleConfiguredAi(request,env){
  if(!env.DB)return null;
@@ -58,7 +58,7 @@ export async function handleConfiguredAi(request,env){
   const service=c.billing.services.find(s=>s.id===input.serviceId);
   if(!service||!['free','paid'].includes(service.status))throw new RuntimeError('SERVICE_UNAVAILABLE',403);
   const root=c.billing.services.find(s=>s.id===service.module);if(root&&!['free','paid'].includes(root.status))throw new RuntimeError('SERVICE_UNAVAILABLE',403);
-  const engine={tuvi:'iztro',zodiac:'astronomy',batu:'lunar',numerology:'numerology',kinhdich:'kinhdich',tarot:'tarot'}[service.module];if(engine&&c.engines?.[engine]?.enabled===false)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
+  const engine=({'compat--tuvi-pair':'iztro','compat--batu-pair':'lunar'}[input.serviceId])||{tuvi:'iztro',zodiac:'astronomy',batu:'lunar',numerology:'numerology',kinhdich:'kinhdich',tarot:'tarot'}[service.module];if(engine&&c.engines?.[engine]?.enabled===false)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
   const requestHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({serviceId:input.serviceId,messages:input.messages,promptDescriptor:input.promptDescriptor,compact:input.compact})))),b=>b.toString(16).padStart(2,'0')).join('');
   if(input.promptDescriptor){try{input.messages=[{role:'user',content:renderServicePrompt(input.promptDescriptor,input.serviceId,c.prompts)}]}catch{throw new RuntimeError('INVALID_MESSAGES',400)}}
   if(input.compact)input.messages.push({role:'user',content:c.prompts.templates['shared.compact']});
@@ -83,7 +83,7 @@ export async function handleConfiguredAi(request,env){
    if(!chargeId)throw new RuntimeError('BACKEND_UNAVAILABLE',503);
    try{
     const result=await executeProviderChain(c,{messages:input.messages,serviceId:input.serviceId},ref=>readSecret(env,ref),{allowHosts:hosts(env),healthStore:providerHealth(env)});attempts=result.attempts;
-    const {choices,model,usage}=result,response={choices,model,usage,configRevision:published.revision,chargedPoints:charge.points};
+    const {choices,model,usage,languagePolicyVersion}=result,response={choices,model,usage,languagePolicyVersion,configRevision:published.revision,chargedPoints:charge.points};
     const saved=await backend('complete',{chargeId,response});
     if(!saved.ok||!(await saved.json().catch(()=>null))?.ok)throw new RuntimeError('RESULT_PERSIST_FAILED',503);
     outcome='success';return json(response);
@@ -97,7 +97,7 @@ export async function handleConfiguredAi(request,env){
   }
 
   const result=await executeProviderChain(c,{messages:input.messages,serviceId:input.serviceId},ref=>readSecret(env,ref),{allowHosts:hosts(env),healthStore:providerHealth(env)});attempts=result.attempts;outcome='success';
-  const {choices,model,usage}=result;return json({choices,model,usage,configRevision:published.revision});
+  const {choices,model,usage,languagePolicyVersion}=result;return json({choices,model,usage,languagePolicyVersion,configRevision:published.revision});
  }catch(e){attempts=e.attempts||attempts;outcome=e.code||'failed';return json({error:diagnostic(e.code)},e.status||503)}
  finally{await sql(env,'INSERT INTO admin_ai_requests(id,service_id,config_revision,created_at,status,attempts,duration_ms) VALUES(?,?,?,?,?,?,?)',crypto.randomUUID(),String(input?.serviceId||''),published.revision,new Date().toISOString(),outcome,JSON.stringify(attempts),Date.now()-started).run().catch(()=>{});}
 }

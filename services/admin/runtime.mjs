@@ -1,3 +1,4 @@
+import {inspectReading,applyTranslations,languageRepairMessages,VIETNAMESE_READING_POLICY,LANGUAGE_POLICY_VERSION} from './reading-language.ts';
 import {normalizeUsage,estimateCost} from './metrics.ts';
 import {providerRoutes} from './provider-models.ts';
 /** Server-only adapters. No wallet mutations; callers own auth, rate limits and idempotency. */
@@ -33,7 +34,7 @@ function messagesFor(config, input) {
   const service=input.serviceId ? config.billing.services.find(s=>s.id===input.serviceId) : null;
   if (input.serviceId && !service) fail('UNKNOWN_SERVICE',400);
   const parent=service&&service.id!==service.module?config.billing.services.find(s=>s.id===service.module):null;
-  return {service,parent,messages:[...(config.ai.systemPrompt ? [{role:'system',content:config.ai.systemPrompt}] : []),...(parent?.prompt ? [{role:'system',content:parent.prompt}] : []),...(service?.prompt ? [{role:'system',content:service.prompt}] : []),...messages]};
+  return {service,parent,messages:[...(config.ai.systemPrompt ? [{role:'system',content:config.ai.systemPrompt}] : []),...(parent?.prompt ? [{role:'system',content:parent.prompt}] : []),...(service?.prompt ? [{role:'system',content:service.prompt}] : []),...(service ? [{role:'system',content:VIETNAMESE_READING_POLICY}] : []),...messages]};
 }
 function normalize(data, protocol, model, attempts) {
   if(!data || typeof data!=='object' || Array.isArray(data)) fail('INVALID_PROVIDER_RESPONSE',502,attempts);
@@ -83,13 +84,46 @@ export async function executeProviderChain(config, input, readSecret, {fetchImpl
         if(!response.ok) { await response.body?.cancel();
           if(response.status===401) { attempt.outcome='authentication_failed'; await healthStore?.recordFailure(p.id,now()); break; }
           if(config.ai.retryStatuses.includes(response.status)) { attempt.outcome='retryable'; await healthStore?.recordFailure(p.id,now()); continue; } fail('PROVIDER_REJECTED',502,attempts); }
-        const raw=await readJson(response);attempt.usage=normalizeUsage(raw?.usage,p.protocol);if(p.pricing)attempt.pricing={...p.pricing};attempt.costUsd=estimateCost({...attempt.usage,cacheWrite:p.protocol==='anthropic'?attempt.usage.cacheWrite:0},p.pricing);const result=normalize(raw,p.protocol,p.model,attempts); attempt.outcome='success'; await healthStore?.recordSuccess(p.id,now()); return result;
+        const recordUsage=(raw,record)=>{record.usage=normalizeUsage(raw?.usage,p.protocol);if(p.pricing)record.pricing={...p.pricing};record.costUsd=estimateCost({...record.usage,cacheWrite:p.protocol==='anthropic'?record.usage.cacheWrite:0},p.pricing);};
+        const raw=await readJson(response);recordUsage(raw,attempt);
+        const result=normalize(raw,p.protocol,p.model,attempts);
+        if(service){
+          let plan;
+          try{plan=inspectReading(result.choices[0].message.content);}catch{attempt.language='blocked';fail('READING_LANGUAGE_INVALID',502,attempts);}
+          attempt.language='clean';
+          if(plan.spans.length){
+            attempt.language='detected';attempt.outcome='language_detected';
+            attempt.durationMs=Math.max(0,now()-attemptStarted);
+            if(attempts.filter(a=>a.outcome!=='circuit_open').length>=Math.min(config.ai.maxAttempts,8)||now()>=deadline)fail('READING_LANGUAGE_INVALID',502,attempts);
+            const repair={providerId:p.id,model:p.model,protocol:p.protocol,status:0,outcome:'failed',purpose:'language_repair',language:'blocked'};
+            attempts.push(repair);const repairStarted=now();
+            try{
+              const repairMessages=languageRepairMessages(plan);
+              const repairBody=p.protocol==='anthropic'?{...body,system:repairMessages[0].content,messages:[repairMessages[1]],temperature:0}:p.protocol==='responses'?{...body,input:repairMessages,temperature:0}:{...body,messages:repairMessages,temperature:0};
+              const fixed=await fetchImpl(url,{method:'POST',headers:{...(p.protocol==='anthropic'?{'x-api-key':key,'anthropic-version':'2023-06-01','Content-Type':'application/json'}:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'}),...(new URL(url).hostname==='opencode.ai'?{'x-opencode-session':'astrox-web','User-Agent':'AstroX/1.0'}:{})},body:JSON.stringify(repairBody),signal:controller.signal,redirect:'manual'});
+              repair.status=fixed.status;
+              if(!fixed.ok){await fixed.body?.cancel();fail('READING_LANGUAGE_INVALID',502,attempts);}
+              const repairRaw=await readJson(fixed);recordUsage(repairRaw,repair);
+              const correction=normalize(repairRaw,p.protocol,p.model,attempts);
+              if(correction.choices[0].finish_reason!=='stop')fail('READING_LANGUAGE_INVALID',502,attempts);
+              result.choices[0].message.content=applyTranslations(plan,correction.choices[0].message.content);
+              repair.language='repaired';repair.outcome='success';
+            }catch(error){
+              if(error instanceof RuntimeError&&error.code==='PROVIDER_REFUSAL')throw error;
+              fail('READING_LANGUAGE_INVALID',502,attempts);
+            }finally{repair.durationMs=Math.max(0,now()-repairStarted);}
+          }
+          result.languagePolicyVersion=LANGUAGE_POLICY_VERSION;
+        }
+        if(attempt.outcome!=='language_detected')attempt.outcome='success';
+        try { await healthStore?.recordSuccess(p.id,now()); } catch { /* Telemetry cannot repeat a completed inference. */ }
+        return result;
       } catch(error) {
         // Transport failures may use the configured chain; malformed input and refusals never do.
-        if(error instanceof RuntimeError) throw error;
+        if(error instanceof RuntimeError){if(!error.attempts?.length)error.attempts=attempts;throw error;}
         attempt.outcome=controller.signal.aborted?'timeout':'network_error';
         await healthStore?.recordFailure(p.id,now());
-      } finally { attempt.durationMs=Math.max(0,now()-attemptStarted);clearTimeout(timer); }
+      } finally { attempt.durationMs??=Math.max(0,now()-attemptStarted);clearTimeout(timer); }
     }
   }
   fail('PROVIDERS_EXHAUSTED',503,attempts);

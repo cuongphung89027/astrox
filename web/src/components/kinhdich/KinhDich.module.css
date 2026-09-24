@@ -238,3 +238,16 @@
 :global(html[data-motion=reduced]) .castingStage[data-leaving=true],
 :global(html[data-motion=reduced]) .castSteps b,
 :global(html[data-motion=reduced]) .readingReveal { animation: none; }
+
+.methodSelect,.digitInput input,.numberInputs input,.coinGrid select{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--line, #d8cfc1);border-radius:10px;background:rgba(255,255,255,.65);color:inherit;font:inherit;outline-offset:3px}.rules{font-size:13px;line-height:1.65;color:var(--muted,#766f63);margin:12px 0 22px}.coinSetup{margin:18px 0}.checkLabel{display:flex!important;align-items:center;gap:10px;font-size:14px!important}.checkLabel input{width:18px;height:18px}.coinGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:15px 0}.coinGrid label,.numberInputs label{min-width:0;font-size:13px!important}.coinGrid select{font-size:13px;padding:8px}.coinThrows{padding:0;margin:16px 0;list-style:none}.coinThrows li{display:grid;grid-template-columns:52px 1fr auto;gap:8px;border-bottom:1px solid #ddd4c6;padding:10px 0;font-size:12px}.coinSetup>p{font-size:13px;margin:12px 0}.numberInputs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}.digitInput{margin:18px 0}.digitInput p{overflow-wrap:anywhere;font-size:13px;margin:10px 0}.formError{color:#9a3527;margin:12px 0;font-size:14px}.primary:disabled{opacity:.45;cursor:not-allowed}
+
+.coinScene { padding: 40px 0 26px; }
+.threeCoins { display: flex; justify-content: center; align-items: center; gap: clamp(8px, 2vw, 18px); }
+.goldCoin { position: relative; display: flex; width: clamp(76px, 9vw, 110px); aspect-ratio: 1; flex: 0 0 auto; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 3px solid #c5a35d; border-radius: 50%; color: #6b491c; background: radial-gradient(circle at 30% 22%, #fff0b5, #e5c578 56%, #b28d46); box-shadow: inset 0 0 0 4px #f9dfa1, inset 0 0 0 5px #b49350, 0 6px 0 #a58649, 0 15px 20px #71613924; }
+.goldCoin:nth-child(2) { margin-top: -26px; }
+.goldCoin[data-face=tails] { background: radial-gradient(circle at 70% 25%, #eed593, #c8a55e 60%, #a37b36); }
+.coinHole { width: 17%; aspect-ratio: 1; border: 1px solid #8e713b; background: #eef0df; box-shadow: inset 2px 2px 3px #81714b45, 1px 1px 0 #ffecbd; }
+.coinFaceLabel { margin-top: 2px; font-size: clamp(10px, 1vw, 12px); line-height: 1; }
+.coinFaceValue { font-family: var(--font-display); font-size: clamp(19px, 2vw, 24px); line-height: 1; }
+.coinScene > p { margin-top: 25px; color: #817551; font-size: 12px; }
+@media (max-width: 640px) { .coinScene { padding: 30px 0 12px; } .goldCoin { width: 82px; } .threeCoins { gap: 14px; } }

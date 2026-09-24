@@ -201,6 +201,8 @@ function getActiveAiCache(): AiProfileCache {
 
 let activePromptRevision: number | null = null;
 const resultRevisions=new Map<string,number>();
+const resultLanguagePolicies=new Map<string,string>();
+export function recordLanguageResult(text:string,version:string){resultLanguagePolicies.set(text,version);if(resultLanguagePolicies.size>32)resultLanguagePolicies.delete(resultLanguagePolicies.keys().next().value!);}
 export function recordPromptResult(text:string,revision:number){resultRevisions.set(text,revision);if(resultRevisions.size>32)resultRevisions.delete(resultRevisions.keys().next().value!);}
 export function setPromptRevision(revision:number){if(Number.isSafeInteger(revision)&&(activePromptRevision===null||revision>activePromptRevision)){activePromptRevision=revision;emit();}}
 export async function refreshPromptRevision(){try{const r=await fetch('/api/site-config',{cache:'no-store'});if(!r.ok)return;const d=await r.json();setPromptRevision(d.revision??0);}catch{/* Keep the last known revision during a transient outage. */}}
@@ -249,8 +251,9 @@ export function writeAiCache(
   const bucket = resolveBucket(cache, group);
   if (!bucket) return;
   const previous=bucket[key];
-  if(previous&&previous.configRevision!==activePromptRevision)bucket[`${key}::history::${previous.configRevision??'legacy'}::${previous.updatedAt}`]=previous;
+  if(previous&&(previous.configRevision!==activePromptRevision||previous.languagePolicyVersion!==resultLanguagePolicies.get(text)))bucket[`${key}::history::${previous.configRevision??'legacy'}::${previous.updatedAt}`]=previous;
   bucket[key] = {
+    languagePolicyVersion:resultLanguagePolicies.get(text),
     configRevision: resultRevisions.get(text) ?? activePromptRevision ?? undefined,
     text,
     module: meta.module || "",

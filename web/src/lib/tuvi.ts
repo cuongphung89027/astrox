@@ -1,3 +1,4 @@
+import { validateChartBirth, assertVietnameseChart } from "./birth-input";
 import { managedPrompt } from "./managed-prompts";
 /**
  * Logic Tử Vi Đẩu Số — port trung thực từ index.html (MODULE 1 — TU VI):
@@ -82,7 +83,9 @@ const ZIWEI_HOUR_INDEX: Record<string, number> = Object.fromEntries(
 export function hourChiToTimeIndex(hourChi: string): number {
   const label = hourChi.split(" (")[0].trim();
   const normalized = label === "Tí" ? "Tý" : label;
-  return ZIWEI_HOUR_INDEX[normalized] ?? 0;
+  const index = ZIWEI_HOUR_INDEX[normalized];
+  if (index === undefined) throw new Error("Không đọc được giờ sinh — hãy chọn lại can giờ.");
+  return index;
 }
 
 /* ------------------------------------------------------------------ */
@@ -122,7 +125,7 @@ function starList(stars: unknown): ZiweiStar[] {
 type ZiweiRaw = ReturnType<typeof astro.bySolar>;
 
 export function buildZiweiChart(input: ZiweiInput): ZiweiChart {
-  if (!input || !input.dob || !input.hourChi) throw new Error("Thiếu ngày sinh hoặc giờ sinh.");
+  validateChartBirth(input);
   const [y, m, d] = input.dob.split("-").map(Number);
   if (!y || !m || !d) throw new Error("Ngày sinh không hợp lệ.");
   // App cũ truyền ngày không pad (YYYY-M-D) — giữ nguyên để khớp kết quả.
@@ -660,3 +663,5 @@ export const TUVI_TOPICS: TuviTopic[] = [
     ],
   },
 ];
+
+export function ziweiAiDto(chart: ZiweiChart): ZiweiChart { return assertVietnameseChart(chart); }

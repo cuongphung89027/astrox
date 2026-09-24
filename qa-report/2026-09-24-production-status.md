@@ -1,6 +1,6 @@
 # AstroX — bảng xử lý sau khi lên production
 
-Cập nhật 24/09/2026. **Đã triển khai lên https://theastrox.space**, cả website và API xác nhận bản `2026-09-24-yellow-1`. Bốn lỗi đỏ đã lên trước, sau đó triển khai các hạng mục vàng. Giữ nguyên cấu hình 77 dịch vụ miễn phí; không tạo giao dịch tiền thật.
+Cập nhật 24/09/2026. **Đã triển khai lên https://theastrox.space**, cả website và API xác nhận bản `2026-09-24-rewards-1`. Bốn lỗi đỏ đã lên trước, sau đó triển khai các hạng mục vàng. Giữ nguyên cấu hình 77 dịch vụ miễn phí; không tạo giao dịch tiền thật.
 
 ✅ Đã sửa và triển khai. ⏳ Cần kiểm chứng vận hành thực tế. 🔵 Tuỳ chọn, chưa bật thêm.
 
@@ -19,15 +19,19 @@ Cập nhật 24/09/2026. **Đã triển khai lên https://theastrox.space**, c�
 | Trang chủ nặng | ✅ Thư viện lập lá số chỉ tải khi có hồ sơ. JavaScript trong các thẻ script ban đầu giảm từ 432.145 xuống 284.734 byte khi nén gzip — khoảng **34%**. | ⏳ Đo LCP/INP trên thiết bị và mạng thực. Hero video cũ hiện không được trang chủ sử dụng, nên không ghi nhận việc sửa video là thành tích tối ưu. |
 | Nội dung cho Google | ✅ Có HTML nội dung sẵn, sitemap, robots; trang hồ sơ đặt noindex. Đã kiểm tra trên tên miền thật. | Google tự quyết định thời gian lập chỉ mục; chưa khẳng định đã tăng thứ hạng. |
 | Theo dõi lỗi | ✅ Có mục **Lỗi giao diện** trong Admin và bộ đếm lỗi theo trang/loại, giữ tối đa khoảng 30 ngày. Không thu câu hỏi, nội dung luận giải, email hay stack trace. | Bộ đếm là số báo lỗi, không phải số người bị ảnh hưởng; chưa có cảnh báo tự động qua email/Slack. Giới hạn báo lỗi dùng mã IP HMAC thay đổi theo ngày, không lưu IP thô trong bảng này. |
-| Lỗi kiểm tra mã | ✅ Sửa lỗi Hook, ref và reset trạng thái. Lint toàn frontend: **0 lỗi, 28 cảnh báo**. Build và **158 kiểm thử** qua. | Cảnh báo còn lại chủ yếu ảnh và mã chưa dùng; tiếp tục dọn khi tối ưu sâu, không gọi là đã sạch toàn bộ cảnh báo. |
-| Điểm danh / giới thiệu / quảng cáo | 🔵 Giữ cấu hình hiện hành, không tự bật thêm. | Triển khai theo kế hoạch sản phẩm sau khi đối soát tài khoản và thanh toán ổn định. |
+| Lỗi kiểm tra mã | ✅ Sửa lỗi Hook, ref và reset trạng thái. Lint toàn frontend: **0 lỗi, 28 cảnh báo**. Build và **179 kiểm thử** qua. | Cảnh báo còn lại chủ yếu ảnh và mã chưa dùng; tiếp tục dọn khi tối ưu sâu, không gọi là đã sạch toàn bộ cảnh báo. |
+| Điểm danh | ✅ Đã bật: 2 Point/ngày, thưởng mốc 3/7/10 ngày. Chống cộng trùng, hiện tiến độ và lịch sử. | ⏳ Kiểm chứng một lượt bằng tài khoản Zalo thật. |
+| Giới thiệu | ✅ Đã bật: đăng ký mới qua link nhận 5 Point mỗi bên; người mời nhận 10 Point khi bạn bè nạp lần đầu. Giữ mã đầu tiên 7 ngày, không gắn người mời hồi tố. | ⏳ Kiểm chứng đăng ký/nạp thật; backend đã thử OAuth và PayOS giả lập, khôi phục lỗi và chống phát thưởng lặp. |
+| Quảng cáo nhận Point | ⏳ Đã nối giao diện và backend; **chưa bật phân phối quảng cáo thật**. Có đồng ý xem, phiên, hạn mức và chống cộng trùng. | Cần network code/ad unit Google Ad Manager thật, kiểm tra inventory và yêu cầu consent. Google rewarded web không có SSV; tín hiệu cấp thưởng do trình duyệt báo. Xem [hướng dẫn](rewards/verification.md). |
 
 ## Bằng chứng và phạm vi
 
-- Mã thay đổi: `0ee6f9a`; bản lỗi đỏ trước đó: `4fc90af`.
-- Worker: `bc12437b-4960-490b-84b0-37a5f570cbc2`.
-- Pages: https://01fa54f1.theastrox-a3l.pages.dev ; tên miền chính đã trả đúng release mới.
+- Bản rewards: `0d8806a`, sửa tương thích CSP/Cloudflare `85d6965`. Bản vàng trước đó: `0ee6f9a`; bản lỗi đỏ: `4fc90af`.
+- Worker: `cfb8355e-9219-4478-9d7e-71ce2a573484`.
+- Pages: https://582f8407.theastrox-a3l.pages.dev ; tên miền chính đã trả đúng release mới.
 - Đã sao lưu D1 và chạy hai migration bổ sung `user-sync.sql`, `client-errors.sql`; không xoá dữ liệu hiện có.
 - Kiểm thử trình duyệt production: bảng giá tải từ cấu hình thật, không bị hộp đăng nhập che; điều khoản 2 ngày làm việc hiện đúng; mobile 390px không tràn ngang; endpoint dữ liệu riêng/AI chặn khách, đường đăng nhập cũ bị tắt; không có lỗi JavaScript trong các lượt kiểm tra này.
 - Luồng đồng bộ nhiều thiết bị, đổi tài khoản, xác nhận giá, hủy thanh toán và các ghép giới tính đã được kiểm thử với API giả lập. Kiểm thử backend dùng mã xử lý thật với SQLite. Không thay thế một lượt Zalo/PayOS/provider thật.
-- Chi tiết: [yellow-items/verification.md](yellow-items/verification.md).
+- Rewards: migration `reward-events.sql` bổ sung sau backup; cấu hình xuất bản 2, bản nháp 3. Chỉ thay `rewards.enabled`; toàn bộ nội dung khác trong bản xuất bản và bản nháp được đối chiếu giữ nguyên.
+- Prod đã kiểm tra các endpoint thưởng chặn khách 401, không có yêu cầu Google ads trước đồng ý, không có lỗi CSP/JavaScript trong các trang kiểm tra.
+- Chi tiết: [rewards/verification.md](rewards/verification.md), [yellow-items/verification.md](yellow-items/verification.md).

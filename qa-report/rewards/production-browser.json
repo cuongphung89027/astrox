@@ -1,0 +1,24 @@
+{
+  "release": "2026-09-24-rewards-1",
+  "configRevision": 2,
+  "statuses": {
+    "summary": 401,
+    "checkin": 401,
+    "adStart": 401,
+    "adGrant": 401
+  },
+  "errors": [],
+  "violations": [],
+  "adRequests": 0,
+  "checks": [
+    "77 free services preserved",
+    "check-in/referrals enabled",
+    "ads disabled",
+    "prices/terms/wallet render with strict nonce CSP",
+    "no Google ad request without consent",
+    "390px no overflow"
+  ],
+  "noAuthenticatedLiveCredit": true,
+  "noRealPayment": true,
+  "noRealAd": true
+}

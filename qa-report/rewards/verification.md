@@ -28,3 +28,11 @@ Release: `2026-09-24-rewards-1`.
 Google Rewarded Web **không có xác minh máy chủ SSV**. Backend kiểm soát phiên, hạn mức và việc cộng trùng; tín hiệu hoàn thành do trình duyệt báo nên có thể bị giả mạo bởi tài khoản cố ý lạm dụng. Không được gọi đây là bằng chứng xem quảng cáo. Tài liệu: [Google rewarded web](https://support.google.com/admanager/answer/9116812?hl=en), [GPT sample](https://developers.google.com/publisher-tag/samples/display-rewarded-ad), [CSP](https://developers.google.com/publisher-tag/guides/content-security-policy).
 
 Chưa kiểm chứng bằng người dùng Zalo thật, tiền nạp thật, quảng cáo thật hoặc một lần cron khôi phục thực tế trên production. Những kiểm thử mô phỏng ở trên không thay thế các bước đó.
+
+## Production
+
+- D1 private backup taken before additive migration; new tables installed.
+- Worker `astrox-api`: version `cfb8355e-9219-4478-9d7e-71ce2a573484`; five-minute cron retained, deployment used `--keep-vars`.
+- Frontend source `0d8806a`, edge compatibility fix `85d6965`; Pages deployment: https://582f8407.theastrox-a3l.pages.dev.
+- Production published config **2**, draft revision **3**. Compared complete private before/after snapshots: only `rewards.enabled` changed; unrelated published settings and draft prompt edits are identical. Activation writes an audit entry.
+- The first live CSP check caught script preloads without nonces and Cloudflare email-obfuscation injection. Fixed by noncing script preload links and `Cache-Control: no-transform`. Final live rerun passed: prices/terms/wallet rendered, zero page errors or CSP violations, no Google ad requests before opt-in, guest summary/check-in/ad-start/ad-grant all return 401. Evidence: `production-browser.json`.

@@ -1,0 +1,5 @@
+# Zalo browser-fallback login is intentionally left untouched.
+services/backend/zalo-browser.mjs
+services/backend/zalo-browser.test.mjs
+**/*.sql
+**/*.md

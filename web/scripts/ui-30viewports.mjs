@@ -8,7 +8,7 @@
  *  1. Horizontal overflow (scrollWidth > clientWidth).
  *  2. Topbar collision: chip Point / avatar / mobile-title KHÔNG được đè bất kỳ
  *     nav link nào (giao hình chữ nhật > 4px²).
- *  3. Phần tử then chốt tồn tại: chip, avatar, thẻ Điểm danh (points), link
+ *  3. Phần tử then chốt tồn tại: chip, avatar, link Kiếm thêm Point (points), link
  *     nhật ký (tarot), nút loa (tarot).
  * Ảnh: --shots chụp 7 width đại diện (320/390/768/1024/1280/1440/1920).
  */
@@ -78,7 +78,7 @@ async function run(engine) {
   const ROUTES = [
     { path: "/trangchu", label: "trangchu" },
     { path: "/dieukhoan", label: "dieukhoan" },
-    { path: "/hoso?section=points", label: "points", extra: async () => check(`[${engine}][points] thẻ Điểm danh`, await page.getByText("Điểm danh hàng ngày").isVisible().catch(() => false)) },
+    { path: "/hoso?section=points", label: "points", extra: async () => check(`[${engine}][points] link Kiếm thêm Point`, await page.getByRole("link", { name: /Kiếm thêm Point/ }).isVisible().catch(() => false)) },
   ];
   if (isLocal) ROUTES.push({ path: "/tarot", label: "tarot", extra: async () => {
     check(`[${engine}][tarot] link nhật ký`, await page.getByRole("link", { name: /Nhật ký trải bài/ }).isVisible().catch(() => false));
@@ -112,4 +112,4 @@ for (const e of engines) await run(e);
 const failed = results.filter((r) => !r.ok);
 console.log(`\n=== UI 30 VIEWPORTS: ${results.length - failed.length}/${results.length} PASS, ${failed.length} FAIL ===`);
 if (failed.length) { console.log("Các lỗi:"); for (const f of failed.slice(0, 20)) console.log(` - ${f.name} ${f.detail}`); }
-process.exit(failed ? 1 : 0);
+process.exit(failed.length ? 1 : 0);

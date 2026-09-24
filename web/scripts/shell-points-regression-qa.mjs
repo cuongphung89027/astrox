@@ -63,14 +63,20 @@ async function run(engine) {
       check(`[${engine}] tag localhost minh họa`, await page.getByText(/dữ liệu minh họa/).isVisible().catch(() => false));
       const rows = page.locator("[class*=row]");
       check(`[${engine}] lịch sử preview 3 dòng`, (await rows.count()) >= 3, `rows=${await rows.count()}`);
-      const attendance = await page.getByText("Điểm danh hàng ngày").isVisible().catch(() => false);
-      check(`[${engine}] thẻ Điểm danh hiện (preview)`, attendance);
+      const earnLink = page.getByRole("link", { name: /Kiếm thêm Point/ });
+      check(`[${engine}] link 'Kiếm thêm Point' trên Ví`, await earnLink.isVisible().catch(() => false));
+      await earnLink.click();
+      await page.waitForURL("**/hoso?section=earn", { timeout: 8000 });
+      check(`[${engine}] earn: nút 'Điểm danh ngay' hiện`, await page.getByRole("button", { name: "Điểm danh ngay" }).isVisible().catch(() => false));
       for (const w of [320, 390, 768, 1280]) {
         await page.setViewportSize({ width: w, height: 900 });
         await page.waitForTimeout(250);
-        check(`[${engine}] points ${w} không tràn ngang`, await overflowOk(page));
+        check(`[${engine}] earn ${w} không tràn ngang`, await overflowOk(page));
       }
       await page.setViewportSize({ width: 390, height: 844 });
+      await page.screenshot({ path: `${OUT_DIR}${engine}-earn-390.png` });
+      await page.goto(`${BASE}/hoso?section=points`, { waitUntil: "networkidle" });
+      await page.waitForTimeout(600);
       await page.screenshot({ path: `${OUT_DIR}${engine}-points-home-390.png` });
 
       /* ---------- A3. TopupPanel (best-effort: nút bị disabled ở preview) ---------- */
@@ -102,9 +108,10 @@ async function run(engine) {
       /* ---------- A4. AuthMenu dropdown + wallet row (bug ellipse) ---------- */
       await page.goto(`${BASE}/trangchu`, { waitUntil: "networkidle" });
       await page.waitForTimeout(900);
-      await page.locator("button[aria-haspopup=menu]").first().click();
-      const panel = page.locator("[role=menu]");
+      await page.locator('button[aria-haspopup=menu][aria-label^="Tài khoản"]').first().click();
+      const panel = page.locator('[role=menu][aria-label="Menu tài khoản"]');
       await panel.waitFor({ state: "visible", timeout: 6000 });
+      await panel.locator("[class*=walletInfo]").first().waitFor({ state: "visible", timeout: 6000 });
       check(`[${engine}] menu identity = tên gọi`, (await panel.locator("h2").textContent()).includes("Thái Sơn"));
       const walletRow = panel.locator("[class*=wallet]").first();
       const walletInfo = panel.locator("[class*=walletInfo]").first();
@@ -130,8 +137,8 @@ async function run(engine) {
         await page.waitForURL("**/hoso?section=points", { timeout: 5000 });
       } catch {
         // Webkit đôi khi cần click lần nữa sau khi menu settled.
-        await page.locator("button[aria-haspopup=menu]").first().click();
-        await page.locator("[role=menu] [class*=walletInfo]").first().click();
+        await page.locator('button[aria-haspopup=menu][aria-label^="Tài khoản"]').first().click();
+        await page.locator('[role=menu][aria-label="Menu tài khoản"] [class*=walletInfo]').first().click();
         await page.waitForURL("**/hoso?section=points", { timeout: 6000 });
       }
       check(`[${engine}] wallet row → /hoso?section=points`, page.url().includes("section=points"));

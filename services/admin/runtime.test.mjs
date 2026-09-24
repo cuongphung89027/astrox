@@ -1,29 +1,342 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createHmac} from 'node:crypto';
-import {defaultConfig} from './config.ts';
-import {executeProviderChain,verifyPayosWebhook,createPaymentRequest,validateIntegration} from './runtime.mjs';
-const setup=()=>{const c=defaultConfig();c.ai.enabled=true;c.ai.providers=['a','b'].map(id=>({id,name:id,baseUrl:'https://api.openai.com/v1',protocol:'chat',model:'model',enabled:true,timeoutMs:1000,retries:0,maxTokens:100,temperature:0.5,secretRef:`provider:${id}`}));c.ai.chain=['a','b'];return c;};
-const input={messages:[{role:'user',content:'Hello'}]};
-const good=()=>Response.json({choices:[{message:{role:'assistant',content:'OK'},finish_reason:'stop'}],usage:{total_tokens:3}});
-const options=fetchImpl=>({fetchImpl,allowHosts:['api.openai.com']});
-test('disabled runtime cannot silently fall through',async()=>{await assert.rejects(executeProviderChain(defaultConfig(),input,async()=>'',options(good)),e=>e.code==='AI_DISABLED');});
-test('retryable errors use ordered fallback and redact diagnostics',async()=>{let n=0;const r=await executeProviderChain(setup(),input,async()=>'secret',options(async()=>++n===1?new Response('secret provider error',{status:429}):good()));assert.equal(r.choices[0].message.content,'OK');assert.deepEqual(r.attempts.map(a=>a.providerId),['a','b']);assert.ok(!JSON.stringify(r).includes('secret'));});
-test('nonretryable and refusal responses never trigger fallback',async()=>{for(const response of [new Response('',{status:400}),Response.json({choices:[{message:{refusal:'No'},finish_reason:'stop'}]})]){let n=0;await assert.rejects(executeProviderChain(setup(),input,async()=>'key',options(async()=>{n++;return response;})));assert.equal(n,1);}});
-test('explicit service chain overrides default and prepends configured prompts',async()=>{const c=setup();c.billing.services[0].chain=['b'];c.billing.services[0].prompt='Service prompt';let body;const r=await executeProviderChain(c,{...input,serviceId:'tuvi'},async()=> 'key',options(async(u,o)=>{body=JSON.parse(o.body);return good();}));assert.equal(r.attempts[0].providerId,'b');assert.ok(body.messages.some(m=>m.content==='Service prompt'));});
-test('untrusted host, redirects and nontext input rejected',async()=>{await assert.rejects(executeProviderChain(setup(),input,async()=>'key',{fetchImpl:good}),e=>e.code==='HOST_NOT_ALLOWED');await assert.rejects(executeProviderChain(setup(),input,async()=>'key',options(async()=>new Response('',{status:302}))),e=>e.code==='PROVIDER_REDIRECT');await assert.rejects(executeProviderChain(setup(),{messages:[{role:'user',content:[]}]},async()=>'key',options(good)),e=>e.code==='INVALID_MESSAGES');});
-test('attempt cap enforced and missing secret fails closed',async()=>{const c=setup();c.ai.maxAttempts=1;let n=0;await assert.rejects(executeProviderChain(c,input,async()=>'key',options(async()=>{n++;return new Response('',{status:503});})));assert.equal(n,1);await assert.rejects(executeProviderChain(c,input,async()=>null,options(good)),e=>e.code==='SECRET_MISSING');});
-test('responses protocol produces compatible plain text',async()=>{const c=setup();c.ai.providers[0].protocol='responses';let url;const r=await executeProviderChain(c,input,async()=>'key',options(async u=>{url=u;return Response.json({output:[{type:'message',content:[{type:'output_text',text:'hello'}]}]});}));assert.ok(url.endsWith('/responses'));assert.equal(r.choices[0].message.content,'hello');});
-test('webhook HMAC verified independently and tampering rejected',async()=>{const data={amount:10000,code:'00',currency:'VND',orderCode:123,reference:'ref'};const signature=createHmac('sha256','checksum').update('amount=10000&code=00&currency=VND&orderCode=123&reference=ref').digest('hex');assert.deepEqual(await verifyPayosWebhook({data,signature},'checksum'),data);await assert.rejects(verifyPayosWebhook({data:{...data,amount:999},signature},'checksum'));});
-test('payment adapter signs authoritative snapshot and sends one request',async()=>{let body;const config=defaultConfig().integrations.payos;config.enabled=true;config.clientId='client';const response=await createPaymentRequest(config,{orderCode:42,amountVnd:10000,description:'AX42',expiresAt:2000000000},{apiKey:'key',checksumKey:'checksum'},{fetchImpl:async(u,o)=>{body=JSON.parse(o.body);return Response.json({code:'00',data:{orderCode:42}});}});assert.equal(body.amount,10000);assert.equal(body.signature,createHmac('sha256','checksum').update(`amount=10000&cancelUrl=${config.cancelUrl}&description=AX42&orderCode=42&returnUrl=${config.returnUrl}`).digest('hex'));assert.equal(response.orderCode,42);});
-test('integration readiness rejects unsafe callbacks',()=>{assert.ok(validateIntegration('zalo',{enabled:true,appId:'123',callbackUrl:'http://localhost',returnUrl:'https://site.com'}).length);});
-test('provider test uses exact requested ID with safe prompt and capped output',async()=>{const {testProvider}=await import('./runtime.mjs');const c=setup();c.ai.enabled=false;let body;const result=await testProvider(c,'b',async()=> 'key',options(async(u,o)=>{body=JSON.parse(o.body);return good();}));assert.equal(result.attempts[0].providerId,'b');assert.equal(body.max_tokens,32);assert.equal(body.messages.length,1);assert.equal(body.messages[0].content,'Reply with OK.');});
-test('provider response size limit rejects before decoding',async()=>{await assert.rejects(executeProviderChain(setup(),input,async()=> 'key',options(async()=>new Response('x',{headers:{'content-length':'2000000'}}))),e=>e.code==='RESPONSE_TOO_LARGE');});
-test('network failures fall back and persist circuit health',async()=>{const c=setup();let n=0;const failed=[],succeeded=[];const r=await executeProviderChain(c,input,async()=> 'key',{...options(async()=>{if(++n===1)throw new TypeError('network secret');return good();}),healthStore:{get:async()=>null,recordFailure:async(...a)=>failed.push(a),recordSuccess:async(...a)=>succeeded.push(a)}});assert.equal(r.attempts[0].outcome,'network_error');assert.equal(failed[0][0],'a');assert.equal(succeeded[0][0],'b');});
-test('open circuit skips provider until cooldown expires',async()=>{const c=setup();const r=await executeProviderChain(c,input,async()=> 'key',{...options(good),now:()=>10000,healthStore:{get:async id=>id==='a'?{failures:3,lastFailureAt:9000}:null,recordFailure:async()=>{},recordSuccess:async()=>{}}});assert.equal(r.attempts[0].outcome,'circuit_open');assert.equal(r.attempts[1].providerId,'b');});
-test('malformed successful response never bypasses to another provider',async()=>{const c=setup();c.ai.providers[0].protocol='responses';let calls=0;await assert.rejects(executeProviderChain(c,input,async()=> 'key',options(async()=>{calls++;return Response.json({output:{bad:true}});})),e=>e.code==='INVALID_PROVIDER_RESPONSE');assert.equal(calls,1);});
-test('invalid provider credentials mark unhealthy and skip retries to next provider',async()=>{const c=setup();c.ai.providers[0].retries=3;const failures=[];let calls=0;const r=await executeProviderChain(c,input,async()=> 'key',{...options(async()=>++calls===1?new Response('',{status:401}):good()),healthStore:{get:async()=>null,recordFailure:async id=>failures.push(id),recordSuccess:async()=>{}}});assert.equal(calls,2);assert.equal(r.attempts[0].outcome,'authentication_failed');assert.equal(r.attempts[1].providerId,'b');assert.deepEqual(failures,['a']);});
-test('403 may be a policy refusal and must not bypass restrictions',async()=>{let calls=0;await assert.rejects(executeProviderChain(setup(),input,async()=> 'key',options(async()=>{calls++;return new Response('',{status:403});})));assert.equal(calls,1);});
-test('trailing-dot internal endpoint rejected even if added to host allowlist',async()=>{const c=setup();c.ai.providers[0].baseUrl='https://metadata.google.internal./v1';await assert.rejects(executeProviderChain(c,input,async()=> 'key',{fetchImpl:good,allowHosts:['metadata.google.internal.']}),e=>e.code==='HOST_NOT_ALLOWED');});
-test('OpenCode inherited connection supplies routing session only to its host',async()=>{for(const host of ['opencode.ai','api.openai.com']){const c=setup();c.ai.providers[0].baseUrl=`https://${host}/v1`;let headers;await executeProviderChain(c,input,async()=> 'key',{allowHosts:[host],fetchImpl:async(u,o)=>{headers=o.headers;return good();}});assert.equal(headers['x-opencode-session'],host==='opencode.ai'?'astrox-web':undefined);}});
-test('OpenCode Muse retains low reasoning and diagnostic allows reasoning budget',async()=>{const {testProvider}=await import('./runtime.mjs');const c=setup();Object.assign(c.ai.providers[0],{baseUrl:'https://opencode.ai/zen/go/v1',model:'muse-spark-1.3-contributor',protocol:'responses',maxTokens:8000});let body;await testProvider(c,'a',async()=> 'key',{allowHosts:['opencode.ai'],fetchImpl:async(u,o)=>{body=JSON.parse(o.body);return Response.json({output:[{type:'message',content:[{type:'output_text',text:'OK'}]}]});}});assert.equal(body.reasoning.effort,'low');assert.equal(body.max_output_tokens,512);});
+import { createHmac } from 'node:crypto';
+import { defaultConfig } from './config.ts';
+import { executeProviderChain, verifyPayosWebhook, createPaymentRequest, validateIntegration } from './runtime.mjs';
+const setup = () => {
+  const c = defaultConfig();
+  c.ai.enabled = true;
+  c.ai.providers = ['a', 'b'].map(id => ({
+    id,
+    name: id,
+    baseUrl: 'https://api.openai.com/v1',
+    protocol: 'chat',
+    model: 'model',
+    enabled: true,
+    timeoutMs: 1000,
+    retries: 0,
+    maxTokens: 100,
+    temperature: 0.5,
+    secretRef: `provider:${id}`,
+  }));
+  c.ai.chain = ['a', 'b'];
+  return c;
+};
+const input = { messages: [{ role: 'user', content: 'Hello' }] };
+const good = () =>
+  Response.json({
+    choices: [{ message: { role: 'assistant', content: 'OK' }, finish_reason: 'stop' }],
+    usage: { total_tokens: 3 },
+  });
+const options = fetchImpl => ({ fetchImpl, allowHosts: ['api.openai.com'] });
+test('disabled runtime cannot silently fall through', async () => {
+  await assert.rejects(
+    executeProviderChain(defaultConfig(), input, async () => '', options(good)),
+    e => e.code === 'AI_DISABLED',
+  );
+});
+test('retryable errors use ordered fallback and redact diagnostics', async () => {
+  let n = 0;
+  const r = await executeProviderChain(
+    setup(),
+    input,
+    async () => 'secret',
+    options(async () => (++n === 1 ? new Response('secret provider error', { status: 429 }) : good())),
+  );
+  assert.equal(r.choices[0].message.content, 'OK');
+  assert.deepEqual(
+    r.attempts.map(a => a.providerId),
+    ['a', 'b'],
+  );
+  assert.ok(!JSON.stringify(r).includes('secret'));
+});
+test('nonretryable and refusal responses never trigger fallback', async () => {
+  for (const response of [
+    new Response('', { status: 400 }),
+    Response.json({ choices: [{ message: { refusal: 'No' }, finish_reason: 'stop' }] }),
+  ]) {
+    let n = 0;
+    await assert.rejects(
+      executeProviderChain(
+        setup(),
+        input,
+        async () => 'key',
+        options(async () => {
+          n++;
+          return response;
+        }),
+      ),
+    );
+    assert.equal(n, 1);
+  }
+});
+test('explicit service chain overrides default and prepends configured prompts', async () => {
+  const c = setup();
+  c.billing.services[0].chain = ['b'];
+  c.billing.services[0].prompt = 'Service prompt';
+  let body;
+  const r = await executeProviderChain(
+    c,
+    { ...input, serviceId: 'tuvi' },
+    async () => 'key',
+    options(async (u, o) => {
+      body = JSON.parse(o.body);
+      return good();
+    }),
+  );
+  assert.equal(r.attempts[0].providerId, 'b');
+  assert.ok(body.messages.some(m => m.content === 'Service prompt'));
+});
+test('untrusted host, redirects and nontext input rejected', async () => {
+  await assert.rejects(
+    executeProviderChain(setup(), input, async () => 'key', { fetchImpl: good }),
+    e => e.code === 'HOST_NOT_ALLOWED',
+  );
+  await assert.rejects(
+    executeProviderChain(
+      setup(),
+      input,
+      async () => 'key',
+      options(async () => new Response('', { status: 302 })),
+    ),
+    e => e.code === 'PROVIDER_REDIRECT',
+  );
+  await assert.rejects(
+    executeProviderChain(setup(), { messages: [{ role: 'user', content: [] }] }, async () => 'key', options(good)),
+    e => e.code === 'INVALID_MESSAGES',
+  );
+});
+test('attempt cap enforced and missing secret fails closed', async () => {
+  const c = setup();
+  c.ai.maxAttempts = 1;
+  let n = 0;
+  await assert.rejects(
+    executeProviderChain(
+      c,
+      input,
+      async () => 'key',
+      options(async () => {
+        n++;
+        return new Response('', { status: 503 });
+      }),
+    ),
+  );
+  assert.equal(n, 1);
+  await assert.rejects(
+    executeProviderChain(c, input, async () => null, options(good)),
+    e => e.code === 'SECRET_MISSING',
+  );
+});
+test('responses protocol produces compatible plain text', async () => {
+  const c = setup();
+  c.ai.providers[0].protocol = 'responses';
+  let url;
+  const r = await executeProviderChain(
+    c,
+    input,
+    async () => 'key',
+    options(async u => {
+      url = u;
+      return Response.json({ output: [{ type: 'message', content: [{ type: 'output_text', text: 'hello' }] }] });
+    }),
+  );
+  assert.ok(url.endsWith('/responses'));
+  assert.equal(r.choices[0].message.content, 'hello');
+});
+test('webhook HMAC verified independently and tampering rejected', async () => {
+  const data = { amount: 10000, code: '00', currency: 'VND', orderCode: 123, reference: 'ref' };
+  const signature = createHmac('sha256', 'checksum')
+    .update('amount=10000&code=00&currency=VND&orderCode=123&reference=ref')
+    .digest('hex');
+  assert.deepEqual(await verifyPayosWebhook({ data, signature }, 'checksum'), data);
+  await assert.rejects(verifyPayosWebhook({ data: { ...data, amount: 999 }, signature }, 'checksum'));
+});
+test('payment adapter signs authoritative snapshot and sends one request', async () => {
+  let body;
+  const config = defaultConfig().integrations.payos;
+  config.enabled = true;
+  config.clientId = 'client';
+  const response = await createPaymentRequest(
+    config,
+    { orderCode: 42, amountVnd: 10000, description: 'AX42', expiresAt: 2000000000 },
+    { apiKey: 'key', checksumKey: 'checksum' },
+    {
+      fetchImpl: async (u, o) => {
+        body = JSON.parse(o.body);
+        return Response.json({ code: '00', data: { orderCode: 42 } });
+      },
+    },
+  );
+  assert.equal(body.amount, 10000);
+  assert.equal(
+    body.signature,
+    createHmac('sha256', 'checksum')
+      .update(`amount=10000&cancelUrl=${config.cancelUrl}&description=AX42&orderCode=42&returnUrl=${config.returnUrl}`)
+      .digest('hex'),
+  );
+  assert.equal(response.orderCode, 42);
+});
+test('integration readiness rejects unsafe callbacks', () => {
+  assert.ok(
+    validateIntegration('zalo', {
+      enabled: true,
+      appId: '123',
+      callbackUrl: 'http://localhost',
+      returnUrl: 'https://site.com',
+    }).length,
+  );
+});
+test('provider test uses exact requested ID with safe prompt and capped output', async () => {
+  const { testProvider } = await import('./runtime.mjs');
+  const c = setup();
+  c.ai.enabled = false;
+  let body;
+  const result = await testProvider(
+    c,
+    'b',
+    async () => 'key',
+    options(async (u, o) => {
+      body = JSON.parse(o.body);
+      return good();
+    }),
+  );
+  assert.equal(result.attempts[0].providerId, 'b');
+  assert.equal(body.max_tokens, 32);
+  assert.equal(body.messages.length, 1);
+  assert.equal(body.messages[0].content, 'Reply with OK.');
+});
+test('provider response size limit rejects before decoding', async () => {
+  await assert.rejects(
+    executeProviderChain(
+      setup(),
+      input,
+      async () => 'key',
+      options(async () => new Response('x', { headers: { 'content-length': '2000000' } })),
+    ),
+    e => e.code === 'RESPONSE_TOO_LARGE',
+  );
+});
+test('network failures fall back and persist circuit health', async () => {
+  const c = setup();
+  let n = 0;
+  const failed = [],
+    succeeded = [];
+  const r = await executeProviderChain(c, input, async () => 'key', {
+    ...options(async () => {
+      if (++n === 1) throw new TypeError('network secret');
+      return good();
+    }),
+    healthStore: {
+      get: async () => null,
+      recordFailure: async (...a) => failed.push(a),
+      recordSuccess: async (...a) => succeeded.push(a),
+    },
+  });
+  assert.equal(r.attempts[0].outcome, 'network_error');
+  assert.equal(failed[0][0], 'a');
+  assert.equal(succeeded[0][0], 'b');
+});
+test('open circuit skips provider until cooldown expires', async () => {
+  const c = setup();
+  const r = await executeProviderChain(c, input, async () => 'key', {
+    ...options(good),
+    now: () => 10000,
+    healthStore: {
+      get: async id => (id === 'a' ? { failures: 3, lastFailureAt: 9000 } : null),
+      recordFailure: async () => {},
+      recordSuccess: async () => {},
+    },
+  });
+  assert.equal(r.attempts[0].outcome, 'circuit_open');
+  assert.equal(r.attempts[1].providerId, 'b');
+});
+test('malformed successful response never bypasses to another provider', async () => {
+  const c = setup();
+  c.ai.providers[0].protocol = 'responses';
+  let calls = 0;
+  await assert.rejects(
+    executeProviderChain(
+      c,
+      input,
+      async () => 'key',
+      options(async () => {
+        calls++;
+        return Response.json({ output: { bad: true } });
+      }),
+    ),
+    e => e.code === 'INVALID_PROVIDER_RESPONSE',
+  );
+  assert.equal(calls, 1);
+});
+test('invalid provider credentials mark unhealthy and skip retries to next provider', async () => {
+  const c = setup();
+  c.ai.providers[0].retries = 3;
+  const failures = [];
+  let calls = 0;
+  const r = await executeProviderChain(c, input, async () => 'key', {
+    ...options(async () => (++calls === 1 ? new Response('', { status: 401 }) : good())),
+    healthStore: { get: async () => null, recordFailure: async id => failures.push(id), recordSuccess: async () => {} },
+  });
+  assert.equal(calls, 2);
+  assert.equal(r.attempts[0].outcome, 'authentication_failed');
+  assert.equal(r.attempts[1].providerId, 'b');
+  assert.deepEqual(failures, ['a']);
+});
+test('403 may be a policy refusal and must not bypass restrictions', async () => {
+  let calls = 0;
+  await assert.rejects(
+    executeProviderChain(
+      setup(),
+      input,
+      async () => 'key',
+      options(async () => {
+        calls++;
+        return new Response('', { status: 403 });
+      }),
+    ),
+  );
+  assert.equal(calls, 1);
+});
+test('trailing-dot internal endpoint rejected even if added to host allowlist', async () => {
+  const c = setup();
+  c.ai.providers[0].baseUrl = 'https://metadata.google.internal./v1';
+  await assert.rejects(
+    executeProviderChain(c, input, async () => 'key', { fetchImpl: good, allowHosts: ['metadata.google.internal.'] }),
+    e => e.code === 'HOST_NOT_ALLOWED',
+  );
+});
+test('OpenCode inherited connection supplies routing session only to its host', async () => {
+  for (const host of ['opencode.ai', 'api.openai.com']) {
+    const c = setup();
+    c.ai.providers[0].baseUrl = `https://${host}/v1`;
+    let headers;
+    await executeProviderChain(c, input, async () => 'key', {
+      allowHosts: [host],
+      fetchImpl: async (u, o) => {
+        headers = o.headers;
+        return good();
+      },
+    });
+    assert.equal(headers['x-opencode-session'], host === 'opencode.ai' ? 'astrox-web' : undefined);
+  }
+});
+test('OpenCode Muse retains low reasoning and diagnostic allows reasoning budget', async () => {
+  const { testProvider } = await import('./runtime.mjs');
+  const c = setup();
+  Object.assign(c.ai.providers[0], {
+    baseUrl: 'https://opencode.ai/zen/go/v1',
+    model: 'muse-spark-1.3-contributor',
+    protocol: 'responses',
+    maxTokens: 8000,
+  });
+  let body;
+  await testProvider(c, 'a', async () => 'key', {
+    allowHosts: ['opencode.ai'],
+    fetchImpl: async (u, o) => {
+      body = JSON.parse(o.body);
+      return Response.json({ output: [{ type: 'message', content: [{ type: 'output_text', text: 'OK' }] }] });
+    },
+  });
+  assert.equal(body.reasoning.effort, 'low');
+  assert.equal(body.max_output_tokens, 512);
+});

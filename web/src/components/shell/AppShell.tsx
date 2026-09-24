@@ -16,6 +16,7 @@ import {RuntimeReporting} from "./RuntimeReporting";
 import {PaidReadingConsent} from "@/components/kit/PaidReadingConsent";
 import Link from "next/link";
 import { FeatureIcon, FEATURE_BY_PATH } from "@/components/kit/FeatureIcon";
+import { MODULES, moduleById } from "../../../../services/admin/modules.ts";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { LyCloudDivider } from "@/components/kit/motifs/LyCloudDivider";
@@ -37,19 +38,14 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/", label: "Trang chủ", accent: "#187650" },
-  { href: "/tuvi", label: "Tử Vi", accent: "#187650" },
-  { href: "/cunghoangdao", label: "Cung Hoàng Đạo", accent: "#187650" },
-  { href: "/kinhdich", label: "Kinh Dịch", accent: "#187650" },
-  { href: "/battu", label: "Bát Tự", accent: "#187650" },
-  { href: "/thansohoc", label: "Thần Số Học", accent: "#187650" },
-  { href: "/tarot", label: "Tarot", accent: "#187650" },
+  ...MODULES.filter(m => m.id !== "compat").map(m => ({ href: m.route, label: m.name, accent: "#187650" })),
   { href: "/hoso", label: "Hồ sơ", accent: "#187650" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const mobileTitle = !isHome ? NAV.find(item => item.href !== "/" && (pathname === item.href || pathname.startsWith(`${item.href}/`)))?.label ?? (pathname === "/tuonghop" ? "Tương Hợp" : pathname === "/dieukhoan" ? "Điều khoản" : "") : "";
+  const mobileTitle = !isHome ? NAV.find(item => item.href !== "/" && (pathname === item.href || pathname.startsWith(`${item.href}/`)))?.label ?? (pathname === moduleById("compat")?.route ? moduleById("compat")?.name : pathname === "/dieukhoan" ? "Điều khoản" : "") : "";
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {

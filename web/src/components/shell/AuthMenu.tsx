@@ -12,7 +12,7 @@ import styles from "./AuthMenu.module.css";
 export function AuthMenu() {
   const { loggedIn, displayName, astroxUser, logout } = useAuth();
   const profile = useProfile();
-  // Tên gọi người dùng tự đặt ưu tiên trước tên từ kênh đăng nhập (Zalo/Supabase).
+  // Tên gọi người dùng tự đặt ưu tiên trước tên từ kênh đăng nhập (Zalo).
   const name = profile?.name || displayName;
   const router = useRouter();
   const id = useId();
@@ -27,11 +27,16 @@ export function AuthMenu() {
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
-  const [previousOpen,setPreviousOpen]=useState(open);
-  if(open!==previousOpen){setPreviousOpen(open);if(open)setPresent(true);}
+  const openRef = useRef(open);
   useEffect(() => {
-    if(open)return;
-    const timer = setTimeout(() => setPresent(false), 160);
+    openRef.current = open;
+    if (open) return;
+    // Timer tắt panel có thể là bản mồ côi từ lần mount/effect trước (StrictMode
+    // dev + provider swap từng để sót, nổ muộn sau khi menu mở lại) — chỉ đóng
+    // khi open vẫn còn false.
+    const timer = setTimeout(() => {
+      if (!openRef.current) setPresent(false);
+    }, 160);
     return () => clearTimeout(timer);
   }, [open]);
   // Mở menu = chạm nhẹ store (TTL 60s bên trong, không spam /api/me).
@@ -67,7 +72,7 @@ export function AuthMenu() {
     // click ngoài vẫn đóng qua listener pointerdown dưới đó.
     if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget)) close();
   }}>
-    <button ref={trigger} type="button" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open} aria-controls={present ? id : undefined} aria-label={`Tài khoản ${name}`} className={styles.trigger}>{avatar}</button>
+    <button ref={trigger} type="button" onClick={() => { if (!open) setPresent(true); setOpen(!open); }} aria-haspopup="menu" aria-expanded={open} aria-controls={present ? id : undefined} aria-label={`Tài khoản ${name}`} className={styles.trigger}>{avatar}</button>
     {present && <div ref={menu} id={id} role="menu" aria-label="Menu tài khoản" className={styles.panel} data-open={open} inert={!open}>
       <div className={styles.identity}><span className={styles.avatar}>{avatar}</span><div><span className={styles.status}>{preview ? "Xem thử · localhost" : "Đã đăng nhập"}</span><h2>{name}</h2></div></div>
       {astroxUser && <div className={styles.wallet}><button role="menuitem" className={styles.walletInfo} onClick={() => go("/hoso?section=points")} aria-label="Mở Ví AstroX Point"><div><span><FeatureIcon name="wallet" size={17}/>AstroX Point</span><p>{preview ? "1.000" : status === "error" && points === null ? "Chưa tải được" : points === null ? "…" : points.toLocaleString("vi-VN")}<small>{preview ? "minh họa" : !preview && points !== null ? "Point" : ""}</small></p></div></button><button role="menuitem" className={styles.walletPlus} disabled={preview} onClick={() => { close(); setTopupOpen(true); }} aria-label="Nạp Point"><FeatureIcon name="explore" size={19}/></button></div>}

@@ -31,8 +31,6 @@ import type { CastResult, KdHistoryEntry } from "@/lib/kinhdich";
 
 type Phase = "input" | "ritual" | "result";
 
-const MANUAL_INPUT_CLASS =
-  "w-full rounded-xl border border-white/80 bg-white/70 px-3.5 py-2.5 text-[15px] text-muc outline-none transition-colors placeholder:text-muc/40 focus:border-son";
 
 export function KinhDichClient() {
   const stopSound = useRef<(() => void) | null>(null);
@@ -142,7 +140,6 @@ export function KinhDichClient() {
     setPhase("result");
   }, []);
 
-  const currentName = cast ? hexagramName(cast.upper, cast.lower) : "";
   const currentHao = cast ? HAO_NAMES[cast.movingPos] : "";
 
   return <section className={styles.page}>

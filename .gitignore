@@ -1,2 +1,16 @@
 # Local admin bootstrap credentials, SQLite and generated diagnostics
 .dev-admin/
+
+# Local CodeGraph index
+.codegraph/
+
+# Local tool and wrangler state
+.playwright-mcp/
+.wrangler/
+services/backend/.wrangler/
+services/backend/.dev.vars
+.mimocode/
+.zcodeignore
+
+# Ad-hoc screenshots at repo root
+/*.png

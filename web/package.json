@@ -13,28 +13,38 @@
     "qa:admin": "node scripts/admin-qa.mjs && node scripts/admin-flows-qa.mjs",
     "qa:loading": "node scripts/loading-audit-qa.cjs && node scripts/loading-progress-qa.mjs",
     "qa:admin:data": "node scripts/admin-data-qa.mjs",
-    "qa:admin:metrics": "node scripts/admin-metrics-qa.mjs"
+    "qa:admin:metrics": "node scripts/admin-metrics-qa.mjs",
+    "test": "npm run test:unit && npm run test:prompts",
+    "test:unit": "cd .. && node --test services/admin/*.test.mjs services/backend/*.test.mjs services/rewards/*.test.mjs web/tests/*.test.mjs",
+    "test:prompts": "node ../scripts/prompt-runtime-qa.cjs",
+    "typecheck": "tsc --noEmit && tsc -p ../services/backend/tsconfig.json",
+    "knip": "knip --include files,exports,types,dependencies",
+    "deploy:worker": "node ../scripts/deploy-worker.mjs",
+    "format": "prettier --ignore-path ../.prettierignore --write ../services ../functions",
+    "format:check": "prettier --ignore-path ../.prettierignore --check ../services ../functions"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.116.0",
     "astronomy-engine": "^2.1.19",
     "iztro": "^2.6.1",
     "lunar-typescript": "^1.8.6",
     "next": "16.3.5",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "three": "^0.186.0"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/three": "^0.186.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
+    "knip": "^6.38.0",
     "playwright": "^1.63.0",
+    "prettier": "^3.9.9",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=22.15"
   }
 }

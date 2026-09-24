@@ -72,15 +72,6 @@ export const BATU_SHISHEN_VI: Record<string, string> = {
 
 export const BATU_WX_LABEL: Record<WxKey, string> = { moc: "Mộc", hoa: "Hoả", tho: "Thổ", kim: "Kim", thuy: "Thuỷ" };
 
-/** Màu ngũ hành dùng cho UI (Kim vàng / Mộc ngọc / Thuỷ chàm / Hoả son / Thổ nâu). */
-export const BATU_WX_COLOR: Record<WxKey, string> = {
-  kim: "var(--color-kim-deep)",
-  moc: "var(--color-ngoc-deep)",
-  thuy: "var(--color-cham)",
-  hoa: "var(--color-son-deep)",
-  tho: "#8a5a2b",
-};
-
 /* ------------------------------------------------------------------ */
 /* Quan hệ Địa Chi — Lục Hợp / Lục Xung / Tam Hợp / Lục Hại / Hình     */
 /* ------------------------------------------------------------------ */

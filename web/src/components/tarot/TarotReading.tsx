@@ -1,1 +1,1 @@
-export { StructuredReading as TarotReading, splitReadingSections as splitTarotReading } from "@/components/kit/StructuredReading";
+export { StructuredReading as TarotReading } from "@/components/kit/StructuredReading";

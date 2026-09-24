@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef, type CSSProperties } from "react";
 import { Fragment } from "react";
 import { FeatureIcon, FEATURE_BY_PATH } from "@/components/kit/FeatureIcon";
+import { MODULES } from "../../../../services/admin/modules.ts";
 
 interface DockItem {
   href: string;
@@ -36,14 +37,7 @@ const DOCK: DockItem[] = [
   },
 ];
 
-const SHEET_LINKS = [
-  { href: "/cunghoangdao", label: "Cung Hoàng Đạo", desc: "Khám phá bản đồ sao" },
-  { href: "/kinhdich", label: "Kinh Dịch", desc: "Gieo quẻ & chiêm nghiệm" },
-  { href: "/battu", label: "Bát Tự", desc: "Tứ trụ ngũ hành" },
-  { href: "/thansohoc", label: "Thần Số Học", desc: "Số chủ đạo & vòng năm" },
-  { href: "/tarot", label: "Tarot", desc: "Rút lá & lời ngỏ" },
-  { href: "/tuonghop", label: "Tương Hợp", desc: "Độ hợp của hai người" },
-];
+const SHEET_LINKS = MODULES.filter(m => m.id !== "tuvi").map(m => ({ href: m.route, label: m.name, desc: m.description }));
 
 export function BottomDock() {
   const pathname = usePathname();

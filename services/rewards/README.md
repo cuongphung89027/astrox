@@ -7,6 +7,7 @@ Rewarded web ads use the Google Publisher Tag opt-in flow and server-owned sessi
 Deployment requires `migrations/reward-events.sql` before the Worker. Registration has a durable event inside identity creation and a five-minute recovery cron. Attendance stores its config snapshot in the atomic receipt. Ad sessions freeze their amount/version at start. First-topup uses the current published rules and authoritative settled-payment history.
 
 Backend integration requirements:
+
 - All inputs come from authenticated session, stored referral identity and verified payment facts. Never accept inviter, amount, settlement status or attendance date from a claim request.
 - Store first referral attribution at verified new-user creation; a stable identity survives account recreation. Enforce no self-referral or cycles. Existing users cannot attach a new referral retroactively.
 - Transactionally write reward keys and wallet ledger credit for both beneficiaries. Unique keys in returned rewards are hints for DB constraints, not an in-memory protection mechanism.

@@ -30,7 +30,7 @@ export function AccountPage() {
   const titles: Record<string,string> = {personal:"Thông tin cá nhân",account:"Tài khoản",preferences:"Hiển thị & trải nghiệm",points:"AstroX Point",earn:"Kiếm thêm Point"};
   const profile = useProfile();
   const { open } = useProfileModal();
-  const { loggedIn, ready, displayName, astroxUser, supabaseUser, logout } = useAuth();
+  const { loggedIn, ready, displayName, astroxUser, logout } = useAuth();
   const settings = usePreferences();
   const preview = astroxUser?.id === "localhost-preview";
   const { points, status: pointsStatus, refresh: refreshBalance } = usePointsBalance(!preview);
@@ -68,7 +68,7 @@ export function AccountPage() {
       <div>
         <span className={styles.authStatus} role="status">{!ready ? "Đang kiểm tra đăng nhập…" : loggedIn ? preview ? "Xem thử · localhost" : astroxUser ? "Đã đăng nhập bằng Zalo" : "Đã đăng nhập" : "Chưa đăng nhập"}</span>
         <h2>{name}</h2>
-        {loggedIn && <p>{supabaseUser?.email || "Quản lý tài khoản và thông tin cá nhân của bạn."}</p>}
+        {loggedIn && <p>Quản lý tài khoản và thông tin cá nhân của bạn.</p>}
         {loggedIn && !preview && <p role="status" className={styles.syncStatus}>{syncStatus}</p>}
       </div>
       {ready && (loggedIn ? <Link className={styles.identityEdit} href="/hoso?section=personal">{profile ? "Chỉnh sửa" : "Thiết lập"} ↗</Link> : <div className={styles.loginAction}><button className={styles.primaryLogin} onClick={openLoginDialog}>Đăng nhập</button></div>)}
@@ -90,7 +90,7 @@ export function AccountPage() {
       </>}
       {section === "account" && <>
 
-        <section className={styles.section}><header><h2><FeatureIcon name="wallet" size={22} />Tài khoản</h2></header>{loggedIn ? <><div className={styles.row}><div><h3>Tài khoản đang đăng nhập</h3><p>{preview ? "Tài khoản xem thử trên localhost" : astroxUser ? "Zalo" : supabaseUser?.email || "Tài khoản AstroX"}</p></div><span className={styles.connected}>Đã đăng nhập</span></div>{astroxUser && <div className={styles.row}><div><h3>AstroX Point</h3><p>Điểm nạp bằng tiền, dùng để mở khóa dịch vụ AstroX.</p><p>{preview ? "1.000 Point · số dư minh họa" : pointsError ? "Chưa tải được số dư" : points === null ? "Đang tải…" : `${points.toLocaleString("vi-VN")} Point`}</p></div><span className={styles.rowActions}><Link className={styles.rowLink} href="/hoso?section=points">Ví Point ↗</Link><button disabled={preview} onClick={() => setTopup(true)}>{preview ? "Xem thử" : "Nạp Point ↗"}</button></span></div>}<button className={styles.logout} disabled={loggingOut} onClick={async () => { if (!confirm("Đăng xuất khỏi AstroX?")) return; setLoggingOut(true); try { await logout(); } finally { setLoggingOut(false); } }}>{loggingOut ? "Đang đăng xuất…" : "Đăng xuất"}</button></> : <div className={styles.row}><div><h3>AstroX Point</h3><p>Đăng nhập để xem số dư, nạp Point và quản lý dịch vụ đã mở khóa.</p></div><button onClick={openLoginDialog} disabled={!ready}>Đăng nhập ↗</button></div>}</section>
+        <section className={styles.section}><header><h2><FeatureIcon name="wallet" size={22} />Tài khoản</h2></header>{loggedIn ? <><div className={styles.row}><div><h3>Tài khoản đang đăng nhập</h3><p>{preview ? "Tài khoản xem thử trên localhost" : astroxUser ? "Zalo" : "Tài khoản AstroX"}</p></div><span className={styles.connected}>Đã đăng nhập</span></div>{astroxUser && <div className={styles.row}><div><h3>AstroX Point</h3><p>Điểm nạp bằng tiền, dùng để mở khóa dịch vụ AstroX.</p><p>{preview ? "1.000 Point · số dư minh họa" : pointsError ? "Chưa tải được số dư" : points === null ? "Đang tải…" : `${points.toLocaleString("vi-VN")} Point`}</p></div><span className={styles.rowActions}><Link className={styles.rowLink} href="/hoso?section=points">Ví Point ↗</Link><button disabled={preview} onClick={() => setTopup(true)}>{preview ? "Xem thử" : "Nạp Point ↗"}</button></span></div>}<button className={styles.logout} disabled={loggingOut} onClick={async () => { if (!confirm("Đăng xuất khỏi AstroX?")) return; setLoggingOut(true); try { await logout(); } finally { setLoggingOut(false); } }}>{loggingOut ? "Đang đăng xuất…" : "Đăng xuất"}</button></> : <div className={styles.row}><div><h3>AstroX Point</h3><p>Đăng nhập để xem số dư, nạp Point và quản lý dịch vụ đã mở khóa.</p></div><button onClick={openLoginDialog} disabled={!ready}>Đăng nhập ↗</button></div>}</section>
       </>}
       {(section === "points" || section === "earn") && <PointsHome view={section === "earn" ? "earn" : "wallet"} />}
       {section === "preferences" && <>

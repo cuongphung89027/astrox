@@ -1,560 +1,601 @@
 export default {
-  "source": "index.html",
-  "system": "Bạn là một chuyên gia chiêm tinh & dịch lý kỳ cựu, viết tiếng Việt tự nhiên, thẳng thắn.\nQUY TẮC BẮT BUỘC:\n1. Chỉ luận giải dựa trên dữ liệu được cung cấp — KHÔNG tự bịa thêm dữ kiện không có trong dữ liệu.\n2. Nếu ảnh mờ hoặc thiếu thông tin, nói rõ \"không đọc được rõ phần này\" thay vì đoán bừa.\n3. Đi thẳng vào nội dung phân tích. CẤM chào hỏi mở đầu kiểu \"Chào bạn/Cường ơi\", CẤM đoạn kết disclaimer kiểu \"đây chỉ là góc nhìn tham khảo\", \"không phải phán xét tuyệt đối\", \"hãy cân nhắc khi áp dụng\".\n4. Văn phong: đoạn ngắn, dùng **in đậm** cho tiêu đề nhỏ và gạch đầu dòng bằng dấu \"-\".\n5. Không đưa dự đoán y tế, pháp lý, tài chính mang tính khẳng định tuyệt đối — dùng ngôn ngữ khả năng.\n6. Trả lời đúng độ dài được yêu cầu, không lan man.",
-  "topics": {
-    "TUVI_TOPICS": [
+  source: 'index.html',
+  system:
+    'Bạn là một chuyên gia chiêm tinh & dịch lý kỳ cựu, viết tiếng Việt tự nhiên, thẳng thắn.\nQUY TẮC BẮT BUỘC:\n1. Chỉ luận giải dựa trên dữ liệu được cung cấp — KHÔNG tự bịa thêm dữ kiện không có trong dữ liệu.\n2. Nếu ảnh mờ hoặc thiếu thông tin, nói rõ "không đọc được rõ phần này" thay vì đoán bừa.\n3. Đi thẳng vào nội dung phân tích. CẤM chào hỏi mở đầu kiểu "Chào bạn/Cường ơi", CẤM đoạn kết disclaimer kiểu "đây chỉ là góc nhìn tham khảo", "không phải phán xét tuyệt đối", "hãy cân nhắc khi áp dụng".\n4. Văn phong: đoạn ngắn, dùng **in đậm** cho tiêu đề nhỏ và gạch đầu dòng bằng dấu "-".\n5. Không đưa dự đoán y tế, pháp lý, tài chính mang tính khẳng định tuyệt đối — dùng ngôn ngữ khả năng.\n6. Trả lời đúng độ dài được yêu cầu, không lan man.',
+  topics: {
+    TUVI_TOPICS: [
       {
-        "id": "tim-hieu-ban-than",
-        "icon": "☾",
-        "title": "Tìm hiểu bản thân",
-        "desc": "Các vì sao mô tả những khía cạnh chân thật nhất về bạn.",
-        "subs": [
+        id: 'tim-hieu-ban-than',
+        icon: '☾',
+        title: 'Tìm hiểu bản thân',
+        desc: 'Các vì sao mô tả những khía cạnh chân thật nhất về bạn.',
+        subs: [
           {
-            "id": "tinh-cach",
-            "label": "Tính cách & khuynh hướng",
-            "prompt": "Phân tích tính cách và khuynh hướng chính dựa trên cung Mệnh và các sao chính. Chia đoạn có tiêu đề in đậm: **Điểm mạnh**, **Điểm cần lưu ý**, **Lời khuyên rèn luyện**. ~260-440 từ."
+            id: 'tinh-cach',
+            label: 'Tính cách & khuynh hướng',
+            prompt:
+              'Phân tích tính cách và khuynh hướng chính dựa trên cung Mệnh và các sao chính. Chia đoạn có tiêu đề in đậm: **Điểm mạnh**, **Điểm cần lưu ý**, **Lời khuyên rèn luyện**. ~260-440 từ.',
           },
           {
-            "id": "thu-thach",
-            "label": "Thử thách cá tính, hành trình",
-            "prompt": "Phân tích những thử thách cá tính và hành trình trưởng thành dựa trên lá số (cung Tật Ách, các sao xung khắc nếu có). ~220-370 từ."
+            id: 'thu-thach',
+            label: 'Thử thách cá tính, hành trình',
+            prompt:
+              'Phân tích những thử thách cá tính và hành trình trưởng thành dựa trên lá số (cung Tật Ách, các sao xung khắc nếu có). ~220-370 từ.',
           },
           {
-            "id": "yeu-to-tac-dong",
-            "label": "Yếu tố tác động cuộc đời",
-            "prompt": "Phân tích các yếu tố (Tuần/Triệt, sao đặc biệt nếu đọc được) tác động đến cuộc đời mệnh chủ. ~220-370 từ."
+            id: 'yeu-to-tac-dong',
+            label: 'Yếu tố tác động cuộc đời',
+            prompt:
+              'Phân tích các yếu tố (Tuần/Triệt, sao đặc biệt nếu đọc được) tác động đến cuộc đời mệnh chủ. ~220-370 từ.',
           },
           {
-            "id": "no-nghiep",
-            "label": "Nợ nghiệp",
-            "prompt": "Phân tích khía cạnh 'nợ nghiệp' — bài học tinh thần xuyên suốt cuộc đời mà lá số gợi ý. Giữ giọng điệu nhẹ nhàng, không bi quan hoá. ~190-340 từ."
-          }
-        ]
+            id: 'no-nghiep',
+            label: 'Nợ nghiệp',
+            prompt:
+              "Phân tích khía cạnh 'nợ nghiệp' — bài học tinh thần xuyên suốt cuộc đời mà lá số gợi ý. Giữ giọng điệu nhẹ nhàng, không bi quan hoá. ~190-340 từ.",
+          },
+        ],
       },
       {
-        "id": "su-nghiep-tai-loc",
-        "icon": "⌂",
-        "title": "Sự nghiệp & tiền tài",
-        "desc": "Tổng quan tài phú, sự nghiệp cùng nhận định và lời khuyên.",
-        "subs": [
+        id: 'su-nghiep-tai-loc',
+        icon: '⌂',
+        title: 'Sự nghiệp & tiền tài',
+        desc: 'Tổng quan tài phú, sự nghiệp cùng nhận định và lời khuyên.',
+        subs: [
           {
-            "id": "tong-quan",
-            "label": "Tổng quan tài phú, sự nghiệp",
-            "prompt": "Tổng quan tài phú và sự nghiệp dựa trên cung Quan Lộc, Tài Bạch. ~240-420 từ."
+            id: 'tong-quan',
+            label: 'Tổng quan tài phú, sự nghiệp',
+            prompt: 'Tổng quan tài phú và sự nghiệp dựa trên cung Quan Lộc, Tài Bạch. ~240-420 từ.',
           },
           {
-            "id": "con-nguoi-cong-viec",
-            "label": "Con người trong công việc",
-            "prompt": "Mô tả phong cách làm việc, cách mệnh chủ thể hiện trong môi trường công sở dựa trên lá số. ~220-370 từ."
+            id: 'con-nguoi-cong-viec',
+            label: 'Con người trong công việc',
+            prompt:
+              'Mô tả phong cách làm việc, cách mệnh chủ thể hiện trong môi trường công sở dựa trên lá số. ~220-370 từ.',
           },
           {
-            "id": "nganh-nghe",
-            "label": "Ngành nghề phù hợp",
-            "prompt": "Liệt kê 5-6 ngành nghề/vị trí cụ thể phù hợp, mỗi ngành kèm 1 câu lý do gắn với sao/cung cụ thể, dạng gạch đầu dòng."
+            id: 'nganh-nghe',
+            label: 'Ngành nghề phù hợp',
+            prompt:
+              'Liệt kê 5-6 ngành nghề/vị trí cụ thể phù hợp, mỗi ngành kèm 1 câu lý do gắn với sao/cung cụ thể, dạng gạch đầu dòng.',
           },
           {
-            "id": "loi-khuyen-tc",
-            "label": "Lời khuyên tài chính & sự nghiệp",
-            "prompt": "Đưa ra 4-5 lời khuyên cụ thể, thực tế về tài chính và sự nghiệp dựa trên lá số, dạng gạch đầu dòng."
-          }
-        ]
+            id: 'loi-khuyen-tc',
+            label: 'Lời khuyên tài chính & sự nghiệp',
+            prompt:
+              'Đưa ra 4-5 lời khuyên cụ thể, thực tế về tài chính và sự nghiệp dựa trên lá số, dạng gạch đầu dòng.',
+          },
+        ],
       },
       {
-        "id": "van-trinh-su-nghiep",
-        "icon": "↗",
-        "title": "Vận trình sự nghiệp",
-        "desc": "Phân tích hành trình và hướng đi phát triển sự nghiệp phù hợp.",
-        "subs": [
+        id: 'van-trinh-su-nghiep',
+        icon: '↗',
+        title: 'Vận trình sự nghiệp',
+        desc: 'Phân tích hành trình và hướng đi phát triển sự nghiệp phù hợp.',
+        subs: [
           {
-            "id": "van-trinh-cong-danh",
-            "label": "Vận trình công danh",
-            "prompt": "Phân tích hành trình công danh qua các giai đoạn tuổi tác (dựa trên đại vận nếu đọc được từ lá số, hoặc theo giai đoạn tuổi tổng quát). ~290-510 từ, có mốc thời gian rõ ràng."
-          }
-        ]
+            id: 'van-trinh-cong-danh',
+            label: 'Vận trình công danh',
+            prompt:
+              'Phân tích hành trình công danh qua các giai đoạn tuổi tác (dựa trên đại vận nếu đọc được từ lá số, hoặc theo giai đoạn tuổi tổng quát). ~290-510 từ, có mốc thời gian rõ ràng.',
+          },
+        ],
       },
       {
-        "id": "hieu-ban-doi",
-        "icon": "♡",
-        "title": "Hiểu bạn đời, mối quan hệ",
-        "desc": "Bức tranh chi tiết về bạn đời, gia đình, tham vọng họ, mối quan hệ.",
-        "subs": [
+        id: 'hieu-ban-doi',
+        icon: '♡',
+        title: 'Hiểu bạn đời, mối quan hệ',
+        desc: 'Bức tranh chi tiết về bạn đời, gia đình, tham vọng họ, mối quan hệ.',
+        subs: [
           {
-            "id": "hieu-ban-doi-sub",
-            "label": "Hiểu bạn đời",
-            "prompt": "Phân tích cung Phu Thê để mô tả chân dung bạn đời tiềm năng — tính cách, điều họ coi trọng. ~240-410 từ."
+            id: 'hieu-ban-doi-sub',
+            label: 'Hiểu bạn đời',
+            prompt:
+              'Phân tích cung Phu Thê để mô tả chân dung bạn đời tiềm năng — tính cách, điều họ coi trọng. ~240-410 từ.',
           },
           {
-            "id": "tac-dong-nguoi-ngoai",
-            "label": "Tác động người ngoài",
-            "prompt": "Phân tích cách các mối quan hệ bên ngoài (gia đình, bạn bè) ảnh hưởng đến đường tình duyên dựa trên lá số. ~200-340 từ."
+            id: 'tac-dong-nguoi-ngoai',
+            label: 'Tác động người ngoài',
+            prompt:
+              'Phân tích cách các mối quan hệ bên ngoài (gia đình, bạn bè) ảnh hưởng đến đường tình duyên dựa trên lá số. ~200-340 từ.',
           },
           {
-            "id": "hai-nguoi",
-            "label": "Hai người — động lực mối quan hệ",
-            "prompt": "Phân tích động lực chung khi ở trong một mối quan hệ — điểm mạnh và điểm cần dung hoà. ~220-370 từ."
-          }
-        ]
+            id: 'hai-nguoi',
+            label: 'Hai người — động lực mối quan hệ',
+            prompt:
+              'Phân tích động lực chung khi ở trong một mối quan hệ — điểm mạnh và điểm cần dung hoà. ~220-370 từ.',
+          },
+        ],
       },
       {
-        "id": "tinh-duyen-hon-nhan",
-        "icon": "❤",
-        "title": "Tình duyên & hôn nhân",
-        "desc": "Xu hướng tình cảm, mối quan hệ, hôn nhân và con cái.",
-        "subs": [
+        id: 'tinh-duyen-hon-nhan',
+        icon: '❤',
+        title: 'Tình duyên & hôn nhân',
+        desc: 'Xu hướng tình cảm, mối quan hệ, hôn nhân và con cái.',
+        subs: [
           {
-            "id": "ban-trong-tinh-yeu",
-            "label": "Bạn trong tình yêu",
-            "prompt": "Mô tả cách mệnh chủ thể hiện và trải nghiệm tình yêu dựa trên cung Phu Thê. ~220-370 từ."
+            id: 'ban-trong-tinh-yeu',
+            label: 'Bạn trong tình yêu',
+            prompt: 'Mô tả cách mệnh chủ thể hiện và trải nghiệm tình yêu dựa trên cung Phu Thê. ~220-370 từ.',
           },
           {
-            "id": "ai-thu-hut",
-            "label": "Ai bị thu hút bởi bạn?",
-            "prompt": "Mô tả kiểu người thường bị thu hút bởi mệnh chủ, dựa trên cung Mệnh. ~190-310 từ."
+            id: 'ai-thu-hut',
+            label: 'Ai bị thu hút bởi bạn?',
+            prompt: 'Mô tả kiểu người thường bị thu hút bởi mệnh chủ, dựa trên cung Mệnh. ~190-310 từ.',
           },
           {
-            "id": "kieu-nguoi-gap",
-            "label": "Những kiểu người thường gặp trong tình yêu",
-            "prompt": "Mô tả các kiểu đối tượng mệnh chủ thường gặp trong đường tình duyên. ~190-310 từ."
+            id: 'kieu-nguoi-gap',
+            label: 'Những kiểu người thường gặp trong tình yêu',
+            prompt: 'Mô tả các kiểu đối tượng mệnh chủ thường gặp trong đường tình duyên. ~190-310 từ.',
           },
           {
-            "id": "ca-tinh-phu-hop",
-            "label": "Cá tính, chính tinh phù hợp",
-            "prompt": "Gợi ý kiểu cá tính bạn đời phù hợp để bổ trợ cho mệnh chủ. ~190-310 từ."
+            id: 'ca-tinh-phu-hop',
+            label: 'Cá tính, chính tinh phù hợp',
+            prompt: 'Gợi ý kiểu cá tính bạn đời phù hợp để bổ trợ cho mệnh chủ. ~190-310 từ.',
           },
           {
-            "id": "tong-quan-ban-doi",
-            "label": "Tổng quan bạn đời",
-            "prompt": "Tổng hợp tổng quan về bạn đời tiềm năng — 3-4 điểm chính, dạng gạch đầu dòng."
+            id: 'tong-quan-ban-doi',
+            label: 'Tổng quan bạn đời',
+            prompt: 'Tổng hợp tổng quan về bạn đời tiềm năng — 3-4 điểm chính, dạng gạch đầu dòng.',
           },
           {
-            "id": "nhan-dinh-hon-nhan",
-            "label": "Nhận định hôn nhân",
-            "prompt": "Nhận định tổng thể về hôn nhân — thời điểm thuận lợi, điều cần chuẩn bị. ~220-370 từ."
+            id: 'nhan-dinh-hon-nhan',
+            label: 'Nhận định hôn nhân',
+            prompt: 'Nhận định tổng thể về hôn nhân — thời điểm thuận lợi, điều cần chuẩn bị. ~220-370 từ.',
           },
           {
-            "id": "tinh-cach-con-cai",
-            "label": "Tính cách con cái",
-            "prompt": "Phân tích cung Tử Tức để mô tả tính cách con cái tiềm năng. ~190-310 từ."
-          }
-        ]
+            id: 'tinh-cach-con-cai',
+            label: 'Tính cách con cái',
+            prompt: 'Phân tích cung Tử Tức để mô tả tính cách con cái tiềm năng. ~190-310 từ.',
+          },
+        ],
       },
       {
-        "id": "vi-sao-toi-la-toi",
-        "icon": "✦",
-        "title": "Vì sao tôi lại là tôi",
-        "desc": "Sứ mệnh cuộc đời và hướng đi phù hợp nhất với tiềm năng của bạn.",
-        "subs": [
+        id: 'vi-sao-toi-la-toi',
+        icon: '✦',
+        title: 'Vì sao tôi lại là tôi',
+        desc: 'Sứ mệnh cuộc đời và hướng đi phù hợp nhất với tiềm năng của bạn.',
+        subs: [
           {
-            "id": "su-menh",
-            "label": "Vì sao tôi lại là tôi",
-            "prompt": "Viết một đoạn suy ngẫm sâu sắc, mang tính triết lý về 'sứ mệnh' và bản chất cốt lõi của mệnh chủ dựa trên cách cục Mệnh trong lá số. ~290-510 từ, giọng văn giàu cảm xúc nhưng vẫn bám sát dữ liệu."
-          }
-        ]
+            id: 'su-menh',
+            label: 'Vì sao tôi lại là tôi',
+            prompt:
+              "Viết một đoạn suy ngẫm sâu sắc, mang tính triết lý về 'sứ mệnh' và bản chất cốt lõi của mệnh chủ dựa trên cách cục Mệnh trong lá số. ~290-510 từ, giọng văn giàu cảm xúc nhưng vẫn bám sát dữ liệu.",
+          },
+        ],
       },
       {
-        "id": "hoc-hanh-thi-cu",
-        "icon": "✎",
-        "title": "Học hành, thi cử 2026",
-        "desc": "Khả năng học tập, thi cử và định hướng phát triển kiến thức năm 2026.",
-        "subs": [
+        id: 'hoc-hanh-thi-cu',
+        icon: '✎',
+        title: 'Học hành, thi cử 2026',
+        desc: 'Khả năng học tập, thi cử và định hướng phát triển kiến thức năm 2026.',
+        subs: [
           {
-            "id": "hoc-hanh-2026",
-            "label": "Học hành, thi cử 2026",
-            "prompt": "Phân tích khả năng học tập, thi cử trong năm 2026 dựa trên tiểu vận năm nay (nếu tính được) và cung Phụ Mẫu/Quan Lộc. ~260-440 từ."
-          }
-        ]
+            id: 'hoc-hanh-2026',
+            label: 'Học hành, thi cử 2026',
+            prompt:
+              'Phân tích khả năng học tập, thi cử trong năm 2026 dựa trên tiểu vận năm nay (nếu tính được) và cung Phụ Mẫu/Quan Lộc. ~260-440 từ.',
+          },
+        ],
       },
       {
-        "id": "doi-cong-viec-2026",
-        "icon": "⇄",
-        "title": "Có nên thay đổi công việc năm 2026?",
-        "desc": "Tiềm năng chuyển việc năm 2026 — thay đổi hay giữ nguyên?",
-        "subs": [
+        id: 'doi-cong-viec-2026',
+        icon: '⇄',
+        title: 'Có nên thay đổi công việc năm 2026?',
+        desc: 'Tiềm năng chuyển việc năm 2026 — thay đổi hay giữ nguyên?',
+        subs: [
           {
-            "id": "doi-viec-2026",
-            "label": "Có nên thay đổi công việc năm 2026?",
-            "prompt": "Phân tích tiềm năng chuyển việc trong năm 2026 dựa trên tiểu vận và cung Quan Lộc. Kết luận rõ xu hướng nên cân nhắc thay đổi hay giữ ổn định, kèm lý do. ~260-440 từ."
-          }
-        ]
+            id: 'doi-viec-2026',
+            label: 'Có nên thay đổi công việc năm 2026?',
+            prompt:
+              'Phân tích tiềm năng chuyển việc trong năm 2026 dựa trên tiểu vận và cung Quan Lộc. Kết luận rõ xu hướng nên cân nhắc thay đổi hay giữ ổn định, kèm lý do. ~260-440 từ.',
+          },
+        ],
       },
       {
-        "id": "tieu-van-2026",
-        "icon": "↻",
-        "title": "Tiểu vận 2026",
-        "desc": "Sự nghiệp, tiền tài, tình duyên và vận hạn năm 2026.",
-        "subs": [
+        id: 'tieu-van-2026',
+        icon: '↻',
+        title: 'Tiểu vận 2026',
+        desc: 'Sự nghiệp, tiền tài, tình duyên và vận hạn năm 2026.',
+        subs: [
           {
-            "id": "tong-quan-2026",
-            "label": "Tổng quan 2026",
-            "prompt": "Tổng quan vận trình năm 2026 (tiểu vận) — 1 đoạn ngắn khái quát toàn bộ năm. ~190-310 từ."
+            id: 'tong-quan-2026',
+            label: 'Tổng quan 2026',
+            prompt: 'Tổng quan vận trình năm 2026 (tiểu vận) — 1 đoạn ngắn khái quát toàn bộ năm. ~190-310 từ.',
           },
           {
-            "id": "sunghiep-2026",
-            "label": "Sự nghiệp 2026",
-            "prompt": "Vận sự nghiệp năm 2026 dựa trên tiểu vận. ~190-310 từ."
+            id: 'sunghiep-2026',
+            label: 'Sự nghiệp 2026',
+            prompt: 'Vận sự nghiệp năm 2026 dựa trên tiểu vận. ~190-310 từ.',
           },
           {
-            "id": "tienbac-2026",
-            "label": "Tiền bạc 2026",
-            "prompt": "Vận tài chính năm 2026 dựa trên tiểu vận. ~190-310 từ."
+            id: 'tienbac-2026',
+            label: 'Tiền bạc 2026',
+            prompt: 'Vận tài chính năm 2026 dựa trên tiểu vận. ~190-310 từ.',
           },
           {
-            "id": "tinhcam-2026",
-            "label": "Tình cảm 2026",
-            "prompt": "Vận tình cảm năm 2026 dựa trên tiểu vận. ~190-310 từ."
+            id: 'tinhcam-2026',
+            label: 'Tình cảm 2026',
+            prompt: 'Vận tình cảm năm 2026 dựa trên tiểu vận. ~190-310 từ.',
           },
           {
-            "id": "vanhan-2026",
-            "label": "Vận hạn 2026",
-            "prompt": "Những điều cần lưu ý, phòng tránh trong năm 2026 dựa trên tiểu vận, dạng gạch đầu dòng 3-4 ý."
-          }
-        ]
+            id: 'vanhan-2026',
+            label: 'Vận hạn 2026',
+            prompt: 'Những điều cần lưu ý, phòng tránh trong năm 2026 dựa trên tiểu vận, dạng gạch đầu dòng 3-4 ý.',
+          },
+        ],
       },
       {
-        "id": "cau-hoi-xuat-ngoai",
-        "icon": "✈",
-        "title": "Câu hỏi xuất ngoại",
-        "desc": "Thời điểm, cơ hội ra nước ngoài. Nên đi hay ở lại?",
-        "subs": [
+        id: 'cau-hoi-xuat-ngoai',
+        icon: '✈',
+        title: 'Câu hỏi xuất ngoại',
+        desc: 'Thời điểm, cơ hội ra nước ngoài. Nên đi hay ở lại?',
+        subs: [
           {
-            "id": "danh-gia-co-hoi",
-            "label": "Đánh giá cơ hội xa xứ",
-            "prompt": "Đánh giá tiềm năng và cơ hội đi xa/xuất ngoại dựa trên cung Thiên Di. ~220-370 từ."
+            id: 'danh-gia-co-hoi',
+            label: 'Đánh giá cơ hội xa xứ',
+            prompt: 'Đánh giá tiềm năng và cơ hội đi xa/xuất ngoại dựa trên cung Thiên Di. ~220-370 từ.',
           },
           {
-            "id": "co-nen-di-xa",
-            "label": "Bạn có nên đi xa phát triển",
-            "prompt": "Kết luận rõ xu hướng nên đi xa phát triển hay ở lại, kèm lý do gắn với cung Thiên Di. ~190-310 từ."
+            id: 'co-nen-di-xa',
+            label: 'Bạn có nên đi xa phát triển',
+            prompt:
+              'Kết luận rõ xu hướng nên đi xa phát triển hay ở lại, kèm lý do gắn với cung Thiên Di. ~190-310 từ.',
           },
           {
-            "id": "nam-co-loi",
-            "label": "Năm có lợi cho di chuyển",
-            "prompt": "Gợi ý giai đoạn/năm thuận lợi cho việc di chuyển, đi xa dựa trên tiểu vận. ~160-270 từ."
-          }
-        ]
+            id: 'nam-co-loi',
+            label: 'Năm có lợi cho di chuyển',
+            prompt: 'Gợi ý giai đoạn/năm thuận lợi cho việc di chuyển, đi xa dựa trên tiểu vận. ~160-270 từ.',
+          },
+        ],
       },
       {
-        "id": "cau-hoi-tien-tai",
-        "icon": "◆",
-        "title": "Câu hỏi tiền tài",
-        "desc": "Tiềm năng giàu có. Cơ hội làm chủ, thừa kế. Xu hướng bất động sản.",
-        "subs": [
+        id: 'cau-hoi-tien-tai',
+        icon: '◆',
+        title: 'Câu hỏi tiền tài',
+        desc: 'Tiềm năng giàu có. Cơ hội làm chủ, thừa kế. Xu hướng bất động sản.',
+        subs: [
           {
-            "id": "tiem-nang-giau",
-            "label": "Tiềm năng giàu có",
-            "prompt": "Đánh giá tiềm năng tài phú dựa trên cung Tài Bạch. ~220-370 từ."
+            id: 'tiem-nang-giau',
+            label: 'Tiềm năng giàu có',
+            prompt: 'Đánh giá tiềm năng tài phú dựa trên cung Tài Bạch. ~220-370 từ.',
           },
           {
-            "id": "hop-lam-chu",
-            "label": "Bạn có hợp làm chủ?",
-            "prompt": "Đánh giá mức độ phù hợp với việc tự kinh doanh/làm chủ dựa trên lá số. ~190-310 từ."
+            id: 'hop-lam-chu',
+            label: 'Bạn có hợp làm chủ?',
+            prompt: 'Đánh giá mức độ phù hợp với việc tự kinh doanh/làm chủ dựa trên lá số. ~190-310 từ.',
           },
           {
-            "id": "co-thua-huong",
-            "label": "Bạn có được thừa hưởng",
-            "prompt": "Đánh giá khả năng thừa hưởng tài sản/hỗ trợ từ gia đình dựa trên cung Phụ Mẫu, Điền Trạch. ~170-270 từ."
+            id: 'co-thua-huong',
+            label: 'Bạn có được thừa hưởng',
+            prompt:
+              'Đánh giá khả năng thừa hưởng tài sản/hỗ trợ từ gia đình dựa trên cung Phụ Mẫu, Điền Trạch. ~170-270 từ.',
           },
           {
-            "id": "hop-bds",
-            "label": "Bạn có hợp làm về bất động sản?",
-            "prompt": "Đánh giá mức độ phù hợp với lĩnh vực bất động sản dựa trên cung Điền Trạch. ~170-270 từ."
+            id: 'hop-bds',
+            label: 'Bạn có hợp làm về bất động sản?',
+            prompt: 'Đánh giá mức độ phù hợp với lĩnh vực bất động sản dựa trên cung Điền Trạch. ~170-270 từ.',
           },
           {
-            "id": "xu-huong-nha",
-            "label": "Xu hướng nhà cửa",
-            "prompt": "Phân tích xu hướng sở hữu nhà cửa, tài sản cố định dựa trên cung Điền Trạch. ~170-270 từ."
-          }
-        ]
+            id: 'xu-huong-nha',
+            label: 'Xu hướng nhà cửa',
+            prompt: 'Phân tích xu hướng sở hữu nhà cửa, tài sản cố định dựa trên cung Điền Trạch. ~170-270 từ.',
+          },
+        ],
       },
       {
-        "id": "cau-hoi-su-nghiep",
-        "icon": "⚒",
-        "title": "Câu hỏi sự nghiệp",
-        "desc": "Môi trường, tổ chức phù hợp. Yếu tố bứt phá sự nghiệp.",
-        "subs": [
+        id: 'cau-hoi-su-nghiep',
+        icon: '⚒',
+        title: 'Câu hỏi sự nghiệp',
+        desc: 'Môi trường, tổ chức phù hợp. Yếu tố bứt phá sự nghiệp.',
+        subs: [
           {
-            "id": "moi-truong-phu-hop",
-            "label": "Môi trường phù hợp",
-            "prompt": "Mô tả kiểu môi trường làm việc phù hợp nhất (quy mô công ty, văn hoá, nhịp độ) dựa trên lá số. ~190-310 từ."
+            id: 'moi-truong-phu-hop',
+            label: 'Môi trường phù hợp',
+            prompt:
+              'Mô tả kiểu môi trường làm việc phù hợp nhất (quy mô công ty, văn hoá, nhịp độ) dựa trên lá số. ~190-310 từ.',
           },
           {
-            "id": "hop-to-chuc",
-            "label": "Bạn có hợp tổ chức truyền thống",
-            "prompt": "Đánh giá mức độ phù hợp với tổ chức truyền thống, quy củ so với môi trường tự do, khởi nghiệp. ~190-310 từ."
+            id: 'hop-to-chuc',
+            label: 'Bạn có hợp tổ chức truyền thống',
+            prompt:
+              'Đánh giá mức độ phù hợp với tổ chức truyền thống, quy củ so với môi trường tự do, khởi nghiệp. ~190-310 từ.',
           },
           {
-            "id": "don-bay",
-            "label": "Yếu tố đòn bẩy sự nghiệp",
-            "prompt": "Xác định 2-3 yếu tố có thể là đòn bẩy giúp bứt phá sự nghiệp dựa trên lá số, dạng gạch đầu dòng."
+            id: 'don-bay',
+            label: 'Yếu tố đòn bẩy sự nghiệp',
+            prompt: 'Xác định 2-3 yếu tố có thể là đòn bẩy giúp bứt phá sự nghiệp dựa trên lá số, dạng gạch đầu dòng.',
           },
           {
-            "id": "nen-hoc-cao",
-            "label": "Bạn có nên học cao",
-            "prompt": "Đánh giá mức độ phù hợp/lợi ích của việc học lên cao (sau đại học, chứng chỉ chuyên sâu) dựa trên cung Phụ Mẫu, Quan Lộc. ~170-270 từ."
-          }
-        ]
+            id: 'nen-hoc-cao',
+            label: 'Bạn có nên học cao',
+            prompt:
+              'Đánh giá mức độ phù hợp/lợi ích của việc học lên cao (sau đại học, chứng chỉ chuyên sâu) dựa trên cung Phụ Mẫu, Quan Lộc. ~170-270 từ.',
+          },
+        ],
       },
       {
-        "id": "xu-huong-dai-van",
-        "icon": "⟳",
-        "title": "Xu hướng đại vận",
-        "desc": "Những bước ngoặt có thể xảy ra trong 10 năm tới.",
-        "subs": [
+        id: 'xu-huong-dai-van',
+        icon: '⟳',
+        title: 'Xu hướng đại vận',
+        desc: 'Những bước ngoặt có thể xảy ra trong 10 năm tới.',
+        subs: [
           {
-            "id": "dien-bien-40nam",
-            "label": "Diễn biến 40 năm",
-            "prompt": "Phác thảo diễn biến tổng quan cuộc đời qua các mốc tuổi lớn (dựa trên các đại vận đọc được từ lá số nếu có, hoặc theo giai đoạn tuổi tổng quát: 20s, 30s, 40s, 50s). ~290-510 từ."
+            id: 'dien-bien-40nam',
+            label: 'Diễn biến 40 năm',
+            prompt:
+              'Phác thảo diễn biến tổng quan cuộc đời qua các mốc tuổi lớn (dựa trên các đại vận đọc được từ lá số nếu có, hoặc theo giai đoạn tuổi tổng quát: 20s, 30s, 40s, 50s). ~290-510 từ.',
           },
           {
-            "id": "thien-thoi-dia-loi",
-            "label": "Thiên thời địa lợi",
-            "prompt": "Xác định giai đoạn/lĩnh vực mà mệnh chủ có lợi thế thiên thời địa lợi nhất trong 10 năm tới. ~190-310 từ."
+            id: 'thien-thoi-dia-loi',
+            label: 'Thiên thời địa lợi',
+            prompt:
+              'Xác định giai đoạn/lĩnh vực mà mệnh chủ có lợi thế thiên thời địa lợi nhất trong 10 năm tới. ~190-310 từ.',
           },
           {
-            "id": "bieu-do-10nam",
-            "label": "Biểu đồ 10 năm tới",
-            "prompt": "Tóm tắt trọng tâm từng năm trong 10 năm tới ở dạng gạch đầu dòng ngắn gọn (mỗi năm 1 dòng, có thể nhóm theo giai đoạn nếu không đủ dữ liệu chi tiết từng năm)."
-          }
-        ]
-      }
+            id: 'bieu-do-10nam',
+            label: 'Biểu đồ 10 năm tới',
+            prompt:
+              'Tóm tắt trọng tâm từng năm trong 10 năm tới ở dạng gạch đầu dòng ngắn gọn (mỗi năm 1 dòng, có thể nhóm theo giai đoạn nếu không đủ dữ liệu chi tiết từng năm).',
+          },
+        ],
+      },
     ],
-    "ZODIAC_TOPICS": [
+    ZODIAC_TOPICS: [
       {
-        "id": "tong-quan-la-so",
-        "title": "Tổng quan lá số",
-        "icon": "✦",
-        "desc": "Bức tranh Bộ ba cốt lõi và các điểm nổi bật.",
-        "subs": [
+        id: 'tong-quan-la-so',
+        title: 'Tổng quan lá số',
+        icon: '✦',
+        desc: 'Bức tranh Bộ ba cốt lõi và các điểm nổi bật.',
+        subs: [
           {
-            "id": "bo-ba-loi",
-            "label": "Bộ ba cốt lõi",
-            "prompt": "Dựa trên dữ liệu đã tính, giải thích tổng quan Bộ ba cốt lõi (Mặt Trời, Mặt Trăng, Cung Mọc), điểm nổi bật và cách cân bằng năng lượng. ~260-440 từ."
+            id: 'bo-ba-loi',
+            label: 'Bộ ba cốt lõi',
+            prompt:
+              'Dựa trên dữ liệu đã tính, giải thích tổng quan Bộ ba cốt lõi (Mặt Trời, Mặt Trăng, Cung Mọc), điểm nổi bật và cách cân bằng năng lượng. ~260-440 từ.',
           },
           {
-            "id": "diem-noi-bat",
-            "label": "Điểm nổi bật",
-            "prompt": "Chỉ ra 3-4 điểm nổi bật nhất trong lá số (hành tinh nổi bật, cung đặc biệt, góc chiếu mạnh) và ý nghĩa của chúng. Dạng gạch đầu dòng. ~220-370 từ."
-          }
+            id: 'diem-noi-bat',
+            label: 'Điểm nổi bật',
+            prompt:
+              'Chỉ ra 3-4 điểm nổi bật nhất trong lá số (hành tinh nổi bật, cung đặc biệt, góc chiếu mạnh) và ý nghĩa của chúng. Dạng gạch đầu dòng. ~220-370 từ.',
+          },
         ],
-        "prompt": "Dựa trên dữ liệu đã tính, giải thích tổng quan Bộ ba cốt lõi, điểm nổi bật và cách cân bằng năng lượng.\n{NATAL}"
+        prompt:
+          'Dựa trên dữ liệu đã tính, giải thích tổng quan Bộ ba cốt lõi, điểm nổi bật và cách cân bằng năng lượng.\n{NATAL}',
       },
       {
-        "id": "big-3",
-        "title": "Bộ ba cốt lõi",
-        "icon": "☉",
-        "desc": "Mặt Trời, Mặt Trăng và Cung Mọc.",
-        "subs": [
+        id: 'big-3',
+        title: 'Bộ ba cốt lõi',
+        icon: '☉',
+        desc: 'Mặt Trời, Mặt Trăng và Cung Mọc.',
+        subs: [
           {
-            "id": "mat-troi",
-            "label": "Mặt Trời",
-            "prompt": "Phân tích Mặt Trời: cung, nhà, ý nghĩa với bản chất cốt lõi. ~220-370 từ."
+            id: 'mat-troi',
+            label: 'Mặt Trời',
+            prompt: 'Phân tích Mặt Trời: cung, nhà, ý nghĩa với bản chất cốt lõi. ~220-370 từ.',
           },
           {
-            "id": "mat-trang",
-            "label": "Mặt Trăng",
-            "prompt": "Phân tích Mặt Trăng: cung, nhà, nhu cầu cảm xúc và cách phản ứng tự nhiên. ~220-370 từ."
+            id: 'mat-trang',
+            label: 'Mặt Trăng',
+            prompt: 'Phân tích Mặt Trăng: cung, nhà, nhu cầu cảm xúc và cách phản ứng tự nhiên. ~220-370 từ.',
           },
           {
-            "id": "cung-moc",
-            "label": "Cung Mọc",
-            "prompt": "Phân tích Cung Mọc: ấn tượng đầu tiên, phong cách bề ngoài và cách tiếp cận cuộc sống. ~220-370 từ."
+            id: 'cung-moc',
+            label: 'Cung Mọc',
+            prompt:
+              'Phân tích Cung Mọc: ấn tượng đầu tiên, phong cách bề ngoài và cách tiếp cận cuộc sống. ~220-370 từ.',
           },
           {
-            "id": "ket-hop",
-            "label": "Sắc thái chung",
-            "prompt": "Tổng hợp cách ba lớp Mặt Trời - Mặt Trăng - Cung Mọc phối hợp và bổ trợ lẫn nhau. ~200-340 từ."
-          }
+            id: 'ket-hop',
+            label: 'Sắc thái chung',
+            prompt: 'Tổng hợp cách ba lớp Mặt Trời - Mặt Trăng - Cung Mọc phối hợp và bổ trợ lẫn nhau. ~200-340 từ.',
+          },
         ],
-        "prompt": "Phân tích riêng Mặt Trời, Mặt Trăng và Cung Mọc; kết luận cách ba lớp tính cách phối hợp.\n{NATAL}"
+        prompt: 'Phân tích riêng Mặt Trời, Mặt Trăng và Cung Mọc; kết luận cách ba lớp tính cách phối hợp.\n{NATAL}',
       },
       {
-        "id": "hanh-tinh",
-        "title": "Hành tinh",
-        "icon": "♄",
-        "desc": "Ý nghĩa 10 hành tinh trong cung.",
-        "subs": [
+        id: 'hanh-tinh',
+        title: 'Hành tinh',
+        icon: '♄',
+        desc: 'Ý nghĩa 10 hành tinh trong cung.',
+        subs: [
           {
-            "id": "hanh-tinh-ca-nhan",
-            "label": "Hành tinh cá nhân",
-            "prompt": "Phân tích Thuỷ, Kim, Hoả, Mộc, Thổ Tinh: cung, nhà và ý nghĩa. Mỗi hành tinh 1 đoạn ngắn. ~290-510 từ."
+            id: 'hanh-tinh-ca-nhan',
+            label: 'Hành tinh cá nhân',
+            prompt:
+              'Phân tích Thuỷ, Kim, Hoả, Mộc, Thổ Tinh: cung, nhà và ý nghĩa. Mỗi hành tinh 1 đoạn ngắn. ~290-510 từ.',
           },
           {
-            "id": "hanh-tinh-xa-xi",
-            "label": "Hành tinh xa xỉ",
-            "prompt": "Phân tích Thiên Vương, Hải Vương, Diêm Vương: thế hệ và điểm cá biệt trong lá số. ~220-370 từ."
-          }
+            id: 'hanh-tinh-xa-xi',
+            label: 'Hành tinh xa xỉ',
+            prompt: 'Phân tích Thiên Vương, Hải Vương, Diêm Vương: thế hệ và điểm cá biệt trong lá số. ~220-370 từ.',
+          },
         ],
-        "prompt": "Giải thích vai trò các hành tinh đang có trong các cung đã tính. Chỉ dùng JSON native được cung cấp.\n{NATAL}"
+        prompt:
+          'Giải thích vai trò các hành tinh đang có trong các cung đã tính. Chỉ dùng JSON native được cung cấp.\n{NATAL}',
       },
       {
-        "id": "12-nha",
-        "title": "12 nhà",
-        "icon": "⌂",
-        "desc": "Lĩnh vực đời sống do 12 nhà đại diện.",
-        "subs": [
+        id: '12-nha',
+        title: '12 nhà',
+        icon: '⌂',
+        desc: 'Lĩnh vực đời sống do 12 nhà đại diện.',
+        subs: [
           {
-            "id": "nhac-trung-tam",
-            "label": "Nhà trọng tâm",
-            "prompt": "Phân tích nhà 1, 4, 7, 10: bản thân, gia đình, quan hệ, sự nghiệp. Mỗi nhà 1 đoạn. ~290-510 từ."
+            id: 'nhac-trung-tam',
+            label: 'Nhà trọng tâm',
+            prompt: 'Phân tích nhà 1, 4, 7, 10: bản thân, gia đình, quan hệ, sự nghiệp. Mỗi nhà 1 đoạn. ~290-510 từ.',
           },
           {
-            "id": "nha-khac",
-            "label": "Các nhà khác",
-            "prompt": "Phân tích các nhà còn lại có hành tinh hoặc điểm đáng chú ý. ~240-420 từ."
-          }
+            id: 'nha-khac',
+            label: 'Các nhà khác',
+            prompt: 'Phân tích các nhà còn lại có hành tinh hoặc điểm đáng chú ý. ~240-420 từ.',
+          },
         ],
-        "prompt": "Phân tích 12 nhà, ưu tiên nhà 1, 4, 7, 10 và liên hệ các hành tinh nếu có.\n{NATAL}"
+        prompt: 'Phân tích 12 nhà, ưu tiên nhà 1, 4, 7, 10 và liên hệ các hành tinh nếu có.\n{NATAL}',
       },
       {
-        "id": "goc-chieu",
-        "title": "Góc chiếu",
-        "icon": "△",
-        "desc": "Trùng tụ, lục hợp, vuông, tam hợp, đối đỉnh.",
-        "subs": [
+        id: 'goc-chieu',
+        title: 'Góc chiếu',
+        icon: '△',
+        desc: 'Trùng tụ, lục hợp, vuông, tam hợp, đối đỉnh.',
+        subs: [
           {
-            "id": "goc-thuan-loi",
-            "label": "Góc thuận lợi",
-            "prompt": "Phân tích các góc chiếu thuận (trùng tụ, lục hợp, tam hợp): nguồn sức mạnh và may mắn. ~240-420 từ."
+            id: 'goc-thuan-loi',
+            label: 'Góc thuận lợi',
+            prompt:
+              'Phân tích các góc chiếu thuận (trùng tụ, lục hợp, tam hợp): nguồn sức mạnh và may mắn. ~240-420 từ.',
           },
           {
-            "id": "goc-thach-thuc",
-            "label": "Góc thử thách",
-            "prompt": "Phân tích các góc căng (vuông, đối đỉnh): điểm cần dung hoà và bài học. ~240-420 từ."
-          }
+            id: 'goc-thach-thuc',
+            label: 'Góc thử thách',
+            prompt: 'Phân tích các góc căng (vuông, đối đỉnh): điểm cần dung hoà và bài học. ~240-420 từ.',
+          },
         ],
-        "prompt": "Giải thích các góc chiếu native đã tính, nêu thuận lợi và điểm cần dung hoà.\n{NATAL}"
+        prompt: 'Giải thích các góc chiếu native đã tính, nêu thuận lợi và điểm cần dung hoà.\n{NATAL}',
       },
       {
-        "id": "tinh-cach-cung",
-        "title": "Tính cách theo cung",
-        "icon": "☾",
-        "desc": "Đặc điểm cốt lõi của cung Mặt Trời.",
-        "subs": [
+        id: 'tinh-cach-cung',
+        title: 'Tính cách theo cung',
+        icon: '☾',
+        desc: 'Đặc điểm cốt lõi của cung Mặt Trời.',
+        subs: [
           {
-            "id": "dac-diem-cot-loi",
-            "label": "Đặc điểm cốt lõi",
-            "prompt": "Phân tích tính cách chi tiết của cung {SIGN}, gắn với dữ liệu tính trực tiếp. ~260-440 từ."
+            id: 'dac-diem-cot-loi',
+            label: 'Đặc điểm cốt lõi',
+            prompt: 'Phân tích tính cách chi tiết của cung {SIGN}, gắn với dữ liệu tính trực tiếp. ~260-440 từ.',
           },
           {
-            "id": "diem-manh-yeu",
-            "label": "Điểm mạnh & cần lưu ý",
-            "prompt": "Về cung {SIGN}: 3 điểm mạnh và 3 điểm cần lưu ý, mỗi điểm 1-2 câu, dạng gạch đầu dòng."
-          }
+            id: 'diem-manh-yeu',
+            label: 'Điểm mạnh & cần lưu ý',
+            prompt: 'Về cung {SIGN}: 3 điểm mạnh và 3 điểm cần lưu ý, mỗi điểm 1-2 câu, dạng gạch đầu dòng.',
+          },
         ],
-        "prompt": "Phân tích tính cách chi tiết của cung {SIGN}, gắn với dữ liệu tính trực tiếp.\n{NATAL}"
+        prompt: 'Phân tích tính cách chi tiết của cung {SIGN}, gắn với dữ liệu tính trực tiếp.\n{NATAL}',
       },
       {
-        "id": "tinh-yeu-cung",
-        "title": "Tình yêu & quan hệ",
-        "icon": "♡",
-        "desc": "Phong cách yêu, nhu cầu cảm xúc và tương tác.",
-        "subs": [
+        id: 'tinh-yeu-cung',
+        title: 'Tình yêu & quan hệ',
+        icon: '♡',
+        desc: 'Phong cách yêu, nhu cầu cảm xúc và tương tác.',
+        subs: [
           {
-            "id": "phong-cach-yeu",
-            "label": "Phong cách yêu",
-            "prompt": "Phân tích phong cách yêu từ Kim Tinh, Hoả Tinh và nhà 5/7. ~240-420 từ."
+            id: 'phong-cach-yeu',
+            label: 'Phong cách yêu',
+            prompt: 'Phân tích phong cách yêu từ Kim Tinh, Hoả Tinh và nhà 5/7. ~240-420 từ.',
           },
           {
-            "id": "nhu-cau-cam-xuc",
-            "label": "Nhu cầu cảm xúc",
-            "prompt": "Phân tích nhu cầu cảm xúc từ Mặt Trăng và nhà 7: điều bạn cần trong mối quan hệ bền lâu. ~220-370 từ."
-          }
+            id: 'nhu-cau-cam-xuc',
+            label: 'Nhu cầu cảm xúc',
+            prompt:
+              'Phân tích nhu cầu cảm xúc từ Mặt Trăng và nhà 7: điều bạn cần trong mối quan hệ bền lâu. ~220-370 từ.',
+          },
         ],
-        "prompt": "Phân tích tình yêu và quan hệ từ Mặt Trăng, Kim Tinh, Hoả Tinh, nhà 5/7 nếu có.\n{NATAL}"
+        prompt: 'Phân tích tình yêu và quan hệ từ Mặt Trăng, Kim Tinh, Hoả Tinh, nhà 5/7 nếu có.\n{NATAL}',
       },
       {
-        "id": "su-nghiep-cung",
-        "title": "Công việc & tài chính",
-        "icon": "⌂",
-        "desc": "Năng lực nghề nghiệp, MC và nhà 2/6/10.",
-        "subs": [
+        id: 'su-nghiep-cung',
+        title: 'Công việc & tài chính',
+        icon: '⌂',
+        desc: 'Năng lực nghề nghiệp, MC và nhà 2/6/10.',
+        subs: [
           {
-            "id": "huong-su-nghiep",
-            "label": "Hướng sự nghiệp",
-            "prompt": "Phân tích hướng nghề từ MC, nhà 6/10 và các hành tinh liên quan. ~260-440 từ."
+            id: 'huong-su-nghiep',
+            label: 'Hướng sự nghiệp',
+            prompt: 'Phân tích hướng nghề từ MC, nhà 6/10 và các hành tinh liên quan. ~260-440 từ.',
           },
           {
-            "id": "tai-chinh",
-            "label": "Tài chính",
-            "prompt": "Phân tích thái độ và tiềm năng tài chính từ nhà 2, Kim Tinh, Mộc Tinh. ~220-370 từ."
-          }
+            id: 'tai-chinh',
+            label: 'Tài chính',
+            prompt: 'Phân tích thái độ và tiềm năng tài chính từ nhà 2, Kim Tinh, Mộc Tinh. ~220-370 từ.',
+          },
         ],
-        "prompt": "Phân tích công việc và tài chính từ MC, nhà 2/6/10 cùng các hành tinh liên quan.\n{NATAL}"
-      }
+        prompt: 'Phân tích công việc và tài chính từ MC, nhà 2/6/10 cùng các hành tinh liên quan.\n{NATAL}',
+      },
     ],
-    "BATU_TOPICS": [
+    BATU_TOPICS: [
       {
-        "id": "tinh-cach",
-        "icon": "☯",
-        "title": "Tính cách",
-        "desc": "Tính cách, khí chất qua Nhật Chủ, Ngũ Hành và Thập Thần.",
-        "prompt": "Phân tích tính cách, khí chất qua Thiên Can Nhật Chủ (trụ Ngày), tỷ lệ Ngũ Hành và các Thập Thần xuất hiện trong lá số Bát Tự. Chia đoạn có tiêu đề in đậm: **Điểm mạnh**, **Điểm cần lưu ý**, **Lời khuyên rèn luyện**. ~260-440 từ."
+        id: 'tinh-cach',
+        icon: '☯',
+        title: 'Tính cách',
+        desc: 'Tính cách, khí chất qua Nhật Chủ, Ngũ Hành và Thập Thần.',
+        prompt:
+          'Phân tích tính cách, khí chất qua Thiên Can Nhật Chủ (trụ Ngày), tỷ lệ Ngũ Hành và các Thập Thần xuất hiện trong lá số Bát Tự. Chia đoạn có tiêu đề in đậm: **Điểm mạnh**, **Điểm cần lưu ý**, **Lời khuyên rèn luyện**. ~260-440 từ.',
       },
       {
-        "id": "su-nghiep-tien-tai",
-        "icon": "⌂",
-        "title": "Sự nghiệp & tiền tài",
-        "desc": "Xu hướng sự nghiệp, tài lộc qua trụ Tháng và Thập Thần Tài/Quan.",
-        "prompt": "Phân tích sự nghiệp và tiền tài dựa trên trụ Tháng và các Thập Thần Tài/Quan/Ấn xuất hiện trong lá số Bát Tự. ~260-440 từ."
+        id: 'su-nghiep-tien-tai',
+        icon: '⌂',
+        title: 'Sự nghiệp & tiền tài',
+        desc: 'Xu hướng sự nghiệp, tài lộc qua trụ Tháng và Thập Thần Tài/Quan.',
+        prompt:
+          'Phân tích sự nghiệp và tiền tài dựa trên trụ Tháng và các Thập Thần Tài/Quan/Ấn xuất hiện trong lá số Bát Tự. ~260-440 từ.',
       },
       {
-        "id": "tinh-duyen",
-        "icon": "❤",
-        "title": "Tình duyên",
-        "desc": "Tình duyên, hôn nhân qua trụ Ngày và Thập Thần liên quan.",
-        "prompt": "Phân tích tình duyên và hôn nhân dựa trên Địa Chi trụ Ngày (cung Phối ngẫu) và các Thập Thần Tài/Quan/Sát trong lá số Bát Tự. ~240-410 từ."
+        id: 'tinh-duyen',
+        icon: '❤',
+        title: 'Tình duyên',
+        desc: 'Tình duyên, hôn nhân qua trụ Ngày và Thập Thần liên quan.',
+        prompt:
+          'Phân tích tình duyên và hôn nhân dựa trên Địa Chi trụ Ngày (cung Phối ngẫu) và các Thập Thần Tài/Quan/Sát trong lá số Bát Tự. ~240-410 từ.',
       },
       {
-        "id": "suc-khoe",
-        "icon": "✚",
-        "title": "Sức khoẻ",
-        "desc": "Xu hướng sức khoẻ qua sự cân bằng Ngũ Hành trong lá số.",
-        "prompt": "Phân tích xu hướng sức khoẻ dựa trên sự dư/thiếu cân bằng Ngũ Hành trong lá số Bát Tự (hành nào vượng, hành nào thiếu) theo quan niệm Ngũ Hành tương ứng ngũ tạng trong văn hoá truyền thống. Nói rõ đây là góc nhìn văn hoá tham khảo, không thay thế chẩn đoán y khoa. ~220-370 từ."
-      }
+        id: 'suc-khoe',
+        icon: '✚',
+        title: 'Sức khoẻ',
+        desc: 'Xu hướng sức khoẻ qua sự cân bằng Ngũ Hành trong lá số.',
+        prompt:
+          'Phân tích xu hướng sức khoẻ dựa trên sự dư/thiếu cân bằng Ngũ Hành trong lá số Bát Tự (hành nào vượng, hành nào thiếu) theo quan niệm Ngũ Hành tương ứng ngũ tạng trong văn hoá truyền thống. Nói rõ đây là góc nhìn văn hoá tham khảo, không thay thế chẩn đoán y khoa. ~220-370 từ.',
+      },
     ],
-    "NUMEROLOGY_TOPICS": [
+    NUMEROLOGY_TOPICS: [
       {
-        "id": "life-path",
-        "icon": "①",
-        "title": "Số Chủ Đạo — hành trình cuộc đời",
-        "desc": "Bài học lớn nhất và hướng đi tự nhiên của cả đời người.",
-        "prompt": "Phân tích ý nghĩa Số Chủ Đạo (Life Path) — bài học cốt lõi, xu hướng tự nhiên và hướng đi phù hợp của cả cuộc đời. Chia đoạn có tiêu đề in đậm: **Bản chất cốt lõi**, **Bài học cuộc đời**, **Lời khuyên**. ~260-440 từ."
+        id: 'life-path',
+        icon: '①',
+        title: 'Số Chủ Đạo — hành trình cuộc đời',
+        desc: 'Bài học lớn nhất và hướng đi tự nhiên của cả đời người.',
+        prompt:
+          'Phân tích ý nghĩa Số Chủ Đạo (Life Path) — bài học cốt lõi, xu hướng tự nhiên và hướng đi phù hợp của cả cuộc đời. Chia đoạn có tiêu đề in đậm: **Bản chất cốt lõi**, **Bài học cuộc đời**, **Lời khuyên**. ~260-440 từ.',
       },
       {
-        "id": "destiny",
-        "icon": "②",
-        "title": "Sứ Mệnh & tài năng bẩm sinh",
-        "desc": "Điều cần hoàn thành và năng lực trời phú thể hiện qua tên gọi.",
-        "prompt": "Phân tích Số Sứ Mệnh (Destiny/Expression) — điều mệnh chủ được sinh ra để hoàn thành và tài năng bẩm sinh thể hiện qua họ tên. ~240-410 từ."
+        id: 'destiny',
+        icon: '②',
+        title: 'Sứ Mệnh & tài năng bẩm sinh',
+        desc: 'Điều cần hoàn thành và năng lực trời phú thể hiện qua tên gọi.',
+        prompt:
+          'Phân tích Số Sứ Mệnh (Destiny/Expression) — điều mệnh chủ được sinh ra để hoàn thành và tài năng bẩm sinh thể hiện qua họ tên. ~240-410 từ.',
       },
       {
-        "id": "inner-self",
-        "icon": "③",
-        "title": "Con người nội tâm",
-        "desc": "Linh Hồn (khao khát thật sự) đối chiếu Nhân Cách (hình ảnh bên ngoài).",
-        "prompt": "So sánh và phân tích Số Linh Hồn (khao khát nội tâm thật sự) với Số Nhân Cách (hình ảnh mà người khác nhìn thấy ở mệnh chủ) — chỉ ra điểm tương đồng hoặc mâu thuẫn giữa hai mặt này. ~240-410 từ."
+        id: 'inner-self',
+        icon: '③',
+        title: 'Con người nội tâm',
+        desc: 'Linh Hồn (khao khát thật sự) đối chiếu Nhân Cách (hình ảnh bên ngoài).',
+        prompt:
+          'So sánh và phân tích Số Linh Hồn (khao khát nội tâm thật sự) với Số Nhân Cách (hình ảnh mà người khác nhìn thấy ở mệnh chủ) — chỉ ra điểm tương đồng hoặc mâu thuẫn giữa hai mặt này. ~240-410 từ.',
       },
       {
-        "id": "birth-grid",
-        "icon": "④",
-        "title": "Biểu đồ ngày sinh",
-        "desc": "Điểm mạnh từ số lặp, khoảng trống cần bù đắp từ số khuyết.",
-        "prompt": "Phân tích biểu đồ ngày sinh (ma trận Pythagoras): ý nghĩa các số lặp (điểm mạnh nổi bật), số khuyết (khoảng trống cần bù đắp), và bất kỳ hàng/cột/đường chéo nào có đủ 3 số liên tiếp cùng xuất hiện. ~260-440 từ."
+        id: 'birth-grid',
+        icon: '④',
+        title: 'Biểu đồ ngày sinh',
+        desc: 'Điểm mạnh từ số lặp, khoảng trống cần bù đắp từ số khuyết.',
+        prompt:
+          'Phân tích biểu đồ ngày sinh (ma trận Pythagoras): ý nghĩa các số lặp (điểm mạnh nổi bật), số khuyết (khoảng trống cần bù đắp), và bất kỳ hàng/cột/đường chéo nào có đủ 3 số liên tiếp cùng xuất hiện. ~260-440 từ.',
       },
       {
-        "id": "cycles",
-        "icon": "⑤",
-        "title": "Chu kỳ đỉnh cao & thử thách",
-        "desc": "4 giai đoạn lớn của cuộc đời và rào cản đặc trưng mỗi giai đoạn.",
-        "prompt": "Phân tích 4 giai đoạn Đỉnh Cao (Pinnacles) và Thử Thách (Challenges) tương ứng theo độ tuổi đã tính — mỗi giai đoạn nêu cơ hội chính (từ số Đỉnh Cao) và rào cản cần vượt qua (từ số Thử Thách). ~280-480 từ."
+        id: 'cycles',
+        icon: '⑤',
+        title: 'Chu kỳ đỉnh cao & thử thách',
+        desc: '4 giai đoạn lớn của cuộc đời và rào cản đặc trưng mỗi giai đoạn.',
+        prompt:
+          'Phân tích 4 giai đoạn Đỉnh Cao (Pinnacles) và Thử Thách (Challenges) tương ứng theo độ tuổi đã tính — mỗi giai đoạn nêu cơ hội chính (từ số Đỉnh Cao) và rào cản cần vượt qua (từ số Thử Thách). ~280-480 từ.',
       },
       {
-        "id": "personal-year",
-        "icon": "⑥",
-        "title": "Năm cá nhân hiện tại",
-        "desc": "Chủ đề vận hành của năm nay theo chu kỳ 9 năm cá nhân.",
-        "prompt": "Phân tích Năm Cá Nhân hiện tại trong chu kỳ 9 năm — chủ đề chính của năm nay và gợi ý cách tận dụng. ~220-370 từ."
-      }
-    ]
-  }
+        id: 'personal-year',
+        icon: '⑥',
+        title: 'Năm cá nhân hiện tại',
+        desc: 'Chủ đề vận hành của năm nay theo chu kỳ 9 năm cá nhân.',
+        prompt:
+          'Phân tích Năm Cá Nhân hiện tại trong chu kỳ 9 năm — chủ đề chính của năm nay và gợi ý cách tận dụng. ~220-370 từ.',
+      },
+    ],
+  },
 };

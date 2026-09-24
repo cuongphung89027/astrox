@@ -1,41 +1,495 @@
-import {test} from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {DatabaseSync} from 'node:sqlite';
-import {readFileSync} from 'node:fs';
-import {handleAdmin} from './server.mjs';
-import {defaultConfig} from './config.ts';
-import {readPublished,readSecret} from './store.mjs';
-function db(){const d=new DatabaseSync(':memory:');d.exec(readFileSync(new URL('../../migrations/admin.sql',import.meta.url),'utf8'));const prepare=(sql,args=[])=>({bind(...a){return prepare(sql,a)},async first(){return d.prepare(sql).get(...args)||null},async all(){return{results:d.prepare(sql).all(...args)}},async run(){const r=d.prepare(sql).run(...args);return{meta:{changes:r.changes}}},exec(){const s=d.prepare(sql);if(s.columns().length)return{results:s.all(...args)};return{meta:{changes:s.run(...args).changes}}}});return{prepare,async batch(ss){d.exec('BEGIN');try{const out=ss.map(s=>s.exec());d.exec('COMMIT');return out}catch(e){d.exec('ROLLBACK');throw e}}};}
-async function fixture(){const env={DB:db(),LOCAL_ADMIN:true,LOCAL_ADMIN_PASSWORD:'test-password',ADMIN_ENCRYPTION_KEY:btoa('a'.repeat(32))};let cookie='',csrf='';async function call(path,method='GET',body,custom={}){const r=await handleAdmin(new Request('http://localhost:8789/api/admin/'+path,{method,headers:{origin:'http://localhost:8789',cookie,'x-admin-csrf':csrf,'content-type':'application/json',...custom},...(body?{body:JSON.stringify(body)}:{})}),env);return r}const login=await call('login','POST',{password:'test-password'});cookie=login.headers.get('set-cookie').split(';')[0];csrf=(await login.json()).csrf;return{env,call};}
-test('fails closed in production without Access setup',async()=>{const r=await handleAdmin(new Request('https://example.com/api/admin/config'),{DB:db()});assert.equal(r.status,503)});
-test('draft CAS, immutable publication and rollback are atomic',async()=>{const{env,call}=await fixture();let r=await call('config');assert.equal(r.status,200);let state=await r.json();const c=defaultConfig();c.content.announcement='first';assert.equal((await call('config','PUT',{config:c,expectedRevision:state.revision})).status,200);assert.equal((await call('config','PUT',{config:c,expectedRevision:state.revision})).status,409);state=await(await call('config')).json();assert.equal((await call('publish','POST',{expectedRevision:state.revision,note:'first'})).status,200);const first=await readPublished(env);assert.equal(first.config.content.announcement,'first');state=await(await call('config')).json();c.content.announcement='second';await call('config','PUT',{config:c,expectedRevision:state.revision});state=await(await call('config')).json();await call('publish','POST',{expectedRevision:state.revision});state=await(await call('config')).json();assert.equal((await call('rollback','POST',{versionId:first.revision,expectedRevision:state.revision})).status,200);assert.equal((await readPublished(env)).config.content.announcement,'first');assert.equal((await(await call('history')).json()).versions.length,3)});
-test('secrets encrypted at rest and absent from config, history and audit',async()=>{const{env,call}=await fixture();assert.equal((await call('secrets','PUT',{ref:'provider:test',value:'never-show-me'})).status,200);assert.equal(await readSecret(env,'provider:test'),'never-show-me');const row=await env.DB.prepare('SELECT * FROM admin_secrets').first();assert.ok(!JSON.stringify(row).includes('never-show-me'));for(const p of ['config','history','audit'])assert.ok(!(await(await call(p)).text()).includes('never-show-me'))});
-test('CSRF and missing wallet backend block writes/activation',async()=>{const{call}=await fixture();assert.equal((await call('config','PUT',{}, {'x-admin-csrf':'bad'})).status,403);const c=defaultConfig();c.rewards.enabled=true;await call('config','PUT',{config:c,expectedRevision:0});assert.equal((await call('publish','POST',{expectedRevision:1})).status,422);assert.equal((await call('data/wallet')).status,503)});
-test('binding alone cannot enable money or reward settings',async()=>{const{env,call}=await fixture();env.ASTROX_BACKEND={fetch:async()=>Response.json({})};const c=defaultConfig();c.rewards.enabled=true;await call('config','PUT',{config:c,expectedRevision:0});assert.equal((await call('publish','POST',{expectedRevision:1})).status,422)});
-test('logout revokes local session and repeated login is rate limited',async()=>{const{call}=await fixture();assert.equal((await call('logout','POST',{})).status,200);assert.equal((await call('session')).status,401);let result;for(let i=0;i<11;i++)result=await call('login','POST',{password:'incorrect'});assert.equal(result.status,429)});
-test('Access signature, expiration, owner allowlist and assigned read-only role are enforced',async()=>{const{env}=await fixture();env.LOCAL_ADMIN=false;env.ADMIN_ACCESS_AUD='admin-aud';env.ADMIN_ACCESS_TEAM_DOMAIN='astrox.cloudflareaccess.com';env.ADMIN_OWNER_EMAILS='owner@example.com';env.ADMIN_ROLE_ASSIGNMENTS=JSON.stringify({'support@example.com':'support'});const keys=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);const jwk=await crypto.subtle.exportKey('jwk',keys.publicKey);jwk.kid='test';const original=globalThis.fetch;globalThis.fetch=async()=>Response.json({keys:[jwk]});const encode=s=>Buffer.from(typeof s==='string'?s:JSON.stringify(s)).toString('base64url');const jwt=async(claims)=>{const content=encode({alg:'RS256',kid:'test'})+'.'+encode({iss:'https://astrox.cloudflareaccess.com',aud:['admin-aud'],exp:Math.floor(Date.now()/1000)+60,...claims});return content+'.'+Buffer.from(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',keys.privateKey,new TextEncoder().encode(content))).toString('base64url')};const request=async(claims,method='GET',csrf='')=>handleAdmin(new Request('https://example.com/api/admin/config',{method,headers:{'Cf-Access-Jwt-Assertion':await jwt(claims),origin:'https://example.com','x-admin-csrf':csrf},...(method==='PUT'?{body:'{}'}:{})}),env);try{assert.equal((await request({email:'owner@example.com'})).status,200);assert.equal((await request({email:'intruder@example.com'})).status,401);assert.equal((await request({email:'owner@example.com',exp:undefined})).status,401);assert.equal((await request({email:'support@example.com'})).status,200);const t=await jwt({email:'support@example.com'});const session=await handleAdmin(new Request('https://example.com/api/admin/session',{headers:{'Cf-Access-Jwt-Assertion':t}}),env);const csrf=(await session.json()).csrf;const denied=await handleAdmin(new Request('https://example.com/api/admin/config',{method:'PUT',headers:{'Cf-Access-Jwt-Assertion':t,origin:'https://example.com','x-admin-csrf':csrf},body:'{}'}),env);assert.equal(denied.status,403);for(const path of ['members','secrets','publish']){const r=await handleAdmin(new Request('https://example.com/api/admin/'+path,{method:'POST',headers:{'Cf-Access-Jwt-Assertion':t,origin:'https://example.com','x-admin-csrf':csrf},body:'{}'}),env);assert.equal(r.status,403);}await env.DB.prepare("INSERT INTO admin_members VALUES('support@example.com','','now','now')").run();assert.equal((await request({email:'support@example.com'})).status,401);await env.DB.prepare("UPDATE admin_members SET role_id='support' WHERE email='support@example.com'").run();assert.equal((await request({email:'support@example.com'})).status,200)}finally{globalThis.fetch=original}});
-test('legacy wallets and users are read-only actual DB rows',async()=>{const{env,call}=await fixture();await env.DB.prepare('CREATE TABLE app_users(id TEXT,display_name TEXT,email TEXT,status TEXT,created_at TEXT,updated_at TEXT)').run();await env.DB.prepare("INSERT INTO app_users VALUES('u1','An','an@example.com','active','2026-01-01','2026-01-01')").run();await env.DB.prepare('CREATE TABLE zalo_point_accounts(user_id TEXT,balance INTEGER,updated_at TEXT)').run();await env.DB.prepare("INSERT INTO zalo_point_accounts VALUES('u1',72,'2026-01-01')").run();const users=await(await call('data/users')).json(),wallet=await(await call('data/wallet')).json();assert.equal(users.rows[0].display_name,'An');assert.equal(wallet.rows[0].balance,72);assert.equal((await call('data/wallet','POST',{user_id:'u1',balance:999})).status,404);assert.equal((await env.DB.prepare('SELECT balance FROM zalo_point_accounts').first()).balance,72)});
-test('audit failure rolls back both draft and publish/history transaction',async()=>{const{env,call}=await fixture();await call('config');await env.DB.prepare("CREATE TRIGGER fail_audit BEFORE INSERT ON admin_audit BEGIN SELECT RAISE(ABORT, 'audit down'); END").run();const config=defaultConfig();config.content.announcement='must roll back';assert.equal((await call('config','PUT',{config,expectedRevision:0})).status,500);let s=await(await call('config')).json();assert.equal(s.revision,0);assert.equal(s.draft.content.announcement,'');assert.equal((await call('publish','POST',{expectedRevision:0})).status,500);s=await(await call('config')).json();assert.equal(s.published,null);assert.equal((await(await call('history')).json()).versions.length,0)});
-test('membership changes persist, audit, reject owners and unknown roles',async()=>{const{env,call}=await fixture();env.ADMIN_OWNER_EMAILS='owner@example.com';assert.equal((await call('members','PUT',{email:'support@example.com',roleId:'support'})).status,200);const list=await(await call('members')).json();assert.equal(list.members.find(m=>m.email==='support@example.com').roleId,'support');assert.equal((await call('members','PUT',{email:'support@example.com',roleId:'missing'})).status,422);assert.equal((await call('members','DELETE',{email:'owner@example.com'})).status,403);assert.equal((await call('members','PUT',{email:'new@example.com',roleId:'owner'})).status,403);assert.equal((await call('members','DELETE',{email:'support@example.com'})).status,200);assert.ok(!(await(await call('members')).json()).members.some(m=>m.email==='support@example.com'));const audit=await(await call('audit')).json();assert.ok(audit.events.some(e=>e.action==='member.assign'));assert.ok(audit.events.some(e=>e.action==='member.remove'))});
-test('AI reports only return sanitized persisted request fields',async()=>{const{env,call}=await fixture();await env.DB.prepare("INSERT INTO admin_ai_requests VALUES('request1','tarot',2,'2026-01-01','success','[]',50)").run();const r=await call('data/ai');assert.equal(r.status,200);const data=await r.json();assert.equal(data.available,true);assert.equal(data.rows[0].service_id,'tarot');assert.deepEqual(data.rows[0].attempts,[])});
-test('config editor cannot change roles through draft, publish, or rollback',async()=>{
- const {env,call}=await fixture();const baseline=defaultConfig();baseline.access.roles.push({id:'editor',name:'Editor',capabilities:['config.read','config.write','config.publish']});
- await call('config','PUT',{config:baseline,expectedRevision:0});await call('publish','POST',{expectedRevision:1});
- const keys=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);const jwk=await crypto.subtle.exportKey('jwk',keys.publicKey);jwk.kid='role-test';const original=globalThis.fetch;globalThis.fetch=async()=>Response.json({keys:[jwk]});
- const encode=o=>Buffer.from(JSON.stringify(o)).toString('base64url');const content=encode({alg:'RS256',kid:'role-test'})+'.'+encode({iss:'https://astrox.cloudflareaccess.com',aud:['aud'],exp:Math.floor(Date.now()/1000)+60,email:'editor@example.com'});const jwt=content+'.'+Buffer.from(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',keys.privateKey,new TextEncoder().encode(content))).toString('base64url');
- const prod={...env,LOCAL_ADMIN:false,ADMIN_ACCESS_AUD:'aud',ADMIN_ACCESS_TEAM_DOMAIN:'astrox.cloudflareaccess.com',ADMIN_OWNER_EMAILS:'owner@example.com',ADMIN_ROLE_ASSIGNMENTS:JSON.stringify({'editor@example.com':'editor'})};
- try{const session=await handleAdmin(new Request('https://example.com/api/admin/session',{headers:{'Cf-Access-Jwt-Assertion':jwt}}),prod);const csrf=(await session.json()).csrf;
- const editor=(path,method,body)=>handleAdmin(new Request('https://example.com/api/admin/'+path,{method,headers:{'Cf-Access-Jwt-Assertion':jwt,origin:'https://example.com','x-admin-csrf':csrf},body:JSON.stringify(body)}),prod);
- const changed=structuredClone(baseline);changed.access.roles.find(r=>r.id==='support').capabilities.push('secrets.write');
- assert.equal((await editor('config','PUT',{config:changed,expectedRevision:2})).status,403);
- await call('config','PUT',{config:changed,expectedRevision:2});
- assert.equal((await editor('publish','POST',{expectedRevision:3})).status,403);
- await call('publish','POST',{expectedRevision:3});
- assert.equal((await editor('rollback','POST',{versionId:1,expectedRevision:4})).status,403);
- const normal=structuredClone(changed);normal.content.announcement='editor content';assert.equal((await editor('config','PUT',{config:normal,expectedRevision:4})).status,200);assert.equal((await editor('publish','POST',{expectedRevision:5})).status,200);
- }finally{globalThis.fetch=original;}
+import { DatabaseSync } from 'node:sqlite';
+import { readFileSync } from 'node:fs';
+import { handleAdmin } from './server.mjs';
+import { defaultConfig } from './config.ts';
+import { readPublished, readSecret } from './store.mjs';
+function db() {
+  const d = new DatabaseSync(':memory:');
+  d.exec(readFileSync(new URL('../../migrations/admin.sql', import.meta.url), 'utf8'));
+  const prepare = (sql, args = []) => ({
+    bind(...a) {
+      return prepare(sql, a);
+    },
+    async first() {
+      return d.prepare(sql).get(...args) || null;
+    },
+    async all() {
+      return { results: d.prepare(sql).all(...args) };
+    },
+    async run() {
+      const r = d.prepare(sql).run(...args);
+      return { meta: { changes: r.changes } };
+    },
+    exec() {
+      const s = d.prepare(sql);
+      if (s.columns().length) return { results: s.all(...args) };
+      return { meta: { changes: s.run(...args).changes } };
+    },
+  });
+  return {
+    prepare,
+    async batch(ss) {
+      d.exec('BEGIN');
+      try {
+        const out = ss.map(s => s.exec());
+        d.exec('COMMIT');
+        return out;
+      } catch (e) {
+        d.exec('ROLLBACK');
+        throw e;
+      }
+    },
+  };
+}
+async function fixture() {
+  const env = {
+    DB: db(),
+    LOCAL_ADMIN: true,
+    LOCAL_ADMIN_PASSWORD: 'test-password',
+    ADMIN_ENCRYPTION_KEY: btoa('a'.repeat(32)),
+  };
+  let cookie = '',
+    csrf = '';
+  async function call(path, method = 'GET', body, custom = {}) {
+    const r = await handleAdmin(
+      new Request('http://localhost:8789/api/admin/' + path, {
+        method,
+        headers: {
+          origin: 'http://localhost:8789',
+          cookie,
+          'x-admin-csrf': csrf,
+          'content-type': 'application/json',
+          ...custom,
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      }),
+      env,
+    );
+    return r;
+  }
+  const login = await call('login', 'POST', { password: 'test-password' });
+  cookie = login.headers.get('set-cookie').split(';')[0];
+  csrf = (await login.json()).csrf;
+  return { env, call };
+}
+test('fails closed in production without Access setup', async () => {
+  const r = await handleAdmin(new Request('https://example.com/api/admin/config'), { DB: db() });
+  assert.equal(r.status, 503);
 });
-test('multi-model provider draft persists with child fallback and encrypted parent secret',async()=>{const{call}=await fixture();const snapshot=await(await call('config')).json();const c=snapshot.draft;const p={id:'gateway',name:'Gateway',model:'base',protocol:'chat',baseUrl:'https://api.example.com/v1',enabled:true,timeoutMs:1000,retries:0,maxTokens:100,temperature:0.5,secretRef:'provider:gateway'};c.ai.providers=[{...p,models:[{id:'second',name:'Second',model:'second-model',protocol:'anthropic',baseUrl:p.baseUrl,enabled:true,timeoutMs:1000,retries:0,maxTokens:100,temperature:0.5}]}];c.ai.chain=['gateway:second','gateway'];assert.equal((await call('config','PUT',{config:c,expectedRevision:snapshot.revision})).status,200);const saved=await(await call('config')).json();assert.deepEqual(saved.draft.ai.providers,c.ai.providers);assert.deepEqual(saved.draft.ai.chain,c.ai.chain)});
-test('metrics filter date bounds, model/provider and do not expose prompts',async()=>{const{env,call}=await fixture();await env.DB.prepare('INSERT INTO admin_ai_requests VALUES(?,?,?,?,?,?,?)').bind('metric-1','tuvi',1,'2026-09-22T01:00:00.000Z','success',JSON.stringify([{providerId:'gateway:one',model:'model-a',outcome:'success',status:200,usage:{input:10,output:2,cacheRead:0,cacheWrite:0},prompt:'NEVER_EXPOSE'}]),25).run();const res=await call('data/ai-metrics?from=2026-09-22&to=2026-09-22&provider=gateway&model=model-a');assert.equal(res.status,200);const text=await res.text();assert.ok(!text.includes('NEVER_EXPOSE'));const data=JSON.parse(text);assert.equal(data.summary.requests,1);assert.equal(data.summary.tokens.input,10);assert.equal((await call('data/ai-metrics?from=2026-02-31')).status,422);assert.equal((await call('data/ai-metrics?from=2020-01-01&to=2026-09-22')).status,422)});
-test('inherited backend credentials count as configured but unsupported paid AI stays blocked',async()=>{const {env,call}=await fixture();env.ASTROX_BACKEND={fetch:async()=>Response.json({configVersioned:true,features:{payos:true,zalo:true,paidAi:false,rewards:false},inheritedSecrets:['payos:apiKey','payos:checksumKey','zalo:appSecret']})};const c=defaultConfig();c.integrations.payos.enabled=true;c.integrations.payos.clientId='existing';c.billing.enabled=true;c.billing.vndPerPoint=1000;await call('config','PUT',{config:c,expectedRevision:0});const snapshot=await(await call('config')).json();assert.ok(snapshot.secrets.includes('payos:apiKey'));assert.equal((await call('publish','POST',{expectedRevision:1})).status,200);c.billing.services[0].status='paid';c.billing.services[0].points=10;await call('config','PUT',{config:c,expectedRevision:2});assert.equal((await call('publish','POST',{expectedRevision:3})).status,422)});
-test('one-time legacy import stores inherited settings and preserves customer state',async()=>{const {env,call}=await fixture();env.ASTROX_BACKEND={fetch:async r=>Response.json(r.url.endsWith('/bootstrap')?{packages:[{id:'p1',label:'50k',amount_vnd:50000,points:55,active:1}],modules:[],prices:[],promos:[],integrations:{payos:{enabled:true,clientId:'old-client',returnUrl:'https://theastrox.space/hoso',cancelUrl:'https://theastrox.space/hoso',expiryMinutes:30},zalo:{enabled:true,appId:'123',callbackUrl:'https://api.theastrox.space/auth/zalo/callback',returnUrl:'https://theastrox.space'},wallet:{enabled:true,label:'AstroX'}}}:{configVersioned:true,inheritedSecrets:['payos:apiKey','payos:checksumKey','zalo:appSecret']})};env.DEVQUOTE_API_KEY='secret-old-ai';assert.equal((await call('import-legacy','POST',{expectedRevision:0})).status,200);const c=await(await call('config')).json();assert.equal(c.draft.billing.packages[0].fixedPoints,55);assert.equal(c.draft.ai.enabled,true);assert.equal(c.published,null);assert.equal(await readSecret(env,'provider:legacy'),'secret-old-ai');assert.ok(!JSON.stringify(c).includes('secret-old-ai'));assert.equal((await call('import-legacy','POST',{expectedRevision:1})).status,409)});
+test('draft CAS, immutable publication and rollback are atomic', async () => {
+  const { env, call } = await fixture();
+  let r = await call('config');
+  assert.equal(r.status, 200);
+  let state = await r.json();
+  const c = defaultConfig();
+  c.content.announcement = 'first';
+  assert.equal((await call('config', 'PUT', { config: c, expectedRevision: state.revision })).status, 200);
+  assert.equal((await call('config', 'PUT', { config: c, expectedRevision: state.revision })).status, 409);
+  state = await (await call('config')).json();
+  assert.equal((await call('publish', 'POST', { expectedRevision: state.revision, note: 'first' })).status, 200);
+  const first = await readPublished(env);
+  assert.equal(first.config.content.announcement, 'first');
+  state = await (await call('config')).json();
+  c.content.announcement = 'second';
+  await call('config', 'PUT', { config: c, expectedRevision: state.revision });
+  state = await (await call('config')).json();
+  await call('publish', 'POST', { expectedRevision: state.revision });
+  state = await (await call('config')).json();
+  assert.equal(
+    (await call('rollback', 'POST', { versionId: first.revision, expectedRevision: state.revision })).status,
+    200,
+  );
+  assert.equal((await readPublished(env)).config.content.announcement, 'first');
+  assert.equal((await (await call('history')).json()).versions.length, 3);
+});
+test('secrets encrypted at rest and absent from config, history and audit', async () => {
+  const { env, call } = await fixture();
+  assert.equal((await call('secrets', 'PUT', { ref: 'provider:test', value: 'never-show-me' })).status, 200);
+  assert.equal(await readSecret(env, 'provider:test'), 'never-show-me');
+  const row = await env.DB.prepare('SELECT * FROM admin_secrets').first();
+  assert.ok(!JSON.stringify(row).includes('never-show-me'));
+  for (const p of ['config', 'history', 'audit']) assert.ok(!(await (await call(p)).text()).includes('never-show-me'));
+});
+test('CSRF and missing wallet backend block writes/activation', async () => {
+  const { call } = await fixture();
+  assert.equal((await call('config', 'PUT', {}, { 'x-admin-csrf': 'bad' })).status, 403);
+  const c = defaultConfig();
+  c.rewards.enabled = true;
+  await call('config', 'PUT', { config: c, expectedRevision: 0 });
+  assert.equal((await call('publish', 'POST', { expectedRevision: 1 })).status, 422);
+  assert.equal((await call('data/wallet')).status, 503);
+});
+test('binding alone cannot enable money or reward settings', async () => {
+  const { env, call } = await fixture();
+  env.ASTROX_BACKEND = { fetch: async () => Response.json({}) };
+  const c = defaultConfig();
+  c.rewards.enabled = true;
+  await call('config', 'PUT', { config: c, expectedRevision: 0 });
+  assert.equal((await call('publish', 'POST', { expectedRevision: 1 })).status, 422);
+});
+test('logout revokes local session and repeated login is rate limited', async () => {
+  const { call } = await fixture();
+  assert.equal((await call('logout', 'POST', {})).status, 200);
+  assert.equal((await call('session')).status, 401);
+  let result;
+  for (let i = 0; i < 11; i++) result = await call('login', 'POST', { password: 'incorrect' });
+  assert.equal(result.status, 429);
+});
+test('Access signature, expiration, owner allowlist and assigned read-only role are enforced', async () => {
+  const { env } = await fixture();
+  env.LOCAL_ADMIN = false;
+  env.ADMIN_ACCESS_AUD = 'admin-aud';
+  env.ADMIN_ACCESS_TEAM_DOMAIN = 'astrox.cloudflareaccess.com';
+  env.ADMIN_OWNER_EMAILS = 'owner@example.com';
+  env.ADMIN_ROLE_ASSIGNMENTS = JSON.stringify({ 'support@example.com': 'support' });
+  const keys = await crypto.subtle.generateKey(
+    { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+    true,
+    ['sign', 'verify'],
+  );
+  const jwk = await crypto.subtle.exportKey('jwk', keys.publicKey);
+  jwk.kid = 'test';
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ keys: [jwk] });
+  const encode = s => Buffer.from(typeof s === 'string' ? s : JSON.stringify(s)).toString('base64url');
+  const jwt = async claims => {
+    const content =
+      encode({ alg: 'RS256', kid: 'test' }) +
+      '.' +
+      encode({
+        iss: 'https://astrox.cloudflareaccess.com',
+        aud: ['admin-aud'],
+        exp: Math.floor(Date.now() / 1000) + 60,
+        ...claims,
+      });
+    return (
+      content +
+      '.' +
+      Buffer.from(
+        await crypto.subtle.sign('RSASSA-PKCS1-v1_5', keys.privateKey, new TextEncoder().encode(content)),
+      ).toString('base64url')
+    );
+  };
+  const request = async (claims, method = 'GET', csrf = '') =>
+    handleAdmin(
+      new Request('https://example.com/api/admin/config', {
+        method,
+        headers: { 'Cf-Access-Jwt-Assertion': await jwt(claims), origin: 'https://example.com', 'x-admin-csrf': csrf },
+        ...(method === 'PUT' ? { body: '{}' } : {}),
+      }),
+      env,
+    );
+  try {
+    assert.equal((await request({ email: 'owner@example.com' })).status, 200);
+    assert.equal((await request({ email: 'intruder@example.com' })).status, 401);
+    assert.equal((await request({ email: 'owner@example.com', exp: undefined })).status, 401);
+    assert.equal((await request({ email: 'support@example.com' })).status, 200);
+    const t = await jwt({ email: 'support@example.com' });
+    const session = await handleAdmin(
+      new Request('https://example.com/api/admin/session', { headers: { 'Cf-Access-Jwt-Assertion': t } }),
+      env,
+    );
+    const csrf = (await session.json()).csrf;
+    const denied = await handleAdmin(
+      new Request('https://example.com/api/admin/config', {
+        method: 'PUT',
+        headers: { 'Cf-Access-Jwt-Assertion': t, origin: 'https://example.com', 'x-admin-csrf': csrf },
+        body: '{}',
+      }),
+      env,
+    );
+    assert.equal(denied.status, 403);
+    for (const path of ['members', 'secrets', 'publish']) {
+      const r = await handleAdmin(
+        new Request('https://example.com/api/admin/' + path, {
+          method: 'POST',
+          headers: { 'Cf-Access-Jwt-Assertion': t, origin: 'https://example.com', 'x-admin-csrf': csrf },
+          body: '{}',
+        }),
+        env,
+      );
+      assert.equal(r.status, 403);
+    }
+    await env.DB.prepare("INSERT INTO admin_members VALUES('support@example.com','','now','now')").run();
+    assert.equal((await request({ email: 'support@example.com' })).status, 401);
+    await env.DB.prepare("UPDATE admin_members SET role_id='support' WHERE email='support@example.com'").run();
+    assert.equal((await request({ email: 'support@example.com' })).status, 200);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+test('legacy wallets and users are read-only actual DB rows', async () => {
+  const { env, call } = await fixture();
+  await env.DB.prepare(
+    'CREATE TABLE app_users(id TEXT,display_name TEXT,email TEXT,status TEXT,created_at TEXT,updated_at TEXT)',
+  ).run();
+  await env.DB.prepare(
+    "INSERT INTO app_users VALUES('u1','An','an@example.com','active','2026-01-01','2026-01-01')",
+  ).run();
+  await env.DB.prepare('CREATE TABLE zalo_point_accounts(user_id TEXT,balance INTEGER,updated_at TEXT)').run();
+  await env.DB.prepare("INSERT INTO zalo_point_accounts VALUES('u1',72,'2026-01-01')").run();
+  const users = await (await call('data/users')).json(),
+    wallet = await (await call('data/wallet')).json();
+  assert.equal(users.rows[0].display_name, 'An');
+  assert.equal(wallet.rows[0].balance, 72);
+  assert.equal((await call('data/wallet', 'POST', { user_id: 'u1', balance: 999 })).status, 404);
+  assert.equal((await env.DB.prepare('SELECT balance FROM zalo_point_accounts').first()).balance, 72);
+});
+test('audit failure rolls back both draft and publish/history transaction', async () => {
+  const { env, call } = await fixture();
+  await call('config');
+  await env.DB.prepare(
+    "CREATE TRIGGER fail_audit BEFORE INSERT ON admin_audit BEGIN SELECT RAISE(ABORT, 'audit down'); END",
+  ).run();
+  const config = defaultConfig();
+  config.content.announcement = 'must roll back';
+  assert.equal((await call('config', 'PUT', { config, expectedRevision: 0 })).status, 500);
+  let s = await (await call('config')).json();
+  assert.equal(s.revision, 0);
+  assert.equal(s.draft.content.announcement, '');
+  assert.equal((await call('publish', 'POST', { expectedRevision: 0 })).status, 500);
+  s = await (await call('config')).json();
+  assert.equal(s.published, null);
+  assert.equal((await (await call('history')).json()).versions.length, 0);
+});
+test('membership changes persist, audit, reject owners and unknown roles', async () => {
+  const { env, call } = await fixture();
+  env.ADMIN_OWNER_EMAILS = 'owner@example.com';
+  assert.equal((await call('members', 'PUT', { email: 'support@example.com', roleId: 'support' })).status, 200);
+  const list = await (await call('members')).json();
+  assert.equal(list.members.find(m => m.email === 'support@example.com').roleId, 'support');
+  assert.equal((await call('members', 'PUT', { email: 'support@example.com', roleId: 'missing' })).status, 422);
+  assert.equal((await call('members', 'DELETE', { email: 'owner@example.com' })).status, 403);
+  assert.equal((await call('members', 'PUT', { email: 'new@example.com', roleId: 'owner' })).status, 403);
+  assert.equal((await call('members', 'DELETE', { email: 'support@example.com' })).status, 200);
+  assert.ok(!(await (await call('members')).json()).members.some(m => m.email === 'support@example.com'));
+  const audit = await (await call('audit')).json();
+  assert.ok(audit.events.some(e => e.action === 'member.assign'));
+  assert.ok(audit.events.some(e => e.action === 'member.remove'));
+});
+test('AI reports only return sanitized persisted request fields', async () => {
+  const { env, call } = await fixture();
+  await env.DB.prepare(
+    "INSERT INTO admin_ai_requests VALUES('request1','tarot',2,'2026-01-01','success','[]',50)",
+  ).run();
+  const r = await call('data/ai');
+  assert.equal(r.status, 200);
+  const data = await r.json();
+  assert.equal(data.available, true);
+  assert.equal(data.rows[0].service_id, 'tarot');
+  assert.deepEqual(data.rows[0].attempts, []);
+});
+test('config editor cannot change roles through draft, publish, or rollback', async () => {
+  const { env, call } = await fixture();
+  const baseline = defaultConfig();
+  baseline.access.roles.push({
+    id: 'editor',
+    name: 'Editor',
+    capabilities: ['config.read', 'config.write', 'config.publish'],
+  });
+  await call('config', 'PUT', { config: baseline, expectedRevision: 0 });
+  await call('publish', 'POST', { expectedRevision: 1 });
+  const keys = await crypto.subtle.generateKey(
+    { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+    true,
+    ['sign', 'verify'],
+  );
+  const jwk = await crypto.subtle.exportKey('jwk', keys.publicKey);
+  jwk.kid = 'role-test';
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ keys: [jwk] });
+  const encode = o => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const content =
+    encode({ alg: 'RS256', kid: 'role-test' }) +
+    '.' +
+    encode({
+      iss: 'https://astrox.cloudflareaccess.com',
+      aud: ['aud'],
+      exp: Math.floor(Date.now() / 1000) + 60,
+      email: 'editor@example.com',
+    });
+  const jwt =
+    content +
+    '.' +
+    Buffer.from(
+      await crypto.subtle.sign('RSASSA-PKCS1-v1_5', keys.privateKey, new TextEncoder().encode(content)),
+    ).toString('base64url');
+  const prod = {
+    ...env,
+    LOCAL_ADMIN: false,
+    ADMIN_ACCESS_AUD: 'aud',
+    ADMIN_ACCESS_TEAM_DOMAIN: 'astrox.cloudflareaccess.com',
+    ADMIN_OWNER_EMAILS: 'owner@example.com',
+    ADMIN_ROLE_ASSIGNMENTS: JSON.stringify({ 'editor@example.com': 'editor' }),
+  };
+  try {
+    const session = await handleAdmin(
+      new Request('https://example.com/api/admin/session', { headers: { 'Cf-Access-Jwt-Assertion': jwt } }),
+      prod,
+    );
+    const csrf = (await session.json()).csrf;
+    const editor = (path, method, body) =>
+      handleAdmin(
+        new Request('https://example.com/api/admin/' + path, {
+          method,
+          headers: { 'Cf-Access-Jwt-Assertion': jwt, origin: 'https://example.com', 'x-admin-csrf': csrf },
+          body: JSON.stringify(body),
+        }),
+        prod,
+      );
+    const changed = structuredClone(baseline);
+    changed.access.roles.find(r => r.id === 'support').capabilities.push('secrets.write');
+    assert.equal((await editor('config', 'PUT', { config: changed, expectedRevision: 2 })).status, 403);
+    await call('config', 'PUT', { config: changed, expectedRevision: 2 });
+    assert.equal((await editor('publish', 'POST', { expectedRevision: 3 })).status, 403);
+    await call('publish', 'POST', { expectedRevision: 3 });
+    assert.equal((await editor('rollback', 'POST', { versionId: 1, expectedRevision: 4 })).status, 403);
+    const normal = structuredClone(changed);
+    normal.content.announcement = 'editor content';
+    assert.equal((await editor('config', 'PUT', { config: normal, expectedRevision: 4 })).status, 200);
+    assert.equal((await editor('publish', 'POST', { expectedRevision: 5 })).status, 200);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+test('multi-model provider draft persists with child fallback and encrypted parent secret', async () => {
+  const { call } = await fixture();
+  const snapshot = await (await call('config')).json();
+  const c = snapshot.draft;
+  const p = {
+    id: 'gateway',
+    name: 'Gateway',
+    model: 'base',
+    protocol: 'chat',
+    baseUrl: 'https://api.example.com/v1',
+    enabled: true,
+    timeoutMs: 1000,
+    retries: 0,
+    maxTokens: 100,
+    temperature: 0.5,
+    secretRef: 'provider:gateway',
+  };
+  c.ai.providers = [
+    {
+      ...p,
+      models: [
+        {
+          id: 'second',
+          name: 'Second',
+          model: 'second-model',
+          protocol: 'anthropic',
+          baseUrl: p.baseUrl,
+          enabled: true,
+          timeoutMs: 1000,
+          retries: 0,
+          maxTokens: 100,
+          temperature: 0.5,
+        },
+      ],
+    },
+  ];
+  c.ai.chain = ['gateway:second', 'gateway'];
+  assert.equal((await call('config', 'PUT', { config: c, expectedRevision: snapshot.revision })).status, 200);
+  const saved = await (await call('config')).json();
+  assert.deepEqual(saved.draft.ai.providers, c.ai.providers);
+  assert.deepEqual(saved.draft.ai.chain, c.ai.chain);
+});
+test('metrics filter date bounds, model/provider and do not expose prompts', async () => {
+  const { env, call } = await fixture();
+  await env.DB.prepare('INSERT INTO admin_ai_requests VALUES(?,?,?,?,?,?,?)')
+    .bind(
+      'metric-1',
+      'tuvi',
+      1,
+      '2026-09-22T01:00:00.000Z',
+      'success',
+      JSON.stringify([
+        {
+          providerId: 'gateway:one',
+          model: 'model-a',
+          outcome: 'success',
+          status: 200,
+          usage: { input: 10, output: 2, cacheRead: 0, cacheWrite: 0 },
+          prompt: 'NEVER_EXPOSE',
+        },
+      ]),
+      25,
+    )
+    .run();
+  const res = await call('data/ai-metrics?from=2026-09-22&to=2026-09-22&provider=gateway&model=model-a');
+  assert.equal(res.status, 200);
+  const text = await res.text();
+  assert.ok(!text.includes('NEVER_EXPOSE'));
+  const data = JSON.parse(text);
+  assert.equal(data.summary.requests, 1);
+  assert.equal(data.summary.tokens.input, 10);
+  assert.equal((await call('data/ai-metrics?from=2026-02-31')).status, 422);
+  assert.equal((await call('data/ai-metrics?from=2020-01-01&to=2026-09-22')).status, 422);
+});
+test('inherited backend credentials count as configured but unsupported paid AI stays blocked', async () => {
+  const { env, call } = await fixture();
+  env.ASTROX_BACKEND = {
+    fetch: async () =>
+      Response.json({
+        configVersioned: true,
+        features: { payos: true, zalo: true, paidAi: false, rewards: false },
+        inheritedSecrets: ['payos:apiKey', 'payos:checksumKey', 'zalo:appSecret'],
+      }),
+  };
+  const c = defaultConfig();
+  c.integrations.payos.enabled = true;
+  c.integrations.payos.clientId = 'existing';
+  c.billing.enabled = true;
+  c.billing.vndPerPoint = 1000;
+  await call('config', 'PUT', { config: c, expectedRevision: 0 });
+  const snapshot = await (await call('config')).json();
+  assert.ok(snapshot.secrets.includes('payos:apiKey'));
+  assert.equal((await call('publish', 'POST', { expectedRevision: 1 })).status, 200);
+  c.billing.services[0].status = 'paid';
+  c.billing.services[0].points = 10;
+  await call('config', 'PUT', { config: c, expectedRevision: 2 });
+  assert.equal((await call('publish', 'POST', { expectedRevision: 3 })).status, 422);
+});
+test('one-time legacy import stores inherited settings and preserves customer state', async () => {
+  const { env, call } = await fixture();
+  env.ASTROX_BACKEND = {
+    fetch: async r =>
+      Response.json(
+        r.url.endsWith('/bootstrap')
+          ? {
+              packages: [{ id: 'p1', label: '50k', amount_vnd: 50000, points: 55, active: 1 }],
+              modules: [],
+              prices: [],
+              promos: [],
+              integrations: {
+                payos: {
+                  enabled: true,
+                  clientId: 'old-client',
+                  returnUrl: 'https://theastrox.space/hoso',
+                  cancelUrl: 'https://theastrox.space/hoso',
+                  expiryMinutes: 30,
+                },
+                zalo: {
+                  enabled: true,
+                  appId: '123',
+                  callbackUrl: 'https://api.theastrox.space/auth/zalo/callback',
+                  returnUrl: 'https://theastrox.space',
+                },
+                wallet: { enabled: true, label: 'AstroX' },
+              },
+            }
+          : { configVersioned: true, inheritedSecrets: ['payos:apiKey', 'payos:checksumKey', 'zalo:appSecret'] },
+      ),
+  };
+  env.DEVQUOTE_API_KEY = 'secret-old-ai';
+  assert.equal((await call('import-legacy', 'POST', { expectedRevision: 0 })).status, 200);
+  const c = await (await call('config')).json();
+  assert.equal(c.draft.billing.packages[0].fixedPoints, 55);
+  assert.equal(c.draft.ai.enabled, true);
+  assert.equal(c.published, null);
+  assert.equal(await readSecret(env, 'provider:legacy'), 'secret-old-ai');
+  assert.ok(!JSON.stringify(c).includes('secret-old-ai'));
+  assert.equal((await call('import-legacy', 'POST', { expectedRevision: 1 })).status, 409);
+});

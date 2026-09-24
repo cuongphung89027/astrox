@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,not-found,error,loading,route}.tsx",
+    "scripts/*.{mjs,cjs}",
+    "tests/**/*.test.mjs"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx,css}",
+    "scripts/*.{mjs,cjs}",
+    "tests/**/*.mjs"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "ignore": [
+    "src/styles/transitions-dev.css"
+  ]
+}

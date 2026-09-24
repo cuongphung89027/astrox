@@ -5,11 +5,21 @@ export async function onRequest({ request, env }) {
   if (response.status !== 200 || !response.headers.get('content-type')?.includes('text/html')) return response;
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))));
   const headers = new Headers(response.headers);
-  headers.set('Content-Security-Policy', `object-src 'none'; base-uri 'self'; script-src 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https:; frame-src https:; media-src 'self' blob: https:;`);
+  headers.set(
+    'Content-Security-Policy',
+    `object-src 'none'; base-uri 'self'; script-src 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https:; frame-src https:; media-src 'self' blob: https:;`,
+  );
   headers.set('Cache-Control', 'private, no-store, no-transform');
   headers.delete('content-length');
   headers.delete('etag');
-  const authorize = {element(el) {el.setAttribute('nonce', nonce);}};
-  return new HTMLRewriter().on('script', authorize).on('link[as="script"]', authorize).on('link[rel="modulepreload"]', authorize)
-    .transform(new Response(response.body, {status:response.status, headers}));
+  const authorize = {
+    element(el) {
+      el.setAttribute('nonce', nonce);
+    },
+  };
+  return new HTMLRewriter()
+    .on('script', authorize)
+    .on('link[as="script"]', authorize)
+    .on('link[rel="modulepreload"]', authorize)
+    .transform(new Response(response.body, { status: response.status, headers }));
 }

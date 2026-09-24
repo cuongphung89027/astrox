@@ -1,16 +1,135 @@
-import test from 'node:test';import assert from 'node:assert/strict';
-import {normalizeUsage,summarizeAi} from './metrics.ts';
-test('normalizes protocol token cache fields without inventing absent zero values',()=>{assert.deepEqual(normalizeUsage({prompt_tokens:100,completion_tokens:20,prompt_tokens_details:{cached_tokens:60}},'chat'),{input:100,output:20,cacheRead:60,cacheWrite:null});assert.deepEqual(normalizeUsage({},'responses'),{input:null,output:null,cacheRead:null,cacheWrite:null});assert.deepEqual(normalizeUsage({input_tokens:30,output_tokens:5,cache_read_input_tokens:50,cache_creation_input_tokens:20},'anthropic'),{input:100,output:5,cacheRead:50,cacheWrite:20})});
-const rows=[{id:'1',service_id:'tuvi',created_at:'2026-09-22T00:00:00Z',status:'success',duration_ms:200,attempts:JSON.stringify([{providerId:'a',model:'one',outcome:'retryable',status:503,durationMs:50},{providerId:'b:second',model:'two',outcome:'success',status:200,durationMs:150,usage:{input:100,output:20,cacheRead:0,cacheWrite:null}}])},{id:'2',service_id:'tuvi',created_at:'2026-09-22T01:00:00Z',status:'PROVIDERS_EXHAUSTED',duration_ms:300,attempts:JSON.stringify([{providerId:'a',model:'one',outcome:'timeout',status:0,durationMs:300}])}];
-test('distinguishes logical request failures from failed upstream attempts',()=>{const s=summarizeAi(rows);assert.equal(s.requests,2);assert.equal(s.failed,1);assert.equal(s.errorRate,50);assert.equal(s.attempts,3);assert.equal(s.attemptErrors,2);assert.equal(s.fallbackRequests,1);assert.equal(s.p95Ms,300);assert.equal(s.tokens.input,100);assert.equal(s.usageRequests,1);assert.equal(s.tokens.cacheRead,0);assert.equal(s.tokens.cacheWrite,null)});
-test('filter matches attempted provider/model; preserves request-level outcomes',()=>{const s=summarizeAi(rows,{provider:'b',model:'two'});assert.equal(s.requests,1);assert.equal(s.attempts,1);assert.equal(s.errorRate,0);assert.equal(s.groups[0].model,'two')});
-test('empty statistics do not invent ratios or token totals',()=>{const s=summarizeAi([]);assert.equal(s.errorRate,null);assert.equal(s.p95Ms,null);assert.equal(s.tokens.input,null)});
-test('cost is estimated only with complete usage and rates, cache is not double billed',async()=>{const{estimateCost}=await import('./metrics.ts');assert.equal(estimateCost({input:1000000,output:100000,cacheRead:500000,cacheWrite:100000},{input:2,output:10,cacheRead:0.2,cacheWrite:3}),2.2);assert.equal(estimateCost({input:null,output:2,cacheRead:0,cacheWrite:0},{input:2,output:10,cacheRead:0.2,cacheWrite:3}),null)});
-test('replays succeed; policy blocks do not inflate completed failure denominator or provider attempts',()=>{
- const base={id:'x',service_id:'tuvi',created_at:'2026-09-22T00:00:00Z',duration_ms:1,attempts:'[]'};
- const s=summarizeAi(['success','replayed','rate_limited','price_changed','RESULT_PERSIST_FAILED','PROVIDERS_EXHAUSTED'].map(status=>({...base,status,attempts:status==='RESULT_PERSIST_FAILED'?'[{"providerId":"","outcome":"refunded"}]':'[]'})));
- assert.equal(s.success,2);assert.equal(s.replayed,1);assert.equal(s.blocked,2);assert.equal(s.failed,2);assert.equal(s.completedRequests,4);assert.equal(s.errorRate,50);assert.equal(s.serviceFailures,1);assert.equal(s.providerFailures,1);assert.equal(s.attempts,0);
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { normalizeUsage, summarizeAi } from './metrics.ts';
+test('normalizes protocol token cache fields without inventing absent zero values', () => {
+  assert.deepEqual(
+    normalizeUsage({ prompt_tokens: 100, completion_tokens: 20, prompt_tokens_details: { cached_tokens: 60 } }, 'chat'),
+    { input: 100, output: 20, cacheRead: 60, cacheWrite: null },
+  );
+  assert.deepEqual(normalizeUsage({}, 'responses'), { input: null, output: null, cacheRead: null, cacheWrite: null });
+  assert.deepEqual(
+    normalizeUsage(
+      { input_tokens: 30, output_tokens: 5, cache_read_input_tokens: 50, cache_creation_input_tokens: 20 },
+      'anthropic',
+    ),
+    { input: 100, output: 5, cacheRead: 50, cacheWrite: 20 },
+  );
 });
-test('high cardinality diagnostic groups remain bounded without losing totals',()=>{
- const rows=Array.from({length:650},(_,i)=>({id:String(i),service_id:'tuvi',created_at:'2026-09-22T00:00:00Z',status:`failure-${i}`,duration_ms:1,attempts:JSON.stringify([{providerId:`p${i}`,model:'x',outcome:'timeout'}])}));const s=summarizeAi(rows);assert.equal(s.failed,650);assert.equal(s.attemptErrors,650);assert.equal(s.groups.length,501);assert.equal(s.errors.length,101);assert.equal(s.groupsTruncated,true);assert.equal(s.errorsTruncated,true);assert.equal(s.groups.reduce((n,g)=>n+g.attempts,0),650);assert.equal(s.errors.reduce((n,g)=>n+g.count,0),650);
+const rows = [
+  {
+    id: '1',
+    service_id: 'tuvi',
+    created_at: '2026-09-22T00:00:00Z',
+    status: 'success',
+    duration_ms: 200,
+    attempts: JSON.stringify([
+      { providerId: 'a', model: 'one', outcome: 'retryable', status: 503, durationMs: 50 },
+      {
+        providerId: 'b:second',
+        model: 'two',
+        outcome: 'success',
+        status: 200,
+        durationMs: 150,
+        usage: { input: 100, output: 20, cacheRead: 0, cacheWrite: null },
+      },
+    ]),
+  },
+  {
+    id: '2',
+    service_id: 'tuvi',
+    created_at: '2026-09-22T01:00:00Z',
+    status: 'PROVIDERS_EXHAUSTED',
+    duration_ms: 300,
+    attempts: JSON.stringify([{ providerId: 'a', model: 'one', outcome: 'timeout', status: 0, durationMs: 300 }]),
+  },
+];
+test('distinguishes logical request failures from failed upstream attempts', () => {
+  const s = summarizeAi(rows);
+  assert.equal(s.requests, 2);
+  assert.equal(s.failed, 1);
+  assert.equal(s.errorRate, 50);
+  assert.equal(s.attempts, 3);
+  assert.equal(s.attemptErrors, 2);
+  assert.equal(s.fallbackRequests, 1);
+  assert.equal(s.p95Ms, 300);
+  assert.equal(s.tokens.input, 100);
+  assert.equal(s.usageRequests, 1);
+  assert.equal(s.tokens.cacheRead, 0);
+  assert.equal(s.tokens.cacheWrite, null);
+});
+test('filter matches attempted provider/model; preserves request-level outcomes', () => {
+  const s = summarizeAi(rows, { provider: 'b', model: 'two' });
+  assert.equal(s.requests, 1);
+  assert.equal(s.attempts, 1);
+  assert.equal(s.errorRate, 0);
+  assert.equal(s.groups[0].model, 'two');
+});
+test('empty statistics do not invent ratios or token totals', () => {
+  const s = summarizeAi([]);
+  assert.equal(s.errorRate, null);
+  assert.equal(s.p95Ms, null);
+  assert.equal(s.tokens.input, null);
+});
+test('cost is estimated only with complete usage and rates, cache is not double billed', async () => {
+  const { estimateCost } = await import('./metrics.ts');
+  assert.equal(
+    estimateCost(
+      { input: 1000000, output: 100000, cacheRead: 500000, cacheWrite: 100000 },
+      { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 3 },
+    ),
+    2.2,
+  );
+  assert.equal(
+    estimateCost(
+      { input: null, output: 2, cacheRead: 0, cacheWrite: 0 },
+      { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 3 },
+    ),
+    null,
+  );
+});
+test('replays succeed; policy blocks do not inflate completed failure denominator or provider attempts', () => {
+  const base = { id: 'x', service_id: 'tuvi', created_at: '2026-09-22T00:00:00Z', duration_ms: 1, attempts: '[]' };
+  const s = summarizeAi(
+    ['success', 'replayed', 'rate_limited', 'price_changed', 'RESULT_PERSIST_FAILED', 'PROVIDERS_EXHAUSTED'].map(
+      status => ({
+        ...base,
+        status,
+        attempts: status === 'RESULT_PERSIST_FAILED' ? '[{"providerId":"","outcome":"refunded"}]' : '[]',
+      }),
+    ),
+  );
+  assert.equal(s.success, 2);
+  assert.equal(s.replayed, 1);
+  assert.equal(s.blocked, 2);
+  assert.equal(s.failed, 2);
+  assert.equal(s.completedRequests, 4);
+  assert.equal(s.errorRate, 50);
+  assert.equal(s.serviceFailures, 1);
+  assert.equal(s.providerFailures, 1);
+  assert.equal(s.attempts, 0);
+});
+test('high cardinality diagnostic groups remain bounded without losing totals', () => {
+  const rows = Array.from({ length: 650 }, (_, i) => ({
+    id: String(i),
+    service_id: 'tuvi',
+    created_at: '2026-09-22T00:00:00Z',
+    status: `failure-${i}`,
+    duration_ms: 1,
+    attempts: JSON.stringify([{ providerId: `p${i}`, model: 'x', outcome: 'timeout' }]),
+  }));
+  const s = summarizeAi(rows);
+  assert.equal(s.failed, 650);
+  assert.equal(s.attemptErrors, 650);
+  assert.equal(s.groups.length, 501);
+  assert.equal(s.errors.length, 101);
+  assert.equal(s.groupsTruncated, true);
+  assert.equal(s.errorsTruncated, true);
+  assert.equal(
+    s.groups.reduce((n, g) => n + g.attempts, 0),
+    650,
+  );
+  assert.equal(
+    s.errors.reduce((n, g) => n + g.count, 0),
+    650,
+  );
 });

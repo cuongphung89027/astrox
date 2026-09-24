@@ -14,7 +14,6 @@ import { SavedReading, ReadingInvitation } from "@/components/kit/SavedReading";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn, TopicTabs, type TabItem } from "@/components/kit";
 import { PanelReveal, useToast } from "@/components/motion";
-import { useProfile } from "@/lib/use-store";
 import { readAiCache, writeAiCache, setState } from "@/lib/state";
 import { runAiPrompt } from "@/lib/api";
 import { useRequireProfile } from "@/components/profile/ProfileModal";

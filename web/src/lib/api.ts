@@ -11,6 +11,7 @@ import { promptDescriptor } from "./managed-prompts";
 import { AI_BASE, AUTH_API_BASE, DEFAULT_MODEL } from "./config";
 import { getState, getAccountEpoch, setState, setPromptRevision, recordPromptResult } from "./state";
 import type { AstroxUser } from "./types";
+import { routeModule } from "../../../services/admin/modules.ts";
 
 /* ------------------------------------------------------------------ */
 /* AstroX                                                                  */
@@ -142,7 +143,7 @@ export async function callAiText(opts: {
     operationId: crypto.randomUUID(),
     promptDescriptor: promptDescriptor(opts.parts?.[0]?.text || ""),
     compact,
-    serviceId: opts.serviceId || ({ "/tuvi": "tuvi", "/cunghoangdao": "zodiac", "/hoangdao": "zodiac", "/kinhdich": "kinhdich", "/battu": "batu", "/thansohoc": "numerology", "/thanso": "numerology", "/tarot": "tarot", "/tuonghop": "compat" } as Record<string, string>)[window.location.pathname],
+    serviceId: opts.serviceId || routeModule(window.location.pathname) || undefined,
     messages: [
       {
         role: "system",
@@ -208,10 +209,6 @@ export async function fetchAstroxUser(): Promise<AstroxUser | null> {
   } catch {
     return null;
   }
-}
-
-export function zaloLoginUrl(): string {
-  return `${AUTH_API_BASE}/auth/zalo/login`;
 }
 
 export async function fetchModuleAccessAstrox(): Promise<Record<string, boolean>> {

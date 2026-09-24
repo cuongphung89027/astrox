@@ -7,15 +7,10 @@
  * đường góc chiếu nối giữa các hành tinh; kèm bảng hành tinh / 12 nhà /
  * góc chiếu. Vị trí giữ đúng phép chiếu cũ: natalPointAngle = 270 − kinh độ.
  */
-import { Chip, GlassCard } from "@/components/kit";
+import { GlassCard } from "@/components/kit";
 import styles from "./Zodiac.module.css";
 import { AspectMatrix } from "./AspectMatrix";
-import { ZODIAC_SIGNS, normDeg, type NatalChart, type NatalPlanet } from "@/lib/zodiac";
-
-/** Góc SVG của một kinh độ hoàng đạo — port natalPointAngle. */
-function natalPointAngle(deg: number): number {
-  return normDeg(270 - deg);
-}
+import { ZODIAC_SIGNS, normDeg, type NatalChart } from "@/lib/zodiac";
 
 function polar(cx: number, cy: number, r: number, angleDeg: number): [number, number] {
   const rad = (angleDeg * Math.PI) / 180;
@@ -159,24 +154,6 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
       {/* Tâm bản đồ */}
       <circle cx={C} cy={C} r={4} fill="var(--color-kim-deep)" />
     </svg>
-  );
-}
-
-function PlanetRow({ p }: { p: NatalPlanet }) {
-  return (
-    <tr>
-      <td className="whitespace-nowrap py-2 pr-3 font-bold text-muc">
-        <span aria-hidden="true" className="mr-1.5 text-[15px] text-son-deep">
-          {p.symbol}
-        </span>
-        {p.name}
-      </td>
-      <td className="py-2 pr-3 text-muc-2">
-        {p.sign.symbol} {p.sign.name}
-      </td>
-      <td className="py-2 pr-3 tabular-nums text-muc-2">{p.sign.degree.toFixed(1)}°</td>
-      <td className="py-2 tabular-nums font-bold text-muc">{p.house}</td>
-    </tr>
   );
 }
 

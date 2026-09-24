@@ -160,18 +160,6 @@ export function setProfile(profile: Profile | null) {
   notifyDataDirty();
 }
 
-export function clearDerivedData() {
-  state = {
-    ...state,
-    profile: null,
-    chartImageBase64: null,
-    ziweiChart: null,
-    natalChart: null,
-  };
-  saveState();
-  notifyDataDirty();
-}
-
 /* ------------------------------------------------------------------ */
 /* AI cache (port 1:1 từ index.html)                                  */
 /* ------------------------------------------------------------------ */

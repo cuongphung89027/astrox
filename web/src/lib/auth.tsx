@@ -2,48 +2,21 @@
 import {captureReferral,storedReferral} from "./referral";
 
 /**
- * Auth + module access — port từ initSupabaseAuth/initAstroxAuth của
- * index.html. Hai kênh đăng nhập chạy song song:
- *  - Supabase session (Google/email…) → Bearer token cho /api/user-data
- *    và /api/module-access cùng origin.
- *  - AstroX Worker (Zalo, cookie astrox_session) → api.theastrox.space.
- * Mặc định mọi module được phép; chỉ khoá khi backend trả access[module]=false.
+ * Auth + module access qua AstroX Worker (Zalo, cookie astrox_session) tại
+ * api.theastrox.space. Mặc định mọi module được phép; chỉ khoá khi backend
+ * trả access[module]=false.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { Session, SupabaseClient } from "@supabase/supabase-js";
-import { createClient } from "@supabase/supabase-js";
+import { createContext, useCallback, useContext, useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
 import { fetchAstroxUser, fetchModuleAccessAstrox } from "./api";
-import { AUTH_API_BASE, SUPABASE_ANON_KEY, SUPABASE_URL } from "./config";
+import { AUTH_API_BASE } from "./config";
 import {startCloudSync} from "./cloud-sync";
 import {setPointsAccount} from "./points";
 import { getState, activateAccount } from "./state";
 import type { AstroxUser } from "./types";
 
-function getSupabase(): SupabaseClient | null {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
-  try {
-    return createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  } catch {
-    return null;
-  }
-}
-
-/* ------------------------- user-data sync ------------------------- */
-
-async function currentAccessToken(client: SupabaseClient | null): Promise<string> {
-  if (!client) return "";
-  try {
-    const { data } = await client.auth.getSession();
-    return data?.session?.access_token || "";
-  } catch {
-    return "";
-  }
-}
-
 /* ----------------------------- context ----------------------------- */
 
 interface AuthContextValue {
-  supabaseUser: { email?: string | null; fullName?: string | null } | null;
   astroxUser: AstroxUser | null;
   loggedIn: boolean;
   ready: boolean;
@@ -57,19 +30,36 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const noSubscribe=()=>()=>{};
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const localPreview=useSyncExternalStore(noSubscribe,()=>process.env.NODE_ENV === "development" && ["localhost","127.0.0.1","[::1]"].includes(window.location.hostname),()=>false);
-  useEffect(captureReferral,[]);
+// Tính trực tiếp mỗi render: hai provider render cùng markup nên không có
+// hydration mismatch. (Bản trước dùng useSyncExternalStore với subscribe no-op
+// — một số lần load ở dev kẹt ở server snapshot false, làm localhost rơi vào
+// RealAuthProvider và gọi API production.)
+const localPreview = () =>
+  typeof window !== "undefined" &&
+  process.env.NODE_ENV === "development" &&
+  ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
 
-  return localPreview ? <LocalPreviewProvider>{children}</LocalPreviewProvider> : <RealAuthProvider>{children}</RealAuthProvider>;
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Hydration theo server (false) cho khớp HTML tĩnh; sau mount đổi sang
+  // preview localhost bằng state — deterministic, không lệ thuộc việc
+  // useSyncExternalStore đọc lại snapshot (từng kẹt false ở dev).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // Cờ mounted sau hydration là cách deterministic; useSyncExternalStore từng
+    // kẹt snapshot false trên dev (thấy trên HEAD), render trực tiếp gây mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+  const preview = mounted && localPreview();
+  useEffect(captureReferral, []);
+
+  return preview ? <LocalPreviewProvider>{children}</LocalPreviewProvider> : <RealAuthProvider>{children}</RealAuthProvider>;
 }
 
 function LocalPreviewProvider({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState(true);
   const name = getState().profile?.name || "Tài khoản xem thử";
   const value: AuthContextValue = {
-    supabaseUser: null,
     astroxUser: active ? { id: "localhost-preview", display_name: name } : null,
     loggedIn: active, ready: true, displayName: name, moduleAccess: {},
     isModuleAllowed: () => true, refresh: () => {},
@@ -80,79 +70,35 @@ function LocalPreviewProvider({ children }: { children: React.ReactNode }) {
 }
 
 function RealAuthProvider({ children }: { children: React.ReactNode }) {
-  const [client]=useState<SupabaseClient|null>(()=>getSupabase());
   const syncStop=useRef<(()=>void)|null>(null);
-  const [supabaseId,setSupabaseId]=useState<string|null>(null);
-
-  const [supabaseEmail, setSupabaseEmail] = useState<string | null>(null);
-  const [supabaseName, setSupabaseName] = useState<string | null>(null);
   const [astroxUser, setAstroxUser] = useState<AstroxUser | null>(null);
   const [moduleAccess, setModuleAccess] = useState<Record<string, boolean>>({});
   const [ready, setReady] = useState(false);
 
   const refreshModuleAccess = useCallback(async () => {
-    let access: Record<string, boolean> = {};
-    const hasSupa = !!(await currentAccessToken(client));
-    if (!hasSupa && AUTH_API_BASE) {
-      access = await fetchModuleAccessAstrox();
-    } else if (hasSupa) {
-      try {
-        const token = await currentAccessToken(client);
-        const res = await fetch("/api/module-access", { headers: { Authorization: `Bearer ${token}` } });
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.access) access = data.access;
-        }
-      } catch {
-        /* mặc định cho phép */
-      }
-    }
-    setModuleAccess(access);
-  }, [client]);
+    setModuleAccess(AUTH_API_BASE ? await fetchModuleAccessAstrox() : {});
+  }, []);
 
   useEffect(() => {
     let alive = true;
-    let subscription:{unsubscribe:()=>void}|undefined;
-    (async () => {
-      // Supabase session
-      if (client) {
-        try {
-          const { data } = await client.auth.getSession();
-          const user = (data as { session: Session | null })?.session?.user ?? null;
-          if (user && alive) {
-            setSupabaseEmail((user.email as string) || null);
-            setSupabaseName(((user.user_metadata as { full_name?: string } | null)?.full_name as string) || null);
-            setSupabaseId(user.id);
-          }
-        } catch {
-          /* coi như chưa đăng nhập */
+    // Hoãn 1 macrotask: ở dev-localhost provider này có thể chỉ mounted lướt
+    // qua trước khi AuthProvider đổi sang preview — tránh bắn request CORS.
+    const kickoff = setTimeout(() => {
+      if (!alive) return;
+      void (async () => {
+        const axUser = await fetchAstroxUser();
+        if (alive) setAstroxUser(axUser);
+        if (alive) {
+          await refreshModuleAccess();
+          setReady(true);
         }
-        const authChange=client.auth.onAuthStateChange((event, session) => {
-          if(!alive)return;
-          setSupabaseId(session?.user?.id||null);
-          const user = session?.user ?? null;
-          setSupabaseEmail((user?.email as string) || null);
-          setSupabaseName(((user?.user_metadata as { full_name?: string } | null)?.full_name as string) || null);
-          if (event === "SIGNED_OUT") {
-            syncStop.current?.();activateAccount(null);setPointsAccount(null);
-          }
-        });
-        subscription=authChange.data.subscription;
-        if(!alive)subscription.unsubscribe();
-      }
-      // AstroX (Zalo) user
-      const axUser = await fetchAstroxUser();
-      if (alive) setAstroxUser(axUser);
-      if (alive) {
-        await refreshModuleAccess();
-        setReady(true);
-      }
-    })();
+      })();
+    }, 0);
     return () => {
-      alive = false;subscription?.unsubscribe();
+      alive = false;
+      clearTimeout(kickoff);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refreshModuleAccess]);
 
   // Poll module access mỗi 20s khi tab hiển thị (admin bật/khoá realtime).
   useEffect(() => {
@@ -160,55 +106,40 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
       if (document.visibilityState === "visible") refreshModuleAccess();
     }, 20000);
     return () => clearInterval(id);
-  }, [astroxUser, supabaseEmail, refreshModuleAccess]);
+  }, [astroxUser, refreshModuleAccess]);
 
   useLayoutEffect(()=>{
     if(!ready)return;
     syncStop.current?.();syncStop.current=null;
-    const owner=astroxUser?`zalo:${astroxUser.id}`:supabaseId?`supabase:${supabaseId}`:null;
+    const owner=astroxUser?`zalo:${astroxUser.id}`:null;
     activateAccount(owner);setPointsAccount(astroxUser?String(astroxUser.id):null);
-    if(owner){
-      syncStop.current=startCloudSync(astroxUser?`${AUTH_API_BASE}/api/user-data`:'/api/user-data',async()=>{
-        if(astroxUser)return {} as Record<string,string>;
-        const token=await currentAccessToken(client);if(!token)throw Error('no_session');
-        return {Authorization:`Bearer ${token}`};
-      });
-    }
+    if(owner)syncStop.current=startCloudSync(`${AUTH_API_BASE}/api/user-data`,async()=>({}));
     return()=>{syncStop.current?.();syncStop.current=null;};
-  },[ready,astroxUser,supabaseId,client]);
+  },[ready,astroxUser]);
 
-  const loggedIn = !!supabaseEmail || !!astroxUser;
-  const displayName =
-    supabaseName || supabaseEmail || astroxUser?.display_name || "tài khoản";
+  const loggedIn = !!astroxUser;
+  const displayName = astroxUser?.display_name || "tài khoản";
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      supabaseUser: supabaseEmail ? { email: supabaseEmail, fullName: supabaseName } : null,
       astroxUser,
       loggedIn,
       ready,
       displayName,
       moduleAccess,
-      isModuleAllowed: (module: string) => {
-        if (moduleAccess[module] === false) return false;
-        return true;
-      },
+      isModuleAllowed: (module: string) => moduleAccess[module] !== false,
       refresh: () => {
         refreshModuleAccess();
       },
       logout: async () => {
         syncStop.current?.();syncStop.current=null;activateAccount(null);setPointsAccount(null);
         try {
-          if (client) await client.auth.signOut();
           if (AUTH_API_BASE) await fetch(`${AUTH_API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
         } catch {
           /* bỏ qua */
         }
         activateAccount(null);
         setAstroxUser(null);
-        setSupabaseId(null);
-        setSupabaseEmail(null);
-        setSupabaseName(null);
       },
       zaloLogin: () => {
         if (AUTH_API_BASE) {
@@ -217,10 +148,10 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
     }),
-    [supabaseEmail, supabaseName, astroxUser, loggedIn, ready, displayName, moduleAccess, refreshModuleAccess, client],
+    [astroxUser, loggedIn, ready, displayName, moduleAccess, refreshModuleAccess],
   );
 
-  return <AuthContext.Provider value={value}><AccountContent key={astroxUser?.id||supabaseId||"guest"}>{children}</AccountContent></AuthContext.Provider>;
+  return <AuthContext.Provider value={value}><AccountContent key={astroxUser?.id||"guest"}>{children}</AccountContent></AuthContext.Provider>;
 }
 function AccountContent({children}:{children:React.ReactNode}){return children;}
 

@@ -1,87 +1,597 @@
-import {defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES} from './prompt-engine.ts';
-import { providerRoutes } from "./provider-models.ts";
-import { addMissingServices } from "./catalog.ts";
+import { defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES } from './prompt-engine.ts';
+import { providerRoutes } from './provider-models.ts';
+import { addMissingServices } from './catalog.ts';
+import { MODULES } from './modules.ts';
 /** Shared, non-secret contract. Secrets are stored by reference only. */
-export type Provider = { id: string; name: string; baseUrl: string; protocol: 'responses' | 'chat' | 'anthropic'; model: string; enabled: boolean; timeoutMs: number; retries: number; maxTokens: number; temperature: number; secretRef: string; models?: ProviderModel[]; pricing?: {input:number;output:number;cacheRead:number;cacheWrite:number} };
-export type ProviderModel = Omit<Provider, 'secretRef' | 'models'>;
-export type TopupPackage = { id: string; name: string; amountVnd: number; mode: 'rate' | 'fixed'; fixedPoints: number; bonus: number; enabled: boolean; featured: boolean };
-export type ServicePrice = { id: string; module: string; name: string; points: number; status: 'draft' | 'free' | 'paid' | 'maintenance' | 'hidden'; policy: 'profile' | 'session' | 'period'; prompt: string; chain: string[] };
-export type Milestone = { id: string; day: number; user: number; inviter: number };
-export type Promo = { id: string; code: string; bonus: number; limit: number; perUser: number; enabled: boolean; expiresAt: string };
-export type Notice = { id: string; title: string; body: string; module: string; enabled: boolean; startsAt: string; endsAt: string };
-export type AdminConfig = {
- prompts: ReturnType<typeof defaultPromptSettings>;
- engines: {iztro:{enabled:boolean};astronomy:{enabled:boolean};lunar:{enabled:boolean};numerology:{enabled:boolean};kinhdich:{enabled:boolean};tarot:{enabled:boolean}};
- ai: { enabled: boolean; providers: Provider[]; chain: string[]; totalTimeoutMs: number; maxAttempts: number; cooldownSeconds: number; failureThreshold: number; retryStatuses: number[]; systemPrompt: string };
- billing: { enabled: boolean; vndPerPoint: number; packages: TopupPackage[]; services: ServicePrice[]; promos: Promo[] };
- integrations: { payos: { enabled: boolean; clientId: string; returnUrl: string; cancelUrl: string; expiryMinutes: number }; zalo: { enabled: boolean; appId: string; callbackUrl: string; returnUrl: string }; wallet: { enabled: boolean; label: string } };
- rewards: { enabled: boolean; registrationUser: number; registrationInviter: number; firstTopupInviter: number; firstTopupUser: number; firstTopupMinVnd: number; daily: number; registrationEnabled: boolean; firstTopupEnabled: boolean; attendanceEnabled: boolean; referralMode: 'unlimited' | 'limited'; referralLimit: number; referralWindow: 'day' | 'month' | 'lifetime'; milestones: Milestone[]; ads: { enabled: boolean; networkCode: string; adUnit: string; points: number; dailyLimit: number; cooldownSeconds: number; sessionTtlSeconds: number } };
- content: { supportUrl: string; announcement: string; notices: Notice[] };
- operations: { maintenance: boolean; reconciliationMinutes: number; claimTimeoutMinutes: number; retryLimit: number; batchSize: number; alertPoints: number; auditRetentionDays: number; reportTimezone: string; reportDays: number; reviewAbovePoints: number };
- access: { roles: { id: string; name: string; capabilities: string[] }[] };
+export type Provider = {
+  id: string;
+  name: string;
+  baseUrl: string;
+  protocol: 'responses' | 'chat' | 'anthropic';
+  model: string;
+  enabled: boolean;
+  timeoutMs: number;
+  retries: number;
+  maxTokens: number;
+  temperature: number;
+  secretRef: string;
+  models?: ProviderModel[];
+  pricing?: { input: number; output: number; cacheRead: number; cacheWrite: number };
 };
-export const CAPABILITIES = ['config.read','config.write','config.publish','secrets.write','audit.read','users.read','wallet.read','wallet.adjust','reports.read','reports.export','access.manage'];
-export const MODULES = [{id:'tuvi',name:'Tử Vi',policy:'profile'},{id:'zodiac',name:'Cung Hoàng Đạo',policy:'profile'},{id:'kinhdich',name:'Kinh Dịch',policy:'session'},{id:'batu',name:'Bát Tự',policy:'profile'},{id:'numerology',name:'Thần Số Học',policy:'profile'},{id:'tarot',name:'Tarot',policy:'session'},{id:'compat',name:'Tương Hợp',policy:'profile'}] as const;
+export type ProviderModel = Omit<Provider, 'secretRef' | 'models'>;
+export type TopupPackage = {
+  id: string;
+  name: string;
+  amountVnd: number;
+  mode: 'rate' | 'fixed';
+  fixedPoints: number;
+  bonus: number;
+  enabled: boolean;
+  featured: boolean;
+};
+export type ServicePrice = {
+  id: string;
+  module: string;
+  name: string;
+  points: number;
+  status: 'draft' | 'free' | 'paid' | 'maintenance' | 'hidden';
+  policy: 'profile' | 'session' | 'period';
+  prompt: string;
+  chain: string[];
+};
+export type Milestone = { id: string; day: number; user: number; inviter: number };
+export type Promo = {
+  id: string;
+  code: string;
+  bonus: number;
+  limit: number;
+  perUser: number;
+  enabled: boolean;
+  expiresAt: string;
+};
+export type Notice = {
+  id: string;
+  title: string;
+  body: string;
+  module: string;
+  enabled: boolean;
+  startsAt: string;
+  endsAt: string;
+};
+export type AdminConfig = {
+  prompts: ReturnType<typeof defaultPromptSettings>;
+  engines: {
+    iztro: { enabled: boolean };
+    astronomy: { enabled: boolean };
+    lunar: { enabled: boolean };
+    numerology: { enabled: boolean };
+    kinhdich: { enabled: boolean };
+    tarot: { enabled: boolean };
+  };
+  ai: {
+    enabled: boolean;
+    providers: Provider[];
+    chain: string[];
+    totalTimeoutMs: number;
+    maxAttempts: number;
+    cooldownSeconds: number;
+    failureThreshold: number;
+    retryStatuses: number[];
+    systemPrompt: string;
+  };
+  billing: {
+    enabled: boolean;
+    vndPerPoint: number;
+    packages: TopupPackage[];
+    services: ServicePrice[];
+    promos: Promo[];
+  };
+  integrations: {
+    payos: { enabled: boolean; clientId: string; returnUrl: string; cancelUrl: string; expiryMinutes: number };
+    zalo: { enabled: boolean; appId: string; callbackUrl: string; returnUrl: string };
+    wallet: { enabled: boolean; label: string };
+  };
+  rewards: {
+    enabled: boolean;
+    registrationUser: number;
+    registrationInviter: number;
+    firstTopupInviter: number;
+    firstTopupUser: number;
+    firstTopupMinVnd: number;
+    daily: number;
+    registrationEnabled: boolean;
+    firstTopupEnabled: boolean;
+    attendanceEnabled: boolean;
+    referralMode: 'unlimited' | 'limited';
+    referralLimit: number;
+    referralWindow: 'day' | 'month' | 'lifetime';
+    milestones: Milestone[];
+    ads: {
+      enabled: boolean;
+      networkCode: string;
+      adUnit: string;
+      points: number;
+      dailyLimit: number;
+      cooldownSeconds: number;
+      sessionTtlSeconds: number;
+    };
+  };
+  content: { supportUrl: string; announcement: string; notices: Notice[] };
+  operations: {
+    maintenance: boolean;
+    reconciliationMinutes: number;
+    claimTimeoutMinutes: number;
+    retryLimit: number;
+    batchSize: number;
+    alertPoints: number;
+    auditRetentionDays: number;
+    reportTimezone: string;
+    reportDays: number;
+    reviewAbovePoints: number;
+  };
+  access: { roles: { id: string; name: string; capabilities: string[] }[] };
+};
+export const CAPABILITIES = [
+  'config.read',
+  'config.write',
+  'config.publish',
+  'secrets.write',
+  'audit.read',
+  'users.read',
+  'wallet.read',
+  'wallet.adjust',
+  'reports.read',
+  'reports.export',
+  'access.manage',
+];
+export { MODULES };
 export function defaultConfig(): AdminConfig {
- return {
- prompts:defaultPromptSettings(),engines:{iztro:{enabled:true},astronomy:{enabled:true},lunar:{enabled:true},numerology:{enabled:true},kinhdich:{enabled:true},tarot:{enabled:true}},
- ai:{enabled:false,providers:[],chain:[],totalTimeoutMs:90000,maxAttempts:3,cooldownSeconds:60,failureThreshold:3,retryStatuses:[429,500,502,503,504],systemPrompt:ORIGINAL_SYSTEM_PROMPT},
- billing:{enabled:false,vndPerPoint:0,packages:[],services:addMissingServices(MODULES.map(m=>({id:m.id,module:m.id,name:m.name,points:0,status:'draft',policy:m.policy,prompt:'',chain:[]}))),promos:[]},
- integrations:{payos:{enabled:false,clientId:'',returnUrl:'https://theastrox.space/hoso',cancelUrl:'https://theastrox.space/hoso',expiryMinutes:10},zalo:{enabled:false,appId:'',callbackUrl:'',returnUrl:'https://theastrox.space/'},wallet:{enabled:false,label:'AstroX Wallet'}},
- rewards:{enabled:false,registrationUser:5,registrationInviter:5,firstTopupInviter:10,firstTopupUser:0,firstTopupMinVnd:0,daily:2,registrationEnabled:true,firstTopupEnabled:true,attendanceEnabled:true,referralMode:'unlimited',referralLimit:0,referralWindow:'month',milestones:[{id:'day-3',day:3,user:3,inviter:2},{id:'day-7',day:7,user:5,inviter:3},{id:'day-10',day:10,user:10,inviter:5}],ads:{enabled:false,networkCode:'',adUnit:'',points:5,dailyLimit:5,cooldownSeconds:90,sessionTtlSeconds:600}},
- content:{supportUrl:'',announcement:'',notices:[]},operations:{maintenance:false,reconciliationMinutes:15,claimTimeoutMinutes:10,retryLimit:3,batchSize:100,alertPoints:10000,auditRetentionDays:365,reportTimezone:'Asia/Ho_Chi_Minh',reportDays:30,reviewAbovePoints:1000},
- access:{roles:[{id:'owner',name:'Chủ hệ thống',capabilities:[...CAPABILITIES]},{id:'support',name:'Hỗ trợ',capabilities:['config.read','users.read','wallet.read','reports.read']}]}
- };
+  return {
+    prompts: defaultPromptSettings(),
+    engines: {
+      iztro: { enabled: true },
+      astronomy: { enabled: true },
+      lunar: { enabled: true },
+      numerology: { enabled: true },
+      kinhdich: { enabled: true },
+      tarot: { enabled: true },
+    },
+    ai: {
+      enabled: false,
+      providers: [],
+      chain: [],
+      totalTimeoutMs: 90000,
+      maxAttempts: 3,
+      cooldownSeconds: 60,
+      failureThreshold: 3,
+      retryStatuses: [429, 500, 502, 503, 504],
+      systemPrompt: ORIGINAL_SYSTEM_PROMPT,
+    },
+    billing: {
+      enabled: false,
+      vndPerPoint: 0,
+      packages: [],
+      services: addMissingServices(
+        MODULES.map(m => ({
+          id: m.id,
+          module: m.id,
+          name: m.name,
+          points: 0,
+          status: 'draft',
+          policy: m.policy,
+          prompt: '',
+          chain: [],
+        })),
+      ),
+      promos: [],
+    },
+    integrations: {
+      payos: {
+        enabled: false,
+        clientId: '',
+        returnUrl: 'https://theastrox.space/hoso',
+        cancelUrl: 'https://theastrox.space/hoso',
+        expiryMinutes: 10,
+      },
+      zalo: { enabled: false, appId: '', callbackUrl: '', returnUrl: 'https://theastrox.space/' },
+      wallet: { enabled: false, label: 'AstroX Wallet' },
+    },
+    rewards: {
+      enabled: false,
+      registrationUser: 5,
+      registrationInviter: 5,
+      firstTopupInviter: 10,
+      firstTopupUser: 0,
+      firstTopupMinVnd: 0,
+      daily: 2,
+      registrationEnabled: true,
+      firstTopupEnabled: true,
+      attendanceEnabled: true,
+      referralMode: 'unlimited',
+      referralLimit: 0,
+      referralWindow: 'month',
+      milestones: [
+        { id: 'day-3', day: 3, user: 3, inviter: 2 },
+        { id: 'day-7', day: 7, user: 5, inviter: 3 },
+        { id: 'day-10', day: 10, user: 10, inviter: 5 },
+      ],
+      ads: {
+        enabled: false,
+        networkCode: '',
+        adUnit: '',
+        points: 5,
+        dailyLimit: 5,
+        cooldownSeconds: 90,
+        sessionTtlSeconds: 600,
+      },
+    },
+    content: { supportUrl: '', announcement: '', notices: [] },
+    operations: {
+      maintenance: false,
+      reconciliationMinutes: 15,
+      claimTimeoutMinutes: 10,
+      retryLimit: 3,
+      batchSize: 100,
+      alertPoints: 10000,
+      auditRetentionDays: 365,
+      reportTimezone: 'Asia/Ho_Chi_Minh',
+      reportDays: 30,
+      reviewAbovePoints: 1000,
+    },
+    access: {
+      roles: [
+        { id: 'owner', name: 'Chủ hệ thống', capabilities: [...CAPABILITIES] },
+        { id: 'support', name: 'Hỗ trợ', capabilities: ['config.read', 'users.read', 'wallet.read', 'reports.read'] },
+      ],
+    },
+  };
 }
 export type ConfigError = { path: string; message: string };
 export function isPublicHttps(value: string): boolean {
- try { const u=new URL(value);const h=u.hostname.toLowerCase();return u.protocol==='https:'&&!u.username&&!u.password&&!u.hash&&!u.search&&(!u.port||u.port==='443')&&!h.endsWith('.')&&h.includes('.')&&!/^[\d.]+$/.test(h)&&!h.includes(':')&&!['localhost','metadata.google.internal'].includes(h)&&!['.localhost','.local','.internal','.test','.invalid','.example'].some(s=>h.endsWith(s)); } catch {return false;}
+  try {
+    const u = new URL(value);
+    const h = u.hostname.toLowerCase();
+    return (
+      u.protocol === 'https:' &&
+      !u.username &&
+      !u.password &&
+      !u.hash &&
+      !u.search &&
+      (!u.port || u.port === '443') &&
+      !h.endsWith('.') &&
+      h.includes('.') &&
+      !/^[\d.]+$/.test(h) &&
+      !h.includes(':') &&
+      !['localhost', 'metadata.google.internal'].includes(h) &&
+      !['.localhost', '.local', '.internal', '.test', '.invalid', '.example'].some(s => h.endsWith(s))
+    );
+  } catch {
+    return false;
+  }
 }
 export function validateConfig(input: unknown): ConfigError[] {
- const errors:ConfigError[]=[];const add=(path:string,message:string)=>errors.push({path,message});
- if(!input || typeof input!=='object'||Array.isArray(input)) return [{path:'config',message:'Cấu hình không hợp lệ.'}];
- // Reject unknown properties and nonconforming primitive types before deeper checks.
- const c=hydrateConfig(input as AdminConfig); const defaults=defaultConfig();
- const shape=(v:unknown,d:unknown,p:string)=>{if(Array.isArray(d)){if(!Array.isArray(v))add(p,'Phải là danh sách.');return;}if(d!==null&&typeof d==='object'){if(!v||typeof v!=='object'||Array.isArray(v)){add(p,'Thiếu nhóm cấu hình.');return;}for(const k of Object.keys(v))if(!Object.hasOwn(d,k))add(`${p}.${k}`,'Trường không được hỗ trợ.');for(const [k,value]of Object.entries(d))shape((v as Record<string,unknown>)[k],value,`${p}.${k}`);return;}if(typeof v!==typeof d)add(p,'Sai kiểu dữ liệu.');};
- shape(c,defaults,'config'); if(errors.length)return errors;
- const integer=(v:number,p:string,min=0,max=1e9)=>{if(!Number.isSafeInteger(v)||v<min||v>max)add(p,`Nhập số nguyên từ ${min} đến ${max}.`);};
- const str=(v:unknown,p:string,max=200)=>{if(typeof v!=='string'||v.length>max)add(p,`Văn bản tối đa ${max} ký tự.`);};
- const list=(rows:unknown[],p:string,template:object)=>{if(rows.length>200)add(p,'Tối đa 200 mục.');const ids=new Set();for(const [i,r]of rows.entries()){shape(r,template,`${p}.${i}`);if(r&&typeof r==='object'){const id=(r as {id:string}).id;if(typeof id!=='string'||! /^[a-zA-Z0-9_-]{1,80}$/.test(id)||ids.has(id))add(`${p}.${i}.id`,'ID phải duy nhất, dùng chữ, số, gạch ngang.');ids.add(id);}}};
- const withoutPricing=(v:unknown)=>{if(!v||typeof v!=='object')return v;const {pricing,...rest}=v as Record<string,unknown>;void pricing;return rest;};
- list(c.ai.providers.map(p=>p&&typeof p==='object'?{...withoutPricing(p) as object,models:p.models===undefined?[]:p.models}:p),'ai.providers',{id:'',name:'',baseUrl:'',protocol:'',model:'',enabled:false,timeoutMs:0,retries:0,maxTokens:0,temperature:0,secretRef:'',models:[]});
- if(errors.length)return errors;
- for(const p of c.ai.providers)if(p.models)list(p.models.map(withoutPricing),`ai.providers.${p.id}.models`,{id:'',name:'',baseUrl:'',protocol:'',model:'',enabled:false,timeoutMs:0,retries:0,maxTokens:0,temperature:0});
- list(c.billing.packages,'billing.packages',{id:'',name:'',amountVnd:0,mode:'',fixedPoints:0,bonus:0,enabled:false,featured:false});
- list(c.billing.services,'billing.services',{id:'',module:'',name:'',points:0,status:'',policy:'',prompt:'',chain:[]});
- list(c.billing.promos,'billing.promos',{id:'',code:'',bonus:0,limit:0,perUser:0,enabled:false,expiresAt:''});
- list(c.rewards.milestones,'rewards.milestones',{id:'',day:0,user:0,inviter:0});
- list(c.content.notices,'content.notices',{id:'',title:'',body:'',module:'',enabled:false,startsAt:'',endsAt:''});
- list(c.access.roles,'access.roles',{id:'',name:'',capabilities:[]});
- for(const p of c.ai.providers)for(const item of [p,...(p.models||[])])if(item.pricing!==undefined){shape(item.pricing,{input:0,output:0,cacheRead:0,cacheWrite:0},'ai.providers.pricing');if(item.pricing&&Object.values(item.pricing).some(v=>!Number.isFinite(v)||v<0||v>100000))add('ai.providers.pricing','Giá USD / triệu token phải từ 0 đến 100000.');}
- if(errors.length)return errors;
- integer(c.billing.vndPerPoint,'billing.vndPerPoint',c.billing.enabled?1:0);integer(c.ai.totalTimeoutMs,'ai.totalTimeoutMs',1000,120000);integer(c.ai.maxAttempts,'ai.maxAttempts',1,8);integer(c.ai.cooldownSeconds,'ai.cooldownSeconds',0,3600);integer(c.ai.failureThreshold,'ai.failureThreshold',1,100);
- if(c.ai.retryStatuses.some(v=>![429,500,502,503,504].includes(v)))add('ai.retryStatuses','Chỉ retry lỗi tạm thời 429/500/502/503/504.');
- const chain=(ids:string[],p:string)=>{if(new Set(ids).size!==ids.length)add(p,'Chuỗi không được lặp cấu hình model.');for(const id of ids)if(!providerRoutes(c.ai.providers).some(v=>v.id===id&&v.enabled))add(p,'Cấu hình model không tồn tại hoặc đang tắt.');};
- chain(c.ai.chain,'ai.chain');if(c.ai.enabled&&!c.ai.chain.length)add('ai.chain','Cần ít nhất một provider khi bật AI.');
- for(const p of providerRoutes(c.ai.providers)){if(p.enabled&&(!p.name.trim()||!p.model.trim()))add('ai.providers','Provider đang bật cần tên và model.');str(p.name,'ai.providers.name');str(p.model,'ai.providers.model');if(!isPublicHttps(p.baseUrl))add('ai.providers.baseUrl','Endpoint phải là HTTPS công khai, không IP hoặc mạng nội bộ.');if(!['responses','chat','anthropic'].includes(p.protocol))add('ai.providers.protocol','Giao thức chưa hỗ trợ.');if(p.secretRef!==`provider:${p.id.split(':')[0]}`)add('ai.providers.secretRef','Tham chiếu khóa không hợp lệ.');integer(p.timeoutMs,'ai.providers.timeoutMs',1000,100000);integer(p.retries,'ai.providers.retries',0,3);integer(p.maxTokens,'ai.providers.maxTokens',1,32000);if(!Number.isFinite(p.temperature)||p.temperature<0||p.temperature>2)add('ai.providers.temperature','Nhiệt độ từ 0 đến 2.');}
- for(const p of c.billing.packages){str(p.name,'billing.packages.name');integer(p.amountVnd,'billing.packages.amountVnd',1);integer(p.fixedPoints,'billing.packages.fixedPoints');integer(p.bonus,'billing.packages.bonus');if(!['rate','fixed'].includes(p.mode))add('billing.packages.mode','Chế độ không hợp lệ.');if(p.enabled&&p.mode==='rate'&&c.billing.vndPerPoint<1)add('billing.vndPerPoint','Gói theo tỷ giá cần tỷ giá lớn hơn 0.');if(p.enabled&&quotePackage(p,c.billing.vndPerPoint).total<1)add('billing.packages','Gói đang mở phải có Point.');}
- for(const s of c.billing.services){str(s.name,'billing.services.name');str(s.prompt,'billing.services.prompt',12000);integer(s.points,'billing.services.points');if(!MODULES.some(m=>m.id===s.module))add('billing.services.module','Module không hợp lệ.');if(!['draft','free','paid','maintenance','hidden'].includes(s.status)||!['profile','session','period'].includes(s.policy))add('billing.services','Trạng thái/chính sách không hợp lệ.');if(s.status==='paid'&&s.points<1)add('billing.services.points','Dịch vụ thu phí cần giá lớn hơn 0.');chain(s.chain,`billing.services.${s.id}.chain`);}
- const days=new Set();for(const m of c.rewards.milestones){integer(m.day,'rewards.milestones.day',1,365);integer(m.user,'rewards.milestones.user');integer(m.inviter,'rewards.milestones.inviter');if(days.has(m.day))add('rewards.milestones','Mốc ngày không được trùng.');days.add(m.day);}
- for(const k of ['registrationUser','registrationInviter','firstTopupInviter','firstTopupUser','firstTopupMinVnd','daily','referralLimit']as const)integer(c.rewards[k],`rewards.${k}`);
- if(!['unlimited','limited'].includes(c.rewards.referralMode)||!['day','month','lifetime'].includes(c.rewards.referralWindow))add('rewards.referralMode','Chính sách không hợp lệ.');if(c.rewards.referralMode==='limited'&&c.rewards.referralLimit<1)add('rewards.referralLimit','Nhập hạn mức khi bật giới hạn.');
- for(const k of ['points','dailyLimit','cooldownSeconds','sessionTtlSeconds']as const)integer(c.rewards.ads[k],`rewards.ads.${k}`,k==='dailyLimit'||k==='sessionTtlSeconds'?1:0,k==='sessionTtlSeconds'?3600:1e6);
- if(c.rewards.ads.enabled&&(!/^\d+$/.test(c.rewards.ads.networkCode)||!/^\/[\w/.-]+$/.test(c.rewards.ads.adUnit)||!c.rewards.ads.adUnit.startsWith(`/${c.rewards.ads.networkCode}/`)))add('rewards.ads.adUnit','Nhập network code và ad unit hợp lệ.');
- for(const [key,v]of Object.entries(c.operations))if(typeof v==='number')integer(v,`operations.${key}`,key==='auditRetentionDays'?90:1,1e9);
- try{new Intl.DateTimeFormat('vi',{timeZone:c.operations.reportTimezone});}catch{add('operations.reportTimezone','Múi giờ không hợp lệ.');}
- for(const role of c.access.roles){str(role.name,'access.roles.name');if(role.capabilities.some(v=>!CAPABILITIES.includes(v)))add('access.roles','Quyền không được hỗ trợ.');}if(!c.access.roles.some(r=>r.id==='owner'&&CAPABILITIES.every(v=>r.capabilities.includes(v))))add('access.roles','Vai trò owner phải giữ đầy đủ quyền.');
- const url=(v:string,p:string,required=false)=>{if(!v&&!required)return;try{const u=new URL(v);const clean=new URL(u);clean.search='';if(!isPublicHttps(clean.href))throw Error();}catch{add(p,'Cần URL HTTPS hợp lệ.');}};
- for(const t of PROMPT_TEMPLATES){const value=c.prompts.templates[t.id];str(value,`prompts.templates.${t.id}`,12000);const keys=[...value.matchAll(/\{\{v(\d+)\}\}/g)].map(m=>Number(m[1]));if(keys.some(i=>i>=t.variables.length)||t.variables.some((_,i)=>!keys.includes(i)))add(`prompts.templates.${t.id}`,'Giữ đủ biến dữ liệu gốc và không thêm biến lạ.');}for(const [id,value] of Object.entries(c.prompts.tasks))str(value,`prompts.tasks.${id}`,12000);
- const pay=c.integrations.payos,zalo=c.integrations.zalo;integer(pay.expiryMinutes,'integrations.payos.expiryMinutes',5,1440);if(pay.enabled&&!pay.clientId.trim())add('integrations.payos.clientId','Thiếu Client ID.');if(zalo.enabled&&!/^\d+$/.test(zalo.appId))add('integrations.zalo.appId','Thiếu App ID.');url(pay.returnUrl,'integrations.payos.returnUrl',pay.enabled);url(pay.cancelUrl,'integrations.payos.cancelUrl',pay.enabled);url(zalo.callbackUrl,'integrations.zalo.callbackUrl',zalo.enabled);url(zalo.returnUrl,'integrations.zalo.returnUrl',zalo.enabled);url(c.content.supportUrl,'content.supportUrl');str(c.ai.systemPrompt,'ai.systemPrompt',12000);str(c.content.announcement,'content.announcement',1000);
- const codes=new Set();for(const p of c.billing.promos){if(!/^[A-Z0-9_-]{2,40}$/.test(p.code)||codes.has(p.code))add('billing.promos.code','Mã phải duy nhất, chữ hoa/số/gạch ngang.');codes.add(p.code);integer(p.bonus,'billing.promos.bonus');integer(p.limit,'billing.promos.limit',1);integer(p.perUser,'billing.promos.perUser',1);if(p.expiresAt&&!Number.isFinite(Date.parse(p.expiresAt)))add('billing.promos.expiresAt','Ngày không hợp lệ.');}
- for(const n of c.content.notices){str(n.title,'content.notices.title');str(n.body,'content.notices.body',4000);for(const d of [n.startsAt,n.endsAt])if(d&&!Number.isFinite(Date.parse(d)))add('content.notices','Ngày không hợp lệ.');if(n.startsAt&&n.endsAt&&Date.parse(n.startsAt)>=Date.parse(n.endsAt))add('content.notices','Thời gian kết thúc phải sau bắt đầu.');}
- return errors;
+  const errors: ConfigError[] = [];
+  const add = (path: string, message: string) => errors.push({ path, message });
+  if (!input || typeof input !== 'object' || Array.isArray(input))
+    return [{ path: 'config', message: 'Cấu hình không hợp lệ.' }];
+  // Reject unknown properties and nonconforming primitive types before deeper checks.
+  const c = hydrateConfig(input as AdminConfig);
+  const defaults = defaultConfig();
+  const shape = (v: unknown, d: unknown, p: string) => {
+    if (Array.isArray(d)) {
+      if (!Array.isArray(v)) add(p, 'Phải là danh sách.');
+      return;
+    }
+    if (d !== null && typeof d === 'object') {
+      if (!v || typeof v !== 'object' || Array.isArray(v)) {
+        add(p, 'Thiếu nhóm cấu hình.');
+        return;
+      }
+      for (const k of Object.keys(v)) if (!Object.hasOwn(d, k)) add(`${p}.${k}`, 'Trường không được hỗ trợ.');
+      for (const [k, value] of Object.entries(d)) shape((v as Record<string, unknown>)[k], value, `${p}.${k}`);
+      return;
+    }
+    if (typeof v !== typeof d) add(p, 'Sai kiểu dữ liệu.');
+  };
+  shape(c, defaults, 'config');
+  if (errors.length) return errors;
+  const integer = (v: number, p: string, min = 0, max = 1e9) => {
+    if (!Number.isSafeInteger(v) || v < min || v > max) add(p, `Nhập số nguyên từ ${min} đến ${max}.`);
+  };
+  const str = (v: unknown, p: string, max = 200) => {
+    if (typeof v !== 'string' || v.length > max) add(p, `Văn bản tối đa ${max} ký tự.`);
+  };
+  const list = (rows: unknown[], p: string, template: object) => {
+    if (rows.length > 200) add(p, 'Tối đa 200 mục.');
+    const ids = new Set();
+    for (const [i, r] of rows.entries()) {
+      shape(r, template, `${p}.${i}`);
+      if (r && typeof r === 'object') {
+        const id = (r as { id: string }).id;
+        if (typeof id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(id) || ids.has(id))
+          add(`${p}.${i}.id`, 'ID phải duy nhất, dùng chữ, số, gạch ngang.');
+        ids.add(id);
+      }
+    }
+  };
+  const withoutPricing = (v: unknown) => {
+    if (!v || typeof v !== 'object') return v;
+    const { pricing, ...rest } = v as Record<string, unknown>;
+    void pricing;
+    return rest;
+  };
+  list(
+    c.ai.providers.map(p =>
+      p && typeof p === 'object'
+        ? { ...(withoutPricing(p) as object), models: p.models === undefined ? [] : p.models }
+        : p,
+    ),
+    'ai.providers',
+    {
+      id: '',
+      name: '',
+      baseUrl: '',
+      protocol: '',
+      model: '',
+      enabled: false,
+      timeoutMs: 0,
+      retries: 0,
+      maxTokens: 0,
+      temperature: 0,
+      secretRef: '',
+      models: [],
+    },
+  );
+  if (errors.length) return errors;
+  for (const p of c.ai.providers)
+    if (p.models)
+      list(p.models.map(withoutPricing), `ai.providers.${p.id}.models`, {
+        id: '',
+        name: '',
+        baseUrl: '',
+        protocol: '',
+        model: '',
+        enabled: false,
+        timeoutMs: 0,
+        retries: 0,
+        maxTokens: 0,
+        temperature: 0,
+      });
+  list(c.billing.packages, 'billing.packages', {
+    id: '',
+    name: '',
+    amountVnd: 0,
+    mode: '',
+    fixedPoints: 0,
+    bonus: 0,
+    enabled: false,
+    featured: false,
+  });
+  list(c.billing.services, 'billing.services', {
+    id: '',
+    module: '',
+    name: '',
+    points: 0,
+    status: '',
+    policy: '',
+    prompt: '',
+    chain: [],
+  });
+  list(c.billing.promos, 'billing.promos', {
+    id: '',
+    code: '',
+    bonus: 0,
+    limit: 0,
+    perUser: 0,
+    enabled: false,
+    expiresAt: '',
+  });
+  list(c.rewards.milestones, 'rewards.milestones', { id: '', day: 0, user: 0, inviter: 0 });
+  list(c.content.notices, 'content.notices', {
+    id: '',
+    title: '',
+    body: '',
+    module: '',
+    enabled: false,
+    startsAt: '',
+    endsAt: '',
+  });
+  list(c.access.roles, 'access.roles', { id: '', name: '', capabilities: [] });
+  for (const p of c.ai.providers)
+    for (const item of [p, ...(p.models || [])])
+      if (item.pricing !== undefined) {
+        shape(item.pricing, { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, 'ai.providers.pricing');
+        if (item.pricing && Object.values(item.pricing).some(v => !Number.isFinite(v) || v < 0 || v > 100000))
+          add('ai.providers.pricing', 'Giá USD / triệu token phải từ 0 đến 100000.');
+      }
+  if (errors.length) return errors;
+  integer(c.billing.vndPerPoint, 'billing.vndPerPoint', c.billing.enabled ? 1 : 0);
+  integer(c.ai.totalTimeoutMs, 'ai.totalTimeoutMs', 1000, 120000);
+  integer(c.ai.maxAttempts, 'ai.maxAttempts', 1, 8);
+  integer(c.ai.cooldownSeconds, 'ai.cooldownSeconds', 0, 3600);
+  integer(c.ai.failureThreshold, 'ai.failureThreshold', 1, 100);
+  if (c.ai.retryStatuses.some(v => ![429, 500, 502, 503, 504].includes(v)))
+    add('ai.retryStatuses', 'Chỉ retry lỗi tạm thời 429/500/502/503/504.');
+  const chain = (ids: string[], p: string) => {
+    if (new Set(ids).size !== ids.length) add(p, 'Chuỗi không được lặp cấu hình model.');
+    for (const id of ids)
+      if (!providerRoutes(c.ai.providers).some(v => v.id === id && v.enabled))
+        add(p, 'Cấu hình model không tồn tại hoặc đang tắt.');
+  };
+  chain(c.ai.chain, 'ai.chain');
+  if (c.ai.enabled && !c.ai.chain.length) add('ai.chain', 'Cần ít nhất một provider khi bật AI.');
+  for (const p of providerRoutes(c.ai.providers)) {
+    if (p.enabled && (!p.name.trim() || !p.model.trim())) add('ai.providers', 'Provider đang bật cần tên và model.');
+    str(p.name, 'ai.providers.name');
+    str(p.model, 'ai.providers.model');
+    if (!isPublicHttps(p.baseUrl))
+      add('ai.providers.baseUrl', 'Endpoint phải là HTTPS công khai, không IP hoặc mạng nội bộ.');
+    if (!['responses', 'chat', 'anthropic'].includes(p.protocol))
+      add('ai.providers.protocol', 'Giao thức chưa hỗ trợ.');
+    if (p.secretRef !== `provider:${p.id.split(':')[0]}`)
+      add('ai.providers.secretRef', 'Tham chiếu khóa không hợp lệ.');
+    integer(p.timeoutMs, 'ai.providers.timeoutMs', 1000, 100000);
+    integer(p.retries, 'ai.providers.retries', 0, 3);
+    integer(p.maxTokens, 'ai.providers.maxTokens', 1, 32000);
+    if (!Number.isFinite(p.temperature) || p.temperature < 0 || p.temperature > 2)
+      add('ai.providers.temperature', 'Nhiệt độ từ 0 đến 2.');
+  }
+  for (const p of c.billing.packages) {
+    str(p.name, 'billing.packages.name');
+    integer(p.amountVnd, 'billing.packages.amountVnd', 1);
+    integer(p.fixedPoints, 'billing.packages.fixedPoints');
+    integer(p.bonus, 'billing.packages.bonus');
+    if (!['rate', 'fixed'].includes(p.mode)) add('billing.packages.mode', 'Chế độ không hợp lệ.');
+    if (p.enabled && p.mode === 'rate' && c.billing.vndPerPoint < 1)
+      add('billing.vndPerPoint', 'Gói theo tỷ giá cần tỷ giá lớn hơn 0.');
+    if (p.enabled && quotePackage(p, c.billing.vndPerPoint).total < 1)
+      add('billing.packages', 'Gói đang mở phải có Point.');
+  }
+  for (const s of c.billing.services) {
+    str(s.name, 'billing.services.name');
+    str(s.prompt, 'billing.services.prompt', 12000);
+    integer(s.points, 'billing.services.points');
+    if (!MODULES.some(m => m.id === s.module)) add('billing.services.module', 'Module không hợp lệ.');
+    if (
+      !['draft', 'free', 'paid', 'maintenance', 'hidden'].includes(s.status) ||
+      !['profile', 'session', 'period'].includes(s.policy)
+    )
+      add('billing.services', 'Trạng thái/chính sách không hợp lệ.');
+    if (s.status === 'paid' && s.points < 1) add('billing.services.points', 'Dịch vụ thu phí cần giá lớn hơn 0.');
+    chain(s.chain, `billing.services.${s.id}.chain`);
+  }
+  const days = new Set();
+  for (const m of c.rewards.milestones) {
+    integer(m.day, 'rewards.milestones.day', 1, 365);
+    integer(m.user, 'rewards.milestones.user');
+    integer(m.inviter, 'rewards.milestones.inviter');
+    if (days.has(m.day)) add('rewards.milestones', 'Mốc ngày không được trùng.');
+    days.add(m.day);
+  }
+  for (const k of [
+    'registrationUser',
+    'registrationInviter',
+    'firstTopupInviter',
+    'firstTopupUser',
+    'firstTopupMinVnd',
+    'daily',
+    'referralLimit',
+  ] as const)
+    integer(c.rewards[k], `rewards.${k}`);
+  if (
+    !['unlimited', 'limited'].includes(c.rewards.referralMode) ||
+    !['day', 'month', 'lifetime'].includes(c.rewards.referralWindow)
+  )
+    add('rewards.referralMode', 'Chính sách không hợp lệ.');
+  if (c.rewards.referralMode === 'limited' && c.rewards.referralLimit < 1)
+    add('rewards.referralLimit', 'Nhập hạn mức khi bật giới hạn.');
+  for (const k of ['points', 'dailyLimit', 'cooldownSeconds', 'sessionTtlSeconds'] as const)
+    integer(
+      c.rewards.ads[k],
+      `rewards.ads.${k}`,
+      k === 'dailyLimit' || k === 'sessionTtlSeconds' ? 1 : 0,
+      k === 'sessionTtlSeconds' ? 3600 : 1e6,
+    );
+  if (
+    c.rewards.ads.enabled &&
+    (!/^\d+$/.test(c.rewards.ads.networkCode) ||
+      !/^\/[\w/.-]+$/.test(c.rewards.ads.adUnit) ||
+      !c.rewards.ads.adUnit.startsWith(`/${c.rewards.ads.networkCode}/`))
+  )
+    add('rewards.ads.adUnit', 'Nhập network code và ad unit hợp lệ.');
+  for (const [key, v] of Object.entries(c.operations))
+    if (typeof v === 'number') integer(v, `operations.${key}`, key === 'auditRetentionDays' ? 90 : 1, 1e9);
+  try {
+    new Intl.DateTimeFormat('vi', { timeZone: c.operations.reportTimezone });
+  } catch {
+    add('operations.reportTimezone', 'Múi giờ không hợp lệ.');
+  }
+  for (const role of c.access.roles) {
+    str(role.name, 'access.roles.name');
+    if (role.capabilities.some(v => !CAPABILITIES.includes(v))) add('access.roles', 'Quyền không được hỗ trợ.');
+  }
+  if (!c.access.roles.some(r => r.id === 'owner' && CAPABILITIES.every(v => r.capabilities.includes(v))))
+    add('access.roles', 'Vai trò owner phải giữ đầy đủ quyền.');
+  const url = (v: string, p: string, required = false) => {
+    if (!v && !required) return;
+    try {
+      const u = new URL(v);
+      const clean = new URL(u);
+      clean.search = '';
+      if (!isPublicHttps(clean.href)) throw Error();
+    } catch {
+      add(p, 'Cần URL HTTPS hợp lệ.');
+    }
+  };
+  for (const t of PROMPT_TEMPLATES) {
+    const value = c.prompts.templates[t.id];
+    str(value, `prompts.templates.${t.id}`, 12000);
+    const keys = [...value.matchAll(/\{\{v(\d+)\}\}/g)].map(m => Number(m[1]));
+    if (keys.some(i => i >= t.variables.length) || t.variables.some((_, i) => !keys.includes(i)))
+      add(`prompts.templates.${t.id}`, 'Giữ đủ biến dữ liệu gốc và không thêm biến lạ.');
+  }
+  for (const [id, value] of Object.entries(c.prompts.tasks)) str(value, `prompts.tasks.${id}`, 12000);
+  const pay = c.integrations.payos,
+    zalo = c.integrations.zalo;
+  integer(pay.expiryMinutes, 'integrations.payos.expiryMinutes', 5, 1440);
+  if (pay.enabled && !pay.clientId.trim()) add('integrations.payos.clientId', 'Thiếu Client ID.');
+  if (zalo.enabled && !/^\d+$/.test(zalo.appId)) add('integrations.zalo.appId', 'Thiếu App ID.');
+  url(pay.returnUrl, 'integrations.payos.returnUrl', pay.enabled);
+  url(pay.cancelUrl, 'integrations.payos.cancelUrl', pay.enabled);
+  url(zalo.callbackUrl, 'integrations.zalo.callbackUrl', zalo.enabled);
+  url(zalo.returnUrl, 'integrations.zalo.returnUrl', zalo.enabled);
+  url(c.content.supportUrl, 'content.supportUrl');
+  str(c.ai.systemPrompt, 'ai.systemPrompt', 12000);
+  str(c.content.announcement, 'content.announcement', 1000);
+  const codes = new Set();
+  for (const p of c.billing.promos) {
+    if (!/^[A-Z0-9_-]{2,40}$/.test(p.code) || codes.has(p.code))
+      add('billing.promos.code', 'Mã phải duy nhất, chữ hoa/số/gạch ngang.');
+    codes.add(p.code);
+    integer(p.bonus, 'billing.promos.bonus');
+    integer(p.limit, 'billing.promos.limit', 1);
+    integer(p.perUser, 'billing.promos.perUser', 1);
+    if (p.expiresAt && !Number.isFinite(Date.parse(p.expiresAt))) add('billing.promos.expiresAt', 'Ngày không hợp lệ.');
+  }
+  for (const n of c.content.notices) {
+    str(n.title, 'content.notices.title');
+    str(n.body, 'content.notices.body', 4000);
+    for (const d of [n.startsAt, n.endsAt])
+      if (d && !Number.isFinite(Date.parse(d))) add('content.notices', 'Ngày không hợp lệ.');
+    if (n.startsAt && n.endsAt && Date.parse(n.startsAt) >= Date.parse(n.endsAt))
+      add('content.notices', 'Thời gian kết thúc phải sau bắt đầu.');
+  }
+  return errors;
 }
-export function quotePackage(p:TopupPackage,rate:number){const base=p.mode==='fixed'?p.fixedPoints:rate>0?Math.floor(p.amountVnd/rate):0;return {base,bonus:p.bonus,total:base+p.bonus};}
-export function publicConfig(c:AdminConfig){return {engines:c.engines,availability:Object.fromEntries(c.billing.services.filter(s=>s.id===s.module).map(s=>[s.module,s.status])),billing:{enabled:c.billing.enabled,vndPerPoint:c.billing.vndPerPoint,packages:c.billing.packages.filter(p=>p.enabled).map(p=>({...p,...quotePackage(p,c.billing.vndPerPoint)})),services:c.billing.services.filter(s=>s.status!=='draft'&&s.status!=='hidden').map(({id,module,name,points,status,policy})=>({id,module,name,points,status,policy}))},rewards:{...c.rewards},content:c.content,maintenance:c.operations.maintenance};}
+export function quotePackage(p: TopupPackage, rate: number) {
+  const base = p.mode === 'fixed' ? p.fixedPoints : rate > 0 ? Math.floor(p.amountVnd / rate) : 0;
+  return { base, bonus: p.bonus, total: base + p.bonus };
+}
+export function publicConfig(c: AdminConfig) {
+  return {
+    engines: c.engines,
+    availability: Object.fromEntries(c.billing.services.filter(s => s.id === s.module).map(s => [s.module, s.status])),
+    billing: {
+      enabled: c.billing.enabled,
+      vndPerPoint: c.billing.vndPerPoint,
+      packages: c.billing.packages
+        .filter(p => p.enabled)
+        .map(p => ({ ...p, ...quotePackage(p, c.billing.vndPerPoint) })),
+      services: c.billing.services
+        .filter(s => s.status !== 'draft' && s.status !== 'hidden')
+        .map(({ id, module, name, points, status, policy }) => ({ id, module, name, points, status, policy })),
+    },
+    rewards: { ...c.rewards },
+    content: c.content,
+    maintenance: c.operations.maintenance,
+  };
+}
 
-export function hydrateConfig(c:AdminConfig):AdminConfig{const p=defaultPromptSettings();return {...c,prompts:{templates:{...p.templates,...c.prompts?.templates},tasks:{...p.tasks,...c.prompts?.tasks}},engines:{...defaultConfig().engines,...c.engines}};}
+export function hydrateConfig(c: AdminConfig): AdminConfig {
+  const p = defaultPromptSettings();
+  return {
+    ...c,
+    prompts: { templates: { ...p.templates, ...c.prompts?.templates }, tasks: { ...p.tasks, ...c.prompts?.tasks } },
+    engines: { ...defaultConfig().engines, ...c.engines },
+  };
+}

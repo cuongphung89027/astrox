@@ -61,29 +61,6 @@ export function getZodiacSign(dobIso: string | undefined | null): ZodiacSign | n
   return ZODIAC_SIGNS[0];
 }
 
-/** Chip tone theo nguyên tố: Hoả=son, Thổ=ngọc, Khí=chàm, Thuỷ=sen. */
-export const ELEMENT_TONE: Record<string, "son" | "ngoc" | "cham" | "sen"> = {
-  "Hoả": "son",
-  "Thổ": "ngoc",
-  "Khí": "cham",
-  "Thuỷ": "sen",
-};
-
-/** Nguyên tố hợp / khắc — cùng quy tắc với bảng tương hợp (lửa hút khí, đất hút nước). */
-export const ELEMENT_FRIEND: Record<string, string> = {
-  "Hoả": "Khí",
-  "Thổ": "Thuỷ",
-  "Khí": "Hoả",
-  "Thuỷ": "Thổ",
-};
-
-export const ELEMENT_CLASH: Record<string, string> = {
-  "Hoả": "Thuỷ",
-  "Thổ": "Khí",
-  "Khí": "Thổ",
-  "Thuỷ": "Hoả",
-};
-
 /* ------------------------------------------------------------------ */
 /* Bản đồ sao — port 1:1 buildNatalChart (astronomy-engine)            */
 /* ------------------------------------------------------------------ */
@@ -183,14 +160,8 @@ export function natalTime(profile: Pick<Profile, "dob" | "hourChi" | "birthTime"
   return new Date(`${profile.dob}T${String(hour).padStart(2, "0")}:00:00+07:00`);
 }
 
-function localSidereal(date: Date, lon: number): number {
-  const jd = date.getTime() / 86400000 + 2440587.5;
-  const t = (jd - 2451545) / 36525;
-  return normDeg(280.46061837 + 360.98564736629 * (jd - 2451545) + lon + 0.000387933 * t * t - (t * t * t) / 38710000);
-}
-
 /** Kinh độ hoàng đạo (tropical) của một hành tinh — đúng công thức app cũ. */
-function eclipticLongitude(body: string, date: Date, lat: number, lon: number): number {
+function eclipticLongitude(body: string, date: Date): number {
   const bodyEnum = Astronomy.Body[body as keyof typeof Astronomy.Body];
   return Astronomy.Ecliptic(Astronomy.GeoVector(bodyEnum, date, true)).elon;
 }
@@ -218,7 +189,7 @@ export function buildNatalChart(profile: Pick<Profile, "dob" | "hourChi" | "plac
   const date = natalTime(profile);
 
   const planets: NatalPlanet[] = NATAL_BODIES.map(([body, name, symbol]) => {
-    const longitude = normDeg(eclipticLongitude(body, date, lat, lon));
+    const longitude = normDeg(eclipticLongitude(body, date));
     return { body, name, symbol, longitude, sign: zodiacAt(longitude), house: 0 };
   });
 
@@ -302,10 +273,6 @@ const TRANSIT_FOCUS: Record<ZodiacPeriod, string[]> = {
   month: ["Mặt Trời", "Kim Tinh", "Hoả Tinh", "Mộc Tinh", "Thổ Tinh"],
 };
 
-function observerCoords(place: string | undefined): [number, number] {
-  return (place && VN_COORDS[place]) || VN_COORDS["Hà Nội"];
-}
-
 interface TransitBody {
   name: string;
   symbol: string;
@@ -313,11 +280,10 @@ interface TransitBody {
   sign: ZodiacAt;
 }
 
-export function transitChartFor(date: Date, place: string | undefined): TransitBody[] | null {
+export function transitChartFor(date: Date): TransitBody[] | null {
   try {
     const A = Astronomy;
     const at = new Date(date.getTime());
-    const [lat, lon] = observerCoords(place);
     const moonLon = A.EclipticGeoMoon(at).lon;
     const out: TransitBody[] = [{ name: "Mặt Trăng", symbol: "☽", longitude: normDeg(moonLon), sign: zodiacAt(moonLon) }];
     const bodies: Array<[string, string, string]> = [
@@ -329,7 +295,7 @@ export function transitChartFor(date: Date, place: string | undefined): TransitB
       ["Saturn", "Thổ Tinh", "♄"],
     ];
     for (const [body, name, symbol] of bodies) {
-      const longitude = normDeg(eclipticLongitude(body, at, lat, lon));
+      const longitude = normDeg(eclipticLongitude(body, at));
       out.push({ name, symbol, longitude, sign: zodiacAt(longitude) });
     }
     return out;
@@ -338,13 +304,12 @@ export function transitChartFor(date: Date, place: string | undefined): TransitB
   }
 }
 
-export function moonPhaseInfo(date: Date, place: string | undefined): { age: number; illumination: number; phase: string } | null {
+export function moonPhaseInfo(date: Date): { age: number; illumination: number; phase: string } | null {
   try {
     const A = Astronomy;
     const at = new Date(date.getTime());
-    const [lat, lon] = observerCoords(place);
     const moonLon = A.EclipticGeoMoon(at).lon;
-    const sunLon = normDeg(eclipticLongitude("Sun", at, lat, lon));
+    const sunLon = normDeg(eclipticLongitude("Sun", at));
     const elong = normDeg(moonLon - sunLon);
     const age = (elong / 360) * 29.53;
     const names: Array<[number, string]> = [
@@ -386,7 +351,7 @@ function transitAspects(transits: TransitBody[] | null, natalPlanets: NatalPlane
 const periodSkyCache: Record<string, string> = {};
 
 /** Dữ liệu quá cảnh nạp vào prompt — port periodSkyText. */
-export function periodSkyText(period: ZodiacPeriod, natalChart: NatalChart | null, place: string | undefined): string {
+export function periodSkyText(period: ZodiacPeriod, natalChart: NatalChart | null): string {
   const cacheKey = `${period}_${new Date().toISOString().slice(0, 10)}`;
   if (periodSkyCache[cacheKey]) return periodSkyCache[cacheKey];
   const now = new Date();
@@ -395,7 +360,7 @@ export function periodSkyText(period: ZodiacPeriod, natalChart: NatalChart | nul
   const ephemeris: Record<string, TransitBody[] | null> = {};
   const getTransits = (date: Date): TransitBody[] | null => {
     const k = date.toISOString().slice(0, 10);
-    if (!(k in ephemeris)) ephemeris[k] = transitChartFor(date, place);
+    if (!(k in ephemeris)) ephemeris[k] = transitChartFor(date);
     return ephemeris[k];
   };
   days.forEach((d) => {
@@ -412,7 +377,7 @@ export function periodSkyText(period: ZodiacPeriod, natalChart: NatalChart | nul
       .map((t) => `${t.symbol} ${t.name} ở ${t.sign.name} ${t.sign.degree.toFixed(0)}°`)
       .join("; ");
     const moon = transits.find((t) => t.name === "Mặt Trăng");
-    const phase = moonPhaseInfo(date, place);
+    const phase = moonPhaseInfo(date);
     lines.push(
       `${label}: ${pos}. Mặt Trăng ở ${moon ? moon.sign.name : "—"}.${phase ? ` Pha Mặt Trăng: ${phase.phase} (tuổi ${phase.age} ngày, sáng ${phase.illumination}%).` : ""}`,
     );
@@ -460,7 +425,7 @@ export function zodiacPeriodPrompt(
   profile: Profile | null,
   natalChart: NatalChart | null,
 ): string {
-  const sky = periodSkyText(period, natalChart, profile?.place);
+  const sky = periodSkyText(period, natalChart);
   const base = zodiacPromptBody(
     profile,
     natalChart,

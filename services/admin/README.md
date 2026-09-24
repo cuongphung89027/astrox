@@ -15,7 +15,7 @@ npm run dev -- --port 3311
 
 Mở `http://localhost:3311/admin`. Mật khẩu local được tạo trong `.dev-admin/credentials.json` ở gốc repo; file này được gitignore, quyền 0600. Không đưa file vào git hoặc dùng thông tin local cho production. SQLite local nằm cùng thư mục. Server API chỉ lắng nghe loopback cổng 8789.
 
-Mặc định AI của web preview vẫn dùng đường dẫn hiện có. Để kiểm thử router AI local, khởi động Next với `ASTROX_LOCAL_AI=1`; đặt `PROVIDER_ALLOWED_HOSTS` cho tiến trình API, cấu hình provider/key, mở dịch vụ miễn phí và áp dụng cấu hình trước khi gọi. Kiểm tra provider có thể phát sinh chi phí thực trên provider đã nhập.
+Ở chế độ dev, `/api/ai` của web mặc định đi vào router AI local (`127.0.0.1:8789`). Chỉ khi cần gọi AI production mới khởi động Next với `ASTROX_PROD_AI=1`. Để kiểm thử router local, đặt `PROVIDER_ALLOWED_HOSTS` cho tiến trình API, cấu hình provider/key, mở dịch vụ miễn phí và áp dụng cấu hình trước khi gọi. Kiểm tra provider có thể phát sinh chi phí thực trên provider đã nhập.
 
 ## Phạm vi đã nối
 
@@ -34,16 +34,16 @@ Các tùy chọn audit/retention/đối soát là chính sách cho backend tươ
 
 Áp dụng `migrations/admin.sql` vào D1 được bind tên `DB`. Migration chỉ thêm bảng admin; không sửa số dư cũ. Cấu hình Cloudflare Access bảo vệ cả `/admin*` và `/api/admin/*`, rồi đặt:
 
-| Binding/biến | Ý nghĩa |
-| --- | --- |
-| `DB` | D1 cấu hình, lịch sử, audit, secret mã hóa |
-| `ADMIN_ACCESS_TEAM_DOMAIN` | Domain dạng `team.cloudflareaccess.com` |
-| `ADMIN_ACCESS_AUD` | Audience ứng dụng Access |
-| `ADMIN_OWNER_EMAILS` | Email chủ quản trị, ngăn cách dấu phẩy |
-| `ADMIN_ENCRYPTION_KEY` | Secret base64 của 32 byte ngẫu nhiên; sao lưu an toàn |
-| `ADMIN_ROLE_ASSIGNMENTS` | JSON email → role ID, tùy chọn; thành viên trong DB có ưu tiên |
-| `PROVIDER_ALLOWED_HOSTS` | Danh sách hostname provider chính xác, ngăn cách dấu phẩy |
-| `ASTROX_BACKEND` | Service binding Worker ví/xác thực, chỉ khi sẵn sàng |
+| Binding/biến               | Ý nghĩa                                                        |
+| -------------------------- | -------------------------------------------------------------- |
+| `DB`                       | D1 cấu hình, lịch sử, audit, secret mã hóa                     |
+| `ADMIN_ACCESS_TEAM_DOMAIN` | Domain dạng `team.cloudflareaccess.com`                        |
+| `ADMIN_ACCESS_AUD`         | Audience ứng dụng Access                                       |
+| `ADMIN_OWNER_EMAILS`       | Email chủ quản trị, ngăn cách dấu phẩy                         |
+| `ADMIN_ENCRYPTION_KEY`     | Secret base64 của 32 byte ngẫu nhiên; sao lưu an toàn          |
+| `ADMIN_ROLE_ASSIGNMENTS`   | JSON email → role ID, tùy chọn; thành viên trong DB có ưu tiên |
+| `PROVIDER_ALLOWED_HOSTS`   | Danh sách hostname provider chính xác, ngăn cách dấu phẩy      |
+| `ASTROX_BACKEND`           | Service binding Worker ví/xác thực, chỉ khi sẵn sàng           |
 
 Không cấu hình `LOCAL_ADMIN` trên deployment. Owner được quản lý qua môi trường, các vai trò khác chỉnh trong Admin. API xác minh chữ ký Access, audience, issuer và hạn token; không tin email/header tự gửi.
 

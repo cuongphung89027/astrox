@@ -1,9 +1,9 @@
 "use client";
 import { SERVICE_CATALOG } from "../../../services/admin/catalog.ts";
+import { MODULES, MODULE_IDS } from "../../../services/admin/modules.ts";
 export type FeatureEvent = "feature_view" | "feature_start" | "result_view" | "result_save";
 export type FeatureSource = "navigation" | "calculation" | "ai" | "cache" | "saved";
-const modules = ["tuvi", "zodiac", "kinhdich", "batu", "numerology", "tarot", "compat"];
-const services = new Map([...modules.map(m => [m, m] as const), ...SERVICE_CATALOG.map(s => [s.id, s.module] as const)]);
+const services = new Map([...MODULE_IDS.map(m => [m, m] as const), ...SERVICE_CATALOG.map(s => [s.id, s.module] as const)]);
 const SESSION_KEY = "astrox_feature_session_v1";
 const TTL = 30 * 60 * 1000;
 /** Anonymous, tab-scoped 30-minute activity sessions; never people or accounts. */
@@ -25,4 +25,4 @@ export function trackFeature(event: FeatureEvent, service: string, source: Featu
     }).catch(() => {});
   } catch { /* Disabled storage / telemetry must never interrupt a reading. */ }
 }
-export const FEATURE_ROUTES: Record<string, string> = { "/tuvi": "tuvi", "/cunghoangdao": "zodiac", "/kinhdich": "kinhdich", "/battu": "batu", "/thansohoc": "numerology", "/tarot": "tarot", "/tuonghop": "compat" };
+export const FEATURE_ROUTES: Record<string, string> = Object.fromEntries(MODULES.map(m => [m.route, m.id]));

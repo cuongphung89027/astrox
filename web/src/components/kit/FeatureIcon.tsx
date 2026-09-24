@@ -1,8 +1,12 @@
 import type { SVGProps } from "react";
+import { MODULES, type ModuleId } from "../../../../services/admin/modules.ts";
 
 export type FeatureName = "home" | "tuvi" | "zodiac" | "kinhdich" | "battu" | "numerology" | "tarot" | "compat" | "profile" | "explore" | "settings" | "wallet" | "motion" | "text" | "calendar" | "logout" | "close" | "invite" | "play";
+const MODULE_ICON: Record<ModuleId, FeatureName> = { tuvi: "tuvi", zodiac: "zodiac", kinhdich: "kinhdich", batu: "battu", numerology: "numerology", tarot: "tarot", compat: "compat" };
 export const FEATURE_BY_PATH: Record<string, FeatureName> = {
-  "/": "home", "/tuvi": "tuvi", "/cunghoangdao": "zodiac", "/hoangdao": "zodiac", "/kinhdich": "kinhdich", "/battu": "battu", "/thansohoc": "numerology", "/thanso": "numerology", "/tarot": "tarot", "/tuonghop": "compat", "/hoso": "profile",
+  "/": "home",
+  ...Object.fromEntries(MODULES.flatMap(m => [m.route, ...m.legacyRoutes].map(route => [route, MODULE_ICON[m.id]]))),
+  "/hoso": "profile",
 };
 /** Shared AstroX line icons. Use currentColor so only the active navigation item is accented. */
 export function FeatureIcon({ name, size = 24, ...props }: SVGProps<SVGSVGElement> & { name: FeatureName; size?: number }) {

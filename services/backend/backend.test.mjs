@@ -269,3 +269,23 @@ test('referral follows verified OAuth and a returning identity cannot acquire ne
  async function login(ref){const start=await zaloLogin(env,new Request('https://api.example.com/auth/zalo/login?ref='+ref),settings),state=new URL(start.headers.get('location')).searchParams.get('state');return zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state='+state+'&code=test',{headers:{cookie:'astrox_oauth='+state}}),settings,async url=>url.includes('access_token')?Response.json({access_token:'provider-test'}):Response.json({id:'new-provider-identity',name:'Test only'}));}
  assert.equal((await login('ASTROX')).status,302);const identity=await env.DB.prepare("SELECT user_id FROM zalo_identities WHERE provider_subject='new-provider-identity'").first();assert.equal(await balance(env,identity.user_id),5);assert.equal(await balance(env,'u1'),15);assert.equal((await login('OTHER2')).status,302);assert.equal(await balance(env,'u2'),0);assert.equal(await balance(env,identity.user_id),5);assert.equal((await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?').bind(identity.user_id).first()).inviter_id,'u1');
 });
+
+test('browser Zalo verification failure offers safe recovery without creating a session or exposing credentials',async()=>{
+ const env=await fixture();
+ await env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)').bind('browser-state','v',new Date().toISOString()).run();
+ const response=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state=browser-state&code=private-code',{headers:{cookie:'astrox_oauth=browser-state',accept:'text/html'}}),{zalo:{returnUrl:'https://theastrox.space/'}},async url=>url.includes('access_token')?Response.json({access_token:'private-token'}):Response.json({error:-501}));
+ assert.equal(response.status,502);
+ assert.match(response.headers.get('content-type'),/text\/html/);
+ const html=await response.text();
+ assert.match(html,/Thử lại/);assert.match(html,/Về AstroX/);
+ assert.ok(!html.includes('private-token')&&!html.includes('private-code'));
+ assert.ok(!response.headers.get('set-cookie')?.includes('astrox_session='));
+ assert.match(response.headers.get('referrer-policy'),/no-referrer/);
+ assert.equal((await env.DB.prepare('SELECT COUNT(*) AS n FROM app_users').first()).n,1);
+});
+test('expired browser callbacks show a restart link instead of raw JSON',async()=>{
+ const env=await fixture();
+ const response=await zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback',{headers:{accept:'text/html'}}),{});
+ assert.equal(response.status,400);assert.match(response.headers.get('content-type'),/text\/html/);
+ assert.match(await response.text(),/Phiên đăng nhập đã hết hạn/);
+});

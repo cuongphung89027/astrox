@@ -1,5 +1,6 @@
 import {equal} from '../admin/crypto.mjs';
 import {json,trustedOrigin} from './http.mjs';
+import {loginFailure} from './login-failure.mjs';
 import {registrationEventStatements,settleRegistration} from './rewards.mjs';
 const enc=new TextEncoder();
 // Zalo chặn login ở nhiều tầng (consent, token exchange, verify) mà không bao giờ quay lại callback,
@@ -58,15 +59,15 @@ export async function zaloLogin(env,request,settings){
 }
 export async function zaloCallback(env,request,settings,fetchImpl=fetch){
  const url=new URL(request.url),state=url.searchParams.get('state'),code=url.searchParams.get('code');const cookie=(request.headers.get('cookie')||'').match(/(?:^|;\s*)astrox_oauth=([^;]+)/)?.[1];
- if(!state||!code||!cookie||!await equal(state,cookie)){await diag(env,'callback_rejected',{has_state:!!state,has_code:!!code,has_cookie:!!cookie,zalo_error:url.searchParams.get('error')||null,zalo_error_description:(url.searchParams.get('error_description')||'').slice(0,200)||null});return json(env,request,{error:'invalid_oauth_state'},400);}
- const row=await env.DB.prepare("DELETE FROM oauth_states WHERE id=? AND julianday(created_at)>julianday('now','-10 minutes') RETURNING code_verifier").bind(state).first();if(!row){await diag(env,'state_expired_or_missing',{});return json(env,request,{error:'invalid_or_expired_state'},400);}
+ if(!state||!code||!cookie||!await equal(state,cookie)){await diag(env,'callback_rejected',{has_state:!!state,has_code:!!code,has_cookie:!!cookie,zalo_error:url.searchParams.get('error')||null,zalo_error_description:(url.searchParams.get('error_description')||'').slice(0,200)||null});return loginFailure(env,request,{error:'invalid_oauth_state'},400);}
+ const row=await env.DB.prepare("DELETE FROM oauth_states WHERE id=? AND julianday(created_at)>julianday('now','-10 minutes') RETURNING code_verifier").bind(state).first();if(!row){await diag(env,'state_expired_or_missing',{});return loginFailure(env,request,{error:'invalid_or_expired_state'},400);}
  const refRow=await env.DB.prepare('DELETE FROM oauth_referrals WHERE id=? RETURNING ref').bind(state).first();const ref=refRow?.ref||null;
  const r=await fetchImpl('https://oauth.zaloapp.com/v4/access_token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded',secret_key:env.ZALO_APP_SECRET},body:new URLSearchParams({code,app_id:env.ZALO_APP_ID,grant_type:'authorization_code',code_verifier:row.code_verifier}),redirect:'manual',signal:AbortSignal.timeout(15000)});
- const tokens=await r.json().catch(()=>null);if(!r.ok||!tokens?.access_token){await diag(env,'token_exchange_failed',{status:r.status,body:redact(tokens)});return json(env,request,{error:'token_exchange_failed'},502);}
+ const tokens=await r.json().catch(()=>null);if(!r.ok||!tokens?.access_token){await diag(env,'token_exchange_failed',{status:r.status,body:redact(tokens)});return loginFailure(env,request,{error:'token_exchange_failed'},502);}
  let me;try{me=await verifyZaloUser(tokens.access_token,fetchImpl);}
  // Identity is trusted only when verified by the provider on the server.
  catch(e){await diag(env,'server_verify_failed',{reason:String(e?.message||'').slice(0,250)});
-  return json(env,request,{error:'zalo_identity_unverified',message:'Zalo chưa xác minh được danh tính. Vui lòng thử đăng nhập lại sau.'},502);}
+  return loginFailure(env,request,{error:'zalo_identity_unverified',message:'Zalo chưa xác minh được danh tính. Vui lòng thử đăng nhập lại sau.'},502);}
  return await completeZaloLogin(env,request,settings,me,ref);
 }
 async function completeZaloLogin(env,request,settings,me,ref=null){

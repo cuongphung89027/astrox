@@ -5,6 +5,8 @@ function pending(){try{const value=JSON.parse(sessionStorage.getItem(KEY)||"{}")
 function persist(){try{sessionStorage.setItem(KEY,JSON.stringify(memory));}catch{/* In-memory retry protection remains available. */}}
 export async function pendingAiOperation(userId:string,body:Record<string,unknown>){
  const payload={...body};delete payload.operationId;
+ const selection=payload.selection as {offerId:string;scopeKey:string}|undefined;
+ if(selection){payload.selection={offerId:selection.offerId,scopeKey:selection.scopeKey};delete payload.expectedPoints;}
  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify([userId,payload])));
  const key=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
  const entries=pending();

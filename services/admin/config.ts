@@ -1,6 +1,8 @@
+import { defaultUnlockSettings, type UnlockSettings } from './service-pricing.ts';
+import { bundleDefinitions } from './service-tree.ts';
 import { defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES } from './prompt-engine.ts';
 import { providerRoutes } from './provider-models.ts';
-import { addMissingServices, addCouplesServices } from './catalog.ts';
+import { addMissingServices, addCouplesServices, SERVICE_CATALOG } from './catalog.ts';
 import { MODULES } from './modules.ts';
 /** Shared, non-secret contract. Secrets are stored by reference only. */
 export type Provider = {
@@ -81,6 +83,7 @@ export type AdminConfig = {
   };
   billing: {
     enabled: boolean;
+    unlocks: UnlockSettings;
     vndPerPoint: number;
     packages: TopupPackage[];
     services: ServicePrice[];
@@ -168,6 +171,7 @@ export function defaultConfig(): AdminConfig {
       systemPrompt: ORIGINAL_SYSTEM_PROMPT,
     },
     billing: {
+      unlocks: defaultUnlockSettings(),
       enabled: false,
       vndPerPoint: 0,
       packages: [],
@@ -377,6 +381,16 @@ export function validateConfig(input: unknown): ConfigError[] {
     prompt: '',
     chain: [],
   });
+  list(c.billing.unlocks.bundles, 'billing.unlocks.bundles', { id: '', enabled: false, points: 0 });
+  if (errors.length) return errors;
+  integer(c.billing.unlocks.credit.numerator, 'billing.unlocks.credit.numerator', 0, 10000);
+  integer(c.billing.unlocks.credit.denominator, 'billing.unlocks.credit.denominator', 1, 10000);
+  if (c.billing.unlocks.credit.numerator > c.billing.unlocks.credit.denominator) add('billing.unlocks.credit', 'Tỷ lệ khấu trừ không vượt quá 100%.');
+  const bundles = bundleDefinitions();
+  for (const b of c.billing.unlocks.bundles) {
+    if (!bundles.some(d => d.id === b.id)) add('billing.unlocks.bundles', 'Gói không thuộc danh mục chức năng.');
+    integer(b.points, 'billing.unlocks.bundles.points', b.enabled ? 1 : 0);
+  }
   list(c.billing.promos, 'billing.promos', {
     id: '',
     code: '',
@@ -448,6 +462,8 @@ export function validateConfig(input: unknown): ConfigError[] {
       add('billing.packages', 'Gói đang mở phải có Point.');
   }
   for (const s of c.billing.services) {
+    const canonical = SERVICE_CATALOG.find(entry => entry.id === s.id);
+    if (canonical && (s.module !== canonical.module || (c.billing.unlocks.enabled && s.policy !== canonical.policy))) add('billing.services', 'Bộ môn và phạm vi mở khóa phải khớp chức năng trên web.');
     str(s.name, 'billing.services.name');
     str(s.prompt, 'billing.services.prompt', 12000);
     integer(s.points, 'billing.services.points');
@@ -573,6 +589,7 @@ export function publicConfig(c: AdminConfig) {
     availability: Object.fromEntries(c.billing.services.filter(s => s.id === s.module).map(s => [s.module, s.status])),
     billing: {
       enabled: c.billing.enabled,
+      unlocks: c.billing.unlocks ?? defaultUnlockSettings(),
       vndPerPoint: c.billing.vndPerPoint,
       packages: c.billing.packages
         .filter(p => p.enabled)
@@ -593,7 +610,7 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
     ...c,
     billing:
       c.billing && Array.isArray(c.billing.services)
-        ? { ...c.billing, services: addCouplesServices(c.billing.services) }
+        ? { ...c.billing, unlocks: c.billing.unlocks === undefined ? defaultUnlockSettings() : c.billing.unlocks, services: addCouplesServices(c.billing.services) }
         : c.billing,
     prompts: { templates: { ...p.templates, ...c.prompts?.templates }, tasks: { ...p.tasks, ...c.prompts?.tasks } },
     engines: { ...defaultConfig().engines, ...c.engines },

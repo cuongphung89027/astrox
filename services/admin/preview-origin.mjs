@@ -9,6 +9,8 @@ export function rewriteLocalOrigin(origin, host, preview = '') {
   const local = [
     'http://localhost:3311',
     'http://127.0.0.1:3311',
+    'http://localhost:3322',
+    'http://127.0.0.1:3322',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://127.0.0.1:3000',

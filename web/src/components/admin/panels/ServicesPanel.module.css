@@ -1,0 +1,159 @@
+.rules {
+  padding: 22px;
+  background: #f4f7f3;
+  border: 1px solid #dfe7dd;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+.rules h3 {
+  margin: 0 0 8px;
+  font-size: 19px;
+}
+.rules p {
+  line-height: 1.6;
+  font-size: 13px;
+}
+.ratio {
+  margin-top: 16px;
+}
+.node {
+  border: 1px solid #dfe7dd;
+  border-radius: 12px;
+  margin: 12px 0;
+  background: #fff;
+}
+.node > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  min-height: 56px;
+}
+.node > summary::-webkit-details-marker {
+  display: none;
+}
+.node > summary:after {
+  content: '+';
+  font-size: 19px;
+}
+.node[open] > summary:after {
+  content: '−';
+}
+.node > summary:focus-visible {
+  outline: 2px solid #327462;
+  outline-offset: 2px;
+}
+.node > summary strong {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.marker {
+  color: #56886e;
+}
+.summaryMeta {
+  font-size: 12px;
+  color: #53675d;
+  text-align: right;
+}
+.module {
+  border-color: #b8ccbd;
+}
+.module > summary {
+  background: #edf3ed;
+  border-radius: 12px;
+  font-size: 17px;
+}
+.contents {
+  padding: 0 16px 14px;
+}
+.editor {
+  padding: 10px 0;
+}
+.advanced {
+  margin: 12px 0;
+  font-size: 13px;
+}
+.advanced > summary {
+  cursor: pointer;
+  padding: 10px 0;
+  min-height: 40px;
+}
+.bundle {
+  background: #edf3ed;
+  border: 1px solid #c6d8c7;
+  padding: 16px;
+  border-radius: 12px;
+  margin: 12px 0;
+}
+.bundle p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 6px 0 12px;
+}
+.notice {
+  color: #795218;
+}
+.variant {
+  border-top: 1px solid #dfe7dd;
+  padding: 12px 0;
+}
+.variant h4 {
+  margin: 8px 0;
+}
+.preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding-top: 12px;
+}
+.preview label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.preview input {
+  width: 100%;
+  min-width: 0;
+}
+.preview output {
+  grid-column: 1/-1;
+  font-weight: 600;
+  font-size: 18px;
+  padding: 14px;
+  background: white;
+  border-radius: 10px;
+}
+@media (max-width: 600px) {
+  .rules {
+    padding: 15px;
+  }
+  .contents {
+    padding: 0 10px 10px;
+  }
+  .node > summary {
+    padding: 13px 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .summaryMeta {
+    flex-basis: 100%;
+    text-align: left;
+    padding-left: 20px;
+    order: 2;
+  }
+  .node > summary:after {
+    margin-left: auto;
+  }
+  .preview {
+    grid-template-columns: 1fr;
+  }
+  .bundle {
+    padding: 12px;
+  }
+  .module > summary {
+    font-size: 16px;
+  }
+}

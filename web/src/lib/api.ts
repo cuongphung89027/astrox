@@ -49,10 +49,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
   const assertOwner=()=>{if(getAccountEpoch()!==ownerEpoch)throw new Error("Tài khoản đã thay đổi. Vui lòng mở lại lượt luận giải.");};
   const prices=await servicePrices(true),price=prices[String(body.serviceId||'')];
   if(!price)throw new Error("Chưa xác nhận được giá dịch vụ. Vui lòng thử lại sau.");
-  if(price.status==='paid'){
-    await confirmReading({name:price.name||'Luận giải AstroX',points:price.points},signal);
-  }
-  body={...body,expectedPoints:price.status==='paid'?price.points:0};
+
   assertOwner();
   // Fetch per operation; never persist the credential in localStorage.
   const auth=await fetch(`${AUTH_API_BASE}/api/ai/session`,{method:"POST",credentials:"include",signal});
@@ -60,6 +57,19 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
   const ticket=auth.ok?await auth.json():null;
   const headers:Record<string,string>={"Content-Type":"application/json"};
   if(typeof ticket?.token==="string")headers.Authorization=`Bearer ${ticket.token}`;
+  if(price.status==='paid') {
+    if(price.unlocks && price.policy!=='session') {
+      const qr=await fetch('/api/ai/quote',{method:'POST',headers,body:JSON.stringify({serviceId:body.serviceId,promptDescriptor:body.promptDescriptor}),signal});
+      if(!qr.ok)throw new Error(qr.status===401?'Vui lòng đăng nhập để mở khóa dịch vụ.':'Chưa lấy được giá mở khóa. Vui lòng thử lại.');
+      const quote=await qr.json();
+      assertOwner();
+      const selection=await confirmReading({...quote,name:price.name||'Luận giải AstroX',points:price.points},signal);
+      body={...body,selection,expectedPoints:selection?.points};
+    } else {
+      await confirmReading({name:price.name||'Luận giải AstroX',points:price.points},signal);
+      body={...body,expectedPoints:price.points};
+    }
+  } else body={...body,expectedPoints:0};
   assertOwner();
   const operation=await pendingAiOperation(ticket?.userId||"guest",body);
   body={...body,operationId:operation.id};
@@ -83,7 +93,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
     }
     if(res&&!res.ok){
       const failure=await res.clone().json().catch(()=>null);
-      if(failure?.code==="operation_refunded"){finishAiOperation(operation.key);break;}
+      if(["operation_refunded","quote_changed","price_changed","insufficient_points","purchase_in_progress"].includes(failure?.code)){finishAiOperation(operation.key);break;}
     }
     if (
       res &&
@@ -367,7 +377,7 @@ export async function rewardedAdAction(action:'start'|'ready'|'grant'|'cancel',i
 }
 
 /** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */
-type PriceInfo = { status: string; points: number; name?:string };
+type PriceInfo = { status: string; points: number; name?:string; policy?:string; unlocks?:boolean };
 let priceCache: Promise<Record<string, PriceInfo>> | null = null;
 export function servicePrices(force=false): Promise<Record<string, PriceInfo>> {
   if (force) priceCache=null;
@@ -377,7 +387,7 @@ export function servicePrices(force=false): Promise<Record<string, PriceInfo>> {
       .then((d) => {
         const map: Record<string, PriceInfo> = {};
         for (const s of d?.config?.billing?.services || []) {
-          if (s && typeof s.id === "string" && s.id) map[s.id] = { status: String(s.status || ""), points: Number(s.points) || 0,name:String(s.name||"") };
+          if (s && typeof s.id === "string" && s.id) map[s.id] = { status: String(s.status || ""), points: Number(s.points) || 0,name:String(s.name||""), policy:s.policy, unlocks:!!d?.config?.billing?.unlocks?.enabled };
         }
         return map;
       })

@@ -1,3 +1,4 @@
+import { supportsUnlock } from '../backend/service-unlocks.mjs';
 import { limitAi } from './ai-rate-limit.mjs';
 import { renderServicePrompt } from './prompt-engine.ts';
 import { backendStatus, connectionSecretAvailable } from './backend.mjs';
@@ -85,6 +86,7 @@ function normalizedInput(input) {
     serviceId: input.serviceId,
     operationId: input.operationId,
     expectedPoints: input.expectedPoints,
+    selection: input.selection,
     promptDescriptor: input.promptDescriptor,
     compact: input.compact === true,
   };
@@ -205,6 +207,7 @@ export async function handleConfiguredAi(request, env) {
               messages: input.messages,
               promptDescriptor: input.promptDescriptor,
               compact: input.compact,
+              ...(input.selection ? { offerId: input.selection.offerId, scopeKey: input.selection.scopeKey } : {}),
             }),
           ),
         ),
@@ -227,7 +230,7 @@ export async function handleConfiguredAi(request, env) {
       return limited;
     }
     if (service.status === 'paid') {
-      if (input.expectedPoints !== undefined && input.expectedPoints !== service.points) {
+      if (!supportsUnlock(c, input.serviceId) && input.expectedPoints !== undefined && input.expectedPoints !== service.points) {
         outcome = 'price_changed';
         return json({ error: 'Giá vừa thay đổi. Vui lòng xem lại và xác nhận giá mới.', code: 'price_changed' }, 409);
       }
@@ -256,14 +259,22 @@ export async function handleConfiguredAi(request, env) {
         revision: published.revision,
         operationId: input.operationId,
         requestHash,
+        promptDescriptor: input.promptDescriptor,
+        selection: input.selection,
       });
       const charge = await chargeResponse.json().catch(() => null);
       if (!chargeResponse.ok) {
         const code = charge?.error || 'charge_failed';
         outcome = code;
         const messages = {
+          quote_changed: 'Giá hoặc phần đã mở vừa thay đổi. Vui lòng xác nhận lại.',
+          price_changed: 'Giá vừa thay đổi. Vui lòng xác nhận lại.',
+          purchase_in_progress: 'Một lượt mua của hồ sơ này đang được xử lý. Vui lòng chờ.',
+          invalid_scope: 'Chưa xác định được hồ sơ của luận giải. Vui lòng mở lại dịch vụ.',
           unauthorized: 'Vui lòng đăng nhập lại trước khi dùng dịch vụ trả phí.',
-          insufficient_points: `Không đủ Point — cần ${charge?.needed} Point cho lượt luận giải này.`,
+          insufficient_points: Number.isSafeInteger(charge?.needed)
+            ? `Không đủ Point — cần ${charge.needed} Point cho lượt luận giải này.`
+            : 'Không đủ Point để mở phần luận giải này.',
           operation_in_progress: 'Lượt luận giải này đang được xử lý. Vui lòng chờ rồi thử lại.',
           operation_refunded: 'Lượt trước đã được hoàn Point. Bạn có thể thử một lượt mới.',
           operation_conflict: 'Thông tin của lượt luận giải đã thay đổi. Vui lòng tải lại trang.',
@@ -372,7 +383,18 @@ export async function siteConfig(env) {
 export async function handlePublic(request, env) {
   const path = new URL(request.url).pathname;
   if (path === '/api/site-config' && request.method === 'GET') return siteConfig(env);
+  if (path === '/api/ai/quote' && request.method === 'POST') return handleAiQuote(request, env);
   if (path === '/api/ai' && request.method === 'POST')
     return (await handleConfiguredAi(request, env)) || json({ error: 'Chưa áp dụng cấu hình AI.' }, 503);
   return json({ error: 'Không tìm thấy API.' }, 404);
+}
+
+export async function handleAiQuote(request, env) {
+  if (!env.ASTROX_BACKEND) return json({ error: 'backend_unavailable' }, 503);
+  try {
+    const input = await parse(request);
+    const headers = new Headers({ 'content-type': 'application/json' });
+    for (const name of ['cookie', 'authorization']) { const value=request.headers.get(name); if(value)headers.set(name,value); }
+    return await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/ai/quote', { method:'POST', headers, body:JSON.stringify({serviceId:input.serviceId,promptDescriptor:input.promptDescriptor}), signal:AbortSignal.timeout(15000) }));
+  } catch(e) { return json({error:'quote_unavailable'},e.status||503); }
 }

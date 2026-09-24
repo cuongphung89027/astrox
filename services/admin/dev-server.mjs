@@ -42,7 +42,7 @@ if (process.env.ASTROX_LOCAL_BACKEND !== '0') {
   native.exec(readFileSync(new URL('migrations/backend.sql', root), 'utf8'));
   native.exec(readFileSync(new URL('migrations/rewards.sql', root), 'utf8'));
 }
-for (const migration of ['ai-safety', 'client-errors', 'feature-events', 'admin-insights', 'reward-events'])
+for (const migration of ['ai-safety', 'service-unlocks', 'client-errors', 'feature-events', 'admin-insights', 'reward-events'])
   native.exec(readFileSync(new URL(`migrations/${migration}.sql`, root), 'utf8'));
 const prepare = (query, args = []) => ({
   bind(...values) {

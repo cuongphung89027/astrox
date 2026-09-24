@@ -1,6 +1,6 @@
 import { handleRewardedAds } from './rewarded-ads.mjs';
 import { accountData } from './user-data.mjs';
-import { chargeAi, refundAi, completeAi } from './ai-operations.mjs';
+import { chargeAi, refundAi, completeAi, quoteAi } from './ai-operations.mjs';
 import { readPublished } from '../admin/store.mjs';
 import { runtimeSettings, capabilities, legacySnapshot } from './config.mjs';
 import { readSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } from './auth.mjs';
@@ -135,6 +135,7 @@ export async function internalFetch(request, env) {
   const path = new URL(request.url).pathname;
   // Chỉ service binding (ASTROX_BACKEND) mới vào được handler này; publicFetch
   // chặn mọi /internal/* ở trên. Các POST là thao tác ghi có xác thực riêng.
+  if (path === '/internal/ai/quote' && request.method === 'POST') return await quoteAi(env, request);
   if (path === '/internal/ai/charge' && request.method === 'POST') return await chargeAi(env, request);
   if (path === '/internal/ai/complete' && request.method === 'POST') return await completeAi(env, request);
   if (path === '/internal/ai/refund' && request.method === 'POST') return await refundAi(env, request);

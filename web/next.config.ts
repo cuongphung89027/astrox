@@ -16,10 +16,11 @@ const nextConfig: NextConfig = {
     ? {
         async rewrites() {
           return [
-            { source: "/api/admin/:path*", destination: "http://127.0.0.1:8789/api/admin/:path*" },
-            { source: "/api/site-config", destination: "http://127.0.0.1:8789/api/site-config" },
+            { source: "/api/admin/:path*", destination: `http://127.0.0.1:${process.env.ASTROX_LOCAL_ADMIN_PORT || "8789"}/api/admin/:path*` },
+            { source: "/api/site-config", destination: `http://127.0.0.1:${process.env.ASTROX_LOCAL_ADMIN_PORT || "8789"}/api/site-config` },
             // Local by default so dev traffic never spends production points; opt in with ASTROX_PROD_AI=1.
-            { source: "/api/ai", destination: process.env.ASTROX_PROD_AI === "1" ? "https://theastrox.space/api/ai" : "http://127.0.0.1:8789/api/ai" },
+            { source: "/api/ai/quote", destination: `http://127.0.0.1:${process.env.ASTROX_LOCAL_ADMIN_PORT || "8789"}/api/ai/quote` },
+            { source: "/api/ai", destination: process.env.ASTROX_PROD_AI === "1" ? "https://theastrox.space/api/ai" : `http://127.0.0.1:${process.env.ASTROX_LOCAL_ADMIN_PORT || "8789"}/api/ai` },
           ];
         },
       }

@@ -1,4 +1,5 @@
 // @ts-check
+import { supportsUnlock, quoteUnlock, reserveUnlock, replayUnlock, completeUnlock, refundUnlock, reconcileUnlocks } from './service-unlocks.mjs';
 import { readAiSession } from './auth.mjs';
 import { readPublished } from '../admin/store.mjs';
 import { encrypt, decrypt, b64 } from '../admin/crypto.mjs';
@@ -31,10 +32,18 @@ export async function chargeAi(env, request) {
     .bind(session.sub, operationId)
     .first();
   if (existing) return replay(env, existing, b);
+  try {
+    const unlocked = await replayUnlock(env, session.sub, b);
+    if (unlocked) return reply(unlocked);
+  } catch (e) { return reply({ error: e.message }, e.status || 503); }
   const published = await readPublished(env);
   if (!published || published.revision !== b.revision) return reply({ error: 'revision_mismatch' }, 409);
   const c = published.config,
     service = c.billing.services.find(s => s.id === b.serviceId);
+  if (supportsUnlock(c, b.serviceId)) {
+    try { return reply(await reserveUnlock(env, session.sub, c, published.revision, b)); }
+    catch (e) { return reply({ error: e.message }, e.status || 503); }
+  }
   const price =
     service?.status === 'paid' && Number.isSafeInteger(service.points) && service.points > 0 ? service.points : 0;
   if (!c.ai.enabled || !c.billing.enabled || c.operations.maintenance || !price)
@@ -94,6 +103,11 @@ export async function completeAi(env, request) {
   if (!session) return reply({ error: 'unauthorized' }, 401);
   const b = await bodyJson(request, 600000);
   if (!b?.chargeId || !b?.response || !Array.isArray(b.response.choices)) return reply({ error: 'bad_request' }, 400);
+  const unlock = await env.DB.prepare('SELECT id FROM service_unlock_operations WHERE id=? AND user_id=?').bind(b.chargeId, session.sub).first();
+  if (unlock) {
+    try { return reply(await completeUnlock(env, session.sub, b.chargeId, b.response)); }
+    catch (e) { return reply({ error: e.message }, e.status || 503); }
+  }
   const value = await encrypt(await resultKey(env), b.chargeId, JSON.stringify(b.response)),
     now = Date.now();
   const r = await env.DB.prepare(
@@ -112,6 +126,11 @@ export async function refundAi(env, request) {
   if (!session) return reply({ error: 'unauthorized' }, 401);
   const b = await bodyJson(request);
   if (typeof b?.chargeId !== 'string') return reply({ error: 'bad_request' }, 400);
+  const unlock = await env.DB.prepare('SELECT id FROM service_unlock_operations WHERE id=? AND user_id=?').bind(b.chargeId, session.sub).first();
+  if (unlock) {
+    try { return reply(await refundUnlock(env, session.sub, b.chargeId)); }
+    catch (e) { return reply({ error: e.message }, e.status || 503); }
+  }
   const op = await env.DB.prepare('SELECT * FROM backend_ai_operations WHERE charge_id=? AND user_id=?')
     .bind(b.chargeId, session.sub)
     .first();
@@ -143,6 +162,7 @@ async function refundOperation(env, chargeId, cutoff = Date.now()) {
   ]);
 }
 export async function reconcileAi(env, now = Date.now()) {
+  await reconcileUnlocks(env, now);
   const cutoff = now - LEASE_MS;
   const pending = await env.DB.prepare(
     "SELECT charge_id FROM backend_ai_operations WHERE status='running' AND created_at<=? ORDER BY created_at LIMIT 100",
@@ -169,4 +189,15 @@ export async function reconcileAi(env, now = Date.now()) {
   ]);
   if (failed) throw Error('ai_refund_reconciliation_incomplete');
   return { checked: pending.results.length };
+}
+
+export async function quoteAi(env, request) {
+  const session = await readAiSession(env, request);
+  if (!session) return reply({ error: 'unauthorized' }, 401);
+  try {
+    const input = await bodyJson(request, 300000), published = await readPublished(env);
+    if (!published) return reply({ error: 'service_unavailable' }, 403);
+    const quote = await quoteUnlock(env, session.sub, published.config, published.revision, input);
+    return reply(quote);
+  } catch (e) { return reply({ error: e.message }, e.status || 503); }
 }

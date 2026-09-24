@@ -4,6 +4,7 @@ export function testEnv() {
   const native = new DatabaseSync(':memory:');
   native.exec(readFileSync(new URL('../../../migrations/admin.sql', import.meta.url), 'utf8'));
   native.exec(readFileSync(new URL('../../../migrations/ai-safety.sql', import.meta.url), 'utf8'));
+  native.exec(readFileSync(new URL('../../../migrations/service-unlocks.sql', import.meta.url), 'utf8'));
   const prepare = (query, args = []) => ({
     bind(...v) {
       return prepare(query, v);

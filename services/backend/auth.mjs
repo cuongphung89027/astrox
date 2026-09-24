@@ -1,6 +1,6 @@
 import {equal} from '../admin/crypto.mjs';
 import {json,trustedOrigin} from './http.mjs';
-import {creditRegistration} from './rewards.mjs';
+import {registrationEventStatements,settleRegistration} from './rewards.mjs';
 const enc=new TextEncoder();
 // Zalo chặn login ở nhiều tầng (consent, token exchange, verify) mà không bao giờ quay lại callback,
 // nên mọi nhánh lỗi phải để lại dấu vết trong D1 để truy vết production.
@@ -73,15 +73,17 @@ async function completeZaloLogin(env,request,settings,me,ref=null){
  const now=new Date().toISOString(),candidate=crypto.randomUUID();
  // Người dùng mới hay đã có từ trước — quyết định thưởng đăng ký giới thiệu.
  const existing=await env.DB.prepare("SELECT user_id FROM zalo_identities WHERE provider='zalo' AND provider_subject=?").bind(String(me.id)).first();
+ const referralWork=!existing?await registrationEventStatements(env,candidate,ref):[];
  // Identity insert and user creation commit together; unique identity prevents races.
  await env.DB.batch([
   env.DB.prepare("INSERT INTO app_users(id,display_name,avatar_url,status,created_at,updated_at) SELECT ?,?,?,'active',?,? WHERE NOT EXISTS(SELECT 1 FROM zalo_identities WHERE provider='zalo' AND provider_subject=?)").bind(candidate,String(me.name||'Zalo User').slice(0,200),String(me.picture?.data?.url||'').slice(0,2000),now,now,String(me.id)),
   env.DB.prepare("INSERT OR IGNORE INTO zalo_identities(id,user_id,provider,provider_subject,created_at) SELECT ?,?,'zalo',?,? WHERE EXISTS(SELECT 1 FROM app_users WHERE id=?)").bind(crypto.randomUUID(),candidate,String(me.id),now,candidate),
-  env.DB.prepare("INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) SELECT user_id,0,? FROM zalo_identities WHERE provider='zalo' AND provider_subject=?").bind(now,String(me.id))
+  env.DB.prepare("INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) SELECT user_id,0,? FROM zalo_identities WHERE provider='zalo' AND provider_subject=?").bind(now,String(me.id)),
+  ...referralWork
  ]);
  const identity=await env.DB.prepare("SELECT user_id FROM zalo_identities WHERE provider='zalo' AND provider_subject=?").bind(String(me.id)).first();
  const user=await env.DB.prepare("SELECT id FROM app_users WHERE id=? AND status='active'").bind(identity.user_id).first();if(!user)return json(env,request,{error:'account_disabled'},403);
- if(ref&&!existing)await creditRegistration(env,identity.user_id,ref);
+ if(ref)try{await settleRegistration(env,identity.user_id);}catch{await diag(env,'referral_reward_pending',{});}
  const cookies=[['set-cookie',await sessionCookie(env,user.id)],['set-cookie','astrox_oauth=; HttpOnly; Secure; SameSite=Lax; Path=/auth/zalo; Max-Age=0']];
  if(request.method==='GET'){const headers=new Headers({location:settings.zalo.returnUrl,'cache-control':'no-store'});for(const [k,v] of cookies)headers.append(k,v);return new Response(null,{status:302,headers});}
  const r=json(env,request,{ok:true,redirect:settings.zalo.returnUrl||'/'});for(const [k,v] of cookies)r.headers.append(k,v);return r;

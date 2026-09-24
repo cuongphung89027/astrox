@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {publicFetch} from './handler.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {testEnv} from '../admin/test/sqlite.mjs';
@@ -10,6 +11,7 @@ import {payosSignature,handlePayosWebhook,handleTopupCreate} from './payments.mj
 
 async function fixture(){
  const env=testEnv();
+ for(const q of readFileSync(new URL('../../migrations/reward-events.sql',import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
  for(const q of readFileSync(new URL('./test/legacy-schema.sql',import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
  for(const q of readFileSync(new URL('../../migrations/backend.sql',import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
  for(const q of readFileSync(new URL('../../migrations/rewards.sql',import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
@@ -104,7 +106,7 @@ const rewardsOn=c=>{c.rewards={...c.rewards,enabled:true,registrationEnabled:tru
 async function seedInviter(env,code='ASTROX',userId='u1'){await env.DB.prepare('INSERT INTO referral_codes(user_id,code,created_at) VALUES(?,?,?)').bind(userId,code,'2026-01-01').run();}
 async function addUser(env,id){await env.DB.prepare("INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES(?,'New','active','2026-01-02','2026-01-02')").bind(id).run();await env.DB.prepare("INSERT OR IGNORE INTO zalo_point_accounts VALUES(?,0,'2026-01-02')").bind(id).run();}
 async function balance(env,id){return (await env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(id).first())?.balance??null;}
-const cookieOf=async env=>({cookie:(await sessionCookie(env,'u1')).split(';')[0]});
+const cookieOf=async env=>({origin:'https://theastrox.space',cookie:(await sessionCookie(env,'u1')).split(';')[0]});
 
 test('capabilities advertise rewards and paid-AI as backend features',async()=>{const env=await fixture();assert.equal(capabilities(env).features.paidAi,true);assert.equal(capabilities(env).features.rewards,true)});
 
@@ -207,4 +209,63 @@ test('public routing also hides new internal write endpoints',async()=>{
  const summary=await publicFetch(new Request('https://api.example.com/api/rewards/summary'),env);
  assert.equal(summary.status,401); // guest chặn ở auth, không phải 404
 });
-async function cookieOfUserId(env,userId){return {cookie:(await sessionCookie(env,userId)).split(';')[0]};}
+async function cookieOfUserId(env,userId){return {origin:'https://theastrox.space',cookie:(await sessionCookie(env,userId)).split(';')[0]};}
+
+test('concurrent daily check-ins acknowledge one grant only',async()=>{
+ const {handleRewardsCheckin}=await import('./rewards.mjs');const env=await fixture();await published(env,rewardsOn);const headers={...await cookieOf(env),origin:'https://theastrox.space'};
+ const prepare=env.DB.prepare;let arrived=0,release;const barrier=new Promise(r=>{release=r;});env.DB.prepare=q=>{const decorate=statement=>{const bind=statement.bind;statement.bind=(...args)=>decorate(bind(...args));if(q.startsWith('SELECT last_day,streak,claimed_milestones')){const first=statement.first;statement.first=async()=>{const value=await first();if(++arrived===4)release();await barrier;return value;};}return statement;};return decorate(prepare(q));};
+ const responses=await Promise.all(Array.from({length:4},()=>handleRewardsCheckin(env,new Request('https://api.example.com/api/rewards/checkin',{method:'POST',headers}))));
+ assert.equal(responses.filter(r=>r.status===200).length,1);assert.equal(await balance(env,'u1'),12);
+});
+test('a replay cannot reward a different inviter for the same new account',async()=>{
+ const {creditRegistration}=await import('./rewards.mjs');const env=await fixture();await published(env,rewardsOn);await seedInviter(env,'FIRST1');await addUser(env,'u2');await addUser(env,'u3');await seedInviter(env,'SECOND','u3');await creditRegistration(env,'u2','FIRST1');await creditRegistration(env,'u2','SECOND');assert.equal(await balance(env,'u3'),0);assert.equal(await balance(env,'u2'),5);
+});
+test('foreign origin cannot claim attendance using an existing cookie',async()=>{
+ const env=await fixture();await published(env,rewardsOn);const response=await publicFetch(new Request('https://api.example.com/api/rewards/checkin',{method:'POST',headers:{...await cookieOf(env),origin:'https://evil.example'}}),env);assert.equal(response.status,403);assert.equal(await balance(env,'u1'),10);
+});
+test('old paid topup replay after rewards activation does not become a first topup',async()=>{
+ const env=await fixture();await published(env,c=>{rewardsOn(c);c.integrations.payos.enabled=true;});await addUser(env,'u2');await env.DB.prepare("INSERT INTO user_referrals VALUES('u1','u2','2026-01-01')").run();await order(env);await env.DB.prepare("UPDATE topup_orders_zalo SET status='paid',paid_at='2026-01-01'").run();await handlePayosWebhook(env,await webhook(env));assert.equal(await balance(env,'u2'),0);
+});
+
+test('registration recovery keeps the original reward snapshot and settles only once',async()=>{
+ const {registrationEventStatements,recoverRegistrationRewards}=await import('./rewards.mjs');const env=await fixture();await published(env,rewardsOn);await seedInviter(env);await addUser(env,'u2');await env.DB.batch(await registrationEventStatements(env,'u2','ASTROX'));
+ const s=await state(env),c=JSON.parse(s.draft);c.rewards.registrationInviter=999;await publish(env,'owner',c,s.revision,'change');
+ await recoverRegistrationRewards(env);await recoverRegistrationRewards(env);assert.equal(await balance(env,'u1'),15);assert.equal(await balance(env,'u2'),5);assert.equal((await env.DB.prepare("SELECT status FROM reward_events WHERE id='registration:u2'").first()).status,'completed');
+});
+const adsOn=c=>{rewardsOn(c);c.rewards.ads={...c.rewards.ads,enabled:true,networkCode:'1234',adUnit:'/1234/rewarded',dailyLimit:1,cooldownSeconds:90};};
+async function adRequest(env,path,body={},userId='u1',origin='https://theastrox.space',now=Date.now()){
+ const {handleRewardedAds}=await import('./rewarded-ads.mjs');return handleRewardedAds(env,new Request('https://api.example.com/api/rewards/ads/'+path,{method:'POST',headers:{...await cookieOfUserId(env,userId),origin},body:JSON.stringify(body)}),path,now);
+}
+test('ad completion is account-scoped, grants the reserved amount once and enforces daily cap',async()=>{
+ const env=await fixture();await published(env,adsOn);await addUser(env,'u2');const now=Date.now();const start=await adRequest(env,'start',{},'u1',undefined,now);assert.equal(start.status,200);const session=await start.json();
+ assert.equal((await adRequest(env,'grant',{id:session.id,points:999},'u1',undefined,now)).status,409);
+ assert.equal((await adRequest(env,'ready',{id:session.id},'u2',undefined,now)).status,404);
+ assert.equal((await adRequest(env,'ready',{id:session.id},'u1',undefined,now)).status,200);
+ assert.equal((await adRequest(env,'grant',{id:session.id},'u1',undefined,now+1000)).status,409);
+ const responses=await Promise.all([adRequest(env,'grant',{id:session.id,points:999},'u1',undefined,now+6000),adRequest(env,'grant',{id:session.id},'u1',undefined,now+6000)]);assert.ok(responses.every(r=>r.status===200));assert.equal(await balance(env,'u1'),15);
+ assert.equal((await adRequest(env,'start',{},'u1',undefined,now+100000)).status,429);
+});
+test('ads fail closed without publisher settings, reject foreign origins, expired and cancelled sessions',async()=>{
+ const env=await fixture();await published(env,rewardsOn);assert.equal((await adRequest(env,'start')).status,403);
+ const s=await state(env),c=JSON.parse(s.draft);adsOn(c);await publish(env,'owner',c,s.revision,'ads');const now=Date.now();assert.equal((await adRequest(env,'start',{},'u1','https://evil.example',now)).status,403);
+ const a=await(await adRequest(env,'start',{},'u1',undefined,now)).json();await adRequest(env,'cancel',{id:a.id},'u1',undefined,now+1000);assert.equal((await adRequest(env,'grant',{id:a.id},'u1',undefined,now+6000)).status,409);
+ assert.equal((await adRequest(env,'start',{},'u1',undefined,now+5000)).status,429);
+ const b=await(await adRequest(env,'start',{},'u1',undefined,now+100000)).json();await adRequest(env,'ready',{id:b.id},'u1',undefined,now+100000);assert.equal((await adRequest(env,'grant',{id:b.id},'u1',undefined,now+800000)).status,409);assert.equal(await balance(env,'u1'),10);
+});
+test('registration credit transaction rollback leaves recoverable event and no partial bonus',async()=>{
+ const {registrationEventStatements,settleRegistration}=await import('./rewards.mjs');const env=await fixture();await published(env,rewardsOn);await seedInviter(env);await addUser(env,'u2');await env.DB.batch(await registrationEventStatements(env,'u2','ASTROX'));
+ await env.DB.prepare("CREATE TRIGGER fail_reward BEFORE UPDATE ON zalo_point_accounts BEGIN SELECT RAISE(ABORT,'reward rollback'); END").run();await assert.rejects(()=>settleRegistration(env,'u2'),/reward rollback/);assert.equal((await env.DB.prepare("SELECT status FROM reward_events WHERE id='registration:u2'").first()).status,'pending');assert.equal(await balance(env,'u1'),10);assert.equal(await balance(env,'u2'),0);
+ await env.DB.prepare('DROP TRIGGER fail_reward').run();await settleRegistration(env,'u2');assert.equal(await balance(env,'u1'),15);assert.equal(await balance(env,'u2'),5);
+});
+test('historical settled payment prevents a later order earning first-topup rewards',async()=>{
+ const env=await fixture();await published(env,rewardsOn);await addUser(env,'u2');await env.DB.prepare("INSERT INTO user_referrals VALUES('u1','u2','2026-01-01')").run();await env.DB.prepare("INSERT INTO zalo_point_ledger VALUES('old','u1',55,'topup_payos','older-order','2026-01-01')").run();await order(env);await handlePayosWebhook(env,await webhook(env));assert.equal(await balance(env,'u2'),0);
+});
+test('concurrent ad starts reserve one slot and failed grant rolls back for retry',async()=>{
+ const env=await fixture();await published(env,adsOn);const now=Date.now();const starts=await Promise.all([adRequest(env,'start',{},'u1',undefined,now),adRequest(env,'start',{},'u1',undefined,now)]);assert.equal(starts.filter(r=>r.status===200).length,1);const {id}=await starts.find(r=>r.status===200).json();await adRequest(env,'ready',{id},'u1',undefined,now);
+ await env.DB.prepare("CREATE TRIGGER fail_ad BEFORE UPDATE ON zalo_point_accounts BEGIN SELECT RAISE(ABORT,'ad rollback'); END").run();await assert.rejects(()=>adRequest(env,'grant',{id},'u1',undefined,now+6000),/ad rollback/);assert.equal(await balance(env,'u1'),10);assert.equal((await env.DB.prepare('SELECT status FROM reward_ad_sessions WHERE id=?').bind(id).first()).status,'ready');await env.DB.prepare('DROP TRIGGER fail_ad').run();assert.equal((await adRequest(env,'grant',{id},'u1',undefined,now+7000)).status,200);assert.equal(await balance(env,'u1'),15);
+});
+test('referral follows verified OAuth and a returning identity cannot acquire new attribution',async()=>{
+ const {zaloLogin}=await import('./auth.mjs');const env=await fixture();await published(env,rewardsOn);await seedInviter(env);await addUser(env,'u2');await seedInviter(env,'OTHER2','u2');const settings={zalo:{enabled:true,returnUrl:'https://theastrox.space/hoso'}};
+ async function login(ref){const start=await zaloLogin(env,new Request('https://api.example.com/auth/zalo/login?ref='+ref),settings),state=new URL(start.headers.get('location')).searchParams.get('state');return zaloCallback(env,new Request('https://api.example.com/auth/zalo/callback?state='+state+'&code=test',{headers:{cookie:'astrox_oauth='+state}}),settings,async url=>url.includes('access_token')?Response.json({access_token:'provider-test'}):Response.json({id:'new-provider-identity',name:'Test only'}));}
+ assert.equal((await login('ASTROX')).status,302);const identity=await env.DB.prepare("SELECT user_id FROM zalo_identities WHERE provider_subject='new-provider-identity'").first();assert.equal(await balance(env,identity.user_id),5);assert.equal(await balance(env,'u1'),15);assert.equal((await login('OTHER2')).status,302);assert.equal(await balance(env,'u2'),0);assert.equal(await balance(env,identity.user_id),5);assert.equal((await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?').bind(identity.user_id).first()).inviter_id,'u1');
+});

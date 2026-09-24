@@ -19,3 +19,4 @@ test('public config excludes provider endpoints, operational thresholds and inte
 test('blank rates cannot enable billing and invalid provider addresses cannot publish',()=>{
  const c=defaultConfig();c.billing.enabled=true;c.ai.providers=[{id:'bad',name:'Bad',baseUrl:'http://127.0.0.1',protocol:'responses',model:'x',enabled:true,timeoutMs:10000,retries:0,maxTokens:1000,temperature:0.7,secretRef:'provider:bad'}];assert.ok(validateConfig(c).length>=2);
 });
+test('enabled rewarded ad unit must belong to configured Google network',()=>{const c=defaultConfig();c.rewards.ads.enabled=true;c.rewards.ads.networkCode='1234';c.rewards.ads.adUnit='/9999/test';assert.ok(validateConfig(c).some(e=>e.path==='rewards.ads.adUnit'));c.rewards.ads.adUnit='/1234/test';assert.equal(validateConfig(c).length,0);});

@@ -13,10 +13,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { openLoginDialog } from "@/lib/login-dialog";
 import { usePointsBalance } from "@/lib/points";
-import { fetchRewardsSummary, loadPointsHistory, loadTopupHistory, rewardsCheckin, type PointTxn, type RewardsSummary, type TopupOrder } from "@/lib/api";
+import { rewardedAdAction, fetchRewardsSummary, loadPointsHistory, loadTopupHistory, rewardsCheckin, type PointTxn, type RewardsSummary, type TopupOrder } from "@/lib/api";
 import { FeatureIcon } from "@/components/kit/FeatureIcon";
-import { NumberPopIn, ShimmerText, useInView, useToast } from "@/components/motion";
+import { NumberPopIn, ShimmerText, useToast } from "@/components/motion";
 import { TopupPanel } from "@/components/topup/TopupPanel";
+import {showRewardedAd} from "@/lib/rewarded-ad";
 import { PointCoin } from "./PointCoin";
 import styles from "./PointsHome.module.css";
 
@@ -117,14 +118,17 @@ export function PointsHome() {
   const [rewards, setRewards] = useState<RewardsInfo | null | undefined>(undefined);
   const [summary, setSummary] = useState<RewardsSummary | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
+  const [summaryError,setSummaryError]=useState(false);
+  const [adConsent,setAdConsent]=useState(false),[adBusy,setAdBusy]=useState(false);
+  const adDialog=useRef<HTMLDialogElement>(null),adController=useRef<AbortController|null>(null);
+  useEffect(()=>{if(adConsent)adDialog.current?.showModal();else adDialog.current?.close();},[adConsent]);
+  useEffect(()=>()=>{adController.current?.abort();},[]);
   const [history, setHistory] = useState<HistoryState>({ status: "loading", txns: [], nextCursor: null });
   const [orders, setOrders] = useState<TopupOrder[] | null>(null);
   const [historyEpoch, setHistoryEpoch] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [copied, setCopied] = useState(false);
-  const { ref: earnRef, inView: earnInView } = useInView<HTMLDivElement>();
-  const { ref: ledgerRef, inView: ledgerInView } = useInView<HTMLDivElement>();
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cấu hình phần thưởng từ admin (đã xuất bản) — quyết định trạng thái 2 thẻ "Kiếm Point".
@@ -164,8 +168,8 @@ export function PointsHome() {
     if (!loggedIn || !astroxUser || preview) return;
     let alive = true;
     fetchRewardsSummary()
-      .then((s) => { if (alive) setSummary(s); })
-      .catch(() => { if (alive) setSummary(null); });
+      .then((s) => { if (alive) {setSummary(s);setSummaryError(false);} })
+      .catch(() => { if (alive) {setSummary(null);setSummaryError(true);} });
     loadPointsHistory()
       .then((p) => {
         if (alive) setHistory({ status: "ready", txns: p.transactions, nextCursor: p.nextCursor });
@@ -240,9 +244,9 @@ export function PointsHome() {
   };
 
   const referralCode = summary?.referral.code || "";
-  const referralLink = referralCode && typeof window !== "undefined" ? `${window.location.origin}/?ref=${referralCode}` : astroxUser && typeof window !== "undefined" ? `${window.location.origin}/?ref=${astroxUser.id}` : "";
+  const referralLink = referralCode && typeof window !== "undefined" ? `${window.location.origin}/?ref=${referralCode}` : "";
   const referralOpen = Boolean(rewards?.enabled && rewards.registrationEnabled);
-  const adsOpen = Boolean(rewards?.enabled && rewards.ads.enabled);
+  const adsOpen = Boolean(summary?.enabled && summary.ads?.enabled);
   const attendanceOpen = Boolean(summary?.enabled && summary.attendance.enabled) || preview;
   const attendanceToday = preview ? true : Boolean(summary?.attendance.today);
 
@@ -266,8 +270,9 @@ export function PointsHome() {
         toast.show(`Điểm danh thành công +${r.points.toLocaleString("vi-VN")} Point${bonus}`, "success");
         void refresh();
         reloadHistory();
-        setSummary((s) => (s ? { ...s, attendance: { ...s.attendance, today: true, streak: r.streak, lastDay: r.day } } : s));
+        setSummary((s) => (s ? { ...s, attendance: { ...s.attendance, today: true, streak: r.streak, lastDay: r.day, claimed:[...new Set([...s.attendance.claimed,...r.milestones])] } } : s));
       }
+    } catch {toast.show("Chưa xác nhận được điểm danh. Kiểm tra lịch sử Point rồi thử lại.","error");reloadHistory();
     } finally {
       setCheckingIn(false);
     }
@@ -286,11 +291,28 @@ export function PointsHome() {
     }
   };
 
-  const watchAd = () => {
-    // Điểm tích hợp quảng cáo thưởng (GAM/SSV) — backend chặn bật cho đến khi
-    // mạng quảng cáo thật được nối; không bao giờ cộng Point giả.
-    toast.show("Mạng quảng cáo đang được kết nối — vui lòng thử lại sau.", "info");
+  const watchAd=()=>{if(!adBusy)setAdConsent(true);};
+  const startAd=async()=>{
+    if(adBusy)return;setAdConsent(false);setAdBusy(true);
+    const controller=new AbortController();adController.current=controller;let id:string|undefined;
+    try{
+      const session=await rewardedAdAction('start',undefined,controller.signal);id=session.id;let readyAt=0;
+      const result=await showRewardedAd({adUnit:session.adUnit,signal:controller.signal,
+        onReady:async()=>{await rewardedAdAction('ready',id,controller.signal);readyAt=Date.now();},
+        onGrant:async()=>{
+          const delay=Math.max(0,5100-(Date.now()-readyAt));if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
+          let lastError:unknown;
+          for(let attempt=0;attempt<2;attempt++)try{return (await rewardedAdAction('grant',id,controller.signal)).points;}catch(e){lastError=e;if(controller.signal.aborted)throw e;}
+          throw lastError;
+        }});
+      if(!controller.signal.aborted)toast.show(result.rewarded?`Đã nhận +${result.points} Point từ quảng cáo.`:'Bạn đã đóng quảng cáo trước khi được cấp thưởng.',result.rewarded?'success':'info');
+    }catch(e){if(!controller.signal.aborted)toast.show(e instanceof Error?e.message:'Chưa tải được quảng cáo.','error');}
+    finally{
+      if(id)void rewardedAdAction('cancel',id).catch(()=>{});
+      if(!controller.signal.aborted){void refresh();reloadHistory();setAdBusy(false);}adController.current=null;
+    }
   };
+
 
   /* ----------------------------- Chưa đăng nhập ----------------------------- */
   if (!ready) {
@@ -315,6 +337,12 @@ export function PointsHome() {
 
   return (
     <div className={styles.wrap}>
+      {summaryError&&<p role="alert" className={styles.earnNote}>Chưa tải được trạng thái nhận thưởng. <button onClick={reloadHistory}>Thử lại</button></p>}
+      <dialog ref={adDialog} onCancel={e=>{e.preventDefault();setAdConsent(false);}} className={styles.adDialog} aria-labelledby="ad-consent-title">
+        <h2 id="ad-consent-title">Xem quảng cáo nhận Point</h2><p>Bạn có muốn xem một quảng cáo để nhận <strong>{summary?.ads?.points||0} Point</strong> khi đủ điều kiện nhận thưởng?</p>
+        <p>Quảng cáo do Google cung cấp, có thể có âm thanh. Bạn có thể đóng bất cứ lúc nào; đóng trước khi được cấp thưởng sẽ không nhận Point.</p>
+        <div><button onClick={()=>setAdConsent(false)}>Để sau</button><button className={styles.adBtn} onClick={()=>void startAd()}>Đồng ý xem</button></div>
+      </dialog>
       {/* ------------------------------- Hero số dư ------------------------------ */}
       <section className={styles.hero} aria-label="Số dư AstroX Point">
         <span className={styles.heroRings} aria-hidden="true" />
@@ -355,7 +383,7 @@ export function PointsHome() {
       </section>
 
       {/* ---------------------------- Kiếm thêm Point ---------------------------- */}
-      <div ref={earnRef} className={`ax-stagger ${earnInView ? "is-shown" : ""}`}>
+      <div className="ax-stagger is-shown">
         <section className={styles.earn} aria-label="Kiếm thêm Point">
           <header className={`ax-stagger-line ${styles.earnHeading}`}>
             <h2>
@@ -393,12 +421,13 @@ export function PointsHome() {
                         {!preview && attendanceToday ? "Đã điểm danh hôm nay ✓" : checkingIn ? "Đang ghi…" : "Điểm danh ngay"}
                       </button>
                     </div>
-                    <p className={styles.earnNote}>Điểm liên tiếp mỗi ngày để nhận thêm thưởng mốc — bỏ một ngày thì chuỗi tính lại.</p>
+                    <div className={styles.milestones} aria-label="Mốc thưởng điểm danh">{summary?.attendance.milestones.map(m=><div key={m.day} data-claimed={summary.attendance.claimed.includes(m.day)}><span>Ngày {m.day}</span><strong>+{m.points} Point</strong><small>{summary.attendance.claimed.includes(m.day)?'Đã nhận ✓':`Còn ${Math.max(0,m.day-summary.attendance.streak)} ngày`}</small></div>)}</div>
+                    <p className={styles.earnNote}>Ngày điểm danh tính theo giờ Việt Nam. Bỏ một ngày thì chuỗi tính lại; mỗi mốc thưởng chỉ nhận một lần cho mỗi tài khoản.</p>
                   </>
                 ) : (
                   <p className={styles.earnNote}>
                     <span className={styles.soonChip}>Sắp mở</span>
-                    Điểm danh hàng ngày đang được bật lại — theo dõi thông báo từ AstroX.
+                    Điểm danh chưa mở hoặc chưa tải được trạng thái tài khoản.
                   </p>
                 )}
               </div>
@@ -426,14 +455,15 @@ export function PointsHome() {
                 {referralOpen ? (
                   <>
                     <div className={styles.refRow}>
-                      <input readOnly value={referralLink} aria-label="Link giới thiệu của bạn" onFocus={(e) => e.currentTarget.select()} />
-                      <button type="button" onClick={copyReferral} aria-label="Sao chép link giới thiệu">
+                      <input readOnly placeholder="Đang tải link giới thiệu…" value={referralLink} aria-label="Link giới thiệu của bạn" onFocus={(e) => e.currentTarget.select()} />
+                      <button type="button" onClick={copyReferral} disabled={!referralLink} aria-label="Sao chép link giới thiệu">
                         {copied ? "Đã chép ✓" : "Sao chép"}
                       </button>
                     </div>
                     <p className={styles.earnNote}>
-                      Thưởng tự động cộng vào ví khi bạn bè hoàn tất đăng ký{!preview && summary ? ` — đã mời ${summary.referral.invited} người · nhận ${summary.referral.earned.toLocaleString("vi-VN")} Point` : ""}.
+                      Thưởng khi bạn bè hoàn tất đăng ký Zalo lần đầu qua link này{!preview && summary ? ` — đã mời ${summary.referral.invited} người · nhận ${summary.referral.earned.toLocaleString("vi-VN")} Point` : ""}.
                     </p>
+                    <p className={styles.earnNote}>Người mới nhận +{summary?.referral.registrationUser||0} Point. {summary?.referral.firstTopupMinVnd?`Thưởng nạp đầu áp dụng từ ${summary.referral.firstTopupMinVnd.toLocaleString('vi-VN')}đ.`:''} Thưởng mốc điểm danh của bạn bè: {summary?.attendance.milestones.filter(m=>(m.inviterPoints||0)>0).map(m=>`ngày ${m.day}: +${m.inviterPoints} Point`).join(' · ')}.</p>
                   </>
                 ) : (
                   <p className={styles.earnNote}>
@@ -463,11 +493,11 @@ export function PointsHome() {
                 </p>
                 {adsOpen ? (
                   <>
-                    <button type="button" className={styles.adBtn} onClick={watchAd}>
+                    <button type="button" className={styles.adBtn} onClick={watchAd} disabled={adBusy||(summary?.ads?.used||0)>=(summary?.ads?.dailyLimit||0)}>
                       <FeatureIcon name="play" size={16} />
-                      Xem quảng cáo nhận Point
+                      {adBusy?'Đang mở quảng cáo…':(summary?.ads?.used||0)>=(summary?.ads?.dailyLimit||0)?'Đã đủ lượt hôm nay':'Xem quảng cáo nhận Point'}
                     </button>
-                    <p className={styles.earnNote}>Xem hết video mới được tính thưởng — giới hạn mỗi ngày theo cấu hình.</p>
+                    <p className={styles.earnNote}>Đã nhận {summary?.ads?.used||0}/{summary?.ads?.dailyLimit||0} lượt hôm nay · Chờ {summary?.ads?.cooldownSeconds||0} giây giữa hai lượt. Phần thưởng được ghi khi mạng quảng cáo cấp thưởng.</p>
                   </>
                 ) : (
                   <p className={styles.earnNote}>
@@ -482,7 +512,7 @@ export function PointsHome() {
       </div>
 
       {/* ------------------------------ Lịch sử Point ---------------------------- */}
-      <div ref={ledgerRef} className={`ax-stagger ${ledgerInView ? "is-shown" : ""}`}>
+      <div className="ax-stagger is-shown">
         <section className={styles.ledger} aria-label="Lịch sử Point">
           <header className={`ax-stagger-line ${styles.ledgerHeading}`}>
             <h2>

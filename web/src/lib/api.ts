@@ -322,6 +322,7 @@ export async function promoCheck(code: string): Promise<{ ok: boolean; bonus?: n
 
 export interface RewardsSummary {
   enabled: boolean;
+  ads?: {enabled:boolean;points:number;dailyLimit:number;used:number;cooldownSeconds:number};
   attendance: {
     enabled: boolean;
     daily: number;
@@ -329,7 +330,7 @@ export interface RewardsSummary {
     streak: number;
     claimed: number[];
     today: boolean;
-    milestones: { day: number; points: number }[];
+    milestones: { day: number; points: number; inviterPoints?:number }[];
   };
   referral: {
     enabled: boolean;
@@ -337,6 +338,8 @@ export interface RewardsSummary {
     invited: number;
     earned: number;
     registrationInviter: number;
+    registrationUser?:number;
+    firstTopupMinVnd?:number;
     firstTopupEnabled: boolean;
     firstTopupInviter: number;
   };
@@ -354,6 +357,13 @@ export async function rewardsCheckin(): Promise<{ ok: boolean; day: string; stre
   const d = await res.json().catch(() => ({}));
   if (res.ok && d?.ok) return d;
   return { error: d?.error || "checkin_failed" };
+}
+
+export async function rewardedAdAction(action:'start'|'ready'|'grant'|'cancel',id?:string,signal?:AbortSignal):Promise<{id:string;points:number;adUnit:string}> {
+ const res=await fetch(`${AUTH_API_BASE}/api/rewards/ads/${action}`,{method:'POST',credentials:'include',headers:{'content-type':'application/json'},body:JSON.stringify(id?{id}:{}),signal});
+ const data=await res.json().catch(()=>({}));
+ if(!res.ok)throw new Error(data.message||({ads_unavailable:'Quảng cáo nhận Point chưa sẵn sàng.',ad_not_ready:'Chưa đủ điều kiện nhận thưởng.',ad_session_expired_or_closed:'Phiên quảng cáo đã đóng hoặc hết hạn.',unauthorized:'Vui lòng đăng nhập lại.'} as Record<string,string>)[data.error]||'Chưa xác nhận được lượt quảng cáo. Vui lòng kiểm tra lịch sử Point trước khi thử lại.');
+ return data;
 }
 
 /** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */

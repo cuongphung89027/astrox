@@ -1,3 +1,4 @@
+import {handleRewardedAds} from './rewarded-ads.mjs';
 import {accountData} from './user-data.mjs';
 import {chargeAi,refundAi,completeAi} from './ai-operations.mjs';
 import {readPublished} from '../admin/store.mjs';
@@ -20,7 +21,7 @@ export async function publicFetch(request,env){
  try{
   const url=new URL(request.url),path=url.pathname,method=request.method;
   if(method==='OPTIONS')return new Response(null,{status:204,headers:corsHeaders(env,request)});
-  if(path==='/api/health')return json(env,request,{ok:true,service:'astrox-api',database:Boolean(env.DB),version:'2026-09-24-yellow-1'});
+  if(path==='/api/health')return json(env,request,{ok:true,service:'astrox-api',database:Boolean(env.DB),version:'2026-09-24-rewards-1'});
   // Internal APIs are never routed by the public handler, regardless of Host/header.
   if(path.startsWith('/internal/'))return json(env,request,{error:'not_found'},404);
   if(path==='/api/webhooks/payos'&&method==='POST'||path==='/api/payos/webhook'&&method==='POST')return await handlePayosWebhook(env,request);
@@ -44,6 +45,7 @@ export async function publicFetch(request,env){
   if(path==='/api/topup/history'&&method==='GET'){const session=await readSession(env,request);if(!session)return json(env,request,{error:'unauthorized'},401);const rows=await env.DB.prepare('SELECT order_code,amount_vnd,points,status,created_at,paid_at FROM topup_orders_zalo WHERE user_id=? ORDER BY created_at DESC LIMIT 50').bind(session.sub).all();return json(env,request,{orders:rows.results});}
   if(path==='/api/points/history'&&method==='GET')return await handlePointsHistory(env,request);
   if(path==='/api/rewards/summary'&&method==='GET')return await handleRewardsSummary(env,request);
+  if(path.startsWith('/api/rewards/ads/'))return await handleRewardedAds(env,request,path.slice('/api/rewards/ads/'.length));
   if(path==='/api/rewards/checkin'&&method==='POST')return await handleRewardsCheckin(env,request);
   if(path==='/zalo_verifierHiMyTOFJ571A-hHxZ_WyNqxxiMEYZMiqDZSq.html')return new Response('<!doctype html><meta property="zalo-platform-site-verification" content="HiMyTOFJ571A-hHxZ_WyNqxxiMEYZMiqDZSq">',{headers:{'content-type':'text/html; charset=utf-8'}});
   return json(env,request,{error:'not_found'},404);

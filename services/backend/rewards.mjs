@@ -2,10 +2,11 @@
 // admin đã publish. Mọi khoản thưởng ghi một dòng zalo_point_ledger (idempotent
 // nhờ UNIQUE(reason,reference_id,user_id)) và cộng balance bằng mẫu changes()=1
 // trong cùng batch D1 như webhook PayOS vẫn dùng.
-import { registrationRewards, firstTopupReward, checkIn, vietnamDay, validateConfig } from '../rewards/rules.ts';
+import { registrationRewards, checkIn, vietnamDay, validateConfig } from '../rewards/rules.ts';
 import { readPublished } from '../admin/store.mjs';
 import { readSession } from './auth.mjs';
-import { json } from './http.mjs';
+import {adsConfigured} from './rewarded-ads.mjs';
+import { json, trustedOrigin } from './http.mjs';
 
 const nowIso = () => new Date().toISOString();
 
@@ -22,65 +23,68 @@ function rewardConfig(rewards) {
 async function publishedRewards(env) {
   const published = await readPublished(env);
   const rewards = published?.config?.rewards;
-  if (!rewards?.enabled) return null;
+  if (!rewards?.enabled || published.config.operations.maintenance) return null;
   const config = rewardConfig(rewards);
   try { validateConfig(config); } catch { return null; }
-  return { ...rewards, __engine: config };
+  return { ...rewards, __engine: config, __revision: published.revision };
 }
 
-/** Giới hạn thưởng inviter theo referralMode/Limit/Window (đếm dòng reason='referral'). */
-async function inviterAllowed(env, rewards, inviterId) {
-  if (rewards.referralMode !== 'limited') return true;
-  const limit = Number(rewards.referralLimit) || 0;
-  if (limit <= 0) return false;
-  const since = rewards.referralWindow === 'day' ? new Date(Date.now() - 86400000).toISOString() : rewards.referralWindow === 'month' ? new Date(Date.now() - 30 * 86400000).toISOString() : null;
-  const row = since
-    ? await env.DB.prepare("SELECT COUNT(*) n FROM zalo_point_ledger WHERE user_id=? AND reason='referral' AND created_at>=?").bind(inviterId, since).first()
-    : await env.DB.prepare("SELECT COUNT(*) n FROM zalo_point_ledger WHERE user_id=? AND reason='referral'").bind(inviterId).first();
-  return (row?.n || 0) < limit;
+/** An optional configured referral cap is evaluated inside the wallet transaction. */
+function inviterBudget(rewards, userId, now=Date.now()) {
+ if(rewards.referralMode!=='limited')return {sql:'1',args:[]};
+ const since=rewards.referralWindow==='day'?new Date(now-86400000).toISOString():rewards.referralWindow==='month'?new Date(now-30*86400000).toISOString():null;
+ return {sql:`(SELECT COUNT(*) FROM zalo_point_ledger WHERE user_id=? AND reason='referral'${since?' AND created_at>=?':''})<?`,args:[userId,...(since?[since]:[]),Number(rewards.referralLimit)||0]};
+}
+function creditStatements(env,{userId,points,reason,referenceId},now=nowIso(),guard={sql:'1',args:[]}) {
+ if(!Number.isSafeInteger(points)||points<=0)return [];
+ return [
+  env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(userId,now),
+  env.DB.prepare(`INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,?,?,?,?,? WHERE ${guard.sql} ON CONFLICT(reason,reference_id,user_id) DO NOTHING`).bind(crypto.randomUUID(),userId,points,reason,referenceId,now,...guard.args),
+  env.DB.prepare('UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1').bind(points,now,userId),
+ ];
 }
 
-/** Cặp statement ledger+balance cho một khoản credit; balance chỉ cộng khi dòng
- * ledger vừa được chèn (changes()=1) nên gọi lại nhiều lần không nhân đôi. */
-function creditStatements(env, { userId, points, reason, referenceId }, now = nowIso()) {
-  return [
-    env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(userId, now),
-    env.DB.prepare('INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) VALUES(?,?,?,?,?,?) ON CONFLICT(reason,reference_id,user_id) DO NOTHING').bind(crypto.randomUUID(), userId, points, reason, referenceId, now),
-    env.DB.prepare('UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1').bind(points, now, userId),
-  ];
+/** Included in the verified new-identity creation batch. A crash after login
+ * cannot lose the referral event; its reward rules are frozen at registration. */
+export async function registrationEventStatements(env,userId,refCode) {
+ if(typeof refCode!=='string'||! /^[A-Z0-9]{4,10}$/.test(refCode))return [];
+ const rewards=await publishedRewards(env);if(!rewards?.registrationEnabled)return [];
+ const inviter=await env.DB.prepare("SELECT r.user_id FROM referral_codes r JOIN app_users u ON u.id=r.user_id WHERE r.code=? AND u.status='active'").bind(refCode).first();
+ if(!inviter||inviter.user_id===userId)return [];
+ return [env.DB.prepare("INSERT OR IGNORE INTO reward_events(id,user_id,kind,status,claim_token,config_revision,payload,created_at) SELECT ?,?,'registration','pending',?,?,?,? WHERE EXISTS(SELECT 1 FROM app_users WHERE id=?)").bind(`registration:${userId}`,userId,crypto.randomUUID(),rewards.__revision,JSON.stringify({inviterId:inviter.user_id,rewards}),nowIso(),userId)];
+}
+export async function settleRegistration(env,userId) {
+ const id=`registration:${userId}`,event=await env.DB.prepare("SELECT payload FROM reward_events WHERE id=? AND status='pending'").bind(id).first();if(!event)return;
+ const {inviterId,rewards}=JSON.parse(event.payload);validateConfig(rewards.__engine);
+ const token=crypto.randomUUID(),now=nowIso(),budget=inviterBudget(rewards,inviterId);
+ const guard={sql:"EXISTS(SELECT 1 FROM reward_events WHERE id=? AND status='processing' AND claim_token=?)",args:[id,token]};
+ const entries=registrationRewards({userId,inviterId,verified:true,isNew:true},rewards.__engine);
+ await env.DB.batch([
+  env.DB.prepare("INSERT OR IGNORE INTO user_referrals(user_id,inviter_id,created_at) SELECT ?,?,? WHERE ?!=? AND EXISTS(SELECT 1 FROM app_users WHERE id=? AND status='active') AND NOT EXISTS(WITH RECURSIVE ancestry(id) AS (SELECT inviter_id FROM user_referrals WHERE user_id=? UNION SELECT r.inviter_id FROM user_referrals r JOIN ancestry a ON r.user_id=a.id) SELECT 1 FROM ancestry WHERE id=?)").bind(userId,inviterId,now,userId,inviterId,inviterId,inviterId,userId),
+  env.DB.prepare(`UPDATE reward_events SET status='processing',claim_token=? WHERE id=? AND status='pending' AND EXISTS(SELECT 1 FROM user_referrals WHERE user_id=? AND inviter_id=?) AND ${budget.sql}`).bind(token,id,userId,inviterId,...budget.args),
+  ...entries.flatMap(r=>creditStatements(env,{userId:r.userId,points:r.points,reason:'referral',referenceId:r.key.replace(/^referral:/,'')},now,guard)),
+  env.DB.prepare("UPDATE reward_events SET status=CASE WHEN claim_token=? AND status='processing' THEN 'completed' ELSE 'skipped' END,completed_at=? WHERE id=? AND status IN ('pending','processing')").bind(token,now,id),
+ ]);
+}
+/** Internal compatibility helper; public routes never accept caller-supplied referrals. */
+export async function creditRegistration(env,userId,refCode){const statements=await registrationEventStatements(env,userId,refCode);if(statements.length)await env.DB.batch(statements);await settleRegistration(env,userId);}
+export async function recoverRegistrationRewards(env){
+ const rows=(await env.DB.prepare("SELECT user_id FROM reward_events WHERE kind='registration' AND status='pending' ORDER BY created_at LIMIT 50").all()).results;
+ for(const row of rows)try{await settleRegistration(env,row.user_id);}catch{console.error(JSON.stringify({event:'rewards.registration_retry_failed'}));}
 }
 
-/** Thưởng đăng ký cho cặp invitee/inviter — gọi sau khi user mới được tạo. */
-export async function creditRegistration(env, userId, refCode) {
-  try {
-    if (typeof refCode !== 'string' || !/^[A-Z0-9]{4,10}$/.test(refCode)) return;
-    const rewards = await publishedRewards(env);
-    if (!rewards || !rewards.registrationEnabled) return;
-    const inviter = await env.DB.prepare('SELECT user_id FROM referral_codes WHERE code=?').bind(refCode).first();
-    if (!inviter || inviter.user_id === userId) return;
-    // Quan hệ giới thiệu ghi đúng một lần — mốc điểm danh và lần nạp đầu dựa vào đây.
-    await env.DB.prepare('INSERT OR IGNORE INTO user_referrals(user_id,inviter_id,created_at) VALUES(?,?,?)').bind(userId, inviter.user_id, nowIso()).run();
-    if (!await inviterAllowed(env, rewards, inviter.user_id)) return;
-    const entries = registrationRewards({ userId, inviterId: inviter.user_id, verified: true, isNew: true }, rewards.__engine)
-      .map((r) => ({ userId: r.userId, points: r.points, reason: 'referral', referenceId: r.key.replace(/^referral:/, '') }));
-    if (entries.length) await env.DB.batch(entries.flatMap((e) => creditStatements(env, e)));
-  } catch { /* thưởng không được làm hỏng đăng nhập */ }
-}
-
-/** Statements thưởng inviter khi invitee nạp lần đầu — nối vào batch webhook PayOS. */
-export async function firstTopupStatements(env, settings, order) {
-  try {
-    const rewards = settings.config?.rewards;
-    if (!rewards?.enabled || !rewards.firstTopupEnabled) return [];
-    const minVnd = Number(rewards.firstTopupMinVnd) || 0;
-    if (order.amount_vnd < minVnd) return [];
-    const referral = await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?').bind(order.user_id).first();
-    if (!referral) return [];
-    const already = await env.DB.prepare("SELECT 1 x FROM zalo_point_ledger WHERE reason='referral' AND reference_id=? AND user_id=?").bind(`${order.user_id}:first-paid-topup`, referral.inviter_id).first();
-    const result = firstTopupReward({ userId: order.user_id, inviterId: referral.inviter_id, settled: true, paidAmount: order.amount_vnd, alreadyRewarded: Boolean(already) }, rewardConfig(rewards));
-    if (!result.length || !await inviterAllowed(env, rewards, referral.inviter_id)) return [];
-    return result.flatMap((r) => creditStatements(env, { userId: r.userId, points: r.points, reason: 'referral', referenceId: r.key.replace(/^referral:/, '') }));
-  } catch { return []; }
+/** Runs inside the verified PayOS settlement transaction, after its ledger entry.
+ * The first settled real-money topup is authoritative, not the first callback
+ * after a campaign was enabled. A replay of an already-paid order earns zero. */
+export async function firstTopupStatements(env,settings,order) {
+ const rewards=settings.config?.rewards;
+ if(!rewards?.enabled||!rewards.firstTopupEnabled||order.status!=='pending'||order.amount_vnd<(Number(rewards.firstTopupMinVnd)||0))return [];
+ const referral=await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?').bind(order.user_id).first();if(!referral)return [];
+ const config=rewardConfig(rewards);validateConfig(config);
+ const budget=inviterBudget(rewards,referral.inviter_id);
+ const guard={sql:`EXISTS(SELECT 1 FROM zalo_point_ledger WHERE user_id=? AND reason='topup_payos' AND reference_id=?) AND NOT EXISTS(SELECT 1 FROM zalo_point_ledger WHERE user_id=? AND reason='topup_payos' AND reference_id!=?) AND EXISTS(SELECT 1 FROM app_users WHERE id=? AND status='active') AND ${budget.sql}`,args:[order.user_id,String(order.order_code),order.user_id,String(order.order_code),referral.inviter_id,...budget.args]};
+ const entries=[{userId:order.user_id,points:Number(rewards.firstTopupUser)||0,reason:'referral',referenceId:`${order.user_id}:first-paid-topup:user`},{userId:referral.inviter_id,points:config.firstTopupInviter,reason:'referral',referenceId:`${order.user_id}:first-paid-topup`}];
+ return entries.flatMap(r=>creditStatements(env,r,nowIso(),guard));
 }
 
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -112,15 +116,16 @@ export async function handleRewardsSummary(env, request) {
   let claimed = [];
   try { claimed = JSON.parse(att?.claimed_milestones || '[]'); } catch { claimed = []; }
   return json(env, request, {
-    enabled: Boolean(rewards?.enabled),
+    enabled: Boolean(rewards?.enabled && !published?.config?.operations?.maintenance),
+    ads: {enabled:adsConfigured(rewards)&&!published?.config?.operations?.maintenance,points:Number(rewards?.ads?.points)||0,dailyLimit:Number(rewards?.ads?.dailyLimit)||0,used:(await env.DB.prepare("SELECT COUNT(*) n FROM reward_ad_sessions WHERE user_id=? AND day=? AND status='granted'").bind(session.sub,day).first())?.n||0,cooldownSeconds:Number(rewards?.ads?.cooldownSeconds)||0},
     attendance: {
       enabled: Boolean(rewards?.attendanceEnabled),
       daily: Number(rewards?.daily) || 0,
       lastDay: att?.last_day || null,
-      streak: att?.streak || 0,
+      streak: att?.last_day===day||att?.last_day===vietnamDay(new Date(Date.now()-86400000))?att.streak:0,
       claimed,
       today: att?.last_day === day,
-      milestones: (Array.isArray(rewards?.milestones) ? rewards.milestones : []).map((m) => ({ day: m.day, points: m.user })),
+      milestones: (Array.isArray(rewards?.milestones) ? rewards.milestones : []).map((m) => ({ day: m.day, points: m.user, inviterPoints:m.inviter })),
     },
     referral: {
       enabled: Boolean(rewards?.registrationEnabled),
@@ -128,6 +133,8 @@ export async function handleRewardsSummary(env, request) {
       invited: invited?.n || 0,
       earned: earned?.s || 0,
       registrationInviter: Number(rewards?.registrationInviter) || 0,
+      registrationUser: Number(rewards?.registrationUser) || 0,
+      firstTopupMinVnd: Number(rewards?.firstTopupMinVnd)||0,
       firstTopupEnabled: Boolean(rewards?.firstTopupEnabled),
       firstTopupInviter: Number(rewards?.firstTopupInviter) || 0,
     },
@@ -137,6 +144,7 @@ export async function handleRewardsSummary(env, request) {
 export async function handleRewardsCheckin(env, request) {
   const session = await readSession(env, request);
   if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+  if(!trustedOrigin(env,request))return json(env,request,{error:'forbidden_origin'},403);
   const rewards = await publishedRewards(env);
   if (!rewards || !rewards.attendanceEnabled) return json(env, request, { error: 'attendance_disabled' }, 403);
   const att = await env.DB.prepare('SELECT last_day,streak,claimed_milestones FROM user_attendance WHERE user_id=?').bind(session.sub).first();
@@ -149,18 +157,20 @@ export async function handleRewardsCheckin(env, request) {
   try { result = checkIn(previous, new Date(), rewards.__engine); }
   catch { return json(env, request, { error: 'attendance_invalid_state' }, 500); }
   if (result.duplicate) return json(env, request, { error: 'already_checked_in', day: result.day, streak: previous.streak }, 409);
-  const now = nowIso();
-  const statements = [
-    env.DB.prepare('INSERT INTO user_attendance(user_id,last_day,streak,claimed_milestones,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET last_day=excluded.last_day,streak=excluded.streak,claimed_milestones=excluded.claimed_milestones,updated_at=excluded.updated_at')
-      .bind(session.sub, result.state.lastDay, result.state.streak, JSON.stringify(result.state.claimedMilestones), now),
+  const now=nowIso(),token=crypto.randomUUID(),id=`attendance:${session.sub}:${result.day}`;
+  const guard={sql:'EXISTS(SELECT 1 FROM reward_events WHERE id=? AND claim_token=?)',args:[id,token]};
+  const statements=[
+   env.DB.prepare("INSERT OR IGNORE INTO reward_events(id,user_id,kind,status,claim_token,config_revision,payload,created_at,completed_at) SELECT ?,?,'attendance','completed',?,?,?,?,? WHERE COALESCE((SELECT last_day FROM user_attendance WHERE user_id=?),'')=? RETURNING id").bind(id,session.sub,token,rewards.__revision,JSON.stringify(result),now,now,session.sub,previous.lastDay||''),
+   env.DB.prepare(`INSERT INTO user_attendance(user_id,last_day,streak,claimed_milestones,updated_at) SELECT ?,?,?,?,? WHERE ${guard.sql} ON CONFLICT(user_id) DO UPDATE SET last_day=excluded.last_day,streak=excluded.streak,claimed_milestones=excluded.claimed_milestones,updated_at=excluded.updated_at`).bind(session.sub,result.day,result.state.streak,JSON.stringify(result.state.claimedMilestones),now,...guard.args),
+   ...creditStatements(env,{userId:session.sub,points:result.points,reason:'attendance',referenceId:result.day},now,guard),
   ];
-  if (result.points > 0) statements.push(...creditStatements(env, { userId: session.sub, points: result.points, reason: 'attendance', referenceId: result.day }, now));
-  if (result.inviterPoints > 0) {
-    const referral = await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?').bind(session.sub).first();
-    if (referral && await inviterAllowed(env, rewards, referral.inviter_id)) {
-      statements.push(...creditStatements(env, { userId: referral.inviter_id, points: result.inviterPoints, reason: 'referral', referenceId: `${session.sub}:milestone:${result.day}` }, now));
-    }
+  let inviterPoints=0,inviterId=null;
+  if(result.inviterPoints>0){
+   const referral=await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?').bind(session.sub).first();
+   if(referral){const budget=inviterBudget(rewards,referral.inviter_id);statements.push(...creditStatements(env,{userId:referral.inviter_id,points:result.inviterPoints,reason:'referral',referenceId:`${session.sub}:milestone:${result.day}`},now,{sql:`${guard.sql} AND ${budget.sql} AND EXISTS(SELECT 1 FROM app_users WHERE id=? AND status='active')`,args:[...guard.args,...budget.args,referral.inviter_id]}));inviterId=referral.inviter_id;}
   }
-  await env.DB.batch(statements);
-  return json(env, request, { ok: true, day: result.day, streak: result.state.streak, points: result.points, milestones: result.milestones, inviterPoints: result.inviterPoints });
+  const committed=await env.DB.batch(statements);
+  if(!committed[0].results?.length)return json(env,request,{error:'already_checked_in',day:result.day},409);
+  if(inviterId)inviterPoints=(await env.DB.prepare("SELECT delta FROM zalo_point_ledger WHERE user_id=? AND reason='referral' AND reference_id=?").bind(inviterId,`${session.sub}:milestone:${result.day}`).first())?.delta||0;
+  return json(env,request,{ok:true,day:result.day,streak:result.state.streak,points:result.points,milestones:result.milestones,inviterPoints});
 }

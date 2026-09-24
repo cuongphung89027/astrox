@@ -1,8 +1,10 @@
 # Reward rules — integration status
 
-Implemented: pure server-side calculations for the approved referral and check-in rules. No referral count cap. Test: `node --test services/rewards/rules.test.mjs` (Node 22.18+/24).
+Implemented: server-side rules connected to verified Zalo identity, D1 wallet ledger, PayOS settlement, attendance API, Admin configuration and wallet UI. Current approved referral mode is unlimited. Test: `node --test services/backend/*.test.mjs services/rewards/rules.test.mjs web/tests/*.test.mjs` (Node 24).
 
-Not yet connected to production: authentication, durable transactions, referral attribution at registration, paid settlement hook, attendance API, admin configuration/UI, Google rewarded ads. The authoritative wallet backend is not in this repository. Do not import this module into frontend code and treat its output as wallet authority.
+Rewarded web ads use the Google Publisher Tag opt-in flow and server-owned sessions, caps and idempotent wallet credits. Delivery remains disabled until genuine Google Ad Manager network/ad-unit settings are provided and a real-provider check passes. Google rewarded web has no server-side verification: the granted event is client-reported and can be spoofed by a determined authenticated client. Do not describe this as proof of viewing. See `qa-report/rewards/verification.md` for current evidence.
+
+Deployment requires `migrations/reward-events.sql` before the Worker. Registration has a durable event inside identity creation and a five-minute recovery cron. Attendance stores its config snapshot in the atomic receipt. Ad sessions freeze their amount/version at start. First-topup uses the current published rules and authoritative settled-payment history.
 
 Backend integration requirements:
 - All inputs come from authenticated session, stored referral identity and verified payment facts. Never accept inviter, amount, settlement status or attendance date from a claim request.

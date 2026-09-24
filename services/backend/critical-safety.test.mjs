@@ -8,6 +8,7 @@ import {defaultConfig} from '../admin/config.ts';
 import {state,publish} from '../admin/store.mjs';
 async function fixture(){
  const env=testEnv();
+ for(const q of readFileSync(new URL('../../migrations/reward-events.sql',import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
  for(const file of ['./test/legacy-schema.sql','../../migrations/backend.sql','../../migrations/rewards.sql'])for(const q of readFileSync(new URL(file,import.meta.url),'utf8').split(';').filter(s=>s.trim()))await env.DB.prepare(q).run();
  Object.assign(env,{SESSION_SECRET:'test-session-secret',APP_ORIGIN:'https://theastrox.space'});
  await env.DB.prepare("INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES('victim','Victim','active','2026-01-01','2026-01-01')").run();

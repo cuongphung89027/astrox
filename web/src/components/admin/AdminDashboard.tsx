@@ -1732,7 +1732,7 @@ export function AdminDashboard() {
                 </Card>
                 <Card
                   title="Quảng cáo nhận Point"
-                  description="Chỉ cấp thưởng từ sự kiện đã được backend xác thực."
+                  description="Google Rewarded Web: backend kiểm tra phiên, hạn mức và chống cộng trùng; sự kiện cấp thưởng do trình duyệt báo."
                 >
                   <Fields
                     value={config.rewards.ads}

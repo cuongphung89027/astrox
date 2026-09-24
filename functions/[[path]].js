@@ -1,8 +1,14 @@
-/**
- * Next.js exports one HTML document per route, including its own SEO metadata.
- * Preserve the requested URL so Pages can resolve clean URLs, assets and 404s.
- * Specific /api/* handlers continue to take precedence over this catch-all.
- */
-export function onRequest({ request, env }) {
-  return env.ASSETS.fetch(request);
+/** Preserve each exported Next route. Pages use per-response script nonces
+ * so Google Publisher Tag can load its changing dependencies with strict CSP. */
+export async function onRequest({ request, env }) {
+  const response = await env.ASSETS.fetch(request);
+  if (response.status !== 200 || !response.headers.get('content-type')?.includes('text/html')) return response;
+  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))));
+  const headers = new Headers(response.headers);
+  headers.set('Content-Security-Policy', `object-src 'none'; base-uri 'self'; script-src 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https:; frame-src https:; media-src 'self' blob: https:;`);
+  headers.set('Cache-Control', 'private, no-store');
+  headers.delete('content-length');
+  headers.delete('etag');
+  return new HTMLRewriter().on('script', {element(el) {el.setAttribute('nonce', nonce);}})
+    .transform(new Response(response.body, {status:response.status, headers}));
 }

@@ -16,7 +16,7 @@
  *
  * Wizard port từ pmStep của app cũ: gender → name → fullName (tuỳ chọn) →
  * dob + place → hourChi → review + lưu (setProfile + onboarded). Provider tự
- * chạy captive check: loggedIn && !profile → open({captive:true}) sau 600ms.
+ * chạy captive check: loggedIn && !profile → open({captive:true}) sau khi tải dữ liệu tài khoản thành công.
  */
 import {
   createContext,
@@ -27,6 +27,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useCloudProfileReady } from "@/lib/cloud-sync";
 import { useAuth } from "@/lib/auth";
 import { setProfile } from "@/lib/state";
 import { useProfile } from "@/lib/use-store";
@@ -64,7 +65,9 @@ export function ProfileModalProvider({ children }: { children: React.ReactNode }
     place: "",
   });
 
-  const { loggedIn } = useAuth();
+  const { loggedIn, ready: authReady, astroxUser } = useAuth();
+  const cloudProfileReady = useCloudProfileReady();
+  const profileResolved = authReady && (cloudProfileReady || astroxUser?.id === "localhost-preview");
   const profile = useProfile();
 
   const lastFocusedRef = useRef<HTMLElement | null>(null);
@@ -102,19 +105,19 @@ export function ProfileModalProvider({ children }: { children: React.ReactNode }
     };
   }, [open, close]);
 
-  // Captive check: đăng nhập rồi mà chưa có hồ sơ → ép mở sau 600ms (một lần).
+  // Wait for successful cloud hydration before deciding the account has no profile.
   useEffect(() => {
-    if (!loggedIn || profile || captiveTriggeredRef.current) return;
+    if (!loggedIn || !profileResolved || profile || captiveTriggeredRef.current) return;
     const t = setTimeout(() => {
       captiveTriggeredRef.current = true;
       open({ captive: true });
     }, 600);
     return () => clearTimeout(t);
-  }, [loggedIn, profile, open]);
+  }, [loggedIn, profileResolved, profile, open]);
 
   // Tự giải trừ captive: hồ sơ xuất hiện (vừa lưu / sync từ tài khoản) hoặc
   // đăng xuất giữa chừng → không còn lý do khoá modal.
-  if(openState && captive && (profile || !loggedIn)){setOpenState(false);setCaptive(false);setClosing(false);}
+  if(openState && captive && (profile || !loggedIn || !profileResolved)){setOpenState(false);setCaptive(false);setClosing(false);}
 
   // Focus panel khi mở; trả focus về nút đã mở khi đóng.
   useEffect(() => {

@@ -2,9 +2,11 @@
 import {useSyncExternalStore} from 'react';
 import {getState,setState,onDataDirty,accountStorageKey} from './state';
 import {mergeCloud,type CloudData} from './cloud-merge';
+let profileReady=false;
 let status='Chỉ lưu trên thiết bị này';const listeners=new Set<()=>void>();
 const publish=(value:string)=>{status=value;listeners.forEach(l=>l());};
 const subscribe=(l:()=>void)=>{listeners.add(l);return()=>{listeners.delete(l);};};
+export const useCloudProfileReady=()=>useSyncExternalStore(subscribe,()=>profileReady,()=>false);
 export const useCloudSyncStatus=()=>useSyncExternalStore(subscribe,()=>status,()=> 'Chỉ lưu trên thiết bị này');
 const HISTORY='astrox_tarot_history_v1',DELETED='astrox_tarot_history_deleted_v1';
 function stored(key:string,fallback:unknown){try{return JSON.parse(localStorage.getItem(accountStorageKey(key))||'null')??fallback;}catch{return fallback;}}
@@ -16,6 +18,7 @@ function apply(data:CloudData){
 }
 export function startCloudSync(url:string,headers:()=>Promise<Record<string,string>>){
  let active=true,busy=false,dirty=false,revision=0,base:CloudData=stored('astrox_cloud_base',snapshot()) as CloudData;
+ profileReady=false;
  const controller=new AbortController();let timer:ReturnType<typeof setTimeout>|undefined;
  const request=async(method:'GET'|'PUT',payload?:CloudData)=>fetch(url,{method,credentials:'include',headers:{'content-type':'application/json',...await headers()},signal:controller.signal,...(payload?{body:JSON.stringify({payload,expectedRevision:revision})}:{})});
  const sync=async()=>{
@@ -24,7 +27,7 @@ export function startCloudSync(url:string,headers:()=>Promise<Record<string,stri
    // Always read before upload; reconnect/conflicts retry this step.
    const r=await request('GET');if(!r.ok)throw Error('read');const remote=await r.json();if(!active)return;
    if(!Number.isSafeInteger(remote._syncRevision))throw Error('revision');
-   revision=remote._syncRevision;const merged=mergeCloud(remote,snapshot(),base);apply(merged);base=remote;
+   revision=remote._syncRevision;const merged=mergeCloud(remote,snapshot(),base);apply(merged);base=remote;profileReady=true;publish('Đang đồng bộ…');
    const clean={...remote};delete clean._syncRevision;
    if(dirty||JSON.stringify(merged)!==JSON.stringify(clean)){
     const sent=snapshot();dirty=false;const w=await request('PUT',sent);if(!active)return;
@@ -40,5 +43,5 @@ export function startCloudSync(url:string,headers:()=>Promise<Record<string,stri
  const unsubscribe=onDataDirty(()=>{dirty=true;clearTimeout(timer);timer=setTimeout(()=>void sync(),800);});
  const interval=setInterval(()=>{if(document.visibilityState==='visible')void sync();},30000);
  void sync();
- return()=>{active=false;controller.abort();clearTimeout(timer);clearInterval(interval);unsubscribe();publish('Chỉ lưu trên thiết bị này');};
+ return()=>{active=false;controller.abort();clearTimeout(timer);clearInterval(interval);unsubscribe();profileReady=false;publish('Chỉ lưu trên thiết bị này');};
 }

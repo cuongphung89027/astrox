@@ -6,7 +6,7 @@ import {usePathname} from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { closeLoginDialog, openLoginDialog, useLoginDialogOpen } from "@/lib/login-dialog";
 import { hasTermsConsent, saveTermsConsent, termsHref } from "@/lib/terms";
-import { GoogleG, ZaloWordmark } from "@/components/kit/BrandLogos";
+import { ZaloWordmark } from "@/components/kit/BrandLogos";
 import styles from "./LoginPrompt.module.css";
 
 /**
@@ -74,7 +74,7 @@ export function LoginPrompt() {
 
   function proceedZalo() {
     if (!consent) {
-      setError("Vui lòng tích đồng ý với các điều khoản trước khi tiếp tục.");
+      setError("Bạn cần đồng ý điều khoản để tiếp tục.");
       checkboxRef.current?.focus();
       return;
     }
@@ -90,28 +90,21 @@ export function LoginPrompt() {
         if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close();
       } }}>
       <button type="button" className={styles.close} aria-label="Đóng hộp thoại đăng nhập" onClick={close} autoFocus>×</button>
-      {/* eslint-disable-next-line @next/next/no-img-element -- Original brand asset. */}
-      <img className={styles.logo} src="/assets/logo.png" alt="AstroX" width={80} height={80} />
-      <p className={styles.eyebrow}>Chào bạn đến với AstroX</p>
-      <h2 id="login-prompt-title">Bắt đầu hành trình<br />hiểu mình.</h2>
-      <p id="login-prompt-description" className={styles.description}>Chọn cách đăng nhập để đồng bộ hồ sơ, ví AstroX Point và lịch sử luận giải của bạn. Bạn cũng có thể khám phá trước và đăng nhập sau.</p>
-
-      <div className={styles.providers}>
-        <button type="button" className={styles.zalo} onClick={proceedZalo} aria-disabled={!consent}>
-          <ZaloWordmark size={17} />
-          <span>Đăng nhập bằng Zalo</span>
-        </button>
-        <button type="button" className={styles.google} disabled title="Đăng nhập bằng Google sẽ sớm sẵn sàng">
-          <GoogleG size={18} />
-          <span>Đăng nhập bằng Google</span>
-          <span className={styles.soon}>Đang phát triển</span>
-        </button>
-      </div>
-
+      <header className={styles.hero}>
+        <div className={styles.brand}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- Original brand asset. */}
+          <img className={styles.logo} src="/assets/logo.png" alt="AstroX" width={56} height={56} />
+        </div>
+        <h2 id="login-prompt-title">Chào bạn.</h2>
+        <p id="login-prompt-description" className={styles.description}>Đăng nhập để lưu hành trình của bạn.</p>
+        <span className={styles.orbit} aria-hidden="true" />
+      </header>
+      <div className={styles.body}>
       <p className={styles.consentError} role={error ? "alert" : undefined}>{error}</p>
-      <label className={styles.consent}>
+      <div className={styles.consent}>
         <input
           ref={checkboxRef}
+          aria-labelledby="login-consent-label"
           type="checkbox"
           checked={consent}
           onChange={event => {
@@ -119,16 +112,22 @@ export function LoginPrompt() {
             if (event.target.checked) setError("");
           }}
         />
-        <span>
-          Tôi đã đọc và đồng ý với{" "}
-          <Link href={termsHref("terms")} onClick={close}>Điều khoản sử dụng</Link>,{" "}
-          <Link href={termsHref("disclaimer")} onClick={close}>Tuyên bố miễn trừ trách nhiệm</Link>{" "}
-          và <Link href={termsHref("privacy")} onClick={close}>Thoả thuận xử lý và bảo mật thông tin cá nhân</Link>{" "}
-          cho các mục đích được thông báo; không bao gồm đồng ý quảng cáo hoặc tiếp thị.
+        <span id="login-consent-label">
+          Tôi đồng ý với{" "}
+          <Link href={termsHref("terms")} onClick={close} aria-label="Điều khoản sử dụng">Điều khoản</Link>,{" "}
+          <Link href={termsHref("disclaimer")} onClick={close} aria-label="Tuyên bố miễn trừ trách nhiệm">Miễn trừ</Link>{" "}
+          và <Link href={termsHref("privacy")} onClick={close} aria-label="Thỏa thuận xử lý và bảo mật thông tin cá nhân">Bảo mật</Link>.
         </span>
-      </label>
+      </div>
 
-      <button type="button" className={styles.later} onClick={close}>Để sau, mình muốn khám phá trước</button>
+      <p className={styles.privacyNote}>Không bao gồm quảng cáo, tiếp thị.</p>
+      <button type="button" className={styles.zalo} onClick={proceedZalo} aria-disabled={!consent}>
+        <ZaloWordmark size={20} />
+        <span>Tiếp tục với Zalo</span>
+        <span className={styles.arrow} aria-hidden="true">↗</span>
+      </button>
+      <button type="button" className={styles.later} onClick={close}>Khám phá trước</button>
+      </div>
     </dialog>
   );
 }

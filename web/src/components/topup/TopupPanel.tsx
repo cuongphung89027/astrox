@@ -133,7 +133,7 @@ function TopupSession({ onClose }: { onClose: () => void }) {
         <div className={styles.wallet}><div><p>Số dư hiện tại</p><div className={styles.balance}>{eligible && balance !== null ? number(balance) : "—"}<small>Point</small></div></div><PointCoin size={62} className={styles.coin} /></div>
       </header>
       <div className={styles.body}>
-        <div className={styles.sectionTitle}><h3>Chọn gói nạp</h3><span id="ax-tp-description">Chọn gói trước khi thanh toán</span></div>
+        <div className={styles.sectionTitle}><h3>Chọn gói nạp</h3><span id="ax-tp-description">Đơn thanh toán có hiệu lực 10 phút</span></div>
         {!eligible && <p className={styles.message}>{astroxUser ? "Chế độ xem thử không hỗ trợ thanh toán." : "Đăng nhập bằng Zalo để nạp Point. Bạn vẫn có thể xem các gói bên dưới."}</p>}
         {pkgError ? <div role="alert"><p className={`${styles.message} ${styles.error}`}>Chưa tải được gói nạp.</p><button className={styles.retry} type="button" onClick={() => { setPkgError(false); setPackages(null); setReload(value => value + 1); }}>Thử lại</button></div> : packages === null ? <div className={styles.packages} role="status" aria-label="Đang tải gói nạp">{[0,1,2,3].map(key => <div key={key} className={styles.skeleton} aria-hidden="true" />)}</div> : packages.length === 0 ? <p className={styles.message}>Hiện chưa có gói nạp khả dụng. Bạn quay lại sau nhé.</p> : <fieldset className={styles.packages} aria-label="Gói nạp Point">
           {packages.map(pkg => <label className={styles.package} key={pkg.amount_vnd}>

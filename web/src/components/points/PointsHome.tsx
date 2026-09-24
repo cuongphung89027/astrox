@@ -9,6 +9,8 @@
  * - Lịch sử Point: gộp ledger (nạp/cộng/trừ, phân trang cursor) + đơn nạp
  *   đang chờ thanh toán; lọc Tất cả / Cộng / Tiêu.
  */
+import Link from "next/link";
+import { EarnPointsView } from "./EarnPointsView";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { openLoginDialog } from "@/lib/login-dialog";
@@ -32,16 +34,6 @@ interface Entry {
   display: string;
   at: string;
   icon: "coin" | "invite" | "play" | "calendar" | "wallet";
-}
-
-/** Mức thưởng admin cấu hình (publicConfig.rewards) — null khi chưa tải được. */
-interface RewardsInfo {
-  enabled: boolean;
-  registrationEnabled: boolean;
-  registrationInviter: number;
-  firstTopupEnabled: boolean;
-  firstTopupInviter: number;
-  ads: { enabled: boolean; points: number; dailyLimit: number };
 }
 
 const FILTERS: { id: Filter; label: string }[] = [
@@ -108,14 +100,13 @@ interface HistoryState {
   nextCursor: string | null;
 }
 
-export function PointsHome() {
+export function PointsHome({view="wallet"}:{view?:"wallet"|"earn"}) {
   const { loggedIn, ready, astroxUser } = useAuth();
   const preview = astroxUser?.id === "localhost-preview";
   const { points, status, refresh } = usePointsBalance(!preview);
   const toast = useToast();
 
   const [topupOpen, setTopupOpen] = useState(false);
-  const [rewards, setRewards] = useState<RewardsInfo | null | undefined>(undefined);
   const [summary, setSummary] = useState<RewardsSummary | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
   const [summaryError,setSummaryError]=useState(false);
@@ -130,37 +121,6 @@ export function PointsHome() {
   const [filter, setFilter] = useState<Filter>("all");
   const [copied, setCopied] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Cấu hình phần thưởng từ admin (đã xuất bản) — quyết định trạng thái 2 thẻ "Kiếm Point".
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/site-config")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!alive) return;
-        const rw = d?.config?.rewards;
-        setRewards(
-          rw && typeof rw === "object"
-            ? {
-                enabled: Boolean(rw.enabled),
-                registrationEnabled: Boolean(rw.registrationEnabled),
-                registrationInviter: Number(rw.registrationInviter) || 0,
-                firstTopupEnabled: Boolean(rw.firstTopupEnabled),
-                firstTopupInviter: Number(rw.firstTopupInviter) || 0,
-                ads: {
-                  enabled: Boolean(rw.ads?.enabled),
-                  points: Number(rw.ads?.points) || 0,
-                  dailyLimit: Number(rw.ads?.dailyLimit) || 0,
-                },
-              }
-            : null,
-        );
-      })
-      .catch(() => alive && setRewards(null));
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // Lịch sử: trang đầu ledger + đơn nạp (lấy amount_vnd + đơn đang chờ).
   // historyEpoch tăng khi bấm "Thử lại" để chạy lại effect.
@@ -189,6 +149,13 @@ export function PointsHome() {
     };
   }, [loggedIn, astroxUser, preview, historyEpoch]);
 
+  useEffect(() => {
+    if (!loggedIn || preview || !orders?.some(o=>o.status==="pending")) return;
+    let alive=true;
+    const timer=setInterval(()=>{void loadTopupHistory().then(rows=>{if(!alive)return;setOrders(rows);if(rows.some(row=>orders.some(old=>old.order_code===row.order_code&&old.status!==row.status))){setHistoryEpoch(n=>n+1);void refresh();}}).catch(()=>{});},30000);
+    return ()=>{alive=false;clearInterval(timer);};
+  },[loggedIn,preview,orders,refresh]);
+
   const reloadHistory = useCallback(() => setHistoryEpoch((n) => n + 1), []);
 
   useEffect(() => () => { if (copyTimer.current) clearTimeout(copyTimer.current); }, []);
@@ -212,13 +179,13 @@ export function PointsHome() {
     }
     const list = history.txns.map((t) => txnToEntry(t, orderMap));
     const pending = (orders ?? [])
-      .filter((o) => o.status === "pending" && !history.txns.some((t) => t.reason === "topup_payos" && t.reference_id === String(o.order_code)))
+      .filter((o) => ["pending","cancelled","expired"].includes(o.status) && !history.txns.some((t) => t.reason === "topup_payos" && t.reference_id === String(o.order_code)))
       .map<Entry>((o) => ({
         key: `pending-${o.order_code ?? `${o.amount_vnd}-${o.created_at ?? ""}`}`,
         dir: 0,
         label: "Nạp Point",
-        sub: `Chưa thanh toán · ${formatVnd(o.amount_vnd)}`,
-        display: `+${o.points.toLocaleString("vi-VN")}`,
+        sub: `${o.status === "pending" ? "Chờ thanh toán · tự hủy sau 10 phút" : "Đơn đã hủy"} · ${formatVnd(o.amount_vnd)}`,
+        display: o.status === "pending" ? "Đang chờ" : "Đã hủy",
         at: o.created_at ?? "",
         icon: "coin",
       }));
@@ -245,10 +212,6 @@ export function PointsHome() {
 
   const referralCode = summary?.referral.code || "";
   const referralLink = referralCode && typeof window !== "undefined" ? `${window.location.origin}/?ref=${referralCode}` : "";
-  const referralOpen = Boolean(rewards?.enabled && rewards.registrationEnabled);
-  const adsOpen = Boolean(summary?.enabled && summary.ads?.enabled);
-  const attendanceOpen = Boolean(summary?.enabled && summary.attendance.enabled) || preview;
-  const attendanceToday = preview ? true : Boolean(summary?.attendance.today);
 
   const checkin = async () => {
     if (checkingIn) return;
@@ -343,6 +306,7 @@ export function PointsHome() {
         <p>Quảng cáo do Google cung cấp, có thể có âm thanh. Bạn có thể đóng bất cứ lúc nào; đóng trước khi được cấp thưởng sẽ không nhận Point.</p>
         <div><button onClick={()=>setAdConsent(false)}>Để sau</button><button className={styles.adBtn} onClick={()=>void startAd()}>Đồng ý xem</button></div>
       </dialog>
+      {view === "earn" ? <EarnPointsView failed={summaryError} summary={summary} preview={preview} checkingIn={checkingIn} adBusy={adBusy} copied={copied} referralLink={referralLink} onCheckin={()=>void checkin()} onCopy={()=>void copyReferral()} onAd={watchAd}/> : <>
       {/* ------------------------------- Hero số dư ------------------------------ */}
       <section className={styles.hero} aria-label="Số dư AstroX Point">
         <span className={styles.heroRings} aria-hidden="true" />
@@ -382,134 +346,7 @@ export function PointsHome() {
         </button>
       </section>
 
-      {/* ---------------------------- Kiếm thêm Point ---------------------------- */}
-      <div className="ax-stagger is-shown">
-        <section className={styles.earn} aria-label="Kiếm thêm Point">
-          <header className={`ax-stagger-line ${styles.earnHeading}`}>
-            <h2>
-              <FeatureIcon name="explore" size={20} />
-              Kiếm thêm Point
-            </h2>
-          </header>
-          <div className={`${styles.earnGrid} ax-stagger-line`}>
-            {/* Điểm danh hàng ngày */}
-            <article className={styles.earnCard}>
-              <span className={`${styles.earnIcon} ${attendanceOpen ? styles.earnIconOn : ""}`}>
-                <FeatureIcon name="calendar" size={22} />
-              </span>
-              <div className={styles.earnBody}>
-                <h3>Điểm danh hàng ngày</h3>
-                <p className={styles.earnLine}>
-                  {!attendanceOpen ? (
-                    <span className={styles.miniSkeleton} aria-label="Đang tải mức thưởng" />
-                  ) : (
-                    <>
-                      <b>+{(preview ? 2 : summary?.attendance.daily ?? 0).toLocaleString("vi-VN")}</b> Point mỗi ngày
-                      {(summary?.attendance.milestones?.length || 0) > 0 && summary && (
-                        <> · mốc {summary.attendance.milestones.map((m) => `ngày ${m.day} (+${m.points})`).join(", ")}</>
-                      )}
-                    </>
-                  )}
-                </p>
-                {attendanceOpen ? (
-                  <>
-                    <div className={styles.checkinRow}>
-                      <span className={styles.streakChip} aria-label="Chuỗi điểm danh">
-                        Chuỗi <b>{summary?.attendance.streak ?? 0}</b> ngày
-                      </span>
-                      <button type="button" className={styles.adBtn} onClick={checkin} disabled={checkingIn || (attendanceToday && !preview)}>
-                        {!preview && attendanceToday ? "Đã điểm danh hôm nay ✓" : checkingIn ? "Đang ghi…" : "Điểm danh ngay"}
-                      </button>
-                    </div>
-                    <div className={styles.milestones} aria-label="Mốc thưởng điểm danh">{summary?.attendance.milestones.map(m=><div key={m.day} data-claimed={summary.attendance.claimed.includes(m.day)}><span>Ngày {m.day}</span><strong>+{m.points} Point</strong><small>{summary.attendance.claimed.includes(m.day)?'Đã nhận ✓':`Còn ${Math.max(0,m.day-summary.attendance.streak)} ngày`}</small></div>)}</div>
-                    <p className={styles.earnNote}>Ngày điểm danh tính theo giờ Việt Nam. Bỏ một ngày thì chuỗi tính lại; mỗi mốc thưởng chỉ nhận một lần cho mỗi tài khoản.</p>
-                  </>
-                ) : (
-                  <p className={styles.earnNote}>
-                    <span className={styles.soonChip}>Sắp mở</span>
-                    Điểm danh chưa mở hoặc chưa tải được trạng thái tài khoản.
-                  </p>
-                )}
-              </div>
-            </article>
-
-            {/* Giới thiệu bạn bè */}
-            <article className={styles.earnCard}>
-              <span className={`${styles.earnIcon} ${referralOpen ? styles.earnIconOn : ""}`}>
-                <FeatureIcon name="invite" size={22} />
-              </span>
-              <div className={styles.earnBody}>
-                <h3>Giới thiệu bạn bè</h3>
-                <p className={styles.earnLine}>
-                  {rewards == null ? (
-                    <span className={styles.miniSkeleton} aria-label="Đang tải mức thưởng" />
-                  ) : (
-                    <>
-                      <b>+{rewards.registrationInviter.toLocaleString("vi-VN")}</b> Point khi bạn bè đăng ký
-                      {rewards.firstTopupEnabled && rewards.firstTopupInviter > 0 && (
-                        <> · <b>+{rewards.firstTopupInviter.toLocaleString("vi-VN")}</b> Point khi họ nạp lần đầu</>
-                      )}
-                    </>
-                  )}
-                </p>
-                {referralOpen ? (
-                  <>
-                    <div className={styles.refRow}>
-                      <input readOnly placeholder="Đang tải link giới thiệu…" value={referralLink} aria-label="Link giới thiệu của bạn" onFocus={(e) => e.currentTarget.select()} />
-                      <button type="button" onClick={copyReferral} disabled={!referralLink} aria-label="Sao chép link giới thiệu">
-                        {copied ? "Đã chép ✓" : "Sao chép"}
-                      </button>
-                    </div>
-                    <p className={styles.earnNote}>
-                      Thưởng khi bạn bè hoàn tất đăng ký Zalo lần đầu qua link này{!preview && summary ? ` — đã mời ${summary.referral.invited} người · nhận ${summary.referral.earned.toLocaleString("vi-VN")} Point` : ""}.
-                    </p>
-                    <p className={styles.earnNote}>Người mới nhận +{summary?.referral.registrationUser||0} Point. {summary?.referral.firstTopupMinVnd?`Thưởng nạp đầu áp dụng từ ${summary.referral.firstTopupMinVnd.toLocaleString('vi-VN')}đ.`:''} Thưởng mốc điểm danh của bạn bè: {summary?.attendance.milestones.filter(m=>(m.inviterPoints||0)>0).map(m=>`ngày ${m.day}: +${m.inviterPoints} Point`).join(' · ')}.</p>
-                  </>
-                ) : (
-                  <p className={styles.earnNote}>
-                    <span className={styles.soonChip}>Sắp mở</span>
-                    Chương trình giới thiệu đang được hoàn thiện — mức thưởng hiển thị theo cấu hình chính thức.
-                  </p>
-                )}
-              </div>
-            </article>
-
-            {/* Xem quảng cáo */}
-            <article className={styles.earnCard}>
-              <span className={`${styles.earnIcon} ${adsOpen ? styles.earnIconOn : ""}`}>
-                <FeatureIcon name="play" size={22} />
-              </span>
-              <div className={styles.earnBody}>
-                <h3>Xem quảng cáo</h3>
-                <p className={styles.earnLine}>
-                  {rewards == null ? (
-                    <span className={styles.miniSkeleton} aria-label="Đang tải mức thưởng" />
-                  ) : (
-                    <>
-                      <b>+{rewards.ads.points.toLocaleString("vi-VN")}</b> Point mỗi lượt · tối đa{" "}
-                      <b>{rewards.ads.dailyLimit.toLocaleString("vi-VN")}</b> lượt/ngày
-                    </>
-                  )}
-                </p>
-                {adsOpen ? (
-                  <>
-                    <button type="button" className={styles.adBtn} onClick={watchAd} disabled={adBusy||(summary?.ads?.used||0)>=(summary?.ads?.dailyLimit||0)}>
-                      <FeatureIcon name="play" size={16} />
-                      {adBusy?'Đang mở quảng cáo…':(summary?.ads?.used||0)>=(summary?.ads?.dailyLimit||0)?'Đã đủ lượt hôm nay':'Xem quảng cáo nhận Point'}
-                    </button>
-                    <p className={styles.earnNote}>Đã nhận {summary?.ads?.used||0}/{summary?.ads?.dailyLimit||0} lượt hôm nay · Chờ {summary?.ads?.cooldownSeconds||0} giây giữa hai lượt. Phần thưởng được ghi khi mạng quảng cáo cấp thưởng.</p>
-                  </>
-                ) : (
-                  <p className={styles.earnNote}>
-                    <span className={styles.soonChip}>Sắp mở</span>
-                    Đang kết nối mạng quảng cáo — không có thưởng thử nghiệm, chỉ thưởng khi xem quảng cáo thật.
-                  </p>
-                )}
-              </div>
-            </article>
-          </div>
-        </section>
-      </div>
+      <Link href="/hoso?section=earn" className={styles.earnLink}><span><FeatureIcon name="explore" size={25}/></span><div><strong>Kiếm thêm Point</strong><p>Điểm danh · Mời bạn · Xem quảng cáo</p></div><b aria-hidden="true">↗</b></Link>
 
       {/* ------------------------------ Lịch sử Point ---------------------------- */}
       <div className="ax-stagger is-shown">
@@ -574,7 +411,7 @@ export function PointsHome() {
                     </span>
                     <div className={styles.rowMain}>
                       <p className={styles.rowLabel}>
-                        {e.dir === 0 && <i className={styles.pendingDot} aria-hidden="true" />}
+                        {e.dir === 0 && e.display === "Đang chờ" && <i className={styles.pendingDot} aria-hidden="true" />}
                         {e.label}
                       </p>
                       {e.sub && <p className={styles.rowSub}>{e.sub}</p>}
@@ -598,6 +435,7 @@ export function PointsHome() {
         </section>
       </div>
 
+      </>}
       <TopupPanel
         open={topupOpen}
         onClose={() => {

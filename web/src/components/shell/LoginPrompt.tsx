@@ -130,7 +130,6 @@ export function LoginPrompt() {
         </span>
       </div>
 
-      <p className={styles.privacyNote}>Không bao gồm quảng cáo, tiếp thị.</p>
       <button type="button" className={styles.later} onClick={close}>Khám phá trước</button>
       </div>
     </dialog>

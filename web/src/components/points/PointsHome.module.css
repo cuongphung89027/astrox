@@ -397,3 +397,6 @@
 .adDialog p { font-size:14px;line-height:1.7;margin:12px 0; }
 .adDialog>div { display:flex;justify-content:space-between;gap:16px;margin-top:20px; }
 .adDialog button { min-height:44px;cursor:pointer; }
+
+.earnLink{display:flex;align-items:center;gap:16px;padding:22px 24px;border:1px solid #dce1cc;border-radius:22px;background:linear-gradient(115deg,#e9eddc,#faf7ea);color:#285343;text-decoration:none;transition:transform .3s,box-shadow .3s}.earnLink:hover{transform:translateY(-3px);box-shadow:0 10px 25px #254e4210}.earnLink>span{display:grid;place-items:center;width:48px;height:48px;background:#dfe7cf;border-radius:16px}.earnLink>div{flex:1}.earnLink strong{font-size:17px;font-weight:500}.earnLink p{font-size:11px;color:#7c866d;margin:5px 0 0}.earnLink>b{font-size:23px;font-weight:400}@media(prefers-reduced-motion:reduce){.earnLink{transition:none}.earnLink:hover{transform:none}}
+:global(html[data-motion=reduced]) .earnLink{transition:none;transform:none}

@@ -1522,7 +1522,6 @@ export function AdminDashboard() {
                         ["clientId", "Client ID", "text"],
                         ["returnUrl", "URL thanh toán thành công", "text"],
                         ["cancelUrl", "URL hủy thanh toán", "text"],
-                        ["expiryMinutes", "Thời hạn đơn (phút)", "number"],
                       ]}
                       onChange={(key, value) =>
                         update((d) =>
@@ -1530,6 +1529,7 @@ export function AdminDashboard() {
                         )
                       }
                     />
+                    <p>Đơn chưa thanh toán tự hết hạn sau 10 phút.</p>
                     <SecretInput
                       label="PayOS API key"
                       reference="payos:apiKey"

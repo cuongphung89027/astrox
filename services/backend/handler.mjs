@@ -21,7 +21,7 @@ export async function publicFetch(request,env){
  try{
   const url=new URL(request.url),path=url.pathname,method=request.method;
   if(method==='OPTIONS')return new Response(null,{status:204,headers:corsHeaders(env,request)});
-  if(path==='/api/health')return json(env,request,{ok:true,service:'astrox-api',database:Boolean(env.DB),version:'2026-09-24-account-sync-guard-1'});
+  if(path==='/api/health')return json(env,request,{ok:true,service:'astrox-api',database:Boolean(env.DB),version:'2026-09-24-point-expiry-1'});
   // Internal APIs are never routed by the public handler, regardless of Host/header.
   if(path.startsWith('/internal/'))return json(env,request,{error:'not_found'},404);
   if(path==='/api/webhooks/payos'&&method==='POST'||path==='/api/payos/webhook'&&method==='POST')return await handlePayosWebhook(env,request);

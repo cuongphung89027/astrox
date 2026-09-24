@@ -11,7 +11,7 @@
 .close { position: absolute; z-index: 2; right: 17px; top: 17px; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #f8f5e42e; border-radius: 50%; background: #ffffff05; font-size: 24px; font-weight: 300; line-height: 1; color: #e5ebd8; cursor: pointer; transition: background .2s, transform .2s; }
 .close:hover { background: #ffffff1c; transform: rotate(90deg); }
 .body { padding: 24px 28px 17px; }
-.consent { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0 0; text-align: left; font-size: 11px; line-height: 1.8; color: #798272; cursor: pointer; }
+.consent { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0 0; text-align: left; font-size: 10px; line-height: 1.8; color: #798272; cursor: pointer; }
 .consent input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: #244e42; cursor: pointer; }
 .consent a { white-space: normal; color: #244e42; text-decoration: underline; text-decoration-color: #a2b292; text-underline-offset: 3px; }
 .privacyNote { margin: 7px 0 8px 28px; font-size: 10px; color: #798272; line-height: 1.6; }

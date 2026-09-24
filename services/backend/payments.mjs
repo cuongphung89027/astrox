@@ -31,7 +31,7 @@ export async function handleTopupCreate(env,request,fetchImpl=fetch){
  let promo;try{promo=await getPromo(env,settings,String(body.promo_code||'').trim().toUpperCase(),amount,session.sub);}catch(e){return json(env,request,{error:e.message},400);}
  const points=pkg.points+(promo?.bonus||0);if(!Number.isSafeInteger(points)||points<1)return json(env,request,{error:'invalid_package'},422);
  const orderCode=Date.now()*1000+crypto.getRandomValues(new Uint16Array(1))[0]%1000;
- const id=crypto.randomUUID(),now=new Date().toISOString(),expires=new Date(Date.now()+settings.payos.expiryMinutes*60000).toISOString();
+ const id=crypto.randomUUID(),now=new Date().toISOString(),expires=new Date(Date.now()+10*60000).toISOString();
  // Reserve promotions with the order snapshot inside a D1 transaction, before PayOS.
  // Both paid orders and unexpired pending orders consume the limit.
  const count="SELECT COUNT(*) FROM backend_order_snapshots s JOIN topup_orders_zalo o ON o.order_code=s.order_code WHERE s.promo_id=? AND (o.status='paid' OR (o.status IN ('pending') AND s.expires_at>?))";
@@ -70,12 +70,33 @@ export async function handlePayosWebhook(env,request){
  const now=new Date().toISOString(),ref=String(d.orderCode);
  await env.DB.batch([
   env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(order.user_id,now),
-  env.DB.prepare("INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,user_id,points,'topup_payos',?,? FROM topup_orders_zalo WHERE id=? AND status IN ('pending') ON CONFLICT(reason,reference_id,user_id) DO NOTHING").bind(crypto.randomUUID(),ref,now,order.id),
+  env.DB.prepare("INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,user_id,points,'topup_payos',?,? FROM topup_orders_zalo WHERE id=? AND status IN ('pending','cancelled','expired') ON CONFLICT(reason,reference_id,user_id) DO NOTHING").bind(crypto.randomUUID(),ref,now,order.id),
   env.DB.prepare('UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1').bind(order.points,now,order.user_id),
-  env.DB.prepare("UPDATE topup_orders_zalo SET status='paid',paid_at=? WHERE id=? AND status IN ('pending') AND EXISTS(SELECT 1 FROM zalo_point_ledger WHERE reason='topup_payos' AND reference_id=? AND user_id=?)").bind(now,order.id,ref,order.user_id),
+  env.DB.prepare("UPDATE topup_orders_zalo SET status='paid',paid_at=? WHERE id=? AND status IN ('pending','cancelled','expired') AND EXISTS(SELECT 1 FROM zalo_point_ledger WHERE reason='topup_payos' AND reference_id=? AND user_id=?)").bind(now,order.id,ref,order.user_id),
   env.DB.prepare('UPDATE promotion_codes SET redeemed_count=redeemed_count+1 WHERE id=(SELECT promo_id FROM topup_promo_map WHERE order_code=?) AND changes()=1').bind(Number(d.orderCode)),
   // Thưởng inviter khi invitee nạp lần đầu (cấu hình rewards admin đã publish).
   ...await firstTopupStatements(env,settings,order)
  ]);
  return json(env,request,{ok:true});
+}
+
+// PayOS enforces the exact ten-minute deadline. Cron reconciles the local status
+// within the following minute; only a signed unpaid cancellation may close it.
+export async function expirePendingTopups(env,now=Date.now(),fetchImpl=fetch){
+ const settings=await runtimeSettings(env),runtime=settings.env;if(!configured(runtime))return;
+ const rows=(await env.DB.prepare("SELECT order_code,amount_vnd FROM topup_orders_zalo WHERE status='pending' AND julianday(created_at)<=julianday(?) ORDER BY random() LIMIT 20").bind(new Date(now-600000).toISOString()).all()).results;
+ for(let i=0;i<rows.length;i+=4)await Promise.all(rows.slice(i,i+4).map(async order=>{
+  try{
+   const url=`https://api-merchant.payos.vn/v2/payment-requests/${order.order_code}`;
+   const headers={'content-type':'application/json','x-client-id':runtime.PAYOS_CLIENT_ID,'x-api-key':runtime.PAYOS_API_KEY};
+   let r=await fetchImpl(`${url}/cancel`,{method:'POST',headers,body:JSON.stringify({cancellationReason:'Tự động hủy sau 10 phút chưa thanh toán'}),redirect:'manual',signal:AbortSignal.timeout(10000)});
+   let data=await r.json().catch(()=>null);
+   // Already-expired links may reject cancellation. Read their signed status.
+   if(!r.ok||data?.code!=='00'){r=await fetchImpl(url,{headers,redirect:'manual',signal:AbortSignal.timeout(10000)});data=await r.json().catch(()=>null);}
+   const d=data?.data;
+   if(!r.ok||data?.code!=='00'||!d||!await equal(await payosSignature(runtime.PAYOS_CHECKSUM_KEY,d),String(data.signature||'')))throw Error('unverified_response');
+   if(Number(d.orderCode)!==order.order_code||Number(d.amount)!==order.amount_vnd||Number(d.amountPaid)!==0||!['CANCELLED','EXPIRED'].includes(d.status))return;
+   await env.DB.prepare("UPDATE topup_orders_zalo SET status='cancelled' WHERE order_code=? AND status='pending'").bind(order.order_code).run();
+  }catch{console.error(JSON.stringify({event:'topup.expiry_retry',orderCode:order.order_code}));}
+ }));
 }

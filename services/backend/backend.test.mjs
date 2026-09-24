@@ -289,3 +289,25 @@ test('expired browser callbacks show a restart link instead of raw JSON',async()
  assert.equal(response.status,400);assert.match(response.headers.get('content-type'),/text\/html/);
  assert.match(await response.text(),/Phiên đăng nhập đã hết hạn/);
 });
+test('pending topups expire at ten minutes only after verified provider cancellation',async()=>{
+ const {expirePendingTopups}=await import('./payments.mjs');const env=await fixture();await order(env);const now=Date.now();await env.DB.prepare('UPDATE topup_orders_zalo SET created_at=?').bind(new Date(now-599000).toISOString()).run();let calls=0;const upstream=async()=>{calls++;const data={orderCode:12345,amount:50000,amountPaid:0,status:'CANCELLED'};return Response.json({code:'00',data,signature:await payosSignature(env.PAYOS_CHECKSUM_KEY,data)});};
+ await expirePendingTopups(env,now,upstream);assert.equal(calls,0);await expirePendingTopups(env,now+1000,upstream);assert.equal(calls,1);assert.equal((await env.DB.prepare("SELECT status FROM topup_orders_zalo WHERE id='o1'").first()).status,'cancelled');assert.equal((await env.DB.prepare("SELECT balance FROM zalo_point_accounts WHERE user_id='u1'").first()).balance,10);
+ // A delayed valid bank event is credited exactly once even if expiry ran first.
+ await handlePayosWebhook(env,await webhook(env));await handlePayosWebhook(env,await webhook(env));assert.equal((await env.DB.prepare("SELECT balance FROM zalo_point_accounts WHERE user_id='u1'").first()).balance,65);
+});
+test('expiry cannot cancel paid orders or trust unsigned cancellation',async()=>{const {expirePendingTopups}=await import('./payments.mjs');const env=await fixture();await order(env);await expirePendingTopups(env,Date.now(),async()=>Response.json({code:'00',data:{orderCode:12345,amount:50000,amountPaid:0,status:'CANCELLED'},signature:'fake'}));assert.equal((await env.DB.prepare("SELECT status FROM topup_orders_zalo WHERE id='o1'").first()).status,'pending');await handlePayosWebhook(env,await webhook(env));let called=false;await expirePendingTopups(env,Date.now(),async()=>{called=true;throw Error()});assert.equal(called,false);});
+
+test('new payment links expire after ten minutes even with old published 30-minute settings',async()=>{
+ const env=await fixture();await published(env);const cookie=(await sessionCookie(env,'u1')).split(';')[0],before=Date.now();let expires;
+ const result=await handleTopupCreate(env,new Request('https://api.example.com/api/topup/create',{method:'POST',headers:{cookie,origin:'https://theastrox.space'},body:JSON.stringify({amount_vnd:60000})}),async(_url,init)=>{const p=JSON.parse(init.body);expires=p.expiredAt;const data={orderCode:p.orderCode,amount:p.amount,checkoutUrl:'https://pay.payos.vn/test'};return Response.json({code:'00',data,signature:await payosSignature(env.PAYOS_CHECKSUM_KEY,data)});});
+ assert.equal(result.status,200);assert.ok(expires>=Math.floor((before+600000)/1000));assert.ok(expires<=Math.floor((Date.now()+600000)/1000));
+ const snapshot=await env.DB.prepare('SELECT expires_at FROM backend_order_snapshots').first();assert.equal(Math.floor(Date.parse(snapshot.expires_at)/1000),expires);
+});
+test('expiry preserves paid or partially paid upstream orders and retries provider failures',async()=>{
+ const {expirePendingTopups}=await import('./payments.mjs');const env=await fixture();await order(env);
+ for(const data of [{orderCode:12345,amount:50000,amountPaid:50000,status:'PAID'},{orderCode:12345,amount:50000,amountPaid:10000,status:'CANCELLED'}]){
+ await expirePendingTopups(env,Date.now(),async()=>Response.json({code:'00',data,signature:await payosSignature(env.PAYOS_CHECKSUM_KEY,data)}));assert.equal((await env.DB.prepare("SELECT status FROM topup_orders_zalo WHERE id='o1'").first()).status,'pending');
+ }
+ await expirePendingTopups(env,Date.now(),async()=>{throw Error('offline')});assert.equal((await env.DB.prepare("SELECT status FROM topup_orders_zalo WHERE id='o1'").first()).status,'pending');
+});
+test('already expired provider links are reconciled using signed readback',async()=>{const {expirePendingTopups}=await import('./payments.mjs');const env=await fixture();await order(env);let calls=0;await expirePendingTopups(env,Date.now(),async(url)=>{calls++;if(url.endsWith('/cancel'))return Response.json({code:'error'},{status:400});const data={orderCode:12345,amount:50000,amountPaid:0,status:'EXPIRED'};return Response.json({code:'00',data,signature:await payosSignature(env.PAYOS_CHECKSUM_KEY,data)});});assert.equal(calls,2);assert.equal((await env.DB.prepare("SELECT status FROM topup_orders_zalo WHERE id='o1'").first()).status,'cancelled');});

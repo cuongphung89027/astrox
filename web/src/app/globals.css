@@ -1048,16 +1048,37 @@ body {
   .ax-deck-slot .ax-art-motion { animation: none; }
 }
 
-/* Larger navigation with only the current destination accented. */
-.ax-nav-link { font-size: clamp(14px,1.1vw,17px); color: #171717; padding-inline: clamp(8px,.8vw,13px); }
+/* Keep every destination icon visible whenever the desktop navigation is shown.
+   <1024px retains the existing mobile header and bottom dock. */
+.ax-nav-link { color: #171717; }
 .ax-nav-link:hover { color: #171717; }
 .ax-nav-link[aria-current="page"] { color: var(--nav-accent, #187650); }
 .ax-nav-link:not([aria-current="page"]):hover .ax-nav-underline { transform: scaleX(0); }
 .ax-nav-link[aria-current="page"]:hover .ax-nav-underline { transform: scaleX(1); opacity: 1; }
-/* Cột hai bên co theo nội dung (logo/chip+avatar) để nav giữa có tối đa chỗ;
-   nav chặn tràn ra ô của mình — không bao giờ đè lên chip Point/avatar. */
-@media(min-width:1024px) { .ax-top-inner { display: grid; grid-template-columns: auto minmax(0,1fr) auto; } .ax-top-inner > nav { justify-self: center; max-width: 100%; min-width: 0; } }
-/* Dải desktop vừa (1024–1365px): chữ nav nhỏ hơn một nấc để 8 mục luôn vừa ô giữa. */
-@media(min-width:1024px) and (max-width:1365px) { .ax-nav-link { font-size: 13.5px; padding-inline: 7px; } }
+.ax-nav-link:focus-visible { outline: 2px solid #b69753; outline-offset: 1px; border-radius: 8px; }
+@media (min-width:1024px) {
+  .ax-top-inner { display: grid; grid-template-columns: auto minmax(0,1fr) auto; column-gap: 20px; }
+  .ax-top-inner > nav { justify-self: center; width: 100%; max-width: 1040px; min-width: 0; }
+  .ax-top-inner > nav > ul { justify-content: center; gap: 6px; }
+  .ax-nav-link { justify-content: center; min-height: 44px; gap: 7px; padding: 8px 10px; font-size: 14px; line-height: 20px; }
+  .ax-nav-icon { display: block; width: 18px; height: 18px; }
+  .ax-nav-underline { left: 10px; right: 10px; bottom: 3px; }
+}
+/* Landscape tablets and smaller laptops: icon above label, generous hit area. */
+@media (min-width:1024px) and (max-width:1279px) {
+  .ax-top-inner { column-gap: 24px; }
+  .ax-top-inner > nav > ul { justify-content: space-evenly; gap: 8px; }
+  .ax-nav-link { flex-direction: column; gap: 3px; min-height: 56px; padding: 5px 8px; font-size: 12.5px; line-height: 18px; }
+  .ax-nav-icon { width: 19px; height: 19px; }
+  .ax-nav-underline { left: 8px; right: 8px; bottom: 1px; height: 2px; }
+}
+/* Wide desktops have a wider content rail, rather than cramming larger labels. */
+@media (min-width:1440px) {
+  .ax-top-inner { max-width: 1440px; padding-inline: 32px; column-gap: 28px; }
+  .ax-top-inner > nav > ul { gap: 10px; }
+  .ax-nav-link { font-size: 15px; padding-inline: 12px; gap: 8px; }
+  .ax-nav-icon { width: 19px; height: 19px; }
+  .ax-nav-underline { left: 12px; right: 12px; }
+}
 
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }

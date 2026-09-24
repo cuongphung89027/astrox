@@ -108,7 +108,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         className="ax-nav-link whitespace-nowrap"
                         style={{ ["--nav-accent" as string]: item.accent }}
                       >
-                        <FeatureIcon name={FEATURE_BY_PATH[item.href]} size={19} className="mr-1.5 hidden shrink-0 xl:block" />{item.label}
+                        <FeatureIcon name={FEATURE_BY_PATH[item.href]} size={19} className="ax-nav-icon shrink-0" />{item.label}
                         <span aria-hidden="true" className="ax-nav-underline" />
                       </Link>
                     </li>

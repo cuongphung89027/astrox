@@ -77,8 +77,11 @@ export function TarotClient() {
   }, [show]);
 
   useEffect(() => {
-    if (!peekTarotCards()) fetchCards();
-  }, [fetchCards]);
+    if(peekTarotCards())return;
+    let active=true;
+    loadTarotCards().then(data=>{if(active)setCardsData(data);}).catch(()=>{if(active){setCardsErr(true);show("Không tải được dữ liệu lá bài — thử lại sau.","error");}});
+    return()=>{active=false;};
+  }, [show]);
 
 
   // Dọn timer khi rời trang

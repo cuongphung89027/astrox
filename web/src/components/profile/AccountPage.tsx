@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import {useCloudSyncStatus} from "@/lib/cloud-sync";
 import { useAuth } from "@/lib/auth";
 import { openLoginDialog } from "@/lib/login-dialog";
 import { useProfile } from "@/lib/use-store";
@@ -22,6 +23,7 @@ const exploreLinks = [
 ] as const;
 
 export function AccountPage() {
+  const syncStatus=useCloudSyncStatus();
   const search = useSearchParams();
   const selected = search.get("section");
   const section = ["personal","account","preferences","points"].includes(selected || "") ? selected : null;
@@ -44,15 +46,15 @@ export function AccountPage() {
   }, [astroxUser, preview]);
   // Quay về từ PayOS: cập nhật số dư ngay + báo kết quả một lần cho mỗi lần nạp.
   useEffect(() => {
-    if (preview) return;
-    const flag = search.get("topup");
+    if (preview || !ready || !loggedIn) return;
+    const flag = search.get("cancel")==="true"||search.get("status")==="CANCELLED"?"cancelled":search.get("topup")||(search.get("status")==="PAID"?"success":null);
     if (!flag || lastTopupFlag.current === flag) return;
     lastTopupFlag.current = flag;
     if (flag === "success") {
       void refreshPoints(true);
-      toast.show("Nạp Point thành công — số dư đã được cập nhật.", "success");
-    }
-  }, [search, toast, preview]);
+      toast.show("Đã quay về từ thanh toán. Số dư cập nhật khi giao dịch được xác nhận.", "success");
+    } else if(flag==="cancelled"||flag==="cancel") {toast.show("Bạn đã hủy thanh toán. Chưa ghi nhận nạp Point.","info");}
+  }, [search, toast, preview, ready, loggedIn]);
   const update = (patch: Parameters<typeof savePreferences>[0]) => {
     try { savePreferences(patch); setMessage("Đã lưu cài đặt trên thiết bị này."); }
     catch { setMessage("Không lưu được cài đặt. Kiểm tra quyền lưu trữ của trình duyệt."); }
@@ -60,6 +62,7 @@ export function AccountPage() {
   const name = loggedIn ? profile?.name || displayName || "Tài khoản của bạn" : "Chào mừng đến AstroX";
   return <div className={styles.page}>
     <h1 className="sr-only">Hồ sơ & cài đặt</h1>
+    {loggedIn&&!preview&&<p role="status" className="text-sm text-muc-2">{syncStatus}</p>}
     {!section ? <div className={styles.accountHome}>
     <header className={`${styles.identity} ${!loggedIn ? styles.guestIdentity : ""}`}>
       <span className={styles.avatar} aria-hidden="true">{loggedIn ? name.slice(0,1).toUpperCase() : <FeatureIcon name="profile" size={28} />}</span>

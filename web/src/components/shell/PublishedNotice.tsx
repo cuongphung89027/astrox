@@ -12,7 +12,6 @@ type PublishedConfig = ReturnType<typeof publicConfig>;
  * on a transient read error; server-side mutation guards remain authoritative. */
 export function PublishedNotice({ children }: { children?: ReactNode }) {
   const pathname = usePathname();
-  const [revision,setRevision]=useState<number|null>(null);
   const [config, setConfig] = useState<PublishedConfig | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
   useEffect(() => {
@@ -24,7 +23,7 @@ export function PublishedNotice({ children }: { children?: ReactNode }) {
         const response = await fetch("/api/site-config", { signal: controller.signal });
         if (response.ok) {
           const data = await response.json();
-          if (alive) {setPromptRevision(data.revision??0);setRevision(data.revision??0);setConfig(data.config ?? null);}
+          if (alive) {setPromptRevision(data.revision??0);setConfig(data.config ?? null);}
         }
       } catch { /* Keep last confirmed configuration while offline. */ }
     }
@@ -35,12 +34,12 @@ export function PublishedNotice({ children }: { children?: ReactNode }) {
   }, []);
   const state = publicState(config, pathname);
   const notice = state.notice && !dismissed.includes(state.notice.id) ? state.notice : null;
-  if (!state.announcement && !state.blocked && !notice) return <Fragment key={revision}>{children}</Fragment>;
+  if (!state.announcement && !state.blocked && !notice) return <Fragment>{children}</Fragment>;
   return <><aside aria-label="Thông báo AstroX" style={{ maxWidth: 1240, margin: "16px auto 0", padding: "0 20px", color: "#214d42" }}>
     <div style={{ padding: "14px 18px", border: "1px solid #d5dac9", borderRadius: 16, background: "#f0f2e8", fontSize: 14, lineHeight: 1.7 }}>
       {state.blocked && <p role="status">Dịch vụ đang tạm ngưng. Vui lòng quay lại sau.</p>}
       {state.announcement && <p>{state.announcement}</p>}
       {notice && <div style={{ display: "flex", alignItems: "start", gap: 20 }}><div style={{ flex: 1 }}><strong>{notice.title}</strong><p style={{ whiteSpace: "pre-wrap" }}>{notice.body}</p></div><button type="button" aria-label="Đóng thông báo" onClick={() => setDismissed(v => [...v, notice.id])} style={{ minWidth: 44, minHeight: 44, cursor: "pointer" }}>×</button></div>}
     </div>
-  </aside>{!state.blocked && <Fragment key={revision}>{children}</Fragment>}</>;
+  </aside>{!state.blocked && <Fragment>{children}</Fragment>}</>;
 }

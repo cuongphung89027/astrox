@@ -16,14 +16,13 @@ export function LockPanel() {
           Chưa được cấp quyền truy cập Tử Vi
         </h1>
         <p className="max-w-md text-sm leading-relaxed text-muc-2">
-          Module Tử Vi Đẩu Số là tính năng Premium. Tài khoản của bạn chưa được mở quyền — hãy nạp điểm hoặc liên hệ
-          AstroX để được cấp. Bạn vẫn có thể xem Cung Hoàng Đạo miễn phí.
+          Tính năng này hiện chưa được mở cho tài khoản của bạn. Xem bảng giá và liên hệ AstroX để được hỗ trợ; nạp Point không tự động thay đổi quyền truy cập.
         </p>
         <Link
-          href="/trangchu"
+          href="/banggia"
           className="inline-flex items-center gap-2 rounded-full bg-son px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-pop)] transition-all duration-200 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-son"
         >
-          ← Về trang chủ
+          Xem bảng giá →
         </Link>
       </div>
     </section>

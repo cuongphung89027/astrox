@@ -1,3 +1,4 @@
+import {accountData} from '../../services/backend/user-data.mjs';
 /*
  * Cloudflare Pages Function — lưu/khôi phục hồ sơ + cache AI theo tài khoản.
  * Thay thế netlify/functions/user-data.mjs.
@@ -22,11 +23,6 @@
  *   DB (D1 database binding)
  */
 
-// D1: giá trị 1 cột/1 hàng tối đa 2.000.000 byte (giới hạn nền tảng D1).
-// Đặt biên an toàn thấp hơn để còn khoảng đệm, thấp hơn mức 4.5MB cũ của
-// Netlify Blobs — đây là khác biệt thật giữa hai nền tảng lưu trữ, không phải lỗi.
-const MAX_BYTES = 1_800_000;
-
 function json(status, body) {
   return new Response(JSON.stringify(body), {
     status,
@@ -35,12 +31,6 @@ function json(status, body) {
       "cache-control": "private, no-store"
     }
   });
-}
-
-function validPayload(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const allowed = ["profile", "chartImageBase64", "chartImageMime", "ziweiChart", "natalChart", "aiCache", "lastAiModel"];
-  return Object.keys(value).every((key) => allowed.includes(key));
 }
 
 async function resolveUser(request, env) {
@@ -85,55 +75,13 @@ async function recordUserSeen(env, user) {
   } catch { /* best-effort, bo qua loi */ }
 }
 
-export async function onRequestGet(context) {
-  const { request, env } = context;
-  const user = await resolveUser(request, env);
-  if (!user) return json(401, { error: "Bạn cần đăng nhập." });
-  if (!env.DB) return json(500, { error: "Máy chủ chưa cấu hình D1 database (binding DB)." });
-  context.waitUntil(recordUserSeen(env, user));
-
-  try {
-    const row = await env.DB.prepare("SELECT payload FROM user_data WHERE user_id = ?1")
-      .bind(user.id)
-      .first();
-    if (!row) return json(200, {});
-    let data;
-    try { data = JSON.parse(row.payload); } catch { return json(200, {}); }
-    return json(200, data || {});
-  } catch {
-    return json(500, { error: "Không truy cập được dữ liệu tài khoản." });
-  }
+async function handle(context){
+ const {request,env}=context;const user=await resolveUser(request,env);
+ if(!user)return json(401,{error:"Bạn cần đăng nhập."});
+ context.waitUntil(recordUserSeen(env,user));
+ try{return await accountData(env,request,user.id);}catch{return json(503,{error:"Chưa đồng bộ được dữ liệu tài khoản."});}
 }
-
-export async function onRequestPut(context) {
-  const { request, env } = context;
-  const user = await resolveUser(request, env);
-  if (!user) return json(401, { error: "Bạn cần đăng nhập." });
-  if (!env.DB) return json(500, { error: "Máy chủ chưa cấu hình D1 database (binding DB)." });
-  context.waitUntil(recordUserSeen(env, user));
-
-  const raw = await request.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_BYTES)
-    return json(413, { error: "Dữ liệu quá lớn." });
-
-  let payload;
-  try {
-    payload = JSON.parse(raw);
-  } catch {
-    return json(400, { error: "JSON không hợp lệ." });
-  }
-  if (!validPayload(payload)) return json(400, { error: "Cấu trúc dữ liệu không hợp lệ." });
-
-  try {
-    await env.DB.prepare(
-      `INSERT INTO user_data (user_id, payload, updated_at) VALUES (?1, ?2, ?3)
-       ON CONFLICT(user_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at`
-    ).bind(user.id, JSON.stringify(payload), Date.now()).run();
-    return json(200, { ok: true });
-  } catch {
-    return json(500, { error: "Không truy cập được dữ liệu tài khoản." });
-  }
-}
-
-export async function onRequestDelete() { return json(405, { error: "Phương thức không được hỗ trợ." }); }
-export async function onRequestPost() { return json(405, { error: "Phương thức không được hỗ trợ." }); }
+export const onRequestGet=handle;
+export const onRequestPut=handle;
+export async function onRequestDelete(){return json(405,{error:"Phương thức không được hỗ trợ."});}
+export async function onRequestPost(){return json(405,{error:"Phương thức không được hỗ trợ."});}

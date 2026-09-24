@@ -30,8 +30,8 @@ export function useInView<T extends HTMLElement>(options?: UseInViewOptions) {
     const failSafe = setTimeout(() => setInView(true), 1200);
     // Môi trường không có IntersectionObserver (ct cũ) => hiện luôn.
     if (typeof IntersectionObserver === "undefined") {
-      setInView(true);
-      return () => clearTimeout(failSafe);
+      const fallback=setTimeout(()=>setInView(true),0);
+      return () => {clearTimeout(failSafe);clearTimeout(fallback);};
     }
     const io = new IntersectionObserver(
       (entries) => {

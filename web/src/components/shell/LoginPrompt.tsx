@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import {usePathname} from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { closeLoginDialog, openLoginDialog, useLoginDialogOpen } from "@/lib/login-dialog";
 import { hasTermsConsent, saveTermsConsent, termsHref } from "@/lib/terms";
@@ -18,6 +19,7 @@ import styles from "./LoginPrompt.module.css";
  * ghi nhớ theo TERMS_VERSION — đổi phiên bản điều khoản thì hỏi lại.
  */
 export function LoginPrompt() {
+  const pathname=usePathname();
   const { ready, loggedIn, zaloLogin } = useAuth();
   const open = useLoginDialogOpen();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -35,11 +37,12 @@ export function LoginPrompt() {
 
   // Mời khách một lần mỗi lượt ghé thăm (đóng rồi thì không tự mở lại trong phiên).
   useEffect(() => {
+    if (["/banggia","/dieukhoan"].includes(pathname)) return;
     if (ready && !loggedIn && !invited.current) {
       invited.current = true;
       openLoginDialog();
     }
-  }, [ready, loggedIn]);
+  }, [ready, loggedIn, pathname]);
 
   // Đồng bộ store ↔ <dialog> native (focus trap + Esc gratis từ showModal).
   useEffect(() => {

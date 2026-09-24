@@ -90,13 +90,14 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
     [sign, period, profile, natalChart, toast],
   );
 
-  useEffect(() => {
-    reqRef.current += 1;
+  const scope=sign.id+period+JSON.stringify(profile),[previousScope,setPreviousScope]=useState<string|null>(null);
+  if(scope!==previousScope){
+    setPreviousScope(scope);
     setText(readAiCache(`zodiacPeriod.${period}`, `natal-v2::${sign.id}::${period}::${periodCacheKey(period)}`));
     setLoading(false);
     setError("");
-    return () => { reqRef.current += 1; };
-  }, [sign.id, period, profile]);
+  }
+  useEffect(()=>()=>{reqRef.current++;},[scope]);
 
   if (!profile) {
     return (

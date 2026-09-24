@@ -42,14 +42,15 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
   /** Cache key gắn với chart hiện tại — đổi ngày giờ sinh là đổi key. */
   const cacheKey = useMemo(() => stableHash(`${topic.id}::${JSON.stringify(chart)}`), [topic, chart]);
 
-  useEffect(() => {
-    request.current++;
-      const cached = readAiCache("batuTopics", cacheKey);
+  const [cacheIdentity,setCacheIdentity]=useState<string|null>(null);
+  if(cacheIdentity!==cacheKey){
+    setCacheIdentity(cacheKey);
+    const cached = readAiCache("batuTopics", cacheKey);
     setText(cached);
     setAiState(cached ? "done" : "idle");
     setErrorMsg("");
-    return ()=>{request.current++;};
-  }, [cacheKey]);
+  }
+  useEffect(()=>()=>{request.current++;},[cacheKey]);
 
   const run = useCallback(async () => {
     if (!requireProfile()) return;

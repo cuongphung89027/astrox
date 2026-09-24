@@ -33,7 +33,7 @@ async function setup(gender='Nam',width=390,{motion='reduce',failFirst=false}={}
  await context.addInitScript(({profile,fp,bucket})=>{if(!localStorage.getItem('astrox_v2_state'))localStorage.setItem('astrox_v2_state',JSON.stringify({profile,ziweiChart:null,chartImageBase64:null,onboarded:true,aiCache:{version:2,profiles:{[fp]:bucket},legacy:{}}}));},{profile,fp,bucket});
  await context.route('**/api/**',async route=>{
   const url=new URL(route.request().url());let data={};
-  if(url.pathname==='/api/site-config')data={config:null,revision:1};
+  if(url.pathname==='/api/site-config')data={config:{billing:{enabled:true,services:[{id:'compat--pair',module:'compat',name:'Tương hợp',status:'free',points:0}]},content:{}},revision:1};
   else if(url.pathname==='/api/me')data={user:{id:'qa-user',display_name:'An'},points:0};
   else if(url.pathname==='/api/module-access')data={access:{}};
   else if(url.pathname==='/api/ai'){

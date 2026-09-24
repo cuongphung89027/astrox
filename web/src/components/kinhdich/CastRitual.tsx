@@ -8,7 +8,8 @@ export function CastRitual({numbers,onComplete,onCancel}:{numbers:[number,number
  const [revealed,setRevealed]=useState(0);
  const [leaving,setLeaving]=useState(false);
  const dialog=useRef<HTMLDialogElement>(null);
- const done=useRef(onComplete); done.current=onComplete;
+ const done=useRef(onComplete);
+ useEffect(()=>{done.current=onComplete;},[onComplete]);
  useEffect(()=>{
   const previous=document.activeElement; const old=document.body.style.overflow;
   document.body.style.overflow="hidden"; dialog.current?.showModal();

@@ -84,12 +84,13 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
     [profile, natalChart, topic, sign, toast],
   );
 
-  useEffect(() => {
-    reqRef.current += 1;
+  const scope=topic.id+topic.subId+sign.id+JSON.stringify(profile),[previousScope,setPreviousScope]=useState<string|null>(null);
+  if(scope!==previousScope){
+    setPreviousScope(scope);
     setText(readAiCache("zodiacTopics", `natal-v2::${topic.id}::${topic.subId}::${sign.id}`));
     setError(""); setLoading(false);
-    return () => { reqRef.current += 1; };
-  }, [topic.id, topic.subId, sign.id, profile]);
+  }
+  useEffect(()=>()=>{reqRef.current++;},[scope]);
 
   return <section className={`${styles.detail} ${className || ""}`}>
     <div className={styles.topicChoices}>{ZODIAC_DEEP_TOPICS.map((item,i)=><button key={`${item.id}::${item.subId}`} aria-pressed={topicId===`${item.id}::${item.subId}`} onClick={()=>setTopicId(`${item.id}::${item.subId}`)}><span>0{i+1}</span><strong>{item.label}</strong><i aria-hidden="true">↗</i></button>)}</div>

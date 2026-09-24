@@ -27,8 +27,10 @@ export function AuthMenu() {
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
+  const [previousOpen,setPreviousOpen]=useState(open);
+  if(open!==previousOpen){setPreviousOpen(open);if(open)setPresent(true);}
   useEffect(() => {
-    if (open) { setPresent(true); return; }
+    if(open)return;
     const timer = setTimeout(() => setPresent(false), 160);
     return () => clearTimeout(timer);
   }, [open]);

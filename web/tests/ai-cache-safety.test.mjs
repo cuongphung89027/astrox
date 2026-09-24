@@ -5,9 +5,9 @@ import ts from 'typescript';
 function fixture(storage=new Map(),fetchImpl=async()=>Response.json({revision:1})){
  const source=fs.readFileSync(new URL('../src/lib/state.ts',import.meta.url),'utf8');
  const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- const module={exports:{}};
- new Function('exports','require','window','localStorage','fetch',js)(module.exports,()=>({DEFAULT_MODEL:'test',PROMPT_VERSION:'test',STORAGE_KEY:'state'}),{}, {getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},fetchImpl);
- module.exports.getState();return {state:module.exports,storage};
+ const compiledModule={exports:{}};
+ new Function('exports','require','window','localStorage','fetch',js)(compiledModule.exports,()=>({DEFAULT_MODEL:'test',PROMPT_VERSION:'test',STORAGE_KEY:'state'}),{}, {getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},fetchImpl);
+ compiledModule.exports.getState();return {state:compiledModule.exports,storage};
 }
 test('a saved paid reading remains readable after config outage, reload and revision upgrade',async()=>{
  const {state,storage}=fixture();state.setState({profile:{name:'An',dob:'1990-01-01'}});state.setPromptRevision(1);state.writeAiCache('compatibility','pair','Paid reading');

@@ -114,9 +114,7 @@ export function ProfileModalProvider({ children }: { children: React.ReactNode }
 
   // Tự giải trừ captive: hồ sơ xuất hiện (vừa lưu / sync từ tài khoản) hoặc
   // đăng xuất giữa chừng → không còn lý do khoá modal.
-  useEffect(() => {
-    if (openState && captive && (profile || !loggedIn)) forceClose();
-  }, [openState, captive, profile, loggedIn, forceClose]);
+  if(openState && captive && (profile || !loggedIn)){setOpenState(false);setCaptive(false);setClosing(false);}
 
   // Focus panel khi mở; trả focus về nút đã mở khi đóng.
   useEffect(() => {
@@ -165,15 +163,15 @@ export function ProfileModalProvider({ children }: { children: React.ReactNode }
 
 export function useProfileModal(): ProfileModalContextValue {
   const ctx = useContext(ProfileModalContext);
-  if (ctx) return ctx;
   // Ngoài Provider (vd. AuthMenu trong header): uỷ quyền cho Provider đã mount.
-  return useMemo(
+  const fallback = useMemo<ProfileModalContextValue>(
     () => ({
       open: (opts) => providerControls?.open(opts),
       close: () => providerControls?.close(),
     }),
     [],
   );
+  return ctx || fallback;
 }
 
 /** Hook tiện dùng cho các trang module: chưa có hồ sơ → mở modal. */

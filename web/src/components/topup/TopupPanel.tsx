@@ -10,10 +10,10 @@
  */
 import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {usePointsBalance} from "@/lib/points";
 import { useAuth } from "@/lib/auth";
 import {
   createTopup,
-  fetchMeWithPoints,
   loadTopupHistory,
   loadTopupPackages,
   promoCheck,
@@ -52,7 +52,7 @@ function HistoryStatus({ status }: { status: string }) {
 export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { astroxUser } = useAuth();
 
-  const [balance, setBalance] = useState<number | null>(null);
+  const {points:balance,refresh:refreshBalance}=usePointsBalance(!!astroxUser&&astroxUser.id!=="localhost-preview");
   const [packages, setPackages] = useState<TopupPackage[]>([]);
   const [pkgError, setPkgError] = useState(false);
   const [history, setHistory] = useState<TopupOrder[] | null>(null);
@@ -91,19 +91,13 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
 
-  // Tải số dư + gói + lịch sử khi mở panel (chỉ với tài khoản Zalo).
+  const scope=String(open)+":"+String(astroxUser?.id||"guest"),[previousScope,setPreviousScope]=useState(scope);
+  if(scope!==previousScope){setPreviousScope(scope);setBuyError("");setPackages([]);setPkgError(false);setHistory(null);setHistoryError(false);}
+  // Fetch public packages; load private history only for the current account.
   useEffect(() => {
-    if (!open || !astroxUser) return;
+    if (!open) return;
     let alive = true;
-    setBuyError("");
-    setBalance(null);
-    setPackages([]);
-    setPkgError(false);
-    setHistory(null);
-    setHistoryError(false);
-    fetchMeWithPoints().then((r) => {
-      if (alive) setBalance(r.points);
-    });
+    if(astroxUser)void refreshBalance();
     loadTopupPackages()
       .then((pkgs) => {
         if (alive) setPackages(pkgs);
@@ -111,7 +105,7 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
       .catch(() => {
         if (alive) setPkgError(true);
       });
-    loadTopupHistory()
+    if(astroxUser)loadTopupHistory()
       .then((orders) => {
         if (alive) setHistory(orders);
       })
@@ -121,7 +115,7 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
     return () => {
       alive = false;
     };
-  }, [open, astroxUser]);
+  }, [open, astroxUser,refreshBalance]);
 
   const buy = useCallback(
     async (amountVnd: number) => {
@@ -236,9 +230,9 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
           <p className="mt-5 rounded-xl bg-kim-tint px-4 py-3 text-sm font-medium text-kim-deep">
             Nạp Point hiện dành cho tài khoản đăng nhập bằng Zalo.
           </p>
-        ) : (
+        ) : null}
           <>
-            {/* Gói nạp */}
+            {/* Gói nạp công khai */}
             <div className="mt-5 grid grid-cols-2 gap-2.5">
               {pkgError ? (
                 <p className="col-span-full text-[13px] font-medium text-son">Không tải được gói nạp. Thử lại sau.</p>
@@ -252,7 +246,7 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
                       key={p.amount_vnd}
                       type="button"
                       onClick={() => buy(p.amount_vnd)}
-                      disabled={buying !== null}
+                      disabled={!astroxUser || buying !== null}
                       className={`rounded-2xl border-2 bg-white/60 px-3.5 py-3.5 text-center transition-all ${
                         busy
                           ? "border-son/40 opacity-60"
@@ -346,7 +340,7 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
               </p>
             ) : null}
           </>
-        )}
+
       </div>
     </div>
   );

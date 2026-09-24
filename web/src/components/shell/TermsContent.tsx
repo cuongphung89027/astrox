@@ -5,7 +5,7 @@
  *   03 Thoả thuận xử lý & bảo mật thông tin cá nhân theo ND 13/2023/NĐ-CP
  *
  * Anchor id các khối được tham chiếu từ popup đăng nhập (lib/terms.ts) — đổi id
- * phải đổi cả hai chỗ. Ngày hiệu lực & phiên bản: 23/09/2026 · 1.1.
+ * phải đổi cả hai chỗ. Ngày hiệu lực & phiên bản: 24/09/2026 · 1.2.
  */
 import Link from "next/link";
 import { SectionTitle } from "@/components/kit/SectionTitle";
@@ -22,7 +22,7 @@ export function TermsContent() {
         title="Các điều khoản & Thoả thuận"
         sub="Ba văn bản ràng buộc việc bạn sử dụng AstroX: Điều khoản sử dụng dịch vụ, Tuyên bố miễn trừ trách nhiệm và Thoả thuận xử lý, bảo mật thông tin cá nhân theo Nghị định 13/2023/NĐ-CP. Mỗi văn bản có hiệu lực độc lập và được áp dụng đồng thời."
       />
-      <p className={styles.meta}>Phiên bản 1.1 · Có hiệu lực từ ngày 23/09/2026</p>
+      <p className={styles.meta}>Phiên bản 1.2 · Có hiệu lực từ ngày 24/09/2026</p>
 
       <nav className={styles.toc} aria-label="Mục lục điều khoản">
         <ol>
@@ -58,6 +58,7 @@ export function TermsContent() {
           <p><strong>Giao dịch nội dung số.</strong> Luận giải trả phí là nội dung số được cung cấp ngay theo yêu cầu của bạn và không thể thu hồi sau khi hoàn thành. Theo quy định của pháp luật về bảo vệ quyền lợi người tiêu dùng đối với giao dịch từ xa, quyền hủy giao dịch không áp dụng cho các giao dịch này sau khi Point đã được trừ và kết quả đã được cung cấp.</p>
           <p><strong>Lỗi kỹ thuật và hoàn Point.</strong> Nếu một lượt sử dụng bị trừ Point nhưng bạn không nhận được kết quả do lỗi kỹ thuật của chúng tôi, số Point tương ứng được hoàn lại; nếu không thể hoàn tự động, bạn liên hệ email dưới đây kèm tài khoản, thời điểm giao dịch để được xử lý. Yêu cầu báo lỗi nên được gửi trong thời gian sớm nhất để tiện đối chiếu.</p>
           <p><strong>Hoàn tiền.</strong> Tiền đã nạp để mua Point không được hoàn lại, trừ trường hợp (a) lỗi kỹ thuật thuộc trách nhiệm của chúng tôi mà không thể khắc phục; hoặc (b) các trường hợp pháp luật bắt buộc. Việc hoàn trả (nếu có) được thực hiện qua phương thức thanh toán gốc trong thời gian hợp lý.</p>
+          <p><strong>Thời hạn phản hồi hỗ trợ.</strong> AstroX phản hồi ban đầu trong vòng 2 ngày làm việc kể từ khi nhận được yêu cầu hỗ trợ, hoàn Point hoặc hoàn tiền qua email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Ngày làm việc là từ thứ Hai đến thứ Sáu, không bao gồm ngày nghỉ lễ tại Việt Nam. Thời hạn này là thời gian phản hồi ban đầu; thời gian hoàn tất xử lý phụ thuộc vào việc xác minh giao dịch và phương thức thanh toán. Chúng tôi thông báo tình trạng và thời gian dự kiến khi cần xác minh thêm.</p>
           <p><strong>Chống lạm dụng.</strong> Với dấu hiệu gian lận, thanh toán bằng nguồn vốn bất hợp pháp, khiếu nại đảo ngược giao dịch (chargeback) trái quy định hoặc sai sót của hệ thống trong việc ghi có Point, chúng tôi có quyền tạm giữ số Point/đơn giao dịch liên quan trong thời gian cần thiết để xác minh, và phối hợp cơ quan có thẩm quyền khi được yêu cầu theo pháp luật.</p>
           <p><strong>Ưu đãi Point.</strong> Point tặng kèm (khuyến mãi nạp, điểm danh, giới thiệu bạn bè, xem quảng cáo…) do chúng tôi cấp kèm điều kiện, giới hạn được công bố ngay tại tính năng tương ứng; có thể được điều chỉnh hoặc ngừng cấp, không quy đổi thành tiền và không thuộc đối tượng hoàn tiền.</p>
           <h3>1.7. Quy tắc sử dụng chấp thuận</h3>
@@ -170,7 +171,7 @@ export function TermsContent() {
 
       <footer className={styles.footer}>
         <p>Điều khoản &amp; thoả thuận này áp dụng cho toàn bộ dịch vụ AstroX. Để lưu giữ, bạn có thể in hoặc lưu trang này dưới dạng PDF.</p>
-        <p>Liên hệ: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> · Phiên bản 1.1 — 23/09/2026</p>
+        <p>Liên hệ: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> · Phiên bản 1.2 — 24/09/2026</p>
         <Link className={styles.backHome} href="/">← Về trang chủ AstroX</Link>
       </footer>
     </div>

@@ -108,3 +108,14 @@ test('long readings are saved for replay without argument-size overflow',async()
  assert.equal((await internalFetch(paidRequest(cookie,'complete',{chargeId,response}),env)).status,200);
  assert.deepEqual((await(await internalFetch(paidRequest(cookie,'charge',operation()),env)).json()).response,response);
 });
+test('cloud data route requires cookie identity and rejects cross-origin writes',async()=>{
+ const env=await fixture();await env.DB.prepare(readFileSync(new URL('../../migrations/user-sync.sql',import.meta.url),'utf8')).run();
+ const cookie=(await sessionCookie(env,'victim')).split(';')[0];
+ const url='https://api.theastrox.space/api/user-data';
+ assert.equal((await publicFetch(new Request(url),env)).status,401);
+ const get=await publicFetch(new Request(url,{headers:{cookie,origin:env.APP_ORIGIN}}),env);assert.equal(get.status,200);assert.equal(get.headers.get('access-control-allow-origin'),env.APP_ORIGIN);
+ const payload=JSON.stringify({expectedRevision:0,payload:{profile:{name:'Private'}}});
+ assert.equal((await publicFetch(new Request(url,{method:'PUT',headers:{cookie,origin:'https://evil.example'},body:payload}),env)).status,403);
+ assert.equal((await publicFetch(new Request(url,{method:'PUT',headers:{cookie,origin:env.APP_ORIGIN},body:payload}),env)).status,200);
+ assert.equal((await env.DB.prepare('SELECT user_id FROM user_data').first()).user_id,'zalo:victim');
+});

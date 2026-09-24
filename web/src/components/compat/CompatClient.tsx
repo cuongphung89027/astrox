@@ -36,7 +36,9 @@ function WesternCompatClient(){
  const a=signById(aId),b=signById(bId),ca=checked?signById(checked.a):undefined,cb=checked?signById(checked.b):undefined;
  const analysis=useMemo(()=>ca&&cb?compatAnalysis(ca,cb):null,[ca,cb]);
  const key=checked?`${[checked.a,checked.b].sort().join('+')}::${cacheFingerprint()}`:'';
- useEffect(()=>{req.current++;setLoading(false);setError('');setRaw(key&&profile?readAiCache('compatibility',key):'');return()=>{req.current++;};},[key,profile]);
+ const scope=key+JSON.stringify(profile),[previousScope,setPreviousScope]=useState<string|null>(null);
+ if(scope!==previousScope){setPreviousScope(scope);setLoading(false);setError('');setRaw(key&&profile?readAiCache('compatibility',key):'');}
+ useEffect(()=>()=>{req.current++;},[scope]);
  useEffect(()=>{if(phase!=='joining')return;const timer=setTimeout(()=>setPhase('result'),1100);return()=>clearTimeout(timer);},[phase]);
  const check=()=>{if(!a||!b)return;window.scrollTo({top:0,behavior:"instant"});setChecked({a:a.id,b:b.id});const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches||document.documentElement.dataset.motion==='reduced';setPhase(reduced?'result':'joining');};
  const reset=()=>{req.current++;setLoading(false);setChecked(null);setPhase('choose');setRaw('');setError('');};

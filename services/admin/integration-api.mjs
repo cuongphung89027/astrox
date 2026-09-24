@@ -17,7 +17,7 @@ function normalizedInput(input){
  if(!input||typeof input.serviceId!=='string'||input.serviceId.length>80||!Array.isArray(input.messages)||!input.messages.length||input.messages.length>100)throw new RuntimeError('INVALID_MESSAGES',400);
  const messages=input.messages.map(m=>{if(!m||!['system','user','assistant'].includes(m.role))throw new RuntimeError('INVALID_MESSAGES',400);let content=m.content;if(Array.isArray(content)){if(!content.length||content.some(p=>!p||typeof p.text!=='string'||(p.type!==undefined&&p.type!=='text')||Object.keys(p).some(k=>!['type','text'].includes(k))))throw new RuntimeError('INVALID_MESSAGES',400);content=content.map(p=>p.text).join('\n')}if(typeof content!=='string'||!content.trim()||content.length>100000)throw new RuntimeError('INVALID_MESSAGES',400);return {role:m.role,content}}).filter(m=>m.role!=='system');
  if(!messages.length||input.operationId!==undefined&&(typeof input.operationId!=='string'||input.operationId.length>120))throw new RuntimeError('INVALID_MESSAGES',400);
- return {messages,serviceId:input.serviceId,operationId:input.operationId,promptDescriptor:input.promptDescriptor,compact:input.compact===true};
+ return {messages,serviceId:input.serviceId,operationId:input.operationId,expectedPoints:input.expectedPoints,promptDescriptor:input.promptDescriptor,compact:input.compact===true};
 }
 export async function handleAdminRuntime(path,request,env,user){
  if(request.method!=='POST')return json({error:'Phương thức không hỗ trợ.'},405);
@@ -64,6 +64,7 @@ export async function handleConfiguredAi(request,env){
   if(input.compact)input.messages.push({role:'user',content:c.prompts.templates['shared.compact']});
   const limited=await limitAi(request,env);if(limited)return limited;
   if(service.status==='paid'){
+   if(input.expectedPoints!==undefined&&input.expectedPoints!==service.points)return json({error:'Giá vừa thay đổi. Vui lòng xem lại và xác nhận giá mới.',code:'price_changed'},409);
    if(!c.billing.enabled)throw new RuntimeError('SERVICE_UNAVAILABLE',403);
    if(!env.ASTROX_BACKEND)throw new RuntimeError('BACKEND_UNAVAILABLE',503);
    if(!/^[a-zA-Z0-9_-]{8,120}$/.test(input.operationId||''))throw new RuntimeError('INVALID_MESSAGES',400);

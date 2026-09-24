@@ -44,7 +44,7 @@ export async function handleAdmin(request,env){try{
  if(!['GET','HEAD'].includes(method)&&(request.headers.get('origin')!==new URL(request.url).origin||!await equal(request.headers.get('x-admin-csrf')||'',user.csrf)))return json({error:'Phiên xác thực thao tác không hợp lệ.'},403);
  if(path==='session'&&method==='GET')return json({user:{email:user.email,capabilities:user.capabilities},csrf:user.csrf});
  if(path==='logout'&&method==='POST'){if(user.sid)await sql(env,'DELETE FROM admin_sessions WHERE id=?',user.sid).run();return json({ok:true,...(!local(request,env)?{redirect:'/cdn-cgi/access/logout'}:{})},200,{'Set-Cookie':cookieValue('',local(request,env),true)});}
- const needed=path==='members'?'access.manage':path==='audit'?'audit.read':path==='secrets'?'secrets.write':path==='publish'||path==='rollback'?'config.publish':path.startsWith('data/')?({ai:'config.read','ai-metrics':'config.read',users:'users.read',wallet:'wallet.read',reports:'reports.read',rewards:'reports.read','login-diagnostics':'audit.read'}[path.slice(5)]):method==='GET'?'config.read':'config.write';if(needed&&!user.capabilities.includes(needed))return json({error:'Bạn không có quyền thực hiện thao tác này.'},403);
+ const needed=path==='members'?'access.manage':path==='audit'?'audit.read':path==='secrets'?'secrets.write':path==='publish'||path==='rollback'?'config.publish':path.startsWith('data/')?({ai:'config.read','ai-metrics':'config.read','client-errors':'audit.read',users:'users.read',wallet:'wallet.read',reports:'reports.read',rewards:'reports.read','login-diagnostics':'audit.read'}[path.slice(5)]):method==='GET'?'config.read':'config.write';if(needed&&!user.capabilities.includes(needed))return json({error:'Bạn không có quyền thực hiện thao tác này.'},403);
  await state(env);
  if(path==='members'&&method==='GET'){
  const roles=((await readPublished(env))?.config||defaultConfig()).access.roles;
@@ -66,6 +66,7 @@ export async function handleAdmin(request,env){try{
  await env.DB.batch([sql(env,'INSERT INTO admin_members(email,role_id,created_at,updated_at) VALUES(?,?,?,?) ON CONFLICT(email) DO UPDATE SET role_id=excluded.role_id,updated_at=excluded.updated_at',email,roleId,now,now),auditStatement(env,user.email,method==='DELETE'?'member.remove':'member.assign',email,{roleId})]);
  return json({ok:true});
  }
+ if(path==='data/client-errors'&&method==='GET')return json({available:true,rows:(await sql(env,'SELECT day,path,kind,count,last_at FROM client_error_counts WHERE day>=? ORDER BY last_at DESC LIMIT 400',Math.floor(Date.now()/86400000)-30).all()).results});
  if(path==='data/ai-metrics'&&method==='GET'){
   const params=new URL(request.url).searchParams;
   const endText=params.get('to')||new Date().toISOString().slice(0,10),startText=params.get('from')||new Date(Date.now()-6*86400000).toISOString().slice(0,10);

@@ -53,6 +53,7 @@ type View =
   | "users"
   | "wallet"
   | "reports"
+  | "clientErrors"
   | "diagnostics"
   | "audit";
 const navigation: [View, string, string, string][] = [
@@ -70,6 +71,7 @@ const navigation: [View, string, string, string][] = [
   ["zalo", "Đăng nhập Zalo", "⇥", "NGƯỜI DÙNG & THƯỞNG"],
   ["diagnostics", "Chẩn đoán đăng nhập", "⚑", "NGƯỜI DÙNG & THƯỞNG"],
   ["rewards", "Thưởng & giới thiệu", "☀", "NGƯỜI DÙNG & THƯỞNG"],
+  ["clientErrors", "Lỗi giao diện", "⚑", "HỆ THỐNG"],
   ["reports", "Báo cáo", "↗", "HỆ THỐNG"],
   ["walletbackend", "Kết nối backend ví", "⇄", "HỆ THỐNG"],
   ["operations", "Vận hành", "⚙", "HỆ THỐNG"],
@@ -307,12 +309,12 @@ export function AdminDashboard() {
   useEffect(() => {
     if (!session) return;
     let active = true;
-    if (["users", "wallet", "reports", "diagnostics"].includes(view)) {
+    if (["users", "wallet", "reports", "diagnostics", "clientErrors"].includes(view)) {
       adminRequest<{
         available: boolean;
         rows: Record<string, unknown>[];
         message?: string;
-      }>(`data/${view === "reports" ? reportKind : view === "diagnostics" ? "login-diagnostics" : view}`)
+      }>(`data/${view === "reports" ? reportKind : view === "diagnostics" ? "login-diagnostics" : view === "clientErrors" ? "client-errors" : view}`)
         .then((data) => {
           if (active) {
             setRows(data.rows || []);
@@ -2012,7 +2014,7 @@ export function AdminDashboard() {
               ))}
             </div>
           )}
-          {["users", "wallet", "reports", "diagnostics", "audit"].includes(view) && (
+          {["users", "wallet", "reports", "diagnostics", "clientErrors", "audit"].includes(view) && (
             <div className={s.rowActions}>
               <button className={s.secondary} onClick={refreshData}>
                 Làm mới dữ liệu
@@ -2117,6 +2119,7 @@ export function AdminDashboard() {
               )}
             </Card>
           )}
+          {view === "clientErrors" && <Card title="Lỗi giao diện trong 30 ngày" description="Số lỗi theo trang và loại; không lưu câu hỏi, luận giải hoặc thông tin cá nhân. Đây là bộ đếm trình duyệt, không phải số người dùng bị ảnh hưởng.">{rows.length ? <DataTable rows={rows}/> : <p>{remoteMessage}</p>}</Card>}
           {view === "diagnostics" && (
             <Card
               title="Lỗi đăng nhập Zalo gần đây"

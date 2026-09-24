@@ -4,10 +4,11 @@
  * Lớp gọi API — port từ callAiText/runAiPrompt/aiHedgeRace + topup của
  * index.html. Toàn bộ chạy client-side (static export).
  */
+import {confirmReading} from "./reading-consent";
 import {pendingAiOperation,finishAiOperation} from "./ai-operation";
 import { promptDescriptor } from "./managed-prompts";
 import { AI_BASE, AUTH_API_BASE, DEFAULT_MODEL } from "./config";
-import { getState, setState, setPromptRevision, recordPromptResult } from "./state";
+import { getState, getAccountEpoch, setState, setPromptRevision, recordPromptResult } from "./state";
 import type { AstroxUser } from "./types";
 
 /* ------------------------------------------------------------------ */
@@ -42,12 +43,22 @@ function aiParts(parts: AiPart[]) {
 }
 
 async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): Promise<string> {
+  const ownerEpoch=getAccountEpoch();
+  const assertOwner=()=>{if(getAccountEpoch()!==ownerEpoch)throw new Error("Tài khoản đã thay đổi. Vui lòng mở lại lượt luận giải.");};
+  const prices=await servicePrices(true),price=prices[String(body.serviceId||'')];
+  if(!price)throw new Error("Chưa xác nhận được giá dịch vụ. Vui lòng thử lại sau.");
+  if(price.status==='paid'){
+    await confirmReading({name:price.name||'Luận giải AstroX',points:price.points},signal);
+  }
+  body={...body,expectedPoints:price.status==='paid'?price.points:0};
+  assertOwner();
   // Fetch per operation; never persist the credential in localStorage.
   const auth=await fetch(`${AUTH_API_BASE}/api/ai/session`,{method:"POST",credentials:"include",signal});
   if(!auth.ok&&auth.status!==401)throw new Error("Chưa xác minh được phiên đăng nhập. Vui lòng thử lại.");
   const ticket=auth.ok?await auth.json():null;
   const headers:Record<string,string>={"Content-Type":"application/json"};
   if(typeof ticket?.token==="string")headers.Authorization=`Bearer ${ticket.token}`;
+  assertOwner();
   const operation=await pendingAiOperation(ticket?.userId||"guest",body);
   body={...body,operationId:operation.id};
   let res: Response | undefined;
@@ -97,13 +108,14 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
     throw new Error(`Lỗi dịch vụ AstroX ${res.status}: ${msg}`);
   }
   const data = await res.json();
+  assertOwner();
   if(Number.isSafeInteger(data.configRevision))setPromptRevision(data.configRevision);
   const choice = data?.choices?.[0];
   const finish = choice?.finish_reason || choice?.finishReason;
   const content = typeof choice?.message?.content === "string" ? choice.message.content : "";
   if (content && content.trim() !== "") {
     if(Number.isSafeInteger(data.configRevision))recordPromptResult(content,data.configRevision);
-    if (finish !== "length") {finishAiOperation(operation.key);return content;}
+    if (finish !== "length") {finishAiOperation(operation.key);void import("./points").then(m=>m.refreshPoints(true));return content;}
     const ceiling = Math.max(Number(body.max_tokens) || 0, 2400);
     if (content.length / ceiling >= AI_PARTIAL_MIN_RATIO) {finishAiOperation(operation.key);return content;}
     throw new Error("AstroX dừng sớm (length).");
@@ -345,20 +357,21 @@ export async function rewardsCheckin(): Promise<{ ok: boolean; day: string; stre
 }
 
 /** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */
-type PriceInfo = { status: string; points: number };
+type PriceInfo = { status: string; points: number; name?:string };
 let priceCache: Promise<Record<string, PriceInfo>> | null = null;
-export function servicePrices(): Promise<Record<string, PriceInfo>> {
+export function servicePrices(force=false): Promise<Record<string, PriceInfo>> {
+  if (force) priceCache=null;
   if (!priceCache) {
     priceCache = fetch("/api/site-config")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         const map: Record<string, PriceInfo> = {};
         for (const s of d?.config?.billing?.services || []) {
-          if (s && typeof s.id === "string" && s.id) map[s.id] = { status: String(s.status || ""), points: Number(s.points) || 0 };
+          if (s && typeof s.id === "string" && s.id) map[s.id] = { status: String(s.status || ""), points: Number(s.points) || 0,name:String(s.name||"") };
         }
         return map;
       })
-      .catch(() => ({}));
+      .catch(() => {priceCache=null;return {};});
   }
   return priceCache;
 }

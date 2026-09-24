@@ -6,12 +6,12 @@ import ts from 'typescript';
 function fixture() {
  const data=new Map();const localStorage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
  let fingerprint='alice';const app={profile:{name:'Alice'},aiCache:{profiles:{alice:{tarot:{}},bob:{tarot:{}}}}};
- const state={getState:()=>app,cacheFingerprint:()=>fingerprint,subscribe:()=>()=>{}};
+ const state={accountStorageKey:k=>k,notifyDataDirty:()=>{},getState:()=>app,cacheFingerprint:()=>fingerprint,subscribe:()=>()=>{}};
  const source=fs.readFileSync(new URL('../src/lib/tarot-history.ts',import.meta.url),'utf8');
  const js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- const module={exports:{}};
- new Function('exports','require','window','localStorage',js)(module.exports,name=>{if(name==='./state')return state;throw Error(name);},{addEventListener(){},removeEventListener(){}},localStorage);
- return {history:module.exports,app,localStorage,switchProfile:()=>{fingerprint='bob';}};
+ const compiledModule={exports:{}};
+ new Function('exports','require','window','localStorage',js)(compiledModule.exports,name=>{if(name==='./state')return state;throw Error(name);},{addEventListener(){},removeEventListener(){}},localStorage);
+ return {history:compiledModule.exports,app,localStorage,switchProfile:()=>{fingerprint='bob';}};
 }
 const entry=(id='one')=>({id,savedAt:100,question:'Question',deckId:'rws',spreadId:'one',spreadName:'Một lá',frameLabel:'',cards:[],text:'Saved reading'});
 

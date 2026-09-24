@@ -51,7 +51,7 @@ export function BottomDock() {
   const [dockWidth, setDockWidth] = useState(366);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false);
+  const [open,setOpen]=useState(false);
 
   useEffect(() => {
     const dock = dockRef.current;
@@ -62,7 +62,7 @@ export function BottomDock() {
   }, []);
 
   // Escape đóng sheet; đóng khi đổi route.
-  useEffect(() => setOpen(false), [pathname]);
+
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;

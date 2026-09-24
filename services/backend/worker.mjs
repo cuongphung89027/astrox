@@ -10,4 +10,4 @@ export class AdminBackend extends WorkerEntrypoint {
 export class PaymentWebhook extends WorkerEntrypoint {
  async fetch(request){if(request.method!=='POST')return new Response(null,{status:405});return handlePayosWebhook(this.env,request);}
 }
-export default {fetch:publicFetch,async scheduled(controller,env){await reconcileAi(env,controller.scheduledTime);}};
+export default {fetch:publicFetch,async scheduled(controller,env){await reconcileAi(env,controller.scheduledTime);await env.DB.prepare("DELETE FROM client_error_counts WHERE day<?").bind(Math.floor(controller.scheduledTime/86400000)-30).run();}};

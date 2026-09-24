@@ -16,7 +16,7 @@
  *   đổi sau mount (chống hydration mismatch).
  */
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TextsReveal } from "@/components/motion";
 import { useAuth } from "@/lib/auth";
 import { openLoginDialog } from "@/lib/login-dialog";
@@ -31,10 +31,11 @@ const WASH_MS = 8000;
    xong trước khi từ mới vào. */
 const WORD_EXIT_MS = 860;
 
+const noSubscribe=()=>()=>{};
 export function HeroVideo() {
   const { loggedIn } = useAuth();
   const profile = useProfile();
-  const [mounted, setMounted] = useState(false);
+  const mounted=useSyncExternalStore(noSubscribe,()=>true,()=>false);
   const [showCue, setShowCue] = useState(true);
   const [{ idx, leaving }, setRot] = useState<{ idx: number; leaving: number | null }>({
     idx: 0,
@@ -43,7 +44,7 @@ export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => setMounted(true), []);
+
 
   /* Cue chỉ hiện khi còn ở đỉnh hero — khi cuộn sang #modules, cue tuyệt đối
      ở đáy hero sẽ lọt vào vùng topbar fixed nếu scroll-margin chừa chỗ. */
@@ -147,7 +148,7 @@ export function HeroVideo() {
                        giờ toàn cục: khi đổi từ, em remount nhưng animation bắt
                        đầu đúng pha đang dở → conic quay liền mạch, không giật.
                        mounted guard để tránh lệch hydration ở lần render đầu. */
-                    const washPhase = mounted ? performance.now() % WASH_MS : 0;
+                    const washPhase = mounted ? (idx*(WORD_HOLD_MS+WORD_EXIT_MS)) % WASH_MS : 0;
                     const washDelay = -((i / arr.length) * WASH_MS + washPhase);
                     return (
                       <span

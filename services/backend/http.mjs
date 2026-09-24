@@ -1,7 +1,7 @@
 export function corsHeaders(env,request){
  const origin=request.headers.get('Origin')||'';
  const allowed=[env.APP_ORIGIN||'https://theastrox.space','https://theastrox-a3l.pages.dev'];
- return {'Access-Control-Allow-Origin':allowed.includes(origin)?origin:allowed[0],'Access-Control-Allow-Credentials':'true','Access-Control-Allow-Headers':'Content-Type, Authorization','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Vary':'Origin'};
+ return {'Access-Control-Allow-Origin':allowed.includes(origin)?origin:allowed[0],'Access-Control-Allow-Credentials':'true','Access-Control-Allow-Headers':'Content-Type, Authorization','Access-Control-Allow-Methods':'GET, POST, PUT, OPTIONS','Vary':'Origin'};
 }
 export const json=(env,request,data,status=200)=>Response.json(data,{status,headers:{...corsHeaders(env,request),'cache-control':'no-store','x-content-type-options':'nosniff'}});
 export function trustedOrigin(env,request){const origin=request.headers.get('Origin');return origin===(env.APP_ORIGIN||'https://theastrox.space')||origin===new URL(request.url).origin;}

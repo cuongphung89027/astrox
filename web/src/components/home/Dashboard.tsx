@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { openLoginDialog } from "@/lib/login-dialog";
 import { useAppState } from "@/lib/use-store";
 import { cacheFingerprint } from "@/lib/state";
-import { periodCacheKey, TUVI_TOPICS, buildZiweiChart, menhPalace } from "@/lib/tuvi";
+
 import { formatDob } from "@/lib/utils";
 import { PROMPT_VERSION } from "@/lib/config";
 import { useProfileModal } from "@/components/profile/ProfileModal";
@@ -28,6 +28,8 @@ export function Dashboard() {
   const router = useRouter();
   const state = useAppState();
   const { profile } = state;
+  const [engine,setEngine]=useState<typeof import('@/lib/tuvi')|null>(null);
+  useEffect(()=>{let active=true;if(profile)void import('@/lib/tuvi').then(m=>{if(active)setEngine(m);});return()=>{active=false;};},[profile]);
   const { loggedIn, ready, displayName } = useAuth();
   const { open } = useProfileModal();
   const [now, setNow] = useState<Date | null>(null);
@@ -38,14 +40,14 @@ export function Dashboard() {
     return () => clearInterval(timer);
   }, []);
   const cache = profile ? state.aiCache.profiles[cacheFingerprint()] : undefined;
-  const today = now ? cache?.tuviPeriod.today[periodCacheKey("today")] : undefined;
+  const today = now&&engine ? cache?.tuviPeriod.today[engine.periodCacheKey("today")] : undefined;
   const usableToday = today && (!today.promptVersion || today.promptVersion === PROMPT_VERSION) && (!today.expiresAt || today.expiresAt > (now?.getTime() || 0)) ? today : undefined;
   const recent = Object.entries(cache?.tuviTopics || {}).filter(([,entry]) => entry.text && (!entry.promptVersion || entry.promptVersion === PROMPT_VERSION) && (!entry.expiresAt || entry.expiresAt > (now?.getTime() || 0))).sort((a,b) => b[1].updatedAt - a[1].updatedAt).slice(0, 3);
   const chart = useMemo(() => {
-    if (!profile?.dob || !profile.hourChi || !profile.gender) return null;
-    try { return buildZiweiChart(profile); } catch { return null; }
-  }, [profile]);
-  const menh = chart ? menhPalace(chart) : null;
+    if (!engine || !profile?.dob || !profile.hourChi || !profile.gender) return null;
+    try { return engine.buildZiweiChart(profile); } catch { return null; }
+  }, [profile,engine]);
+  const menh = chart&&engine ? engine.menhPalace(chart) : null;
   const tarotCount = useTarotHistoryCount();
   // Tên gọi người dùng tự đặt ưu tiên trước tên từ kênh đăng nhập (Zalo/Supabase).
   const name = loggedIn ? profile?.name || displayName : undefined;
@@ -62,7 +64,7 @@ export function Dashboard() {
       <Link href="/tarot?history=1" className={styles.tarotAction}><FeatureIcon name="tarot" size={34} /><div><h2>Tarot</h2><p>{tarotCount ? `${tarotCount} luận giải trong nhật ký` : "Chưa có luận giải Tarot trong hồ sơ"}</p></div><span>Xem nhật ký ↗</span></Link>
     </div>}
     <section aria-labelledby="dashboard-tools"><div className={styles.sectionHeading}><h2 id="dashboard-tools">Truy cập nhanh</h2></div><div className={styles.tools}>{[{href:"/tuvi",name:"Tử Vi"},{href:"/tarot",name:"Tarot"},...TOOLS].map(tool => <Link key={tool.href} href={tool.href}><FeatureIcon name={FEATURE_BY_PATH[tool.href]} size={28} />{tool.name}</Link>)}</div></section>
-    {recent.length > 0 && <section aria-labelledby="dashboard-recent"><div className={styles.sectionHeading}><h2 id="dashboard-recent">Đọc tiếp</h2><span>Luận giải đã lưu</span></div><div className={styles.recent}>{recent.map(([key, entry]) => {const [topicId, subId] = key.split("::");const topic = TUVI_TOPICS.find(t=>t.id === topicId);return <Link key={key} href={`/tuvi?view=topics&topic=${encodeURIComponent(topicId)}&sub=${encodeURIComponent(subId || "")}`}><div><h3>{topic?.subs.find(s=>s.id === subId)?.label || topic?.title || "Luận giải Tử Vi"}</h3><p>{excerpt(entry.text)}</p></div><span aria-hidden="true">↗</span></Link>;})}</div></section>}
+    {recent.length > 0 && <section aria-labelledby="dashboard-recent"><div className={styles.sectionHeading}><h2 id="dashboard-recent">Đọc tiếp</h2><span>Luận giải đã lưu</span></div><div className={styles.recent}>{recent.map(([key, entry]) => {const [topicId, subId] = key.split("::");const topic = engine?.TUVI_TOPICS.find(t=>t.id === topicId);return <Link key={key} href={`/tuvi?view=topics&topic=${encodeURIComponent(topicId)}&sub=${encodeURIComponent(subId || "")}`}><div><h3>{topic?.subs.find(s=>s.id === subId)?.label || topic?.title || "Luận giải Tử Vi"}</h3><p>{excerpt(entry.text)}</p></div><span aria-hidden="true">↗</span></Link>;})}</div></section>}
 
   </div>;
 }

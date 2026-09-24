@@ -11,6 +11,8 @@
  * - Mobile (<lg): BOTTOM DOCK glass 4 mục + "Thêm" mở sheet (BottomDock).
  * - Logo: /assets/logo.png (logo AstroX chính thức, có sẵn wordmark).
  */
+import {RuntimeReporting} from "./RuntimeReporting";
+import {PaidReadingConsent} from "@/components/kit/PaidReadingConsent";
 import Link from "next/link";
 import { FeatureIcon, FEATURE_BY_PATH } from "@/components/kit/FeatureIcon";
 import { useEffect, useRef } from "react";
@@ -73,6 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
       <PreferencesEffect />
+      <RuntimeReporting/>
       <div className="flex min-h-dvh flex-col">
         <header
           ref={headerRef}
@@ -146,7 +149,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </footer>}
 
-        <BottomDock />
+        <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-5 px-5 py-5 pb-32 text-sm text-muc-2 lg:pb-5"><Link href="/banggia">Bảng giá</Link><Link href="/dieukhoan">Điều khoản & bảo mật</Link><a href="mailto:hoangcuong89027@gmail.com">Hỗ trợ</a></div>
+        <PaidReadingConsent/>
+        <BottomDock key={pathname} />
         <LoginPrompt />
       </div>
     </ToastProvider>

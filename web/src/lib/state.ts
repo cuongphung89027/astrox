@@ -77,11 +77,32 @@ function migrateAiCache(state: AppState): AiCache {
   return next;
 }
 
+let activeAccount:string|null=null;
+let accountResolved=false;
+let accountEpoch=0;
+export function getAccountEpoch(){return accountEpoch;}
+export function accountStorageKey(key:string){return activeAccount?`${key}:account:${activeAccount}`:key;}
+export function activateAccount(owner:string|null){
+ if(accountResolved&&owner===activeAccount)return;
+ if(accountResolved)saveState();
+ let adopt=false;
+ try{adopt=!!owner&&!localStorage.getItem(`${STORAGE_KEY}:claimed`)&&!localStorage.getItem(`${STORAGE_KEY}:account:${owner}`);}catch{}
+ const guest=getState();
+ if(adopt){
+  for(const key of [STORAGE_KEY,'astrox_tarot_history_v1','astrox_tarot_history_deleted_v1']){
+   try{const value=key===STORAGE_KEY?JSON.stringify(guest):localStorage.getItem(key);if(value)localStorage.setItem(`${key}:account:${owner}`,value);localStorage.removeItem(key);}catch{}
+  }
+ }
+ accountEpoch++;activeAccount=owner;accountResolved=true;hydrated=true;
+ try{if(owner)localStorage.setItem(`${STORAGE_KEY}:claimed`,'1');}catch{}
+ state=loadState();emit();
+}
+
 function loadState(): AppState {
   const base = defaultState();
   if (typeof window === "undefined") return base;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(accountStorageKey(STORAGE_KEY));
     if (!raw) return base;
     const parsed = { ...base, ...JSON.parse(raw) } as AppState;
     parsed.aiCache = migrateAiCache(parsed);
@@ -101,7 +122,8 @@ const listeners = new Set<() => void>();
 
 export function getState(): AppState {
   if (!hydrated && typeof window !== "undefined") {
-    state = loadState();
+    let claimed=false;try{claimed=!!localStorage.getItem(`${STORAGE_KEY}:claimed`);}catch{}
+    state = claimed&&!accountResolved?defaultState():loadState();
     state.apiKey = null;
     if (state.model !== DEFAULT_MODEL) state.model = DEFAULT_MODEL;
     hydrated = true;
@@ -120,7 +142,7 @@ function emit() {
 
 export function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(accountStorageKey(STORAGE_KEY), JSON.stringify(state));
   } catch {
     /* đầy bộ nhớ — bỏ qua, UI nên tự xử thông báo */
   }
@@ -263,6 +285,6 @@ export function onDataDirty(cb: () => void): () => void {
     dirtyListeners.delete(cb);
   };
 }
-function notifyDataDirty() {
+export function notifyDataDirty() {
   dirtyListeners.forEach((cb) => cb());
 }

@@ -8,12 +8,14 @@
  *  - AstroX Worker (Zalo, cookie astrox_session) → api.theastrox.space.
  * Mặc định mọi module được phép; chỉ khoá khi backend trả access[module]=false.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import { fetchAstroxUser, fetchModuleAccessAstrox } from "./api";
 import { AUTH_API_BASE, SUPABASE_ANON_KEY, SUPABASE_URL } from "./config";
-import { getState, onDataDirty, setState, clearDerivedData } from "./state";
+import {startCloudSync} from "./cloud-sync";
+import {setPointsAccount} from "./points";
+import { getState, activateAccount } from "./state";
 import type { AstroxUser } from "./types";
 
 function getSupabase(): SupabaseClient | null {
@@ -35,74 +37,6 @@ async function currentAccessToken(client: SupabaseClient | null): Promise<string
   } catch {
     return "";
   }
-}
-
-let syncTimer: ReturnType<typeof setTimeout> | null = null;
-let syncInFlight = false;
-let syncQueued = false;
-
-function syncUserData(client: SupabaseClient | null, method: "GET" | "PUT") {
-  return (async () => {
-    const state = getState();
-    if (method === "GET" && !state.profile) return; // GET chỉ khi có dữ liệu để merge
-    if (method === "PUT" && syncInFlight) {
-      syncQueued = true;
-      return;
-    }
-    if (method === "PUT") syncInFlight = true;
-    try {
-      const token = await currentAccessToken(client);
-      if (!token) return;
-      const opts: RequestInit = {
-        method,
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      };
-      if (method === "PUT") {
-        const s = getState();
-        opts.body = JSON.stringify({
-          profile: s.profile,
-          chartImageBase64: s.chartImageBase64,
-          chartImageMime: s.chartImageMime,
-          ziweiChart: s.ziweiChart,
-          natalChart: s.natalChart,
-          aiCache: s.aiCache,
-          lastAiModel: s.lastAiModel || "",
-        });
-      }
-      let res: Response;
-      try {
-        res = await fetch("/api/user-data", opts);
-      } catch {
-        return; // offline — dữ liệu vẫn ở localStorage
-      }
-      if (!res.ok) return;
-      if (method === "GET") {
-        const data = await res.json();
-        const patch: Parameters<typeof setState>[0] = {};
-        if (data.profile) patch.profile = data.profile;
-        if (data.chartImageBase64) patch.chartImageBase64 = data.chartImageBase64;
-        if (data.chartImageMime) patch.chartImageMime = data.chartImageMime;
-        if (data.ziweiChart) patch.ziweiChart = data.ziweiChart;
-        if (data.natalChart) patch.natalChart = data.natalChart;
-        if (data.lastAiModel) patch.lastAiModel = data.lastAiModel;
-        if (data.aiCache) {
-          // Merge thô theo updatedAt — đủ dùng cho v5; merge sâu profiles
-          // giữ nguyên từ localStorage làm gốc.
-          patch.aiCache = data.aiCache;
-        }
-        setState(patch);
-      }
-    } finally {
-      if (method === "PUT") {
-        syncInFlight = false;
-        if (syncQueued) {
-          syncQueued = false;
-          if (syncTimer) clearTimeout(syncTimer);
-          syncTimer = setTimeout(() => syncUserData(client, "PUT"), 800);
-        }
-      }
-    }
-  })();
 }
 
 /* ----------------------------- context ----------------------------- */
@@ -144,14 +78,11 @@ function storedReferral(): string {
   }
 }
 
+const noSubscribe=()=>()=>{};
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [localPreview, setLocalPreview] = useState<boolean | null>(null);
-  useEffect(() => {
-    captureReferral();
-    setLocalPreview(process.env.NODE_ENV === "development" &&
-      ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname));
-  }, []);
-  if (localPreview === null) return null;
+  const localPreview=useSyncExternalStore(noSubscribe,()=>process.env.NODE_ENV === "development" && ["localhost","127.0.0.1","[::1]"].includes(window.location.hostname),()=>false);
+  useEffect(captureReferral,[]);
+
   return localPreview ? <LocalPreviewProvider>{children}</LocalPreviewProvider> : <RealAuthProvider>{children}</RealAuthProvider>;
 }
 
@@ -170,9 +101,9 @@ function LocalPreviewProvider({ children }: { children: React.ReactNode }) {
 }
 
 function RealAuthProvider({ children }: { children: React.ReactNode }) {
-  const clientRef = useRef<SupabaseClient | null>(null);
-  if (typeof window !== "undefined" && !clientRef.current) clientRef.current = getSupabase();
-  const client = clientRef.current;
+  const [client]=useState<SupabaseClient|null>(()=>getSupabase());
+  const syncStop=useRef<(()=>void)|null>(null);
+  const [supabaseId,setSupabaseId]=useState<string|null>(null);
 
   const [supabaseEmail, setSupabaseEmail] = useState<string | null>(null);
   const [supabaseName, setSupabaseName] = useState<string | null>(null);
@@ -198,10 +129,11 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setModuleAccess(access);
-  }, [astroxUser, client]);
+  }, [client]);
 
   useEffect(() => {
     let alive = true;
+    let subscription:{unsubscribe:()=>void}|undefined;
     (async () => {
       // Supabase session
       if (client) {
@@ -211,19 +143,23 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
           if (user && alive) {
             setSupabaseEmail((user.email as string) || null);
             setSupabaseName(((user.user_metadata as { full_name?: string } | null)?.full_name as string) || null);
-            await syncUserData(client, "GET");
+            setSupabaseId(user.id);
           }
         } catch {
           /* coi như chưa đăng nhập */
         }
-        client.auth.onAuthStateChange((event, session) => {
+        const authChange=client.auth.onAuthStateChange((event, session) => {
+          if(!alive)return;
+          setSupabaseId(session?.user?.id||null);
           const user = session?.user ?? null;
           setSupabaseEmail((user?.email as string) || null);
           setSupabaseName(((user?.user_metadata as { full_name?: string } | null)?.full_name as string) || null);
           if (event === "SIGNED_OUT") {
-            clearDerivedData();
+            syncStop.current?.();activateAccount(null);setPointsAccount(null);
           }
         });
+        subscription=authChange.data.subscription;
+        if(!alive)subscription.unsubscribe();
       }
       // AstroX (Zalo) user
       const axUser = await fetchAstroxUser();
@@ -234,7 +170,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
       }
     })();
     return () => {
-      alive = false;
+      alive = false;subscription?.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -247,14 +183,20 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, [astroxUser, supabaseEmail, refreshModuleAccess]);
 
-  // Debounce PUT mỗi khi state đổi (hồ sơ, cache AI).
-  useEffect(() => {
-    if (!ready || !supabaseEmail) return;
-    return onDataDirty(() => {
-      if (syncTimer) clearTimeout(syncTimer);
-      syncTimer = setTimeout(() => syncUserData(client, "PUT"), 800);
-    });
-  }, [ready, supabaseEmail, client]);
+  useLayoutEffect(()=>{
+    if(!ready)return;
+    syncStop.current?.();syncStop.current=null;
+    const owner=astroxUser?`zalo:${astroxUser.id}`:supabaseId?`supabase:${supabaseId}`:null;
+    activateAccount(owner);setPointsAccount(astroxUser?String(astroxUser.id):null);
+    if(owner){
+      syncStop.current=startCloudSync(astroxUser?`${AUTH_API_BASE}/api/user-data`:'/api/user-data',async()=>{
+        if(astroxUser)return {} as Record<string,string>;
+        const token=await currentAccessToken(client);if(!token)throw Error('no_session');
+        return {Authorization:`Bearer ${token}`};
+      });
+    }
+    return()=>{syncStop.current?.();syncStop.current=null;};
+  },[ready,astroxUser,supabaseId,client]);
 
   const loggedIn = !!supabaseEmail || !!astroxUser;
   const displayName =
@@ -276,14 +218,16 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
         refreshModuleAccess();
       },
       logout: async () => {
+        syncStop.current?.();syncStop.current=null;activateAccount(null);setPointsAccount(null);
         try {
           if (client) await client.auth.signOut();
           if (AUTH_API_BASE) await fetch(`${AUTH_API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
         } catch {
           /* bỏ qua */
         }
-        clearDerivedData();
+        activateAccount(null);
         setAstroxUser(null);
+        setSupabaseId(null);
         setSupabaseEmail(null);
         setSupabaseName(null);
       },
@@ -297,8 +241,9 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
     [supabaseEmail, supabaseName, astroxUser, loggedIn, ready, displayName, moduleAccess, refreshModuleAccess, client],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}><AccountContent key={astroxUser?.id||supabaseId||"guest"}>{children}</AccountContent></AuthContext.Provider>;
 }
+function AccountContent({children}:{children:React.ReactNode}){return children;}
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);

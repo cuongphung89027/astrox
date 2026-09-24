@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS client_error_counts (
+ day INTEGER NOT NULL,
+ path TEXT NOT NULL,
+ kind TEXT NOT NULL,
+ count INTEGER NOT NULL DEFAULT 0,
+ last_at INTEGER NOT NULL,
+ PRIMARY KEY(day,path,kind)
+);

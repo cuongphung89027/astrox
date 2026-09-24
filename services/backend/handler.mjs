@@ -1,3 +1,4 @@
+import {accountData} from './user-data.mjs';
 import {chargeAi,refundAi,completeAi} from './ai-operations.mjs';
 import {readPublished} from '../admin/store.mjs';
 import {publicConfig} from '../admin/config.ts';
@@ -6,7 +7,7 @@ import {readSession,aiSession,zaloLogin,zaloCallback,zaloFinish,logout} from './
 import {handlePayosWebhook,handleTopupCreate,handlePromoCheck} from './payments.mjs';
 import {handlePointsHistory} from './points.mjs';
 import {handleRewardsSummary,handleRewardsCheckin} from './rewards.mjs';
-import {json,corsHeaders} from './http.mjs';
+import {json,corsHeaders,trustedOrigin} from './http.mjs';
 
 export async function moduleAccess(env,request){
  const published=await readPublished(env),access={};
@@ -19,7 +20,7 @@ export async function publicFetch(request,env){
  try{
   const url=new URL(request.url),path=url.pathname,method=request.method;
   if(method==='OPTIONS')return new Response(null,{status:204,headers:corsHeaders(env,request)});
-  if(path==='/api/health')return json(env,request,{ok:true,service:'astrox-api',database:Boolean(env.DB),version:'2026-09-24-critical-1'});
+  if(path==='/api/health')return json(env,request,{ok:true,service:'astrox-api',database:Boolean(env.DB),version:'2026-09-24-yellow-1'});
   // Internal APIs are never routed by the public handler, regardless of Host/header.
   if(path.startsWith('/internal/'))return json(env,request,{error:'not_found'},404);
   if(path==='/api/webhooks/payos'&&method==='POST'||path==='/api/payos/webhook'&&method==='POST')return await handlePayosWebhook(env,request);
@@ -29,6 +30,11 @@ export async function publicFetch(request,env){
   if(path==='/auth/zalo/complete')return json(env,request,{error:'restart_login',message:'Vui lòng đăng nhập lại để xác minh danh tính.'},410);
   if(path==='/auth/logout'&&method==='POST')return logout(env,request);
   if(path==='/api/ai/session'&&method==='POST')return await aiSession(env,request);
+  if(path==='/api/user-data'){
+   const session=await readSession(env,request);if(!session)return json(env,request,{error:'unauthorized'},401);
+   if(method!=='GET'&&!trustedOrigin(env,request))return json(env,request,{error:'invalid_origin'},403);
+   const r=await accountData(env,request,`zalo:${session.sub}`);const headers=new Headers(r.headers);for(const [k,v] of Object.entries(corsHeaders(env,request)))headers.set(k,v);return new Response(r.body,{status:r.status,headers});
+  }
   if(path==='/api/me'&&method==='GET'){const session=await readSession(env,request);if(!session)return json(env,request,{user:null});const user=await env.DB.prepare('SELECT id,display_name,email,avatar_url FROM app_users WHERE id=?').bind(session.sub).first();const wallet=await env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(session.sub).first();return json(env,request,{user,points:wallet?.balance||0});}
   if(path==='/api/module-access'&&method==='GET')return await moduleAccess(env,request);
   if(path==='/api/site-config'&&method==='GET'){const p=await readPublished(env);return json(env,request,{config:p?publicConfig(p.config):null,revision:p?.revision??null});}

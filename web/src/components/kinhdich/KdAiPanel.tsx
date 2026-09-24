@@ -32,6 +32,7 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
   const [state, setState] = useState<AiState>("idle");
   const [text, setText] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [elapsed, setElapsed] = useState(0);
   const profile = useProfile();
   const requireProfile = useRequireProfile();
   const { open: openProfile } = useProfileModal();
@@ -62,7 +63,6 @@ export function KdAiPanel({ result, question, onReset }: KdAiPanelProps) {
   }, [requireProfile, question, result, profile]);
 
   const done = state === "done";
-  const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     if (state !== "loading") return;
     const started = Date.now();

@@ -34,15 +34,15 @@ export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayM
   const [error, setError] = useState("");
   const abortRef = useRef<AbortController | null>(null);
 
-  // Cache AI nằm trong store phi-reactive → khi đổi mục thì đọc lại chủ động.
-  useEffect(() => {
-    abortRef.current?.abort();
-    abortRef.current = null;
+  const scope=group+"::"+cacheKey,[previousScope,setPreviousScope]=useState(scope);
+  if(scope!==previousScope){
+    setPreviousScope(scope);
     setCompleting(false);
     setLoading(false);
     setText(readAiCache(group, cacheKey));
     setError("");
-  }, [group, cacheKey]);
+  }
+  useEffect(()=>()=>{abortRef.current?.abort();abortRef.current=null;},[scope]);
 
   // Huỷ request khi unmount.
   useEffect(() => () => abortRef.current?.abort(), []);

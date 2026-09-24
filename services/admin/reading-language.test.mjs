@@ -77,3 +77,17 @@ test('JSON repair preserves original numeric lexemes including integers beyond J
     '{"id":9007199254740993,"rate":1.00,"advice":"sao Tài"}',
   );
 });
+
+test('unaccented Vietnamese paragraphs require accent restoration',()=>{
+ const source='Cung Quan Loc tai Hoi co Thai Am, ban co the lam viec va phat trien su nghiep trong nam 2026.';
+ const plan=inspectReading(source);
+ assert.ok(plan.spans.includes(source));
+ const fixed='Cung Quan Lộc tại Hợi có Thái Âm, bạn có thể làm việc và phát triển sự nghiệp trong năm 2026.';
+ assert.equal(applyTranslations(plan,JSON.stringify({translations:[fixed]})),fixed);
+ assert.throws(()=>applyTranslations(plan,JSON.stringify({translations:[fixed.replace('2026','2027')]})),/READING_LANGUAGE_INVALID/);
+ assert.throws(()=>applyTranslations(plan,JSON.stringify({translations:[source]})),/READING_LANGUAGE_INVALID/);
+});
+test('accented Vietnamese and English Tarot prose are not flagged as unaccented',()=>{
+ assert.deepEqual(inspectReading('Cung Quan Lộc tại Hợi có Thái Âm, bạn có thể làm việc và phát triển sự nghiệp.').spans,[]);
+ assert.deepEqual(inspectReading('The Fool and The World invite you to consider a new beginning and reflect on your journey.').spans,[]);
+});

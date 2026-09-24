@@ -1,3 +1,4 @@
+import { normalizeMessages, providerMessages } from './vision.mjs';
 import {
   inspectReading,
   applyTranslations,
@@ -89,23 +90,7 @@ async function readJson(response, maxBytes = 1048576) {
   }
 }
 function messagesFor(config, input) {
-  const messages = input?.messages;
-  if (
-    !Array.isArray(messages) ||
-    !messages.length ||
-    messages.length > 100 ||
-    messages.some(
-      m =>
-        !m ||
-        !['system', 'user', 'assistant'].includes(m.role) ||
-        typeof m.content !== 'string' ||
-        !m.content.trim() ||
-        m.content.length > 100000 ||
-        Object.keys(m).some(k => !['role', 'content'].includes(k)),
-    ) ||
-    JSON.stringify(messages).length > 200000
-  )
-    fail('INVALID_MESSAGES', 400);
+  const messages = normalizeMessages(input?.messages, input?.serviceId === 'palm');
   const service = input.serviceId ? config.billing.services.find(s => s.id === input.serviceId) : null;
   if (input.serviceId && !service) fail('UNKNOWN_SERVICE', 400);
   const parent =
@@ -249,7 +234,7 @@ export async function executeProviderChain(
           p.protocol === 'anthropic'
             ? {
                 model: p.model,
-                messages: messages.filter(m => m.role !== 'system'),
+                messages: providerMessages(messages.filter(m => m.role !== 'system'), p.protocol),
                 system: messages
                   .filter(m => m.role === 'system')
                   .map(m => m.content)
@@ -261,7 +246,7 @@ export async function executeProviderChain(
             : p.protocol === 'responses'
               ? {
                   model: p.model,
-                  input: messages,
+                  input: providerMessages(messages, p.protocol),
                   max_output_tokens: p.maxTokens,
                   temperature: p.temperature,
                   stream: false,

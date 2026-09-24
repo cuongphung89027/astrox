@@ -96,21 +96,21 @@ export function BottomDock() {
         <div className={styles.backdrop} onClick={() => setOpen(false)} />
         <div id="discovery-menu" ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="discovery-title" className={styles.panel}>
           <h2 id="discovery-title" className="sr-only">Khám phá</h2>
-          <svg className={styles.goo} viewBox="0 0 300 360" aria-hidden="true">
+          <svg className={styles.goo} viewBox="0 0 300 480" aria-hidden="true">
             <defs><filter id="astrox-discovery-goo" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB">
               <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
               <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8" />
               <feComposite in="SourceGraphic" operator="atop" />
             </filter></defs>
             <g filter="url(#astrox-discovery-goo)" fill="#fbf6ec">
-              <circle cx="150" cy="324" r="27" />
+              <circle cx="150" cy="444" r="27" />
 
-              {SHEET_LINKS.map((item, i) => <circle key={item.href} cx="150" cy="324" r="27" className={styles.blob} style={{ '--x': `${[-92, 0, 92, -92, 0, 92][i]}px`, '--y': `${[-242, -272, -242, -126, -154, -126][i]}px`, '--delay': `${i * 28}ms` } as CSSProperties} />)}
+              {SHEET_LINKS.map((item, i) => <circle key={item.href} cx="150" cy="444" r="27" className={styles.blob} style={{ '--x': `${[-96, 0, 96][i % 3]}px`, '--y': `${(-360 + Math.floor(i / 3) * 116)}px`, '--delay': `${i * 28}ms` } as CSSProperties} />)}
             </g>
           </svg>
           <div className={styles.grid}>
             {SHEET_LINKS.map((item, i) => (
-              <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={styles.tile} style={{ "--x": `${[-92, 0, 92, -92, 0, 92][i]}px`, "--y": `${[-242, -272, -242, -126, -154, -126][i]}px`, "--delay": `${i * 28}ms` } as CSSProperties} aria-current={isActive(item.href) ? "page" : undefined}>
+              <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={styles.tile} style={{ "--x": `${[-96, 0, 96][i % 3]}px`, "--y": `${(-360 + Math.floor(i / 3) * 116)}px`, "--delay": `${i * 28}ms` } as CSSProperties} aria-current={isActive(item.href) ? "page" : undefined}>
                 <FeatureIcon name={FEATURE_BY_PATH[item.href]} className={styles.icon} />
                 <span className={styles.label}>{item.label}</span>
               </Link>

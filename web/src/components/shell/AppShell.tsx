@@ -19,7 +19,6 @@ import { FeatureIcon, FEATURE_BY_PATH } from "@/components/kit/FeatureIcon";
 import { MODULES, moduleById } from "../../../../services/admin/modules.ts";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { LyCloudDivider } from "@/components/kit/motifs/LyCloudDivider";
 import { ToastProvider } from "@/components/motion/toast";
 import { ProfileModalProvider } from "@/components/profile/ProfileModal";
 import { PreferencesEffect } from "@/components/profile/PreferencesEffect";
@@ -106,7 +105,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         className="ax-nav-link whitespace-nowrap"
                         style={{ ["--nav-accent" as string]: item.accent }}
                       >
-                        <FeatureIcon name={FEATURE_BY_PATH[item.href]} size={19} className="ax-nav-icon shrink-0" />{item.label}
+                        <FeatureIcon name={FEATURE_BY_PATH[item.href]} size={19} className="ax-nav-icon shrink-0" /><span className="ax-nav-label">{item.label}</span>
                         <span aria-hidden="true" className="ax-nav-underline" />
                       </Link>
                     </li>
@@ -127,25 +126,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               chừa pt-16 đúng chiều cao header. pb-28 <lg = chừa bottom dock. */}
           <main className="flex-1 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-0 pt-16"><PublishedNotice>{children}</PublishedNotice></main>
         </ProfileModalProvider>
-
-        {/* Footer: dải mây Lý–Trần + credit + link Tương Hợp.
-            pb-28 <lg = chừa chỗ cho bottom dock. */}
-        {!isHome && pathname !== "/tuvi" && pathname !== "/tarot" && pathname !== "/hoso" && pathname !== "/cunghoangdao" && pathname !== "/kinhdich" && pathname !== "/battu" && pathname !== "/thansohoc" && pathname !== "/tuonghop" && <footer className="mt-20 pb-28 lg:mt-28 lg:pb-10">
-          <LyCloudDivider className="mx-auto max-w-5xl text-muc/25" />
-          <div className="mx-auto max-w-6xl px-5 pt-6 text-center text-sm text-muc-2">
-            <p className="font-display text-base font-extrabold text-muc/80">
-              Astro<span className="text-son">X</span>
-            </p>
-            <p className="mx-auto mt-1.5 max-w-xl leading-relaxed">
-              Họa tiết Việt lấy cảm hứng trống đồng Đông Sơn &amp; mây Lý–Trần, vector gốc AstroX.
-            </p>
-            <p className="mt-3">
-              <Link href="/tuonghop" className="font-semibold text-son underline-offset-4 transition-colors hover:text-son-deep hover:underline">
-                Tương Hợp — thử độ hợp của hai người →
-              </Link>
-            </p>
-          </div>
-        </footer>}
 
         <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-5 px-5 py-5 pb-32 text-sm text-muc-2 lg:pb-5"><Link href="/banggia">Bảng giá</Link><Link href="/dieukhoan">Điều khoản & bảo mật</Link><a href="mailto:tsonniverse@gmail.com">Hỗ trợ</a></div>
         <PaidReadingConsent/>

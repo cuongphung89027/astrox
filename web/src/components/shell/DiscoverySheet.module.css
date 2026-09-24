@@ -2,12 +2,12 @@
 .overlay[data-open="true"] { visibility: visible; pointer-events: auto; transition-delay: 0s; }
 .backdrop { position: absolute; inset: 0; background: #102d2780; backdrop-filter: blur(8px); opacity: 0; transition: opacity 400ms ease; }
 .overlay[data-open="true"] .backdrop { opacity: 1; }
-.panel { position: absolute; bottom: 27px; left: 50%; width: 300px; height: 360px; transform: translateX(-50%); color: #214d42; }
-.goo { position: absolute; inset: 0; width: 300px; height: 360px; overflow: visible; pointer-events: none; }
+.panel { position: absolute; bottom: calc(27px + env(safe-area-inset-bottom)); left: 50%; width: 300px; height: 480px; transform: translateX(-50%); color: #214d42; }
+.goo { position: absolute; inset: 0; width: 300px; height: 480px; overflow: visible; pointer-events: none; }
 .blob { transform: translate(0, 0); transition: transform 520ms cubic-bezier(.22,.8,.22,1); transition-delay: 0ms; }
 .overlay[data-open="true"] .blob { transform: translate(var(--x), var(--y)); transition-delay: var(--delay); }
 .grid { position: absolute; inset: 0; pointer-events: none; }
-.tile { position: absolute; left: 123px; top: 297px; width: 54px; height: 54px; display: grid; place-items: center; color: #214d42; border-radius: 50%; text-decoration: none; opacity: 0; transform: translate(0, 0) scale(.4); transition: transform 520ms cubic-bezier(.22,.8,.22,1), opacity 200ms; }
+.tile { position: absolute; left: 123px; top: 417px; width: 54px; height: 54px; display: grid; place-items: center; color: #214d42; border-radius: 50%; text-decoration: none; opacity: 0; transform: translate(0, 0) scale(.4); transition: transform 520ms cubic-bezier(.22,.8,.22,1), opacity 200ms; }
 .overlay[data-open="true"] .tile { pointer-events: auto; opacity: 1; transform: translate(var(--x), var(--y)) scale(1); transition-delay: var(--delay); }
 .icon { width: 23px; height: 23px; }
 .label { position: absolute; top: 62px; left: 50%; transform: translateX(-50%); width: 88px; text-align: center; font-size: 12px; line-height: 1.4; font-weight: 500; color: #fff8e8; opacity: 0; transition: opacity 150ms; }
@@ -19,8 +19,8 @@
 .triggerLabel { position: absolute; top: 30px; font-size: 10.5px; font-weight: 700; color: #214d42; white-space: nowrap; }
 .tile:hover, .tile[aria-current="page"] { background: #d8e5d6; }
 .tile:focus-visible, .trigger:focus-visible { outline: 2px solid #d9bb78; outline-offset: 4px; }
-@media (max-width: 319px) { .panel { transform: translateX(-50%) scale(.9); transform-origin: 50% 324px; } }
-@media (max-height: 420px) { .panel { transform: translateX(-50%) scale(.8); transform-origin: 50% 324px; } }
+@media (max-width: 319px) { .panel { transform: translateX(-50%) scale(.9); transform-origin: 50% 444px; } }
+@media (max-height: 580px) { .panel { transform: translateX(-50%) scale(.72); transform-origin: 50% 444px; } }
 @media (min-width: 1024px) { .overlay { display: none; } }
 @media (prefers-reduced-motion: reduce) { .overlay, .backdrop, .blob, .tile, .label, .trigger span { transition: none; } }
 

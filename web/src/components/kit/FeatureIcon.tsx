@@ -1,8 +1,8 @@
 import type { SVGProps } from "react";
 import { MODULES, type ModuleId } from "../../../../services/admin/modules.ts";
 
-export type FeatureName = "home" | "tuvi" | "zodiac" | "kinhdich" | "battu" | "numerology" | "tarot" | "compat" | "profile" | "explore" | "settings" | "wallet" | "motion" | "text" | "calendar" | "logout" | "close" | "invite" | "play";
-const MODULE_ICON: Record<ModuleId, FeatureName> = { tuvi: "tuvi", zodiac: "zodiac", kinhdich: "kinhdich", batu: "battu", numerology: "numerology", tarot: "tarot", compat: "compat" };
+export type FeatureName = "palm" | "home" | "tuvi" | "zodiac" | "kinhdich" | "battu" | "numerology" | "tarot" | "compat" | "profile" | "explore" | "settings" | "wallet" | "motion" | "text" | "calendar" | "logout" | "close" | "invite" | "play";
+const MODULE_ICON: Record<ModuleId, FeatureName> = { tuvi: "tuvi", zodiac: "zodiac", kinhdich: "kinhdich", batu: "battu", numerology: "numerology", tarot: "tarot", compat: "compat", palm: "palm", "lunar-calendar": "calendar", experts: "profile" };
 export const FEATURE_BY_PATH: Record<string, FeatureName> = {
   "/": "home",
   ...Object.fromEntries(MODULES.flatMap(m => [m.route, ...m.legacyRoutes].map(route => [route, MODULE_ICON[m.id]]))),
@@ -11,6 +11,7 @@ export const FEATURE_BY_PATH: Record<string, FeatureName> = {
 /** Shared AstroX line icons. Use currentColor so only the active navigation item is accented. */
 export function FeatureIcon({ name, size = 24, ...props }: SVGProps<SVGSVGElement> & { name: FeatureName; size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.55} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" data-feature-icon={name} {...props}>
+    {name === "palm" && <><path d="M7 21 3 12c-1-3 2-4 3-1l2 3V5c0-2 3-2 3 0v6-8c0-2 3-2 3 0v8-6c0-2 3-2 3 0v7-4c0-2 3-2 3 0v6c0 4-2 6-3 7Z"/><path d="M10 15c3-2 5-1 6 1M11 18l4-1"/></>}
     {name === "home" && <><path d="m3.5 10.5 8.5-7 8.5 7"/><path d="M5.5 9v11h5v-6h3v6h5V9"/></>}
     {name === "tuvi" && <><path d="M19.8 14.2A8.3 8.3 0 0 1 9.8 4.1a8.4 8.4 0 1 0 10 10.1Z"/><path d="m17 3 .85 2.65L20.5 6.5l-2.65.85L17 10l-.85-2.65-2.65-.85 2.65-.85Z" strokeWidth="1.3"/></>}
     {name === "zodiac" && <><circle cx="12" cy="12" r="7.5"/><path d="m12 5.8 1.8 4.1 4.5.4-3.4 3 1 4.4-3.9-2.3-3.9 2.3 1-4.4-3.4-3 4.5-.4Z"/></>}

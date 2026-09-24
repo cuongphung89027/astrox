@@ -6,6 +6,7 @@ import type { AdminConfig } from "../../../../services/admin/config";
 import { adminRequest } from "@/lib/admin-client";
 import s from "./AdminDashboard.module.css";
 import { PreferencesEffect } from "@/components/profile/PreferencesEffect";
+import { ExpertManager } from "./ExpertManager";
 import { AiMetrics } from "./AiMetrics";
 import { AdminInsights, type InsightView } from "./AdminInsights";
 import { AdminLogo, Fields, type Spec } from "./ui";
@@ -310,6 +311,7 @@ export function AdminDashboard() {
               })}>Nhập cấu hình backend hiện tại</button>
             </div>
           )}
+          {view === "bookings" && session.user.capabilities.includes("access.manage") && <ExpertManager csrf={session.csrf} />}
           {view === "aiMetrics" && <AiMetrics config={config} />}
           {insightViews.includes(view) && <AdminInsights view={view as InsightView} session={session} config={config} onNavigate={go} />}
           <fieldset

@@ -148,6 +148,11 @@ export const CAPABILITIES = [
   'access.manage',
 ];
 export { MODULES };
+/** New discovery routes are free until an Admin explicitly assigns a price/status. */
+function seedDiscoveryServices(existing: ServicePrice[]): ServicePrice[] {
+  const missing = new Set(['palm', 'lunar-calendar', 'experts'].filter(id => !existing.some(s => s.id === id)));
+  return addMissingServices(existing).map(s => missing.has(s.id) ? { ...s, status: 'free' as const } : s);
+}
 export function defaultConfig(): AdminConfig {
   return {
     prompts: defaultPromptSettings(),
@@ -175,13 +180,13 @@ export function defaultConfig(): AdminConfig {
       enabled: false,
       vndPerPoint: 0,
       packages: [],
-      services: addMissingServices(
+      services: seedDiscoveryServices(
         MODULES.map(m => ({
           id: m.id,
           module: m.id,
           name: m.name,
           points: 0,
-          status: 'draft',
+          status: ['palm', 'lunar-calendar', 'experts'].includes(m.id) ? 'free' as const : 'draft' as const,
           policy: m.policy,
           prompt: '',
           chain: [],
@@ -610,7 +615,7 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
     ...c,
     billing:
       c.billing && Array.isArray(c.billing.services)
-        ? { ...c.billing, unlocks: c.billing.unlocks === undefined ? defaultUnlockSettings() : c.billing.unlocks, services: addCouplesServices(c.billing.services) }
+        ? { ...c.billing, unlocks: c.billing.unlocks === undefined ? defaultUnlockSettings() : c.billing.unlocks, services: seedDiscoveryServices(addCouplesServices(c.billing.services)) }
         : c.billing,
     prompts: { templates: { ...p.templates, ...c.prompts?.templates }, tasks: { ...p.tasks, ...c.prompts?.tasks } },
     engines: { ...defaultConfig().engines, ...c.engines },

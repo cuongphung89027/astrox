@@ -56,7 +56,7 @@ test('real managed prompts for every persistent feature derive a server scope', 
     }
   }
   assert.deepEqual(failures, []);
-  assert.equal(readings.length, SERVICE_CATALOG.filter(s => s.policy !== 'session').length);
+  assert.equal(readings.length, SERVICE_CATALOG.filter(s => s.id !== s.module && s.policy !== 'session').length);
 });
 test('Zodiac without an exact birth time still has a stable profile scope', async () => {
   const load = graph();

@@ -17,7 +17,7 @@ import { zodiacAsset } from "@/lib/earthly-branches";
 import { useTarotHistoryCount } from "@/lib/use-tarot-history";
 import styles from "./Dashboard.module.css";
 
-const QUICK_TOOLS = (["tuvi", "tarot", "zodiac", "kinhdich", "batu", "numerology"] as const).map(id => MODULES.find(m => m.id === id)!).map(m => ({ href: m.route, name: m.name }));
+const QUICK_TOOLS = (["tuvi", "tarot", "zodiac", "kinhdich", "batu", "numerology", "lunar-calendar", "palm", "experts"] as const).map(id => MODULES.find(m => m.id === id)!).map(m => ({ href: m.route, name: m.name }));
 const excerpt = (text: string) => text.replace(/[#*`]/g, "").replace(/\s+/g, " ").trim();
 
 export function Dashboard() {

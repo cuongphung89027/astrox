@@ -441,7 +441,7 @@ test('paid reading language repair completes one charge; failed repair refunds w
       assert.deepEqual(operations, bad ? ['charge', 'refund'] : ['charge', 'complete']);
       if (!bad) {
         assert.equal(saved.response.choices[0].message.content, 'sao Tài năm 2026');
-        assert.equal(saved.response.languagePolicyVersion, 'vi-reading-1');
+        assert.equal(saved.response.languagePolicyVersion, 'vi-reading-2');
       }
     } finally {
       globalThis.fetch = original;

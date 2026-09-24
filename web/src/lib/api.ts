@@ -4,6 +4,7 @@
  * Lớp gọi API — port từ callAiText/runAiPrompt/aiHedgeRace + topup của
  * index.html. Toàn bộ chạy client-side (static export).
  */
+import {aiParts,type AiPart} from "./ai-parts";
 import {trackFeature} from "./feature-telemetry";
 import {confirmReading} from "./reading-consent";
 import {pendingAiOperation,finishAiOperation} from "./ai-operation";
@@ -29,20 +30,6 @@ QUY TẮC BẮT BUỘC:
 5. Không đưa dự đoán y tế, pháp lý, tài chính mang tính khẳng định tuyệt đối — dùng ngôn ngữ khả năng.
 6. Trả lời đúng độ dài được yêu cầu, không lan man.
 7. Gọi dịch vụ là AstroX. Dùng thuật ngữ "tứ trụ" trong Bát Tự. Giữ nguyên tên tiếng Anh gốc của các lá Tarot.`;
-
-type AiPart = { text?: string; inline_data?: { mime_type?: string; data: string } };
-
-function aiParts(parts: AiPart[]) {
-  return parts
-    .map((part) => {
-      if (part && part.text != null) return { type: "text", text: String(part.text) };
-      if (part && part.inline_data && part.inline_data.data) {
-        return { type: "text", text: "[Ảnh lá số đính kèm để đối chiếu — dữ liệu JSON trong tin nhắn vẫn là nguồn chính.]" };
-      }
-      return null;
-    })
-    .filter(Boolean) as { type: "text"; text: string }[];
-}
 
 async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): Promise<string> {
   const ownerEpoch=getAccountEpoch();
@@ -164,7 +151,7 @@ export async function callAiText(opts: {
             ? "\nViết NGẮN GỌN: tổng cộng tối thiểu 150 từ, tối đa 200 từ, đúng nội dung chính, không mở rộng."
             : ""),
       },
-      { role: "user", content: aiParts(opts.parts || []) },
+      { role: "user", content: aiParts(opts.parts || [],opts.serviceId==='palm') },
     ],
     temperature,
     max_tokens: maxTokens,

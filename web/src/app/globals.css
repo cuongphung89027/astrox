@@ -1082,3 +1082,23 @@ body {
 }
 
 html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-motion="reduced"] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+
+/* All modules remain directly reachable without overlapping the logo/account. */
+@media (min-width:1024px) {
+  .ax-top-inner { column-gap: 12px; max-width: 1600px; padding-inline: 20px; }
+  .ax-top-inner > nav { max-width: none; }
+  .ax-top-inner > nav > ul { display: grid; grid-template-columns: repeat(11,minmax(0,1fr)); gap: 2px; }
+  .ax-top-inner .ax-nav-link { flex-direction: column; gap: 3px; min-height: 58px; padding: 4px 2px; white-space: normal; text-align: center; font-size: 11px; line-height: 14px; }
+  .ax-top-inner .ax-nav-icon { flex-shrink: 0; width: 18px; height: 18px; }
+  .ax-top-inner .ax-nav-underline { left: 5px; right: 5px; bottom: 0; }
+}
+@media (min-width:1280px) { .ax-top-inner .ax-nav-link { font-size: 12px; line-height: 15px; } }
+@media (min-width:1536px) { .ax-top-inner .ax-nav-link { font-size: 13px; line-height: 16px; } }
+
+@media (min-width:1024px) {
+ .ax-top-inner > nav > ul > li { min-width: 0; }
+ .ax-top-inner .ax-nav-link { display: flex; width: 100%; height: 58px; box-sizing: border-box; border-radius: 10px; }
+ .ax-nav-label { display: block; width: 100%; min-width: 0; text-align: center; overflow-wrap: normal; }
+ .ax-top-inner .ax-nav-link[aria-current="page"] { background: #e6eddf; }
+ .ax-top-inner .ax-nav-link:focus-visible { outline-offset: -2px; }
+}

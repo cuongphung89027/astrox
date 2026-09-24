@@ -22,7 +22,7 @@ try{
   });
   const p=await context.newPage();p.setDefaultTimeout(12000);p.on('pageerror',e=>errors.push(e.message));
   await go(p,base+'/kinhdich');await p.waitForLoadState('networkidle');
-  assert.equal(await p.locator('#kd-method option').count(),6);assert.ok(await p.getByRole('button',{name:'Gieo quẻ',exact:true}).isEnabled());
+  assert.equal(await p.locator('#kd-method option').count(),7);await p.locator('#kd-method').selectOption('coins');assert.ok(await p.getByRole('button',{name:'Gieo quẻ',exact:true}).isEnabled());
   await checkpoint(p,`${width} coin input`);
   await p.getByRole('button',{name:'Gieo quẻ',exact:true}).click();await p.getByRole('heading',{name:'Quẻ của bạn'}).waitFor();await checkpoint(p,`${width} six coin result`);
   await p.screenshot({path:new URL(`${width}-coins.png`,out).pathname,fullPage:true});
@@ -34,7 +34,7 @@ try{
    await go(p,base+'/kinhdich');await p.locator('#kd-method').selectOption(method);await p.locator('#kd-digits').fill(input);await p.getByRole('button',{name:'Lập quẻ',exact:false}).click();await p.getByRole('heading',{name:'Quẻ của bạn'}).waitFor();await checkpoint(p,`${width} ${method}`);
    if(method==='phone'){const history=await p.evaluate(()=>localStorage.getItem('astrox_kd_history_v1'));assert.ok(!history.includes('0912345678'));await p.screenshot({path:new URL(`${width}-phone.png`,out).pathname,fullPage:true});}
   }
-  await go(p,base+'/kinhdich');await p.locator('#kd-method').selectOption('numbers');for(let i=1;i<=3;i++)await p.getByLabel(`Số ${i}`,{exact:true}).fill(String([1,6,6][i-1]));await p.getByRole('button',{name:'Lập quẻ',exact:false}).click();await p.getByText('Xem chi tiết quẻ').click();assert.ok((await p.locator('main').innerText()).includes('Thể: Càn'));
+  await go(p,base+'/kinhdich');await p.locator('#kd-method').selectOption('numbers');await p.getByLabel('Tự nhập ba số').check();for(let i=1;i<=3;i++)await p.getByLabel(`Số ${i}`,{exact:true}).fill(String([1,6,6][i-1]));await p.getByRole('button',{name:'Lập quẻ',exact:false}).click();await p.getByText('Xem chi tiết quẻ').click();assert.ok((await p.locator('main').innerText()).includes('Thể: Càn'));
   await go(p,base+'/kinhdich');await p.locator('#kd-method').selectOption('time');await p.getByRole('button',{name:'Lập quẻ',exact:false}).click();await p.getByRole('heading',{name:'Quẻ của bạn'}).waitFor();await checkpoint(p,`${width} time`);
   await go(p,base+'/tuonghop?mode=tuvi');await p.waitForLoadState('networkidle');
   await p.locator('[name=personBName]').fill('Bình QA');await p.locator('[name=personBGender]').selectOption('Nam');await p.locator('[name=personBDob]').fill('1992-02-02');await p.locator('[name=personBHour]').selectOption('unknown');await p.getByRole('button',{name:'Lập hai lá số'}).click();await p.getByRole('alert').filter({hasText:'Cần biết giờ sinh'}).waitFor();

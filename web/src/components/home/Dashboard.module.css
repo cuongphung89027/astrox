@@ -35,7 +35,7 @@
 .cards i:nth-child(2) { transform: translateY(-4px); }
 .cards i:nth-child(3) { transform: rotate(15deg); }
 .tools { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 10px; }
-.tools a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border: 1px solid #e0e4d3; border-radius: 13px; padding: 14px 5px; font-size: 13px; background: #ffffff50; text-align: center; }
+.tools a { aspect-ratio: 1; box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; border: 1px solid #e0e4d3; border-radius: 13px; padding: 14px 5px; font-size: 13px; background: #ffffff50; text-align: center; }
 .tools a span { font-size: 23px; color: #91a17e; }
 .recent { display: grid; gap: 0; }
 .recent a { display: flex; align-items: center; gap: 20px; padding: 16px 0; border-bottom: 1px solid #dfe3d1; }

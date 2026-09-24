@@ -9,6 +9,9 @@ export type CatalogEntry = {
 };
 /** Audited against the public topic/subtopic arrays on 2026-09-22. */
 export const SERVICE_CATALOG: CatalogEntry[] = [
+ {id:"palm",module:"palm",name:"Chỉ tay",group:"Khám phá",policy:"session",route:"/chitay"},
+ {id:"lunar-calendar",module:"lunar-calendar",name:"Lịch âm",group:"Tiện ích",policy:"period",route:"/licham"},
+ {id:"experts",module:"experts",name:"Đặt lịch chuyên gia",group:"Tư vấn",policy:"session",route:"/chuyengia"},
   {
     id: 'tuvi--tim-hieu-ban-than--tinh-cach',
     module: 'tuvi',

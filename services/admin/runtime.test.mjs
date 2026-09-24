@@ -367,7 +367,7 @@ test('reading service repairs only Han spans once with both attempts measured', 
   );
   assert.equal(calls, 2);
   assert.equal(result.choices[0].message.content, '**Tử Vi**: sao Tài ở cung Mệnh, năm 2026.');
-  assert.equal(result.languagePolicyVersion, 'vi-reading-1');
+  assert.equal(result.languagePolicyVersion, 'vi-reading-2');
   assert.equal(result.attempts.length, 2);
   assert.equal(result.attempts[0].language, 'detected');
   assert.equal(result.attempts[1].purpose, 'language_repair');

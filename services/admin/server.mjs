@@ -250,6 +250,16 @@ export async function handleAdmin(request, env) {
                   : 'config.write';
     if (needed && !user.capabilities.includes(needed))
       return json({ error: 'Bạn không có quyền thực hiện thao tác này.' }, 403);
+    if (path === 'bookings') {
+      if (!user.capabilities.includes('access.manage')) return json({ error: 'Bạn không có quyền quản lý lịch hẹn.' }, 403);
+      if (!env.ASTROX_BACKEND) return json({ error: 'Chưa nối backend đặt lịch.' }, 503);
+      const payload = method === 'POST' ? await body(request) : undefined;
+      const r = await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/admin/bookings', {
+        method, headers: { 'content-type': 'application/json' }, ...(payload ? { body: JSON.stringify(payload) } : {}),
+      }));
+      if (r.ok && method === 'POST') await recordAudit(env, user.email, 'bookings.change', String(payload?.id || payload?.action || ''));
+      return json(await r.json(), r.status);
+    }
     await state(env);
     if (path === 'members' && method === 'GET') {
       const roles = ((await readPublished(env))?.config || defaultConfig()).access.roles;

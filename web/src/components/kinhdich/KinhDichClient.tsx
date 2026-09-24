@@ -6,9 +6,12 @@ import { FeatureIcon } from '@/components/kit/FeatureIcon';
 import { KdAiPanel } from './KdAiPanel';
 import { KdHistory } from './KdHistory';
 import { KdResultPanel } from './KdResultPanel';
+import { CastRitual } from './CastRitual';
+import { playShakeAudio } from './shakeAudio';
 import { DivinationTube } from './DivinationTube';
 import {
   KD_METHODS,
+  randomCastNumbers,
   castHexagram,
   castCoins,
   castDigits,
@@ -24,14 +27,23 @@ import {
 import type { CastResult, KdHistoryEntry, KdMethod } from '@/lib/kinhdich';
 import styles from './KinhDich.module.css';
 
+const METHOD_OPTIONS = {
+  tube: 'Xóc ống quẻ (tự động)',
+  ...KD_METHODS,
+  coins: 'Ba đồng xu (tự động)',
+  numbers: 'Mai Hoa báo số (tự động)',
+  time: 'Mai Hoa thời gian (tự động)',
+};
+
 export function KinhDichClient() {
   const [question, setQuestion] = useState('');
-  const [method, setMethod] = useState<KdMethod>('coins');
+  const [method, setMethod] = useState<KdMethod | 'tube'>('tube');
   const [cast, setCast] = useState<CastResult | null>(null);
   const [history, setHistory] = useState<KdHistoryEntry[]>([]);
   const [readingId, setReadingId] = useState('');
   const [error, setError] = useState('');
   const [numbers, setNumbers] = useState(['', '', '']);
+  const [manualNumbers, setManualNumbers] = useState(false);
   const [digits, setDigits] = useState('');
   const [values, setValues] = useState<number[]>([]);
   const [faces, setFaces] = useState<number[][]>([]);
@@ -43,7 +55,43 @@ export function KinhDichClient() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const coinScene = useRef<HTMLDivElement>(null);
   const sequence = useRef<number[][] | null>(null);
-  const rolling = phase !== 'idle';
+  const [tubeNumbers, setTubeNumbers] = useState<[number, number, number] | null>(null);
+  const pendingTube = useRef<[number, number, number] | null>(null);
+  const stopSound = useRef<(() => void) | null>(null);
+  useEffect(
+    () => () => {
+      stopSound.current?.();
+      pendingTube.current = null;
+    },
+    [],
+  );
+  const rolling = phase !== 'idle' || tubeNumbers !== null;
+  function cancelTube() {
+    pendingTube.current = null;
+    stopSound.current?.();
+    stopSound.current = null;
+    setTubeNumbers(null);
+  }
+  function completeTube() {
+    const n = pendingTube.current;
+    if (!n) return;
+    cancelTube();
+    finish(castHexagram(...n));
+  }
+  function startTube(n: [number, number, number]) {
+    if (pendingTube.current) return;
+    pendingTube.current = n;
+    if (
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      document.documentElement.dataset.motion === 'reduced'
+    ) {
+      completeTube();
+      return;
+    }
+    stopSound.current?.();
+    stopSound.current = playShakeAudio();
+    setTubeNumbers(n);
+  }
   function stop() {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
@@ -119,12 +167,15 @@ export function KinhDichClient() {
   }
   function submit() {
     try {
-      if (method === 'coins') finish(castCoins(manual ? manualValues.map(Number) : values, manual ? undefined : faces));
+      if (method === 'tube') startTube(randomCastNumbers());
+      else if (method === 'coins')
+        finish(castCoins(manual ? manualValues.map(Number) : values, manual ? undefined : faces));
+      else if (method === 'numbers' && !manualNumbers) startTube(randomCastNumbers());
       else if (method === 'numbers') {
         const n = numbers.map(Number);
         if (!n.every(x => Number.isSafeInteger(x) && x >= 1 && x <= 999))
           throw new Error('Nhập ba số nguyên từ 1 đến 999.');
-        finish(castHexagram(n[0], n[1], n[2]));
+        startTube([n[0], n[1], n[2]]);
       } else if (method === 'time') finish(castTime(new Date().toISOString()));
       else finish(castDigits(method, digits));
     } catch (e) {
@@ -144,6 +195,26 @@ export function KinhDichClient() {
       <h1 className="sr-only">Kinh Dịch</h1>
       {!cast ? (
         <div className={styles.setup}>
+          <div className={styles.methodHeader}>
+            <label htmlFor="kd-method">Cách lập quẻ</label>
+            <select
+              id="kd-method"
+              className={styles.methodSelect}
+              disabled={rolling}
+              value={method}
+              onChange={e => {
+                setMethod(e.target.value as KdMethod | 'tube');
+                setError('');
+                setDigits('');
+              }}
+            >
+              {Object.entries(METHOD_OPTIONS).map(([id, label]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className={styles.intro}>
             <span className={styles.eyebrow}>KINH DỊCH</span>
             <h2>
@@ -218,163 +289,165 @@ export function KinhDichClient() {
                 <p className={styles.throwStatus} role="status">
                   {rolling ? `Đang gieo lượt ${round} / 6` : manual ? 'Nhập kết quả của bạn' : ''}
                 </p>
-                {!manual && (
-                  <div className={styles.coinAction}>
-                    <button className={styles.primary} onClick={start} disabled={rolling}>
-                      {rolling ? `Đang gieo ${round}/6…` : 'Gieo quẻ'}
-                      <span aria-hidden="true">↗</span>
-                    </button>
-                    {rolling && (
-                      <div className={styles.ritualActions}>
-                        <button onClick={stop}>Dừng gieo</button>
-                        <button onClick={reveal}>Hiện quẻ ngay</button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             ) : (
               <DivinationTube />
             )}
           </div>
-          <div className={styles.inputPanel}>
-            <label htmlFor="kd-method">Cách lập quẻ</label>
-            <select
-              id="kd-method"
-              className={styles.methodSelect}
-              disabled={rolling}
-              value={method}
-              onChange={e => {
-                setMethod(e.target.value as KdMethod);
-                setError('');
-                setDigits('');
-              }}
-            >
-              {Object.entries(KD_METHODS).map(([id, label]) => (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <label htmlFor="kd-question">
-              Điều bạn đang băn khoăn <span>Tùy chọn</span>
-            </label>
-            <textarea
-              id="kd-question"
-              disabled={rolling}
-              rows={2}
-              maxLength={200}
-              value={question}
-              onChange={e => setQuestion(e.target.value)}
-              placeholder="Viết điều bạn muốn hỏi…"
-            />
-            {method === 'coins' && (
-              <div className={styles.coinSetup}>
-                <label className={styles.checkLabel}>
-                  <input
-                    type="checkbox"
-                    disabled={rolling}
-                    checked={manual}
-                    onChange={e => setManual(e.target.checked)}
-                  />{' '}
-                  Nhập kết quả gieo xu thật
-                </label>
-                {manual ? (
-                  <div className={styles.coinGrid}>
-                    {manualValues.map((v, i) => (
-                      <label key={i}>
-                        Hào {i + 1} {i === 0 ? '(dưới)' : i === 5 ? '(trên)' : ''}
-                        <select
-                          aria-label={`Giá trị hào ${i + 1}`}
-                          value={v}
-                          onChange={e => setManualValues(a => a.map((x, j) => (j === i ? e.target.value : x)))}
-                        >
-                          <option value="">Chọn</option>
-                          {[6, 7, 8, 9].map(x => (
-                            <option key={x} value={x}>
-                              {x} · {x === 6 ? 'Âm động' : x === 7 ? 'Dương tĩnh' : x === 8 ? 'Âm tĩnh' : 'Dương động'}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    ))}
-                  </div>
-                ) : (
-                  <>
-                    <ol className={styles.coinThrows} aria-live="polite">
-                      {values.map((v, i) => (
-                        <li key={i}>
-                          <span>Hào {i + 1}</span>
-                          <span>{faces[i].map(f => (f ? 'Ngửa' : 'Sấp')).join(' · ')}</span>
-                          <b>
-                            {v}
-                            {v === 6 || v === 9 ? ' · động' : ''}
-                          </b>
-                        </li>
+          <div className={styles.formColumn}>
+            <div className={styles.inputPanel}>
+              <label htmlFor="kd-question">
+                Điều bạn đang băn khoăn <span>Tùy chọn</span>
+              </label>
+              <textarea
+                id="kd-question"
+                disabled={rolling}
+                rows={2}
+                maxLength={200}
+                value={question}
+                onChange={e => setQuestion(e.target.value)}
+                placeholder="Viết điều bạn muốn hỏi…"
+              />
+              {method === 'coins' && (
+                <div className={styles.coinSetup}>
+                  <label className={styles.checkLabel}>
+                    <input
+                      type="checkbox"
+                      disabled={rolling}
+                      checked={manual}
+                      onChange={e => setManual(e.target.checked)}
+                    />{' '}
+                    Nhập kết quả gieo xu thật
+                  </label>
+                  {manual ? (
+                    <div className={styles.coinGrid}>
+                      {manualValues.map((v, i) => (
+                        <label key={i}>
+                          Hào {i + 1} {i === 0 ? '(dưới)' : i === 5 ? '(trên)' : ''}
+                          <select
+                            aria-label={`Giá trị hào ${i + 1}`}
+                            value={v}
+                            onChange={e => setManualValues(a => a.map((x, j) => (j === i ? e.target.value : x)))}
+                          >
+                            <option value="">Chọn</option>
+                            {[6, 7, 8, 9].map(x => (
+                              <option key={x} value={x}>
+                                {x} ·{' '}
+                                {x === 6 ? 'Âm động' : x === 7 ? 'Dương tĩnh' : x === 8 ? 'Âm tĩnh' : 'Dương động'}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                       ))}
-                    </ol>
-                    <p role="status">Đã gieo {values.length}/6 hào · từ dưới lên</p>
+                    </div>
+                  ) : (
+                    <>
+                      <ol className={styles.coinThrows} aria-live="polite">
+                        {values.map((v, i) => (
+                          <li key={i}>
+                            <span>Hào {i + 1}</span>
+                            <span>{faces[i].map(f => (f ? 'Ngửa' : 'Sấp')).join(' · ')}</span>
+                            <b>
+                              {v}
+                              {v === 6 || v === 9 ? ' · động' : ''}
+                            </b>
+                          </li>
+                        ))}
+                      </ol>
+                      <p role="status">Đã gieo {values.length}/6 hào · từ dưới lên</p>
 
-                    {!rolling && values.length > 0 && (
-                      <button
-                        className={styles.manualToggle}
-                        onClick={() => {
-                          setValues([]);
-                          setFaces([]);
-                        }}
-                      >
-                        Hủy và gieo lại
-                      </button>
-                    )}
-                  </>
+                      {!rolling && values.length > 0 && (
+                        <button
+                          className={styles.manualToggle}
+                          onClick={() => {
+                            setValues([]);
+                            setFaces([]);
+                          }}
+                        >
+                          Hủy và gieo lại
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+              {method === 'numbers' && (
+                <div className={styles.coinSetup}>
+                  <label className={styles.checkLabel}>
+                    <input
+                      type="checkbox"
+                      disabled={rolling}
+                      checked={manualNumbers}
+                      onChange={e => setManualNumbers(e.target.checked)}
+                    />{' '}
+                    Tự nhập ba số
+                  </label>
+                  {manualNumbers && (
+                    <div className={styles.numberInputs}>
+                      {numbers.map((v, i) => (
+                        <label key={i}>
+                          Số {i + 1}
+                          <input
+                            aria-label={`Số ${i + 1}`}
+                            type="number"
+                            min={1}
+                            max={999}
+                            value={v}
+                            onChange={e => setNumbers(a => a.map((x, j) => (j === i ? e.target.value : x)))}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {['serial', 'phone', 'digits'].includes(method) && (
+                <div key={method} className={styles.digitInput}>
+                  <label htmlFor="kd-digits">{METHOD_OPTIONS[method]}</label>
+                  <input
+                    id="kd-digits"
+                    value={digits}
+                    maxLength={48}
+                    autoComplete="off"
+                    inputMode={method === 'serial' ? 'text' : 'tel'}
+                    onChange={e => setDigits(e.target.value)}
+                    placeholder={method === 'serial' ? 'AB00123456' : method === 'phone' ? '0912 345 678' : '001234'}
+                  />
+                </div>
+              )}
+              {error && (
+                <p role="alert" className={styles.formError}>
+                  {error}
+                </p>
+              )}
+            </div>
+            {method === 'coins' && !manual && (
+              <div className={styles.formActions}>
+                <button className={styles.primary} onClick={start} disabled={rolling}>
+                  {rolling ? `Đang gieo ${round}/6…` : 'Gieo quẻ'}
+                  <span aria-hidden="true">↗</span>
+                </button>
+                {rolling && (
+                  <div className={styles.ritualActions}>
+                    <button onClick={stop}>Dừng gieo</button>
+                    <button onClick={reveal}>Hiện quẻ ngay</button>
+                  </div>
                 )}
               </div>
             )}
-            {method === 'numbers' && (
-              <div className={styles.numberInputs}>
-                {numbers.map((v, i) => (
-                  <label key={i}>
-                    Số {i + 1}
-                    <input
-                      aria-label={`Số ${i + 1}`}
-                      type="number"
-                      min={1}
-                      max={999}
-                      value={v}
-                      onChange={e => setNumbers(a => a.map((x, j) => (j === i ? e.target.value : x)))}
-                    />
-                  </label>
-                ))}
-              </div>
-            )}
-            {['serial', 'phone', 'digits'].includes(method) && (
-              <div key={method} className={styles.digitInput}>
-                <label htmlFor="kd-digits">{KD_METHODS[method]}</label>
-                <input
-                  id="kd-digits"
-                  value={digits}
-                  maxLength={48}
-                  autoComplete="off"
-                  inputMode={method === 'serial' ? 'text' : 'tel'}
-                  onChange={e => setDigits(e.target.value)}
-                  placeholder={method === 'serial' ? 'AB00123456' : method === 'phone' ? '0912 345 678' : '001234'}
-                />
-              </div>
-            )}
-            {error && (
-              <p role="alert" className={styles.formError}>
-                {error}
-              </p>
-            )}
-            {(method !== 'coins' || manual) && (
-              <button
-                className={styles.primary}
-                onClick={submit}
-                disabled={method === 'coins' && (manual ? manualValues.some(v => !v) : values.length !== 6)}
-              >
-                Lập quẻ <span>↗</span>
-              </button>
-            )}
+            <div className={styles.formActions}>
+              {(method !== 'coins' || manual) && (
+                <button
+                  className={styles.primary}
+                  onClick={submit}
+                  disabled={
+                    rolling || (method === 'coins' && (manual ? manualValues.some(v => !v) : values.length !== 6))
+                  }
+                >
+                  {method === 'tube' || (method === 'numbers' && !manualNumbers) ? 'Xóc quẻ' : 'Lập quẻ'} <span>↗</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       ) : (
@@ -395,6 +468,7 @@ export function KinhDichClient() {
           </div>
         </div>
       )}
+      {tubeNumbers && <CastRitual numbers={tubeNumbers} onComplete={completeTube} onCancel={cancelTube} />}
       <KdHistory
         entries={history}
         onSelect={entry => {

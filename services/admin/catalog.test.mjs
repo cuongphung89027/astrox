@@ -4,7 +4,7 @@ import { SERVICE_CATALOG, addMissingServices } from './catalog.ts';
 import { defaultConfig, validateConfig } from './config.ts';
 test('catalog has unique concrete service IDs covering every public module', () => {
   assert.equal(new Set(SERVICE_CATALOG.map(s => s.id)).size, SERVICE_CATALOG.length);
-  assert.equal(new Set(SERVICE_CATALOG.map(s => s.module)).size, 7);
+  assert.equal(new Set(SERVICE_CATALOG.map(s => s.module)).size, 10);
   assert.ok(SERVICE_CATALOG.length > 50);
   assert.ok(SERVICE_CATALOG.some(s => s.id === 'tarot--three--ppf'));
   assert.ok(SERVICE_CATALOG.some(s => s.id === 'tuvi--period--month'));
@@ -32,6 +32,23 @@ test('new configurations contain all catalog services and validate', () => {
   const config = defaultConfig();
   assert.ok(SERVICE_CATALOG.every(s => config.billing.services.some(x => x.id === s.id)));
   assert.deepEqual(validateConfig(config), []);
+});
+test('older published configurations gain free discovery routes without changing an explicit Admin price', async () => {
+  const { hydrateConfig } = await import('./config.ts');
+  const old = defaultConfig();
+  old.billing.services = old.billing.services.filter(s => !['palm', 'lunar-calendar', 'experts'].includes(s.id));
+  const migrated = hydrateConfig(old);
+  for (const id of ['palm', 'lunar-calendar', 'experts']) {
+    const service = migrated.billing.services.find(s => s.id === id);
+    assert.equal(service?.status, 'free');
+    assert.equal(service?.points, 0);
+  }
+  const palm = migrated.billing.services.find(s => s.id === 'palm');
+  palm.status = 'paid';
+  palm.points = 25;
+  const explicit = hydrateConfig(migrated).billing.services.find(s => s.id === 'palm');
+  assert.equal(explicit.status, 'paid');
+  assert.equal(explicit.points, 25);
 });
 test('every catalog service and route belongs to a module in the shared registry', async () => {
   const { MODULES, routeModule } = await import('./modules.ts');

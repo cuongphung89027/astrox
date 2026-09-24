@@ -1,4 +1,5 @@
 import { supportsUnlock } from '../backend/service-unlocks.mjs';
+import { normalizeMessages, withManagedText } from './vision.mjs';
 import { limitAi } from './ai-rate-limit.mjs';
 import { renderServicePrompt } from './prompt-engine.ts';
 import { backendStatus, connectionSecretAvailable } from './backend.mjs';
@@ -53,29 +54,7 @@ function normalizedInput(input) {
     input.messages.length > 100
   )
     throw new RuntimeError('INVALID_MESSAGES', 400);
-  const messages = input.messages
-    .map(m => {
-      if (!m || !['system', 'user', 'assistant'].includes(m.role)) throw new RuntimeError('INVALID_MESSAGES', 400);
-      let content = m.content;
-      if (Array.isArray(content)) {
-        if (
-          !content.length ||
-          content.some(
-            p =>
-              !p ||
-              typeof p.text !== 'string' ||
-              (p.type !== undefined && p.type !== 'text') ||
-              Object.keys(p).some(k => !['type', 'text'].includes(k)),
-          )
-        )
-          throw new RuntimeError('INVALID_MESSAGES', 400);
-        content = content.map(p => p.text).join('\n');
-      }
-      if (typeof content !== 'string' || !content.trim() || content.length > 100000)
-        throw new RuntimeError('INVALID_MESSAGES', 400);
-      return { role: m.role, content };
-    })
-    .filter(m => m.role !== 'system');
+  const messages = normalizeMessages(input.messages, input.serviceId === 'palm').filter(m => m.role !== 'system');
   if (
     !messages.length ||
     (input.operationId !== undefined && (typeof input.operationId !== 'string' || input.operationId.length > 120))
@@ -181,7 +160,7 @@ export async function handleConfiguredAi(request, env) {
   try {
     if (c.operations.maintenance) throw new RuntimeError('MAINTENANCE', 503);
     if (!c.ai.enabled) throw new RuntimeError('AI_DISABLED', 503);
-    input = normalizedInput(await parse(request));
+    input = normalizedInput(await parse(request, 1500000));
     const service = c.billing.services.find(s => s.id === input.serviceId);
     if (!service || !['free', 'paid'].includes(service.status)) throw new RuntimeError('SERVICE_UNAVAILABLE', 403);
     const root = c.billing.services.find(s => s.id === service.module);
@@ -216,9 +195,7 @@ export async function handleConfiguredAi(request, env) {
     ).join('');
     if (input.promptDescriptor) {
       try {
-        input.messages = [
-          { role: 'user', content: renderServicePrompt(input.promptDescriptor, input.serviceId, c.prompts) },
-        ];
+        input.messages = withManagedText(input.messages, renderServicePrompt(input.promptDescriptor, input.serviceId, c.prompts));
       } catch {
         throw new RuntimeError('INVALID_MESSAGES', 400);
       }

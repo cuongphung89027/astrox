@@ -4,12 +4,12 @@
  * `gated` modules are subject to published billing status and per-user access.
  */
 export type ModuleDef = {
-  id: 'tuvi' | 'zodiac' | 'kinhdich' | 'batu' | 'numerology' | 'tarot' | 'compat';
+  id: 'tuvi' | 'zodiac' | 'kinhdich' | 'batu' | 'numerology' | 'tarot' | 'compat' | 'palm' | 'lunar-calendar' | 'experts';
   name: string;
   route: string;
   /** Older slugs that still resolve to this module. */
   legacyRoutes: readonly string[];
-  policy: 'profile' | 'session';
+  policy: 'profile' | 'session' | 'period';
   gated: boolean;
   description: string;
 };
@@ -78,6 +78,9 @@ export const MODULES = [
     gated: false,
     description: 'Độ hợp của hai người',
   },
+  { id: 'lunar-calendar', name: 'Lịch âm', route: '/licham', legacyRoutes: [], policy: 'period', gated: false, description: 'Ngày âm & ngày gia đình' },
+  { id: 'palm', name: 'Chỉ tay', route: '/chitay', legacyRoutes: [], policy: 'session', gated: false, description: 'Khám phá đường tay' },
+  { id: 'experts', name: 'Đặt lịch chuyên gia', route: '/chuyengia', legacyRoutes: [], policy: 'session', gated: false, description: 'Trao đổi cùng chuyên gia' },
 ] as const satisfies readonly ModuleDef[];
 
 export type ModuleId = (typeof MODULES)[number]['id'];

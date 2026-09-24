@@ -330,3 +330,8 @@ function isKdHistoryEntry(value: unknown): value is KdHistoryEntry {
   if (JSON.stringify([...r.lower.bits,...r.upper.bits]) !== JSON.stringify(r.lines.map(l=>l.bit)) || JSON.stringify([...r.bienLower.bits,...r.bienUpper.bits])!==JSON.stringify(changed)) return false;
   return !!r.relation && typeof r.relation.label === "string" && typeof r.relation.desc === "string";
 }
+
+/** Auto-selected numbers for the tube ritual. */
+export function randomCastNumbers(): [number, number, number] {
+  return [0, 0, 0].map(() => 1 + Math.floor(Math.random() * 999)) as [number, number, number];
+}

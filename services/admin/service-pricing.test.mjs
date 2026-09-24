@@ -25,7 +25,7 @@ test('every actual feature variant is in the catalog, with no stale catalog serv
     for (const f of t.frames ?? [{ id: null }]) expected.push(`tarot--${t.id}${f.id ? '--' + f.id : ''}`);
   for (const m of ['tuvi', 'zodiac']) for (const p of ['today', 'week', 'month']) expected.push(`${m}--period--${p}`);
   expected.push('kinhdich--interpretation', 'compat--pair', 'compat--tuvi-pair', 'compat--batu-pair');
-  assert.deepEqual(SERVICE_CATALOG.map(s => s.id).sort(), expected.sort());
+  assert.deepEqual(SERVICE_CATALOG.filter(s => s.id !== s.module).map(s => s.id).sort(), expected.sort());
 });
 test('functional tree covers every configured row exactly once and has no fourth level', () => {
   const c = defaultConfig();

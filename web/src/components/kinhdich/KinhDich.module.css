@@ -332,3 +332,9 @@
 @keyframes autoCoinTossRight { 0% { transform:translate(0,0) rotateX(0); } 28% { transform:translate(12px,-50px) rotateX(-180deg) rotateZ(18deg); } 57% { transform:translate(7px,-35px) rotateX(-430deg) rotateZ(-8deg); } 80% { transform:translate(0,5px) rotateX(-720deg); } 90% { transform:translate(0,-9px) rotateX(-720deg); } 100% { transform:translate(0,0) rotateX(-720deg); } }
 @media(max-width:640px) { .threeCoins { gap:22px; } .coinSlot { width:80px; } .coinScene { padding-top:74px; } }
 @media(max-width:359px) { .threeCoins { gap:14px; } .coinSlot { width:72px; } }
+.methodHeader { grid-column:1 / -1; width:100%; margin-bottom:4px; }
+.methodHeader > label { display:block; font-size:14px; font-weight:500; margin-bottom:12px; }
+.methodHeader .methodSelect { margin:0; background:#fffdf6; min-height:52px; }
+.formColumn { min-width:0; align-self:start; }
+.formActions { margin-top:20px; }
+.formActions:empty { display:none; }

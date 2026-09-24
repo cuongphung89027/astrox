@@ -1,3 +1,4 @@
+import { publicBookings, adminBookings } from './bookings.mjs';
 import { handleRewardedAds } from './rewarded-ads.mjs';
 import { accountData } from './user-data.mjs';
 import { chargeAi, refundAi, completeAi, quoteAi } from './ai-operations.mjs';
@@ -76,6 +77,7 @@ export async function publicFetch(request, env) {
       for (const [k, v] of Object.entries(corsHeaders(env, request))) headers.set(k, v);
       return new Response(r.body, { status: r.status, headers });
     }
+    if (['/api/experts', '/api/bookings', '/api/bookings/cancel'].includes(path)) return await publicBookings(env, request);
     if (path === '/api/me' && method === 'GET') {
       const session = await readSession(env, request);
       if (!session) return json(env, request, { user: null });
@@ -135,6 +137,7 @@ export async function internalFetch(request, env) {
   const path = new URL(request.url).pathname;
   // Chỉ service binding (ASTROX_BACKEND) mới vào được handler này; publicFetch
   // chặn mọi /internal/* ở trên. Các POST là thao tác ghi có xác thực riêng.
+  if (path === '/internal/admin/bookings') return await adminBookings(env, request);
   if (path === '/internal/ai/quote' && request.method === 'POST') return await quoteAi(env, request);
   if (path === '/internal/ai/charge' && request.method === 'POST') return await chargeAi(env, request);
   if (path === '/internal/ai/complete' && request.method === 'POST') return await completeAi(env, request);

@@ -1,6 +1,7 @@
 import {equal} from '../admin/crypto.mjs';
 import {json,trustedOrigin} from './http.mjs';
 import {loginFailure} from './login-failure.mjs';
+import {startBrowserLogin,browserLoginFinish} from './zalo-browser.mjs';
 import {registrationEventStatements,settleRegistration} from './rewards.mjs';
 const enc=new TextEncoder();
 // Zalo chặn login ở nhiều tầng (consent, token exchange, verify) mà không bao giờ quay lại callback,
@@ -45,7 +46,7 @@ export async function readAiSession(env,request,now=Date.now()){
 export async function verifyZaloUser(token,fetchImpl=fetch){
  if(typeof token!=='string'||!token)throw new Error('zalo_identity_unverified:missing_token');
  const r=await fetchImpl('https://graph.zalo.me/v2.0/me?fields=id,name,picture',{headers:{access_token:token},redirect:'manual',signal:AbortSignal.timeout(15000)});const me=await r.json().catch(()=>null);
- if(!r.ok||!me?.id||me.error)throw new Error(`zalo_identity_unverified:status=${r.status} body=${redact(me&&me.error?{error:me.error}:me)}`);return me;
+ if(!r.ok||!me?.id||me.error){const error=new Error(`zalo_identity_unverified:status=${r.status} body=${redact(me&&me.error?{error:me.error}:me)}`);error.providerCode=me?.error;throw error;}return me;
 }
 export async function zaloLogin(env,request,settings){
  if(!settings.zalo.enabled||!env.ZALO_APP_ID||!env.ZALO_APP_SECRET||!env.SESSION_SECRET)return json(env,request,{error:'zalo_not_configured'},503);
@@ -65,8 +66,9 @@ export async function zaloCallback(env,request,settings,fetchImpl=fetch){
  const r=await fetchImpl('https://oauth.zaloapp.com/v4/access_token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded',secret_key:env.ZALO_APP_SECRET},body:new URLSearchParams({code,app_id:env.ZALO_APP_ID,grant_type:'authorization_code',code_verifier:row.code_verifier}),redirect:'manual',signal:AbortSignal.timeout(15000)});
  const tokens=await r.json().catch(()=>null);if(!r.ok||!tokens?.access_token){await diag(env,'token_exchange_failed',{status:r.status,body:redact(tokens)});return loginFailure(env,request,{error:'token_exchange_failed'},502);}
  let me;try{me=await verifyZaloUser(tokens.access_token,fetchImpl);}
- // Identity is trusted only when verified by the provider on the server.
- catch(e){await diag(env,'server_verify_failed',{reason:String(e?.message||'').slice(0,250)});
+ // Browser fallback is an explicit temporary operator exception, only for -501.
+ catch(e){if(env.ZALO_BROWSER_FALLBACK_ENABLED==='true'&&e.providerCode===-501){await diag(env,'browser_fallback_started',{provider_error:-501});return startBrowserLogin(env,tokens.access_token,ref);}
+  await diag(env,'server_verify_failed',{reason:String(e?.message||'').slice(0,250)});
   return loginFailure(env,request,{error:'zalo_identity_unverified',message:'Zalo chưa xác minh được danh tính. Vui lòng thử đăng nhập lại sau.'},502);}
  return await completeZaloLogin(env,request,settings,me,ref);
 }
@@ -89,8 +91,9 @@ async function completeZaloLogin(env,request,settings,me,ref=null){
  if(request.method==='GET'){const headers=new Headers({location:settings.zalo.returnUrl,'cache-control':'no-store'});for(const [k,v] of cookies)headers.append(k,v);return new Response(null,{status:302,headers});}
  const r=json(env,request,{ok:true,redirect:settings.zalo.returnUrl||'/'});for(const [k,v] of cookies)r.headers.append(k,v);return r;
 }
-// Retired insecure browser-verification fallback. Old links cannot mint sessions.
-export async function zaloFinish(env,request){
+// Disabled by default. Old escrow links remain invalid under the new cookie-bound flow.
+export async function zaloFinish(env,request,settings){
+ if(env.ZALO_BROWSER_FALLBACK_ENABLED==='true')return browserLoginFinish(env,request,settings,completeZaloLogin);
  return json(env,request,{error:'restart_login',message:'Vui lòng đăng nhập lại để xác minh danh tính.'},410);
 }
 export function logout(env,request){if(!trustedOrigin(env,request))return json(env,request,{error:'invalid_origin'},403);const r=json(env,request,{ok:true});r.headers.set('set-cookie','astrox_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');return r;}

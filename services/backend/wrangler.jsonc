@@ -4,6 +4,8 @@
  "account_id": "17dafb18db82f24f286900c270708342",
  "compatibility_date": "2026-09-15",
  "keep_vars": true,
+ // Temporary operator-approved browser identity fallback; see qa-report/zalo/2026-09-24-browser-fallback.md.
+ "vars": {"ZALO_BROWSER_FALLBACK_ENABLED":"true"},
  "workers_dev": true,
  "preview_urls": false,
  "d1_databases": [{"binding":"DB","database_name":"astrox-db","database_id":"bbefe032-7053-49cf-99f1-794d3fbc128e","migrations_dir":"../../migrations"}],

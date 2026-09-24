@@ -1,6 +1,6 @@
 "use client";
 import type { CastResult } from "@/lib/kinhdich";
-import { KD_METHODS, KD_RULES, hexagramName } from "@/lib/kinhdich";
+import { KD_METHODS, hexagramName } from "@/lib/kinhdich";
 import { HexagramSvg, hexagramAriaLabel } from "./HexagramSvg";
 import styles from "./KinhDich.module.css";
 interface KdResultPanelProps { result: CastResult; }
@@ -16,8 +16,7 @@ export function KdResultPanel({ result }: KdResultPanelProps) {
       <div className={styles.sealChange}><span aria-hidden="true">↳</span><div><small>CHUYỂN THÀNH</small><h4>{bienName}</h4></div><HexagramSvg lines={bienLines} label={hexagramAriaLabel(bienLines,bienName)}/></div>
     </div>
     <details className={styles.castDetails}><summary>Xem chi tiết quẻ</summary>
-      <p>{KD_METHODS[result.method || "numbers"]} · {result.algorithmVersion || "legacy-v1"}</p>
-      <p>{result.algorithmVersion === "legacy-v1" ? "Bản cũ: giữ nguyên quy tắc Thể–Dụng tại thời điểm lưu." : KD_RULES[result.method || "numbers"]}</p>
+      <p>{KD_METHODS[result.method || "numbers"]}{result.algorithmVersion === "legacy-v1" ? " · Bản đã lưu trước đây" : ""}</p>
       {result.method !== "coins" && <><p>{result.relation.label} · {result.relation.desc}</p>
       <p>Thể: {result.the.name} · {result.the.elem}. Dụng: {result.dung.name} · {result.dung.elem}.</p>
       {result.method === "numbers" && <p>Ba số: {result.s1} · {result.s2} · {result.s3}</p>}<p>Thượng quái: {result.upper.name} · Hạ quái: {result.lower.name}</p><p>Quẻ hỗ: {hexagramName(result.hoUpper,result.hoLower)}</p></>}

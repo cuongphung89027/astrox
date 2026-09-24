@@ -1,0 +1,41 @@
+{
+  "time": "2026-09-24T06:02:20.650Z",
+  "checks": [
+    "390 serial live",
+    "390 Bat Tu live chart",
+    "390 Tu Vi live chart",
+    "1440 serial live",
+    "1440 Bat Tu live chart",
+    "1440 Tu Vi live chart"
+  ],
+  "errors": [],
+  "aiCalls": 0,
+  "release": {
+    "release": "2026-09-24-readings-upgrade-1",
+    "scope": "Vietnamese reading guard, six Kinh Dich methods, Tu Vi and Bat Tu couples",
+    "backendRelease": "2026-09-24-point-expiry-1"
+  },
+  "configRevision": 3,
+  "pairServices": [
+    {
+      "id": "compat--tuvi-pair",
+      "module": "compat",
+      "name": "Cặp đôi Tử Vi",
+      "points": 0,
+      "status": "free",
+      "policy": "profile"
+    },
+    {
+      "id": "compat--batu-pair",
+      "module": "compat",
+      "name": "Cặp đôi Bát Tự",
+      "points": 0,
+      "status": "free",
+      "policy": "profile"
+    }
+  ],
+  "commit": "8d02932",
+  "pagesDeployment": "64c9a7a4-337e-4b7a-b8c2-a9f7d8c56857",
+  "workerVersion": "7d8615d6-cf3c-460f-9b3b-fabee7606b91",
+  "limitations": "Production UI and published configuration verified without API mocks. No live AI inference or payment was performed."
+}

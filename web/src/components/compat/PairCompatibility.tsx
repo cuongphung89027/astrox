@@ -19,7 +19,7 @@ function PersonEditor({person,onChange,label,id,mode}:{person:CouplePerson;onCha
    <label className={styles.formField}>Tham số bộ tính<select name={`${id}Gender`} required value={person.gender} onChange={e=>update('gender',e.target.value)}><option value="">Chọn tham số</option><option>Nam</option><option>Nữ</option></select></label>
    <label className={styles.formField}>Ngày sinh dương lịch<input name={`${id}Dob`} type="date" min="1900-01-01" max="2100-12-31" required value={person.dob} onChange={e=>update('dob',e.target.value)}/></label>
   </div>
-  <div className={styles.fieldRow}>
+  <div className={`${styles.fieldRow} ${styles.birthRow}`}>
    <label className={styles.formField}>Giờ sinh<select name={`${id}Hour`} required value={person.hourChi} onChange={e=>update('hourChi',e.target.value)}><option value="">Chọn giờ sinh</option><option value="unknown">Không biết giờ sinh</option>{HOUR_CHI_OPTIONS.map(h=><option key={h} value={h}>{h}</option>)}</select></label>
    {mode==='batu'&&<label className={styles.formField}>Nơi sinh<select name={`${id}Place`} required value={person.place} onChange={e=>update('place',e.target.value)}><option value="">Chọn nơi được hỗ trợ</option>{COUPLE_PLACES.map(p=><option key={p}>{p}</option>)}{person.place&&!COUPLE_PLACES.includes(person.place)&&<option value={person.place}>{person.place} — chưa hỗ trợ</option>}</select></label>}
   </div>
@@ -54,7 +54,7 @@ export function PairCompatibility({mode}:{mode:CoupleMode}) {
    writeAiCache('compatibility',key,result,{module:'compat',topic:`${mode}-pair`});markFresh(result);setText(result);
   }catch(e){if(current())setError(e instanceof Error?e.message:'Không lấy được luận giải.');}finally{if(id===request.current)setLoading(false);}
  };
- return <section className={styles.page}><header className={styles.compatIntro}><span className={styles.eyebrow}>HAI CON NGƯỜI. MỘT KẾT NỐI.</span><h1>Hiểu nhau hơn.</h1><p>Đối chiếu hai {mode==='tuvi'?'lá số Tử Vi':'mệnh bàn Bát Tự'} để tìm điểm đồng điệu và cách dung hòa khác biệt.</p></header>
+ return <section key={mode} className={`${styles.page} ${styles.pairPage}`}><header className={styles.compatIntro}><div className={styles.connectionEmblem} aria-hidden="true"><i/><i/><span>✦</span><b/><b/></div><span className={styles.eyebrow}>HAI CON NGƯỜI. MỘT KẾT NỐI.</span><h1>Hiểu nhau hơn.</h1><p>Đối chiếu hai {mode==='tuvi'?'lá số Tử Vi':'mệnh bàn Bát Tự'} để tìm điểm đồng điệu và cách dung hòa khác biệt.</p></header>
   <form className={styles.compatForm} onSubmit={e=>{e.preventDefault();calculate();}}><div className={styles.formPair}><PersonEditor id="personA" label="Bạn" mode={mode} person={a} onChange={p=>change('a',p)}/><PersonEditor id="personB" label="Người ấy" mode={mode} person={b} onChange={p=>change('b',p)}/></div>
    <p className={styles.inclusiveNote}>Hai bạn có thể cùng giới hoặc khác giới. Nam/Nữ là tham số của bộ tính truyền thống, không thay thế bản dạng giới và không quy định vai trò trong mối quan hệ.</p>
    {mode==='batu'&&<p className={styles.scope}>Hiện hỗ trợ 5 thành phố Việt Nam. Giờ được lấy ở giữa can giờ, hiệu chỉnh theo kinh độ và UTC+7; chưa hỗ trợ nơi sinh khác.</p>}

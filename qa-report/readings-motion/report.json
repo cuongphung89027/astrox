@@ -1,0 +1,33 @@
+{
+  "checks": [
+    "390 coin input",
+    "390 coin toss animation",
+    "390 six coin result",
+    "390 history persisted",
+    "390 serial",
+    "390 phone",
+    "390 digits",
+    "390 time",
+    "390 tuvi same-sex pair",
+    "390 batu pair",
+    "390 pair mode retention",
+    "390 legacy paid pair preserved",
+    "390 system and app reduced-motion",
+    "1440 coin input",
+    "1440 coin toss animation",
+    "1440 six coin result",
+    "1440 history persisted",
+    "1440 serial",
+    "1440 phone",
+    "1440 digits",
+    "1440 time",
+    "1440 tuvi same-sex pair",
+    "1440 batu pair",
+    "1440 pair mode retention",
+    "1440 legacy paid pair preserved",
+    "1440 system and app reduced-motion"
+  ],
+  "errors": [],
+  "aiCalls": 4,
+  "api": "mocked; no charge or live provider request"
+}

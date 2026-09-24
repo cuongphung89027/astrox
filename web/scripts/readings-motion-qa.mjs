@@ -3,13 +3,13 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 const base=process.env.BASE_URL||'http://127.0.0.1:3347';
-const out=new URL('../../qa-report/readings-upgrade/',import.meta.url);await mkdir(out,{recursive:true});
+const out=new URL('../../qa-report/readings-motion/',import.meta.url);await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true});const errors=[],checks=[];let calls=[];
 async function go(page,url){await page.goto(url);await page.waitForLoadState('networkidle');}
 async function checkpoint(page,name){assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`overflow ${name}`);checks.push(name);}
 try{
  for(const width of [390,1440]){
-  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce'});
+  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'no-preference'});
   await context.addInitScript(()=>{if(!localStorage.getItem('astrox_v2_state'))localStorage.setItem('astrox_v2_state',JSON.stringify({onboarded:true,profile:{name:'An QA',gender:'Nam',dob:'1990-01-01',hourChi:'Tý',place:'Hà Nội'},aiCache:{version:2,profiles:{},legacy:{}}}));});
   await context.route('**/api/**',async route=>{
    const req=route.request(),path=new URL(req.url()).pathname;let data={};let status=200;
@@ -20,10 +20,11 @@ try{
    else if(path==='/api/ai'){const body=req.postDataJSON();calls.push(body);data={languagePolicyVersion:'vi-reading-1',configRevision:1,choices:[{finish_reason:'stop',message:{content:'**Điểm đồng điệu**\n\nHai bạn cùng lắng nghe.\n\n**Gợi ý cho bạn**\n\nChia sẻ điều cần dung hòa.'}}]};}
    await route.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':base,'access-control-allow-credentials':'true'},body:JSON.stringify(data)});
   });
-  const p=await context.newPage();p.setDefaultTimeout(12000);p.on('pageerror',e=>errors.push(e.message));
+  const p=await context.newPage();await p.addLocatorHandler(p.getByRole('button',{name:'Đóng hộp thoại đăng nhập'}),async()=>{await p.getByRole('button',{name:'Đóng hộp thoại đăng nhập'}).click();});p.setDefaultTimeout(12000);p.on('pageerror',e=>errors.push(e.message));
   await go(p,base+'/kinhdich');await p.waitForLoadState('networkidle');
   assert.equal(await p.locator('#kd-method option').count(),6);assert.ok(await p.getByRole('button',{name:'Gieo quẻ',exact:true}).isEnabled());
   await checkpoint(p,`${width} coin input`);
+  await p.screenshot({path:new URL(`${width}-setup.png`,out).pathname,fullPage:true});
   await p.getByRole('button',{name:'Gieo quẻ',exact:true}).click();await p.getByRole('heading',{name:'Quẻ của bạn'}).waitFor();await checkpoint(p,`${width} six coin result`);
   await p.screenshot({path:new URL(`${width}-coins.png`,out).pathname,fullPage:true});
   await p.getByRole('button',{name:'Lập quẻ khác',exact:true}).click();await p.getByLabel('Nhập kết quả gieo xu thật').check();
@@ -49,6 +50,13 @@ try{
   // Reopen a paid legacy pair reading without any inference request.
   await p.evaluate(()=>{const s=JSON.parse(localStorage.getItem('astrox_v2_state'));const fp=Object.keys(s.aiCache.profiles).find(k=>Object.keys(s.aiCache.profiles[k].compatibility||{}).length);s.aiCache.profiles[fp].compatibility[JSON.stringify(['original-tuvi','Bình cũ','Nam','1992-02-02',fp])]={text:'Bài cặp đôi đã mua từ trước.'};localStorage.setItem('astrox_v2_state',JSON.stringify(s));});
   await go(p,base+'/tuonghop?mode=tuvi');await p.locator('[name=personBName]').fill('Bình cũ');await p.locator('[name=personBGender]').selectOption('Nam');await p.locator('[name=personBDob]').fill('1992-02-02');const legacyCalls=calls.length;await p.getByText('Luận giải đã lưu từ phiên bản trước',{exact:true}).click();await p.getByText('Bài cặp đôi đã mua từ trước.',{exact:true}).waitFor();assert.equal(calls.length,legacyCalls);checks.push(`${width} legacy paid pair preserved`);
+  await go(p,base+'/kinhdich');
+  await p.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await p.locator('[class*=goldCoin]').first().evaluate(e=>getComputedStyle(e).animationName),'none');
+  await p.emulateMedia({reducedMotion:'no-preference'});
+  await p.evaluate(()=>document.documentElement.dataset.motion='reduced');
+  assert.equal(await p.locator('[class*=goldCoin]').first().evaluate(e=>getComputedStyle(e).animationName),'none');
+  checks.push(`${width} system and app reduced-motion`);
   await context.close();
  }
  assert.deepEqual(errors,[]);await writeFile(new URL('report.json',out),JSON.stringify({checks,errors,aiCalls:calls.length,api:'mocked; no charge or live provider request'},null,2));console.log(`PASS ${checks.length} browser checkpoints; ${calls.length} mocked AI calls; no page errors.`);

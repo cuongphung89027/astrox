@@ -640,7 +640,7 @@ if (!SERVICE_CATALOG.some(s => s.id === 'zodiac--hanh-tinh--hanh-tinh-xa-xi'))
   SERVICE_CATALOG.push({
     id: 'zodiac--hanh-tinh--hanh-tinh-xa-xi',
     module: 'zodiac',
-    name: 'Hành tinh xa xỉ',
+    name: 'Hành tinh xã hội',
     group: 'Hành tinh',
     policy: 'profile',
     route: '/cunghoangdao',

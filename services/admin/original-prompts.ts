@@ -408,7 +408,7 @@ export default {
           },
           {
             id: 'hanh-tinh-xa-xi',
-            label: 'Hành tinh xa xỉ',
+            label: 'Hành tinh xã hội',
             prompt: 'Phân tích Thiên Vương, Hải Vương, Diêm Vương: thế hệ và điểm cá biệt trong lá số. ~220-370 từ.',
           },
         ],

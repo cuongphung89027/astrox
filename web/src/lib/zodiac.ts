@@ -497,7 +497,7 @@ export const ZODIAC_DEEP_TOPICS: ZodiacDeepTopic[] = [
   {
     "id": "hanh-tinh",
     "subId": "hanh-tinh-xa-xi",
-    "label": "Hành tinh · Hành tinh xa xỉ",
+    "label": "Hành tinh · Hành tinh xã hội",
     "prompt": "Phân tích Thiên Vương, Hải Vương, Diêm Vương: thế hệ và điểm cá biệt trong lá số. ~220-370 từ."
   },
   {

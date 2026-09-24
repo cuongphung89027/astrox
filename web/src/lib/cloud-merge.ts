@@ -8,6 +8,7 @@ function mergeTree(remote:unknown,local:unknown):unknown{
 export function mergeCloud(remote:CloudData,local:CloudData,base:CloudData):CloudData{
  const result:CloudData={...remote};delete result._syncRevision;
  for(const k of ['profile','chartImageBase64','chartImageMime','ziweiChart','natalChart','lastAiModel']){
+  if(k==='profile'&&remote.profile&&(!object(local.profile)||!String(local.profile.name||'').trim()))continue;
   if(JSON.stringify(local[k])!==JSON.stringify(base[k]))result[k]=local[k];
   else if(!(k in remote)&&local[k]!=null)result[k]=local[k];
  }

@@ -1,4 +1,5 @@
 import {bodyJson} from './http.mjs';
+import {preserveUserData} from './preserve-user-data.mjs';
 const reply=(body,status=200)=>Response.json(body,{status,headers:{'cache-control':'private, no-store'}});
 const FIELDS=['profile','chartImageBase64','chartImageMime','ziweiChart','natalChart','aiCache','lastAiModel','tarotHistory','tarotDeleted'];
 export async function accountData(env,request,userId){
@@ -13,7 +14,8 @@ export async function accountData(env,request,userId){
  if(b.expectedRevision!==revision)return reply({error:'sync_conflict'},409);
  const next=b.payload;
  if(!next||typeof next!=='object'||Array.isArray(next)||Object.keys(next).some(k=>!FIELDS.includes(k)))return reply({error:'invalid_data'},400);
- const raw=JSON.stringify(next);if(new TextEncoder().encode(raw).length>1700000)return reply({error:'data_too_large'},413);
+ const raw=JSON.stringify(preserveUserData(payload,next));if(new TextEncoder().encode(raw).length>1700000)return reply({error:'data_too_large'},413);
+ if(row&&raw===row.payload)return reply({ok:true,revision});
  const updated=Math.max(Date.now(),revision+1);
  const changed=await env.DB.prepare('INSERT INTO user_data(user_id,payload,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET payload=excluded.payload,updated_at=excluded.updated_at WHERE user_data.updated_at=? RETURNING updated_at').bind(userId,raw,updated,revision).first();
  return changed?reply({ok:true,revision:updated}):reply({error:'sync_conflict'},409);

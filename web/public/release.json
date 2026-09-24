@@ -1,1 +1,1 @@
-{"release":"2026-09-24-profile-hydration-1","scope":"Restore Google placeholder and wait for cloud profile before onboarding","backendRelease":"2026-09-24-zalo-browser-1"}
+{"release":"2026-09-24-account-sync-guard-1","scope":"Restore Google; protect account profile and saved reading sync","backendRelease":"2026-09-24-account-sync-guard-1"}

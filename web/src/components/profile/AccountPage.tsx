@@ -62,7 +62,6 @@ export function AccountPage() {
   const name = loggedIn ? profile?.name || displayName || "Tài khoản của bạn" : "Chào mừng đến AstroX";
   return <div className={styles.page}>
     <h1 className="sr-only">Hồ sơ & cài đặt</h1>
-    {loggedIn&&!preview&&<p role="status" className="text-sm text-muc-2">{syncStatus}</p>}
     {!section ? <div className={styles.accountHome}>
     <header className={`${styles.identity} ${!loggedIn ? styles.guestIdentity : ""}`}>
       <span className={styles.avatar} aria-hidden="true">{loggedIn ? name.slice(0,1).toUpperCase() : <FeatureIcon name="profile" size={28} />}</span>
@@ -70,6 +69,7 @@ export function AccountPage() {
         <span className={styles.authStatus} role="status">{!ready ? "Đang kiểm tra đăng nhập…" : loggedIn ? preview ? "Xem thử · localhost" : astroxUser ? "Đã đăng nhập bằng Zalo" : "Đã đăng nhập" : "Chưa đăng nhập"}</span>
         <h2>{name}</h2>
         {loggedIn && <p>{supabaseUser?.email || "Quản lý tài khoản và thông tin cá nhân của bạn."}</p>}
+        {loggedIn && !preview && <p role="status" className={styles.syncStatus}>{syncStatus}</p>}
       </div>
       {ready && (loggedIn ? <Link className={styles.identityEdit} href="/hoso?section=personal">{profile ? "Chỉnh sửa" : "Thiết lập"} ↗</Link> : <div className={styles.loginAction}><button className={styles.primaryLogin} onClick={openLoginDialog}>Đăng nhập</button></div>)}
     </header>
@@ -98,6 +98,7 @@ export function AccountPage() {
         <p className={styles.saved} role="status">{message || "Cài đặt hiển thị được lưu riêng trên thiết bị này."}</p>
 
       </>}
+      {loggedIn && !preview && <p role="status" className={styles.syncStatus}>{syncStatus}</p>}
     </div>}
     <TopupPanel open={topup} onClose={() => { setTopup(false); void refreshBalance(); }} />
   </div>;

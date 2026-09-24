@@ -97,3 +97,5 @@
 @media(max-width:480px) { .accountMenu > a { padding:18px 16px; gap:13px; } .accountMenu h2 { font-size:15px; } .detailHeading h2 { font-size:26px; } }
 @media(prefers-reduced-motion:reduce) { .accountDetail { animation:none; } .accountMenu > a { transition:none; } }
 :global(html[data-motion="reduced"]) .accountDetail { animation:none; }
+
+.syncStatus, .identity .syncStatus { margin: 10px 0 0; font-size: 11px; line-height: 1.6; color: #6f7c68; overflow-wrap: anywhere; }

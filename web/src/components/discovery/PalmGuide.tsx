@@ -1,12 +1,14 @@
 import { useId } from "react";
 import s from "./Discovery.module.css";
 
-const HAND_PATH =
-  "M79 290c0-33-5-47-24-71l-27-48c-8-17 10-25 20-13l25 31-9-101c-2-22 19-24 22-3l10 69-1-117c0-22 23-22 24 0l3 110 7-128c1-20 23-19 23 2l-2 130 15-108c3-19 25-16 22 6l-11 114 18-71c5-20 26-15 21 7l-13 80c-3 50-15 84-30 113l-1 21Z";
+/** Bàn tay 5 ngón (ngón giữa cao nhất) trong khung 240x320 — dùng chung với
+ * PalmReader (ảnh minh hoạ) và màn loading của PalmCamera, tránh lệch hình. */
+export const PALM_HAND_PATH =
+  "M90 296 L68 242 C58 214 48 192 52 178 C56 164 70 166 76 180 C82 192 86 200 89 210 L89 56 Q89 42 97 42 Q105 42 105 56 L105 144 L105 34 Q105 24 113 24 Q121 24 121 34 L121 146 L121 44 Q121 32 129 32 Q137 32 137 44 L137 152 L137 72 Q137 61 144 61 Q151 61 151 72 L151 176 Q152 200 156 222 Q160 260 158 296";
 
 function MiniHand({ transform, opacity = 1 }: { transform?: string; opacity?: number }) {
   return (
-    <path d={HAND_PATH} transform={transform} opacity={opacity} fill="none" stroke="currentColor" strokeWidth="8" strokeLinejoin="round" />
+    <path d={PALM_HAND_PATH} transform={transform} opacity={opacity} fill="none" stroke="currentColor" strokeWidth="8" strokeLinejoin="round" />
   );
 }
 
@@ -24,7 +26,7 @@ export function PalmGuide() {
         <svg viewBox="0 0 240 320" aria-hidden="true">
           <rect x="18" y="18" width="204" height="284" rx="20" fill="none" stroke="currentColor" strokeWidth="4" opacity=".4" />
           <g clipPath={`url(#${clip})`}>
-            <MiniHand transform="translate(120 160) scale(0.86) translate(-120 -160)" />
+            <MiniHand />
           </g>
           <defs>
             <clipPath id={clip}>

@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pickLens, needsRescan, luminanceMean, lightVerdict, lensOpenPlan } from "../src/lib/palm-camera.ts";
+import { pickLens, scoreLenses, needsRescan, luminanceMean, lightVerdict, lensOpenPlan } from "../src/lib/palm-camera.ts";
 
-const lens = (deviceId, zoomMin) => ({ deviceId, label: deviceId, zoomMin });
+/** `label` mặc định lấy theo deviceId để test ngắn gọn; truyền nhãn thật khi cần. */
+const lens = (deviceId, zoomMin, label = deviceId) => ({ deviceId, label, zoomMin });
 
 test("pickLens chooses the wide lens among 1x-based back cameras", () => {
   assert.equal(pickLens([lens("tele", 3), lens("wide", 1), lens("ultra", 0.5)])?.deviceId, "wide");
@@ -18,6 +19,66 @@ test("pickLens falls back to the first candidate when no zoom info exists", () =
 
 test("pickLens returns the only suspicious lens if it is still closest to 1x", () => {
   assert.equal(pickLens([lens("only", 2)])?.deviceId, "only");
+});
+
+test("scoreLenses is the same pick used by the alias", () => {
+  assert.equal(scoreLenses, pickLens);
+});
+
+test("scoreLenses drops a tele lens by label even without zoom info", () => {
+  assert.equal(
+    scoreLenses([
+      lens("0", null, "camera2 0, facing back"),
+      lens("1", null, "camera2 1, facing back tele"),
+    ])?.deviceId,
+    "0",
+  );
+});
+
+test("scoreLenses drops an ultra-wide lens by label without zoom info", () => {
+  assert.equal(
+    scoreLenses([
+      lens("0", null, "camera2 0, facing back"),
+      lens("1", null, "camera2 1, facing back ultra wide"),
+    ])?.deviceId,
+    "0",
+  );
+});
+
+test("scoreLenses drops labelled side lenses even when they look closer to 1x", () => {
+  const picked = scoreLenses([
+    lens("tele", 1, "Back Telephoto Camera"),
+    lens("main", 2, "Back Camera"),
+  ]);
+  assert.equal(picked?.deviceId, "main");
+});
+
+test("scoreLenses adds a bonus for a wide/main label", () => {
+  // Cùng đáy 3x: nhãn wide vẫn thắng nhãn trung tính nhờ điểm cộng.
+  assert.equal(scoreLenses([lens("a", 3, "Camera 0"), lens("b", 3, "Back Wide Camera")])?.deviceId, "b");
+});
+
+test("scoreLenses ignores the label filter when every candidate looks like a side lens", () => {
+  // Không còn lựa chọn nào khác → vẫn phải trả lens gần 1x nhất.
+  assert.equal(scoreLenses([lens("tele", 3, "Tele"), lens("macro", 1, "Macro")])?.deviceId, "macro");
+});
+
+test("scoreLenses keeps candidates[0] when labels match and no zoom info exists", () => {
+  assert.equal(
+    scoreLenses([
+      lens("0", null, "camera2 0, facing back"),
+      lens("1", null, "camera2 0, facing back"),
+    ])?.deviceId,
+    "0",
+  );
+});
+
+test("scoreLenses treats zoom min 100 as a 100-based unit base", () => {
+  assert.equal(scoreLenses([lens("a", 300, "Camera 0"), lens("b", 100, "Camera 1")])?.deviceId, "b");
+});
+
+test("scoreLenses returns null for an empty list", () => {
+  assert.equal(scoreLenses([]), null);
 });
 
 test("needsRescan flags min zoom far from 1x in either unit base", () => {
@@ -61,4 +122,136 @@ test("lensOpenPlan keeps the default when no zoom info separates candidates", ()
     primary: "a",
     fallback: "a",
   });
+});
+
+test("lensOpenPlan moves off a tele default when only labels separate the lenses", () => {
+  assert.deepEqual(
+    lensOpenPlan(
+      [
+        lens("0", null, "camera2 0, facing back tele"),
+        lens("1", null, "camera2 1, facing back"),
+      ],
+      "0",
+    ),
+    { primary: "1", fallback: "0" },
+  );
+});
+
+/**
+ * Luồng mở camera thật (lỗi máy thật: Find X9 Ultra không expose zoom nên
+ * không bao giờ dò, giữ nguyên lens tele mặc định). Mỗi case nạp lại module
+ * bằng query riêng để cache lens trong module không lẫn giữa các case.
+ */
+function fakeCameras({ cameras, defaultIndex = 0, stored = null }) {
+  const store = new Map();
+  if (stored) store.set("astrox.palm.lensId", stored);
+  const storage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+  };
+  const calls = [];
+  const streamOf = (cam) => {
+    const track = {
+      label: cam.label,
+      getSettings: () => ({ facingMode: "environment", deviceId: cam.deviceId }),
+      getCapabilities: () => (cam.zoomMin == null ? {} : { zoom: { min: cam.zoomMin } }),
+      stop: () => {},
+    };
+    return { getVideoTracks: () => [track], getTracks: () => [track] };
+  };
+  navigator.mediaDevices = {
+    enumerateDevices: async () =>
+      cameras.map((c) => ({ kind: "videoinput", deviceId: c.deviceId, label: c.label })),
+    getUserMedia: async (constraints) => {
+      const requested = constraints?.video?.deviceId?.exact ?? null;
+      calls.push(requested ?? "default");
+      const cam = requested === null ? cameras[defaultIndex] : cameras.find((c) => c.deviceId === requested);
+      if (!cam) throw new Error("NotFoundError");
+      return streamOf(cam);
+    },
+  };
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: storage });
+  return { calls, store };
+}
+
+const TELE = { deviceId: "0", label: "camera2 0, facing back tele", zoomMin: null };
+const BACK = { deviceId: "1", label: "camera2 1, facing back", zoomMin: null };
+
+test("openBackCamera skips the lens scan on a single-camera device", async () => {
+  const env = fakeCameras({ cameras: [{ deviceId: "solo", label: "camera2 0, facing back", zoomMin: null }] });
+  const { openBackCamera } = await import("../src/lib/palm-camera.ts?flow-single");
+  const opened = await openBackCamera();
+  assert.equal(opened.deviceId, "solo");
+  assert.deepEqual(env.calls, ["default"]);
+  assert.equal(opened.backList.length, 1);
+});
+
+test("openBackCamera rescans and moves off a tele default even with no zoom signals", async () => {
+  const env = fakeCameras({ cameras: [TELE, BACK] });
+  const logs = [];
+  const info = console.info;
+  console.info = (...a) => logs.push(a.map(String).join(" "));
+  try {
+    const { openBackCamera } = await import("../src/lib/palm-camera.ts?flow-no-signals");
+    const opened = await openBackCamera();
+    assert.equal(opened.deviceId, "1");
+    // mặc định → quét từng lens → mở lại lens đã chọn
+    assert.deepEqual(env.calls, ["default", "0", "1", "1"]);
+    assert.equal(env.store.get("astrox.palm.lensId"), "1");
+    assert.ok(logs.some((l) => l.includes("[palm] lens scan")));
+  } finally {
+    console.info = info;
+  }
+});
+
+test("openBackCamera opens the remembered lens before the session cache", async () => {
+  const env = fakeCameras({ cameras: [TELE, BACK], stored: "1" });
+  const { openBackCamera } = await import("../src/lib/palm-camera.ts?flow-stored");
+  const opened = await openBackCamera();
+  assert.equal(opened.deviceId, "1");
+  assert.deepEqual(env.calls, ["1"]); // mở thẳng, không mở mặc định, không dò
+  // Vẫn còn danh sách để đổi ống kính, lens đang dùng đứng đầu.
+  assert.deepEqual(opened.backList.map((c) => c.deviceId), ["1", "0"]);
+});
+
+test("openBackCamera forgets a stale lens and rescans from the default", async () => {
+  const env = fakeCameras({ cameras: [TELE, BACK], stored: "unplugged" });
+  const { openBackCamera } = await import("../src/lib/palm-camera.ts?flow-stale");
+  const opened = await openBackCamera();
+  assert.equal(opened.deviceId, "1");
+  assert.equal(env.calls[0], "unplugged"); // đã thử lens đã nhớ trước
+  assert.equal(env.store.get("astrox.palm.lensId"), "1");
+});
+
+test("switchToLens opens the requested lens and remembers it", async () => {
+  const env = fakeCameras({ cameras: [TELE, BACK] });
+  const { switchToLens } = await import("../src/lib/palm-camera.ts?flow-switch");
+  const stream = await switchToLens("0");
+  assert.equal(stream.getVideoTracks().length, 1);
+  assert.deepEqual(env.calls, ["0"]);
+  assert.equal(env.store.get("astrox.palm.lensId"), "0");
+});
+
+test("openBackCamera and persistLensChoice survive storage throwing", async () => {
+  const env = fakeCameras({ cameras: [TELE, BACK] });
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: () => {
+        throw new Error("SecurityError");
+      },
+      setItem: () => {
+        throw new Error("QuotaExceededError");
+      },
+      removeItem: () => {
+        throw new Error("SecurityError");
+      },
+    },
+  });
+  const { openBackCamera, persistLensChoice } = await import("../src/lib/palm-camera.ts?flow-storage-error");
+  assert.doesNotThrow(() => persistLensChoice("1"));
+  const opened = await openBackCamera();
+  assert.equal(opened.deviceId, "1");
+  assert.equal(env.calls[0], "default");
 });

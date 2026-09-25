@@ -17,6 +17,7 @@ import { PanelReveal, useToast } from "@/components/motion";
 import { readAiCache, writeAiCache, setState } from "@/lib/state";
 import { runAiPrompt } from "@/lib/api";
 import { usePaidPrice } from "@/lib/use-paid-price";
+import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
 import { useRequireProfile } from "@/components/profile/ProfileModal";
 import {
   PERIOD_LABELS,
@@ -146,7 +147,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
               {error}
             </p>
             <Btn variant="ghost" size="sm" className="mt-3" disabled={price.pending} onClick={() => void load(true)}>
-              Thử lại{price.paid && ` · ${price.text}`}
+              Thử lại<PaidPriceBadge price={price} />
             </Btn>
           </div>
         ) : text ? (
@@ -154,7 +155,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
             <SavedReading text={text} periodic />
             <div className="mt-4">
               <Btn variant="ghost" size="sm" disabled={price.pending} onClick={() => void load(true)}>
-                ↻ Tạo lại{price.paid && ` · ${price.text}`}
+                ↻ Tạo lại<PaidPriceBadge price={price} />
               </Btn>
             </div>
           </PanelReveal>

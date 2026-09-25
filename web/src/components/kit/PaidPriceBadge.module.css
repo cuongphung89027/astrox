@@ -1,0 +1,28 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 0.4em;
+  margin-inline: 0.55em 0.1em;
+  padding: 0.25em 0.65em;
+  border: 1px solid #c9a95d;
+  border-radius: 999px;
+  background: #fff3cd;
+  color: #624912;
+  font-size: 0.78em;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 #ffffff70 inset;
+}
+
+.badge::before {
+  width: 0.5em;
+  height: 0.5em;
+  flex: none;
+  border-radius: 50%;
+  background: #b98727;
+  box-shadow: 0 0 0 2px #b9872729;
+  content: "";
+}

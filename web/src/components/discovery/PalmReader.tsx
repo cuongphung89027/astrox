@@ -4,6 +4,7 @@ import Link from "next/link";
 import { callAiText } from "@/lib/api";
 import { managedPrompt } from "@/lib/managed-prompts";
 import { usePaidPrice } from "@/lib/use-paid-price";
+import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
 import { parsePalmReading, type PalmReading } from "@/lib/palm";
 import s from "./Discovery.module.css";
 function HandArt() {
@@ -425,7 +426,7 @@ export function PalmReader() {
                 className={s.button}
                 disabled={!photo || !consent || busy || camera || price.pending}
               >
-                {busy ? "Đang quan sát ảnh…" : `Khám phá chỉ tay${price.paid ? ` · ${price.text}` : ''} ↗`}
+                {busy ? "Đang quan sát ảnh…" : <>Khám phá chỉ tay<PaidPriceBadge price={price} /><span aria-hidden="true">↗</span></>}
               </button>
               {busy && (
                 <button

@@ -7,6 +7,7 @@ import { useProfile } from '@/lib/use-store';
 import { useFeatureResult } from '@/lib/use-feature-result';
 import { runAiPrompt } from '@/lib/api';
 import { usePaidPrice } from '@/lib/use-paid-price';
+import { PaidPriceBadge } from '@/components/kit/PaidPriceBadge';
 import { cacheFingerprint, readAiCache, writeAiCache, refreshPromptRevision } from '@/lib/state';
 import { buildCoupleReading, coupleCacheKey, couplePrompt, COUPLE_PLACES, type CouplePerson, type CoupleMode } from '@/lib/couples';
 import { HOUR_CHI_OPTIONS } from '@/lib/utils';
@@ -64,7 +65,7 @@ export function PairCompatibility({mode}:{mode:CoupleMode}) {
   </form>
   {legacyText&&<details className={styles.details}><summary>Luận giải đã lưu từ phiên bản trước</summary><p className={styles.scope}>Bài đã lưu dùng hồ sơ của bạn và ngày sinh người ấy theo cách xem trước đây. Mở lại không gọi AI.</p><AiText text={legacyText}/></details>}
   {error&&<p role="alert" className={styles.error}>{error}</p>}
-  {reading&&<section className={styles.compatResult} aria-label="Cơ sở đối chiếu"><h2 className={styles.readingTitle}>Hai lá số, hai góc nhìn</h2><p className={styles.scope}>{reading.limits}</p><details className={styles.details}><summary>Xem dữ kiện đã tính cho hai bạn ({reading.evidence.length})</summary><ul className={styles.evidenceList}>{reading.evidence.map((r,i)=><li key={i}><strong>{r.a}</strong><strong>{r.b}</strong><span>{r.relation}</span></li>)}</ul></details><section aria-label="Luận giải cặp đôi" aria-busy={loading}>{loading?<ReadingLoader kind="compat"/>:text?<AiText text={text}/>:<button type="button" className={styles.primary} disabled={price.pending} onClick={()=>void run()}>{error?'Thử luận giải lại':'Đọc luận giải hai bạn'}{price.paid && ` · ${price.text}`} ↗</button>}</section></section>}
+  {reading&&<section className={styles.compatResult} aria-label="Cơ sở đối chiếu"><h2 className={styles.readingTitle}>Hai lá số, hai góc nhìn</h2><p className={styles.scope}>{reading.limits}</p><details className={styles.details}><summary>Xem dữ kiện đã tính cho hai bạn ({reading.evidence.length})</summary><ul className={styles.evidenceList}>{reading.evidence.map((r,i)=><li key={i}><strong>{r.a}</strong><strong>{r.b}</strong><span>{r.relation}</span></li>)}</ul></details><section aria-label="Luận giải cặp đôi" aria-busy={loading}>{loading?<ReadingLoader kind="compat"/>:text?<AiText text={text}/>:<button type="button" className={styles.primary} disabled={price.pending} onClick={()=>void run()}>{error?'Thử luận giải lại':'Đọc luận giải hai bạn'}<PaidPriceBadge price={price} /><span aria-hidden="true">↗</span></button>}</section></section>}
   <p className={styles.scope}>Góc nhìn văn hóa tham khảo, không quyết định giá trị hay tương lai của mối quan hệ.</p>
  </section>;
 }

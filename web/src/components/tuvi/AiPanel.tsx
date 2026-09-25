@@ -11,6 +11,7 @@ import { Btn } from "@/components/kit";
 import { SavedReading } from "@/components/kit/SavedReading";
 import { PanelReveal } from "@/components/motion";
 import { usePaidPrice } from "@/lib/use-paid-price";
+import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
 
 interface AiPanelProps {
   cached: string;
@@ -53,7 +54,7 @@ export function AiPanel({ cached, loading, error, runLabel = "Luận giải", em
           {emptyText ?? "Chưa có luận giải cho mục này. AstroX sẽ đọc trực tiếp dữ liệu lá số đã tính — không tự bịa dữ kiện."}
         </p>
         <Btn size="sm" onClick={() => onRun(false)} disabled={price.pending}>
-          {error ? "Thử lại" : runLabel}{price.paid && ` · ${price.text}`}
+          {error ? "Thử lại" : runLabel}<PaidPriceBadge price={price} />
         </Btn>
       </div>
     </div>

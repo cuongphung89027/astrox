@@ -21,6 +21,7 @@ import type { CastResult } from "@/lib/kinhdich";
 import { readAiCache, writeAiCache } from "@/lib/state";
 import { useProfile } from "@/lib/use-store";
 import { usePaidPrice } from "@/lib/use-paid-price";
+import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
 
 interface KdAiPanelProps {
   result: CastResult;
@@ -119,7 +120,7 @@ export function KdAiPanelContent({ result, question, onReset }: KdAiPanelProps) 
       {state === "idle" ? (
         <div>
           <button className={styles.primary} disabled={price.pending} onClick={interpret}>
-            Đọc luận giải{price.paid && ` · ${price.text}`} <span aria-hidden="true">↗</span>
+            Đọc luận giải<PaidPriceBadge price={price} /> <span aria-hidden="true">↗</span>
           </button>
 
         </div>
@@ -137,7 +138,7 @@ export function KdAiPanelContent({ result, question, onReset }: KdAiPanelProps) 
             {errorMsg}
           </p>
           <Btn variant="ghost" size="sm" className="mt-3" disabled={price.pending} onClick={interpret}>
-            Thử lại{price.paid && ` · ${price.text}`}
+            Thử lại<PaidPriceBadge price={price} />
           </Btn>
         </div>
       ) : null}

@@ -27,6 +27,7 @@ import type { Profile } from "@/lib/types";
 import { SavedReading } from "@/components/kit/SavedReading";
 import { useAiText } from "./useAiText";
 import { usePaidPrice } from "@/lib/use-paid-price";
+import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
 
 const PERIOD_TABS: { id: TuviPeriod; label: string }[] = [
   { id: "today", label: "Hôm nay" },
@@ -110,10 +111,10 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
         </div> : ai.text ? <>
           <SavedReading text={ai.text} periodic />
           {ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}
-          <button className={styles.regenerate} disabled={price.pending} onClick={() => ai.run(true)}>↻ Đọc lại vận trình{price.paid && ` · ${price.text}`}</button>
+          <button className={styles.regenerate} disabled={price.pending} onClick={() => ai.run(true)}>↻ Đọc lại vận trình<PaidPriceBadge price={price} /></button>
         </> : <div className={styles.invitation}>
           {ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}
-          <button className={styles.cta} disabled={price.pending} onClick={() => ai.run(false)}>{ai.error ? "Thử lại" : "Mở vận trình"}{price.paid && ` · ${price.text}`}<span aria-hidden="true">↗</span></button>
+          <button className={styles.cta} disabled={price.pending} onClick={() => ai.run(false)}>{ai.error ? "Thử lại" : "Mở vận trình"}<PaidPriceBadge price={price} /><span aria-hidden="true">↗</span></button>
         </div>}
       </div>
     </div>

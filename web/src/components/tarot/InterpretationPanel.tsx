@@ -20,6 +20,7 @@ import { useProfileModal, useRequireProfile } from "@/components/profile/Profile
 import { PROMPT_VERSION } from "@/lib/config";
 import { runAiPrompt } from "@/lib/api";
 import { usePaidPrice } from "@/lib/use-paid-price";
+import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
 import { profileContextText } from "@/lib/numerology";
 import { readAiCache, writeAiCache } from "@/lib/state";
 import type { Profile } from "@/lib/types";
@@ -144,7 +145,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
               }
             }}
           >
-            Luận giải trải bài{price.paid && ` · ${price.text}`}
+            Luận giải trải bài<PaidPriceBadge price={price} />
           </Btn>
         </div>
       ) : state === "loading" ? (
@@ -163,7 +164,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
                   void load();
                 }}
               >
-                Tạo lại{price.paid && ` · ${price.text}`}
+                Tạo lại<PaidPriceBadge price={price} />
               </Btn>
               <LikeButton label="Thích luận giải này" />
             </div>

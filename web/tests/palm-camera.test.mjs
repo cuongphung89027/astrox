@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeZoomUnit, pickLens, needsRescan, luminanceMean, lightVerdict, lensOpenPlan } from "../src/lib/palm-camera.ts";
+import { pickLens, needsRescan, luminanceMean, lightVerdict, lensOpenPlan } from "../src/lib/palm-camera.ts";
 
 const lens = (deviceId, zoomMin) => ({ deviceId, label: deviceId, zoomMin });
 

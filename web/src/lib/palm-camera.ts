@@ -142,11 +142,6 @@ export async function openBackCamera(): Promise<OpenedCamera> {
   }
 }
 
-export function resetLensCache(): void {
-  cachedLensId = null;
-  cachedBackList = [];
-}
-
 /** Độ sáng trung bình 0..255 theo luminance Rec.709. */
 export function luminanceMean(data: Uint8ClampedArray): number {
   let sum = 0;

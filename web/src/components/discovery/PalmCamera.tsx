@@ -216,6 +216,7 @@ export function PalmCamera({
           }
           landmarkerRef.current = lm;
           setTrackerReady(true);
+          setTrackerOff(false);
           if (videoRef.current)
             stopLoopRef.current = startDetectLoop(videoRef.current, lm, (pts) => {
               const frame = frameFromLandmarks(pts, prevPtsRef.current);

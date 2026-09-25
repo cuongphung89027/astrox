@@ -56,6 +56,7 @@ export function PalmReader() {
     [],
   );
   function start() {
+    generation.current++;
     setError("");
     setCamera(true);
   }
@@ -171,6 +172,7 @@ export function PalmReader() {
   function reset() {
     abort.current?.abort();
     generation.current++;
+    setCamera(false);
     setTips(null);
     setPhoto("");
     setResult(null);
@@ -210,7 +212,10 @@ export function PalmReader() {
                   setError((e as Error).message);
                 }
               }}
-              onClose={() => setCamera(false)}
+              onClose={() => {
+                generation.current++;
+                setCamera(false);
+              }}
               onFatal={(message) => {
                 setError(message);
                 setCamera(false);

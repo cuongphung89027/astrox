@@ -36,6 +36,7 @@ const VIEWPORTS = [
 const ROUTES = [
   "/", "/trangchu", "/tuvi", "/cunghoangdao", "/kinhdich", "/battu",
   "/thansohoc", "/tarot", "/tarot?history=1", "/tuonghop", "/hoso", "/dieukhoan",
+  "/chitay",
   // Alias cũ — redirect server-side, cần giữ sạch layout mọi viewport:
   "/hoangdao", "/thanso",
   // /topup & /profile là MODAL (TopupPanel/ProfileModal), không phải route.

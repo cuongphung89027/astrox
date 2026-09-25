@@ -51,6 +51,7 @@ export function PalmCamera({
   const countingRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cbs = useRef({ onCapture, onClose, onFatal });
   useEffect(() => {
     cbs.current = { onCapture, onClose, onFatal };
@@ -71,6 +72,8 @@ export function PalmCamera({
     timerRef.current = null;
     if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
     warnTimerRef.current = null;
+    if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+    loadTimerRef.current = null;
     countingRef.current = false;
     landmarkerRef.current?.close();
     landmarkerRef.current = null;
@@ -140,6 +143,8 @@ export function PalmCamera({
     if (c.width !== v.videoWidth) {
       c.width = v.videoWidth;
       c.height = v.videoHeight;
+      // Box + overlay phải theo tỉ lệ buffer thật của video, không theo getSettings().
+      setAspect(`${v.videoWidth}/${v.videoHeight}`);
     }
     const ctx = c.getContext("2d");
     if (!ctx) return;
@@ -163,6 +168,23 @@ export function PalmCamera({
     }
   }
 
+  // Khung hình thật đổi kích thước (mở camera, đổi ống kính, xoay máy) → cập nhật
+  // tỉ lệ box theo buffer video, kể cả khi tracker không chạy nên không có overlay.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const sync = () => {
+      if (v.videoWidth && v.videoHeight) setAspect(`${v.videoWidth}/${v.videoHeight}`);
+    };
+    sync();
+    v.addEventListener("loadedmetadata", sync);
+    v.addEventListener("resize", sync);
+    return () => {
+      v.removeEventListener("loadedmetadata", sync);
+      v.removeEventListener("resize", sync);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -178,13 +200,15 @@ export function PalmCamera({
           v.srcObject = opened.stream;
           await v.play().catch(() => {});
         }
-        const track = opened.stream.getVideoTracks()[0];
-        const st = track?.getSettings();
-        if (st?.width && st?.height) setAspect(`${st.width}/${st.height}`);
         setBackList(opened.backList);
         setLensIdx(0);
         setNote("Đưa lòng bàn tay vào khung");
         try {
+          setNote("Đang tải bộ nhận diện tay…");
+          // Model ~8MB: quá 4s thì chuyển copy chụp thủ công, không bắt người dùng chờ.
+          loadTimerRef.current = setTimeout(() => {
+            if (!landmarkerRef.current) setTrackerOff(true);
+          }, 4000);
           const lm = await loadHandTracker();
           if (cancelled) {
             lm.close();
@@ -239,8 +263,6 @@ export function PalmCamera({
       prev.getTracks().forEach((t) => t.stop());
       streamRef.current = stream;
       setLensIdx(backList.indexOf(next));
-      const st = stream.getVideoTracks()[0]?.getSettings();
-      if (st?.width && st?.height) setAspect(`${st.width}/${st.height}`);
       cancelCountdown();
       const v = videoRef.current;
       if (v) {

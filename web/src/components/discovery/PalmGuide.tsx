@@ -24,7 +24,7 @@ export function PalmGuide() {
         <svg viewBox="0 0 240 320" aria-hidden="true">
           <rect x="18" y="18" width="204" height="284" rx="20" fill="none" stroke="currentColor" strokeWidth="4" opacity=".4" />
           <g clipPath={`url(#${clip})`}>
-            <MiniHand />
+            <MiniHand transform="translate(120 160) scale(0.86) translate(-120 -160)" />
           </g>
           <defs>
             <clipPath id={clip}>

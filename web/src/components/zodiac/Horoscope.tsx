@@ -16,6 +16,7 @@ import { Btn, TopicTabs, type TabItem } from "@/components/kit";
 import { PanelReveal, useToast } from "@/components/motion";
 import { readAiCache, writeAiCache, setState } from "@/lib/state";
 import { runAiPrompt } from "@/lib/api";
+import { usePaidPrice } from "@/lib/use-paid-price";
 import { useRequireProfile } from "@/components/profile/ProfileModal";
 import {
   PERIOD_LABELS,
@@ -53,6 +54,8 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
   const reqRef = useRef(0);
 
   const markFresh = useFeatureResult(text, `zodiac--period--${period}`, !loading && !!profile);
+  const pricePrompt = profile ? zodiacPeriodPrompt(sign, period, profile, natalChart ?? buildNatalChart(profile)) : undefined;
+  const price = usePaidPrice(`zodiac--period--${period}`, pricePrompt);
   const load = useCallback(
     async (force: boolean) => {
       // Tải tự động: chỉ chạy khi đã có hồ sơ (không bật modal).
@@ -142,21 +145,21 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
             <p role="alert" className="text-sm font-semibold text-son-deep">
               {error}
             </p>
-            <Btn variant="ghost" size="sm" className="mt-3" onClick={() => void load(true)}>
-              Thử lại
+            <Btn variant="ghost" size="sm" className="mt-3" disabled={price.pending} onClick={() => void load(true)}>
+              Thử lại{price.paid && ` · ${price.text}`}
             </Btn>
           </div>
         ) : text ? (
           <PanelReveal open key={`${sign.id}-${period}-${text.slice(0, 24)}`}>
             <SavedReading text={text} periodic />
             <div className="mt-4">
-              <Btn variant="ghost" size="sm" onClick={() => void load(true)}>
-                ↻ Tạo lại
+              <Btn variant="ghost" size="sm" disabled={price.pending} onClick={() => void load(true)}>
+                ↻ Tạo lại{price.paid && ` · ${price.text}`}
               </Btn>
             </div>
           </PanelReveal>
         ) : (
-          <ReadingInvitation label={`Xem dự báo ${PERIOD_LABELS[period].toLowerCase()}`} onRun={() => void load(false)} />
+          <ReadingInvitation label={`Xem dự báo ${PERIOD_LABELS[period].toLowerCase()}`} onRun={() => void load(false)} serviceId={`zodiac--period--${period}`} prompt={pricePrompt}/>
         )}
       </div>
 

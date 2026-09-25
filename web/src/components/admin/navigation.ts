@@ -32,3 +32,16 @@ export const navigation: [View, string, string, string][] = [
  ['services','Dịch vụ & giá','☷','DỊCH VỤ & AI'],['prompts','Kho prompt','▤','DỊCH VỤ & AI'],['providers','Cài đặt AI','✧','DỊCH VỤ & AI'],['aiMetrics','Thống kê AI','↗','DỊCH VỤ & AI'],
  ['setup','Trạng thái cấu hình','◈','VẬN HÀNH & CÀI ĐẶT'],['apis','Cài đặt API','⇄','VẬN HÀNH & CÀI ĐẶT'],['content','Nội dung & thông báo','▤','VẬN HÀNH & CÀI ĐẶT'],['zalo','Đăng nhập Zalo','⇥','VẬN HÀNH & CÀI ĐẶT'],['diagnostics','Chẩn đoán đăng nhập','⚑','VẬN HÀNH & CÀI ĐẶT'],['clientErrors','Lỗi giao diện','⚑','VẬN HÀNH & CÀI ĐẶT'],['reports','Báo cáo','↗','VẬN HÀNH & CÀI ĐẶT'],['walletbackend','Kết nối backend ví','⇄','VẬN HÀNH & CÀI ĐẶT'],['operations','Vận hành','⚙','VẬN HÀNH & CÀI ĐẶT'],['access','Phân quyền','⌘','VẬN HÀNH & CÀI ĐẶT'],['audit','Nhật ký & phiên bản','◷','VẬN HÀNH & CÀI ĐẶT'],
 ];
+const searchable = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[đĐ]/g, 'd').toLowerCase();
+const keywords: Partial<Record<View,string>> = {
+  billing: 'mã khuyến mãi promo coupon nạp tối thiểu hết hạn',
+  services: 'báo giá thu phí giá point mở khóa',
+  wallet: 'số dư điều chỉnh cộng trừ point',
+  prompts: 'câu lệnh system prompt mẫu luận giải',
+  rewards: 'điểm danh thưởng giới thiệu quảng cáo',
+  access: 'vai trò quyền quản trị',
+};
+export function searchNavigation(query: string): typeof navigation {
+  const needle = searchable(query.trim());
+  return needle ? navigation.filter(([id,label,,group]) => searchable(`${id} ${label} ${group} ${keywords[id] ?? ''}`).includes(needle)) : navigation;
+}

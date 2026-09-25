@@ -7,10 +7,10 @@ import {captureReferral,storedReferral} from "./referral";
  * trả access[module]=false.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
-import { fetchAstroxUser, fetchModuleAccessAstrox } from "./api";
+import { fetchMeWithPoints, fetchModuleAccessAstrox } from "./api";
 import { AUTH_API_BASE } from "./config";
 import {startCloudSync} from "./cloud-sync";
-import {setPointsAccount} from "./points";
+import {refreshPoints,seedPointsBalance,setPointsAccount} from "./points";
 import { getState, activateAccount } from "./state";
 import type { AstroxUser } from "./types";
 
@@ -86,12 +86,14 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
     const kickoff = setTimeout(() => {
       if (!alive) return;
       void (async () => {
-        const axUser = await fetchAstroxUser();
-        if (alive) setAstroxUser(axUser);
-        if (alive) {
-          await refreshModuleAccess();
-          setReady(true);
-        }
+        const result = await fetchMeWithPoints().catch(() => ({ user: null, points: 0 }));
+        if (!alive) return;
+        const axUser = result.user;
+        setPointsAccount(axUser ? String(axUser.id) : null);
+        if (axUser) seedPointsBalance(String(axUser.id), result.points);
+        setAstroxUser(axUser);
+        setReady(true);
+        void refreshModuleAccess();
       })();
     }, 0);
     return () => {
@@ -107,6 +109,19 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
     }, 20000);
     return () => clearInterval(id);
   }, [astroxUser, refreshModuleAccess]);
+
+  useEffect(() => {
+    if (!ready || !astroxUser) return;
+    const refreshVisible = () => {
+      if (document.visibilityState === "visible") void refreshPoints(true);
+    };
+    const timer = window.setInterval(refreshVisible, 15000);
+    document.addEventListener("visibilitychange", refreshVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refreshVisible);
+    };
+  }, [ready, astroxUser]);
 
   useLayoutEffect(()=>{
     if(!ready)return;

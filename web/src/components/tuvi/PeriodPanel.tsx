@@ -26,6 +26,7 @@ import {
 import type { Profile } from "@/lib/types";
 import { SavedReading } from "@/components/kit/SavedReading";
 import { useAiText } from "./useAiText";
+import { usePaidPrice } from "@/lib/use-paid-price";
 
 const PERIOD_TABS: { id: TuviPeriod; label: string }[] = [
   { id: "today", label: "Hôm nay" },
@@ -83,6 +84,7 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
   );
 
   const ai = useAiText({ group: GROUP_BY_PERIOD[period], cacheKey, prompt, period, revealDelayMs: 750 });
+  const price = usePaidPrice(`tuvi--period--${period}`, prompt);
 
   const [direction, setDirection] = useState(1);
   const periodIndex = PERIOD_TABS.findIndex(item => item.id === period);
@@ -108,10 +110,10 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
         </div> : ai.text ? <>
           <SavedReading text={ai.text} periodic />
           {ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}
-          <button className={styles.regenerate} onClick={() => ai.run(true)}>↻ Đọc lại vận trình</button>
+          <button className={styles.regenerate} disabled={price.pending} onClick={() => ai.run(true)}>↻ Đọc lại vận trình{price.paid && ` · ${price.text}`}</button>
         </> : <div className={styles.invitation}>
           {ai.error && <p role="alert" className={styles.error}>{ai.error}</p>}
-          <button className={styles.cta} onClick={() => ai.run(false)}>{ai.error ? "Thử lại" : "Mở vận trình"}<span aria-hidden="true">↗</span></button>
+          <button className={styles.cta} disabled={price.pending} onClick={() => ai.run(false)}>{ai.error ? "Thử lại" : "Mở vận trình"}{price.paid && ` · ${price.text}`}<span aria-hidden="true">↗</span></button>
         </div>}
       </div>
     </div>

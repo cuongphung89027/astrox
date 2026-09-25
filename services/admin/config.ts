@@ -45,6 +45,8 @@ export type Milestone = { id: string; day: number; user: number; inviter: number
 export type Promo = {
   id: string;
   code: string;
+  kind?: 'topup_bonus' | 'direct_points';
+  minAmountVnd?: number;
   bonus: number;
   limit: number;
   perUser: number;
@@ -396,9 +398,11 @@ export function validateConfig(input: unknown): ConfigError[] {
     if (!bundles.some(d => d.id === b.id)) add('billing.unlocks.bundles', 'Gói không thuộc danh mục chức năng.');
     integer(b.points, 'billing.unlocks.bundles.points', b.enabled ? 1 : 0);
   }
-  list(c.billing.promos, 'billing.promos', {
+  list(c.billing.promos.map(p => ({ ...p, kind: p.kind ?? 'topup_bonus', minAmountVnd: p.minAmountVnd ?? 0 })), 'billing.promos', {
     id: '',
     code: '',
+    kind: '',
+    minAmountVnd: 0,
     bonus: 0,
     limit: 0,
     perUser: 0,
@@ -569,7 +573,10 @@ export function validateConfig(input: unknown): ConfigError[] {
     if (!/^[A-Z0-9_-]{2,40}$/.test(p.code) || codes.has(p.code))
       add('billing.promos.code', 'Mã phải duy nhất, chữ hoa/số/gạch ngang.');
     codes.add(p.code);
-    integer(p.bonus, 'billing.promos.bonus');
+    if (!['topup_bonus', 'direct_points'].includes(p.kind ?? 'topup_bonus')) add('billing.promos.kind', 'Loại mã không hợp lệ.');
+    integer(p.bonus, 'billing.promos.bonus', 1);
+    integer(p.minAmountVnd ?? 0, 'billing.promos.minAmountVnd', 0);
+    if (p.kind === 'direct_points' && p.minAmountVnd) add('billing.promos.minAmountVnd', 'Mã cộng Point trực tiếp không yêu cầu nạp tiền.');
     integer(p.limit, 'billing.promos.limit', 1);
     integer(p.perUser, 'billing.promos.perUser', 1);
     if (p.expiresAt && !Number.isFinite(Date.parse(p.expiresAt))) add('billing.promos.expiresAt', 'Ngày không hợp lệ.');

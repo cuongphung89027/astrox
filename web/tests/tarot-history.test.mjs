@@ -34,13 +34,14 @@ test('a newly generated AI reading is immediately readable in the journal',async
  const {InterpretationPanel}=await load('components/tarot/InterpretationPanel.tsx',{mocks:{react:runtime.react,
   '@/lib/state':{cacheFingerprint:()=>'alice',refreshPromptRevision:async()=>{},readAiCache:()=>'',writeAiCache:(_,key,text)=>{app.aiCache.profiles.alice.tarot[key]={text,updatedAt:100};}},
   '@/lib/api':{runAiPrompt:async()=>'Fresh reading',servicePrices:async()=>({})},
+  '@/lib/use-paid-price':{usePaidPrice:()=>({text:'',pending:false,paid:false})},
   '@/lib/tarot':{buildTarotPrompt:()=>'',tarotCacheKey:x=>x,tarotCardById:()=>({nameEn:'The Fool'})},
   '@/lib/tarot-history':{pushTarotHistory:history.pushTarotHistory},
   '@/lib/use-feature-result':{useFeatureResult:()=>()=>{}},
   '@/components/profile/ProfileModal':{useRequireProfile:()=>()=>true,useProfileModal:()=>({open(){}})}}});
  const props={spread:{id:'one',name:'Một lá'},frameLabel:'',deck:{id:'rws',name:'RWS'},question:'Today?',drawn:[{id:'0',reversed:false}],positionLabels:['Now'],profile:{name:'Alice'}};
  const render=()=>{runtime.reset();return InterpretationPanel(props);};
- const start=nodes(render()).find(n=>n.props?.children==='Luận giải trải bài');assert.ok(start,'interpretation button');
+ const start=nodes(render()).find(n=>Array.isArray(n.props?.children)&&n.props.children.includes('Luận giải trải bài'));assert.ok(start,'interpretation button');
  start.props.onClick();for(let i=0;i<5;i++)await new Promise(r=>setImmediate(r));
  const rows=history.readTarotHistory();assert.equal(rows.length,1);assert.equal(rows[0].text,'Fresh reading');assert.equal(rows[0].cards[0].nameEn,'The Fool');
 });

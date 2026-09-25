@@ -7,7 +7,7 @@ import { defaultConfig } from '../admin/config.ts';
 import { state, saveDraft, publish } from '../admin/store.mjs';
 import { legacySnapshot, runtimeSettings, capabilities } from './config.mjs';
 import { sessionCookie, readSession, verifyZaloUser, zaloCallback, zaloFinish } from './auth.mjs';
-import { payosSignature, handlePayosWebhook, handleTopupCreate } from './payments.mjs';
+import { payosSignature, handlePayosWebhook, handleTopupCreate, handlePromoCheck, handlePromoRedeem } from './payments.mjs';
 
 async function fixture() {
   const env = testEnv();
@@ -20,6 +20,10 @@ async function fixture() {
     .filter(s => s.trim()))
     await env.DB.prepare(q).run();
   for (const q of readFileSync(new URL('../../migrations/backend.sql', import.meta.url), 'utf8')
+    .split(';')
+    .filter(s => s.trim()))
+    await env.DB.prepare(q).run();
+  for (const q of readFileSync(new URL('../../migrations/promo-redemptions.sql', import.meta.url), 'utf8')
     .split(';')
     .filter(s => s.trim()))
     await env.DB.prepare(q).run();
@@ -246,6 +250,40 @@ test('promotion reservations prevent concurrent oversubscription before payment'
   const second = await handleTopupCreate(env, req(), upstream);
   assert.equal(second.status, 400);
   assert.equal((await second.json()).error, 'promo_exhausted');
+});
+test('promo check explains minimum amount and exhausted use before checkout', async () => {
+  const env = await fixture();
+  await published(env, c => { c.billing.promos = [{ id:'min', code:'MIN50', kind:'topup_bonus', minAmountVnd:50000, bonus:12, limit:1, perUser:1, enabled:true, expiresAt:'' }]; });
+  const cookie = (await sessionCookie(env, 'u1')).split(';')[0];
+  const check = amount => handlePromoCheck(env, new Request('https://api.example.com/api/topup/promo-check', {method:'POST',headers:{cookie},body:JSON.stringify({promo_code:'MIN50',amount_vnd:amount})}));
+  const low = await check(10000);
+  assert.equal((await low.json()).error, 'promo_min_amount');
+  assert.equal((await check(60000)).status, 200);
+  await env.DB.prepare("INSERT INTO topup_orders_zalo(id,user_id,order_code,amount_vnd,points,status,idempotency_key,created_at) VALUES('o1','u1',1,60000,100,'paid','o1','2026-09-25')").run();
+  await env.DB.prepare("INSERT INTO backend_order_snapshots(order_code,user_id,package_id,promo_id,promo_code,expires_at) VALUES(1,'u1','new','min','MIN50','2026-09-26')").run();
+  const exhausted = await check(60000);
+  assert.equal((await exhausted.json()).error, 'promo_exhausted');
+});
+test('direct promo credits Point once and rejects replay', async () => {
+  const env = await fixture();
+  await published(env, c => { c.billing.promos = [{ id:'gift', code:'GIFT', kind:'direct_points', minAmountVnd:0, bonus:25, limit:1, perUser:1, enabled:true, expiresAt:'' }]; });
+  const cookie = (await sessionCookie(env, 'u1')).split(';')[0];
+  const req = () => new Request('https://api.example.com/api/promos/redeem', {method:'POST',headers:{cookie,origin:'https://theastrox.space'},body:JSON.stringify({promo_code:'GIFT',request_key:'same-request'})});
+  assert.equal((await handlePromoRedeem(env, req())).status, 200);
+  const replay = await handlePromoRedeem(env, req());
+  assert.equal(replay.status, 200);
+  assert.equal((await replay.json()).replayed, true);
+  assert.equal((await env.DB.prepare("SELECT balance FROM zalo_point_accounts WHERE user_id='u1'").first()).balance, 35);
+});
+test('simultaneous direct redemptions cannot exceed the global promo limit', async () => {
+  const env = await fixture();
+  await published(env, c => { c.billing.promos = [{ id:'race', code:'RACE', kind:'direct_points', minAmountVnd:0, bonus:20, limit:1, perUser:2, enabled:true, expiresAt:'' }]; });
+  const cookie = (await sessionCookie(env, 'u1')).split(';')[0];
+  const req = key => new Request('https://api.example.com/api/promos/redeem', {method:'POST',headers:{cookie,origin:'https://theastrox.space'},body:JSON.stringify({promo_code:'RACE',request_key:key})});
+  const results = await Promise.all([handlePromoRedeem(env, req('request-one')), handlePromoRedeem(env, req('request-two'))]);
+  assert.deepEqual(results.map(r => r.status).sort(), [200,400]);
+  assert.equal((await env.DB.prepare("SELECT balance FROM zalo_point_accounts WHERE user_id='u1'").first()).balance, 30);
+  assert.equal((await env.DB.prepare("SELECT COUNT(*) AS n FROM backend_promo_redemptions WHERE promo_id='race'").first()).n, 1);
 });
 test('new orders disabled in Admin do not reach PayOS', async () => {
   const env = await fixture();

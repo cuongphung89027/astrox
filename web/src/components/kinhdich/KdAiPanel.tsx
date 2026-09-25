@@ -20,6 +20,7 @@ import { buildKdPrompt, kdCacheKey } from "@/lib/kinhdich";
 import type { CastResult } from "@/lib/kinhdich";
 import { readAiCache, writeAiCache } from "@/lib/state";
 import { useProfile } from "@/lib/use-store";
+import { usePaidPrice } from "@/lib/use-paid-price";
 
 interface KdAiPanelProps {
   result: CastResult;
@@ -40,6 +41,7 @@ export function KdAiPanelContent({ result, question, onReset }: KdAiPanelProps) 
   const [errorMsg, setErrorMsg] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const profile = useProfile();
+  const price = usePaidPrice("kinhdich--interpretation", profile ? buildKdPrompt(result, question.trim() || "(không có câu hỏi cụ thể — luận giải tổng quát)", profile) : undefined);
   const requireProfile = useRequireProfile();
   const { open: openProfile } = useProfileModal();
 
@@ -116,8 +118,8 @@ export function KdAiPanelContent({ result, question, onReset }: KdAiPanelProps) 
 
       {state === "idle" ? (
         <div>
-          <button className={styles.primary} onClick={interpret}>
-            Đọc luận giải <span aria-hidden="true">↗</span>
+          <button className={styles.primary} disabled={price.pending} onClick={interpret}>
+            Đọc luận giải{price.paid && ` · ${price.text}`} <span aria-hidden="true">↗</span>
           </button>
 
         </div>
@@ -134,8 +136,8 @@ export function KdAiPanelContent({ result, question, onReset }: KdAiPanelProps) 
           <p role="alert" className="text-sm font-semibold text-son-deep">
             {errorMsg}
           </p>
-          <Btn variant="ghost" size="sm" className="mt-3" onClick={interpret}>
-            Thử lại
+          <Btn variant="ghost" size="sm" className="mt-3" disabled={price.pending} onClick={interpret}>
+            Thử lại{price.paid && ` · ${price.text}`}
           </Btn>
         </div>
       ) : null}

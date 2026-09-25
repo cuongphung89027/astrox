@@ -66,6 +66,10 @@
 .sidebar > .brand {
   padding: 0 18px;
 }
+.navSearch { display:block; margin:20px 6px 4px; }
+.navSearch input { width:100%; border:1px solid #d8dfce; border-radius:10px; padding:10px 12px; background:#fffdf7; color:#214d42; font:inherit; }
+.navEmpty { padding:12px; color:#758272; }
+.srOnly { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .workspace {
   display: flex;
   align-items: center;
@@ -495,6 +499,24 @@
 .fields textarea {
   resize: vertical;
   line-height: 1.7;
+}
+.promoExpiry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  font-size: 11px;
+  color: #57705b;
+}
+.promoExpiry input {
+  width: min(100%, 340px);
+  min-height: 43px;
+  padding: 11px 12px;
+  border: 1px solid #dce1d1;
+  border-radius: 9px;
+  background: #fffef8;
+  color: #214d42;
+  font: inherit;
 }
 .full {
   grid-column: 1/-1;

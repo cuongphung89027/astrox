@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { usePointsBalance } from "@/lib/points";
 import { useAuth } from "@/lib/auth";
 import { PointCoin } from "@/components/points/PointCoin";
-import { createTopup, loadTopupHistory, loadTopupPackages, promoCheck, type TopupOrder, type TopupPackage } from "@/lib/api";
+import { createTopup, loadTopupHistory, loadTopupPackages, promoCheck, redeemPromo, type TopupOrder, type TopupPackage } from "@/lib/api";
+import { promoErrorMessage } from "./promo-message";
 import styles from "./TopupPanel.module.css";
 
 const vnd = (value: number) => `${value.toLocaleString("vi-VN")} ₫`;
@@ -30,6 +31,7 @@ function TopupSession({ onClose }: { onClose: () => void }) {
   const [promo, setPromo] = useState("");
   const [applied, setApplied] = useState<{ code: string; bonus: number } | null>(null);
   const [promoMessage, setPromoMessage] = useState("");
+  const [promoSuccess, setPromoSuccess] = useState(false);
   const [promoChecking, setPromoChecking] = useState(false);
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState("");
@@ -38,6 +40,7 @@ function TopupSession({ onClose }: { onClose: () => void }) {
   const requestLock = useRef(false);
   const promoRevision = useRef(0);
   const promoLock = useRef(false);
+  const redemptionKeys = useRef(new Map<string, string>());
   const chosen = packages?.find(pkg => pkg.amount_vnd === selected);
   const unappliedPromo = !!promo.trim() && !applied;
 
@@ -79,13 +82,24 @@ function TopupSession({ onClose }: { onClose: () => void }) {
     setApplied(null);
     setPromoMessage("");
     try {
-      const result = await promoCheck(code);
+      const result = await promoCheck(code, chosen?.amount_vnd);
       if (!alive.current || revision !== promoRevision.current) return;
       if (result.ok) {
-        setApplied({ code, bonus: result.bonus ?? 0 });
-        setPromoMessage(`Mã ${code}: thêm ${number(result.bonus ?? 0)} Point khi nạp thành công.`);
+        if (result.kind === "direct_points") {
+          if (!redemptionKeys.current.has(code)) redemptionKeys.current.set(code, crypto.randomUUID());
+          const redeemed = await redeemPromo(code, redemptionKeys.current.get(code)!);
+          if (!alive.current || revision !== promoRevision.current) return;
+          setPromoSuccess(redeemed.ok);
+          setPromoMessage(redeemed.ok ? `Áp dụng thành công: đã cộng ${number(redeemed.points ?? 0)} Point vào ví.` : promoErrorMessage(redeemed.error));
+          if (redeemed.ok) { setPromo(""); void refreshBalance(); }
+        } else {
+          setApplied({ code, bonus: result.bonus ?? 0 });
+          setPromoSuccess(true);
+          setPromoMessage(`Áp dụng thành công: mã ${code} thêm ${number(result.bonus ?? 0)} Point khi nạp thành công.`);
+        }
       } else {
-        setPromoMessage(result.error === "network" ? "Chưa kết nối được. Bạn thử lại nhé." : result.error === "promo_expired" ? "Mã đã hết hạn." : result.error === "promo_exhausted" ? "Mã đã hết lượt sử dụng." : "Mã không hợp lệ. Kiểm tra lại hoặc xóa mã để tiếp tục.");
+        setPromoSuccess(false);
+        setPromoMessage(promoErrorMessage(result.error, result.minAmountVnd));
       }
     } catch {
       if (alive.current && revision === promoRevision.current) setPromoMessage("Chưa kiểm tra được mã. Bạn thử lại nhé.");
@@ -107,11 +121,12 @@ function TopupSession({ onClose }: { onClose: () => void }) {
         window.location.assign(result.checkoutUrl);
         return;
       }
-      if (result.error === "promo") {
+      if (result.error?.startsWith("promo_") || result.error === "invalid_promo") {
         setApplied(null);
-        setPromoMessage("Mã không còn hợp lệ. Kiểm tra lại hoặc xóa mã để tiếp tục.");
+        setPromoSuccess(false);
+        setPromoMessage(promoErrorMessage(result.error, result.minAmountVnd));
       }
-      setBuyError(result.error === "promo" ? "Vui lòng kiểm tra lại mã ưu đãi." : result.error === "payos" ? "Thanh toán đang bảo trì. Bạn quay lại sau nhé." : "Chưa tạo được đơn nạp. Vui lòng thử lại.");
+      setBuyError(result.error?.startsWith("promo_") || result.error === "invalid_promo" ? "Vui lòng kiểm tra lại mã ưu đãi." : result.error === "payos" ? "Thanh toán đang bảo trì. Bạn quay lại sau nhé." : "Chưa tạo được đơn nạp. Vui lòng thử lại.");
     } catch {
       if (alive.current) setBuyError("Kết nối bị gián đoạn. Kiểm tra lịch sử nạp trước khi thử lại để tránh tạo đơn trùng.");
     } finally {
@@ -137,12 +152,12 @@ function TopupSession({ onClose }: { onClose: () => void }) {
         {!eligible && <p className={styles.message}>{astroxUser ? "Chế độ xem thử không hỗ trợ thanh toán." : "Đăng nhập bằng Zalo để nạp Point. Bạn vẫn có thể xem các gói bên dưới."}</p>}
         {pkgError ? <div role="alert"><p className={`${styles.message} ${styles.error}`}>Chưa tải được gói nạp.</p><button className={styles.retry} type="button" onClick={() => { setPkgError(false); setPackages(null); setReload(value => value + 1); }}>Thử lại</button></div> : packages === null ? <div className={styles.packages} role="status" aria-label="Đang tải gói nạp">{[0,1,2,3].map(key => <div key={key} className={styles.skeleton} aria-hidden="true" />)}</div> : packages.length === 0 ? <p className={styles.message}>Hiện chưa có gói nạp khả dụng. Bạn quay lại sau nhé.</p> : <fieldset className={styles.packages} aria-label="Gói nạp Point">
           {packages.map(pkg => <label className={styles.package} key={pkg.amount_vnd}>
-            <input type="radio" name="astrox-topup-package" value={pkg.amount_vnd} checked={selected === pkg.amount_vnd} disabled={buying} onChange={() => { setSelected(pkg.amount_vnd); setBuyError(""); }} aria-label={`${number(pkg.points)} Point, ${vnd(pkg.amount_vnd)}`} />
+            <input type="radio" name="astrox-topup-package" value={pkg.amount_vnd} checked={selected === pkg.amount_vnd} disabled={buying} onChange={() => { setSelected(pkg.amount_vnd); setApplied(null); setPromoMessage(""); setBuyError(""); }} aria-label={`${number(pkg.points)} Point, ${vnd(pkg.amount_vnd)}`} />
             <span className={styles.packageTop}><span className={styles.pointValue}>{number(pkg.points)}<small>Point</small></span><span className={styles.check} aria-hidden="true">✓</span></span>
             <span className={styles.price}>{vnd(pkg.amount_vnd)}</span>{packageNote(pkg.label) && <span className={styles.badge}>{packageNote(pkg.label)}</span>}
           </label>)}
         </fieldset>}
-        <details className={styles.details}><summary>Bạn có mã ưu đãi?</summary><div className={styles.promoRow}><input aria-label="Mã ưu đãi" value={promo} disabled={!eligible || buying} placeholder="Nhập mã của bạn" autoCapitalize="characters" autoComplete="off" onChange={event => { promoRevision.current += 1; setPromo(event.target.value); setApplied(null); setPromoMessage(""); setBuyError(""); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); void applyPromo(); } }} /><button type="button" onClick={() => void applyPromo()} disabled={!eligible || !promo.trim() || promoChecking || buying}>{promoChecking ? "Đang kiểm tra…" : "Áp dụng"}</button></div>{promoMessage && <p role="status" className={`${styles.message} ${applied ? styles.success : styles.error}`}>{promoMessage}</p>}</details>
+        <details className={styles.details}><summary>Bạn có mã ưu đãi?</summary><p className={styles.message}>Mã cộng Point trực tiếp không cần chọn gói nạp.</p><div className={styles.promoRow}><input aria-label="Mã ưu đãi" value={promo} disabled={!eligible || buying} placeholder="Nhập mã của bạn" autoCapitalize="characters" autoComplete="off" onChange={event => { promoRevision.current += 1; setPromo(event.target.value); setApplied(null); setPromoSuccess(false); setPromoMessage(""); setBuyError(""); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); void applyPromo(); } }} /><button type="button" onClick={() => void applyPromo()} disabled={!eligible || !promo.trim() || promoChecking || buying}>{promoChecking ? "Đang kiểm tra…" : "Áp dụng"}</button></div>{promoMessage && <p role="status" className={`${styles.message} ${promoSuccess ? styles.success : styles.error}`}>{promoMessage}</p>}</details>
         <details className={styles.details}><summary>Lịch sử nạp gần đây</summary>{!eligible ? <p className={styles.message}>Đăng nhập để xem giao dịch của bạn.</p> : historyError ? <p className={`${styles.message} ${styles.error}`}>Chưa tải được lịch sử. Hãy mở lại cửa sổ để thử lại.</p> : history === null ? <p role="status" className={styles.message}>Đang tải giao dịch…</p> : history.length === 0 ? <p className={styles.message}>Chưa có giao dịch nào. Lần nạp đầu tiên sẽ xuất hiện ở đây.</p> : <ul className={styles.history}>{history.map((order,index) => <li key={order.order_code ?? index}><div>{number(order.points)} Point<small>{vnd(order.amount_vnd)}{order.order_code ? ` · #${order.order_code}` : ""}</small></div><span className={styles.historyStatus}>{order.status === "paid" ? "Đã nạp" : order.status === "pending" ? "Chờ thanh toán" : order.status === "cancelled" || order.status === "canceled" ? "Đã hủy" : order.status === "expired" ? "Đã hết hạn" : "Đang cập nhật"}</span></li>)}</ul>}</details>
       </div>
       <footer className={styles.footer}>

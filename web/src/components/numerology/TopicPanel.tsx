@@ -4,7 +4,6 @@ import { refreshPromptRevision } from "@/lib/state";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {ReadingLoader} from "@/components/kit/ReadingLoader";
 import {SavedReading,ReadingInvitation} from "@/components/kit/SavedReading";
-import {Btn} from "@/components/kit";
 import {useRequireProfile} from "@/components/profile/ProfileModal";
 import {runAiPrompt} from "@/lib/api";
 import {readAiCache,writeAiCache} from "@/lib/state";
@@ -18,5 +17,5 @@ export function TopicPanel({topic,chart,profile}:{topic:NumerologyTopic;chart:Nu
  if(scope!==previousScope){setPreviousScope(scope);const cached=readAiCache('numerologyTopics',key);setText(cached);setState(cached?'done':'idle');setError('');}
  useEffect(()=>()=>{generation.current++;},[scope]);
  const run=useCallback(async()=>{if(!requireProfile())return;await refreshPromptRevision();const cached=readAiCache('numerologyTopics',key);if(cached){setText(cached);setState('done');return;}const id=++generation.current;setState('loading');setError('');try{const out=await runAiPrompt(numerologyPromptBody(topic.prompt,chart,profile),{serviceId:`numerology--${topic.id}`});if(id!==generation.current)return;writeAiCache('numerologyTopics',key,out,{module:'numerology',topic:topic.id});markFresh(out); setText(out);setState('done');}catch(e){if(id!==generation.current)return;setError(e instanceof Error?e.message:'Không lấy được luận giải.');setState('error');}},[markFresh,requireProfile,key,topic,chart,profile]);
- return <div aria-live="polite" aria-busy={state==='loading'}>{state==='idle'?<ReadingInvitation label="Đọc luận giải" onRun={run}/>:state==='loading'?<ReadingLoader kind="numerology"/>:state==='done'?<SavedReading text={text} periodic={topic.id==='personal-year'}/>:<div><p role="alert">{error}</p><Btn onClick={run}>Thử lại</Btn></div>}</div>;
+ return <div aria-live="polite" aria-busy={state==='loading'}>{state==='idle'?<ReadingInvitation label="Đọc luận giải" onRun={run} serviceId={`numerology--${topic.id}`} prompt={numerologyPromptBody(topic.prompt,chart,profile)}/>:state==='loading'?<ReadingLoader kind="numerology"/>:state==='done'?<SavedReading text={text} periodic={topic.id==='personal-year'}/>:<div><p role="alert">{error}</p><ReadingInvitation label="Thử lại" onRun={run} serviceId={`numerology--${topic.id}`} prompt={numerologyPromptBody(topic.prompt,chart,profile)}/></div>}</div>;
 }

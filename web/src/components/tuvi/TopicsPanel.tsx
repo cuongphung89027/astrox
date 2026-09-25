@@ -72,7 +72,7 @@ export function TopicsPanel({ profile, chart }: TopicsPanelProps) {
     <header className={styles.readerHeader}><span className={styles.eyebrow}>LUẬN GIẢI CỦA {profile.name.toUpperCase()}</span><h2>{topic.title}</h2><p>{topic.desc}</p></header>
     <div className={styles.readingLayout}>
       <nav className={styles.questions} aria-label="Chọn góc nhìn"><p>GÓC NHÌN</p>{topic.subs.map((s, i) => <button key={s.id} aria-pressed={s.id === sub.id} onClick={() => setSubId(s.id)}><span>{String(i + 1).padStart(2, "0")}</span>{s.label}</button>)}</nav>
-      <article className={styles.answer} aria-label={sub.label}><ReadingQuestion label="GÓC NHÌN BẠN CHỌN">{sub.label}</ReadingQuestion><AiPanel cached={ai.text} loading={ai.loading} error={ai.error} runLabel="Khám phá luận giải" emptyText="Một góc nhìn dành riêng cho bạn, dựa trên thông tin và các cung trong lá số đã lưu." onRun={ai.run} /></article>
+      <article className={styles.answer} aria-label={sub.label}><ReadingQuestion label="GÓC NHÌN BẠN CHỌN">{sub.label}</ReadingQuestion><AiPanel cached={ai.text} loading={ai.loading} error={ai.error} runLabel="Khám phá luận giải" emptyText="Một góc nhìn dành riêng cho bạn, dựa trên thông tin và các cung trong lá số đã lưu." onRun={ai.run} serviceId={`tuvi--${topic.id}--${sub.id}`} prompt={prompt} /></article>
     </div>
   </section>;
 }

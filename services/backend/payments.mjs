@@ -35,19 +35,34 @@ export async function payosSignature(key, data) {
   ).join('');
 }
 const configured = env => Boolean(env.PAYOS_CLIENT_ID && env.PAYOS_API_KEY && env.PAYOS_CHECKSUM_KEY);
-async function getPromo(env, settings, code, amount, userId) {
+const minimumError = amount => Object.assign(new Error('promo_min_amount'), { minAmountVnd: amount });
+async function getPromo(env, settings, code, amount, userId, expectedKind = null) {
   if (!code) return null;
   if (settings.config) {
-    const p = settings.config.billing.promos.find(p => p.code === code && p.enabled);
+    const p = settings.config.billing.promos.find(p => p.code === code);
     if (!p) throw new Error('invalid_promo');
+    if (!p.enabled) throw new Error('promo_disabled');
     if (p.expiresAt && Date.parse(p.expiresAt) <= Date.now()) throw new Error('promo_expired');
-    return { id: p.id, code: p.code, bonus: p.bonus, limit: p.limit, perUser: p.perUser };
+    const kind = p.kind ?? 'topup_bonus';
+    if (expectedKind && kind !== expectedKind) throw new Error('promo_wrong_kind');
+    if (kind === 'topup_bonus' && amount < (p.minAmountVnd ?? 0)) {
+      throw minimumError(p.minAmountVnd);
+    }
+    const source = kind === 'direct_points' ? 'backend_promo_redemptions r' : 'backend_order_snapshots r JOIN topup_orders_zalo o ON o.order_code=r.order_code';
+    const where = kind === 'direct_points' ? 'r.promo_id=?' : "r.promo_id=? AND (o.status='paid' OR (o.status='pending' AND r.expires_at>?))";
+    const args = kind === 'direct_points' ? [p.id] : [p.id, new Date().toISOString()];
+    const total = await env.DB.prepare(`SELECT COUNT(*) AS n FROM ${source} WHERE ${where}`).bind(...args).first();
+    if ((total?.n ?? 0) >= p.limit) throw new Error('promo_exhausted');
+    const used = await env.DB.prepare(`SELECT COUNT(*) AS n FROM ${source} WHERE ${where} AND r.user_id=?`).bind(...args, userId).first();
+    if ((used?.n ?? 0) >= p.perUser) throw new Error('promo_user_exhausted');
+    return { id: p.id, code: p.code, kind, bonus: p.bonus, limit: p.limit, perUser: p.perUser };
   }
   const p = await env.DB.prepare('SELECT * FROM promotion_codes WHERE code=? AND active=1').bind(code).first();
   if (!p) throw new Error('invalid_promo');
   if (p.expires_at && Date.parse(p.expires_at) <= Date.now()) throw new Error('promo_expired');
-  if (p.starts_at && Date.parse(p.starts_at) > Date.now()) throw new Error('invalid_promo');
-  if (amount && amount < (p.min_amount_vnd || 0)) throw new Error('promo_min_amount');
+  if (p.starts_at && Date.parse(p.starts_at) > Date.now()) throw new Error('promo_not_started');
+  if (expectedKind === 'direct_points') throw new Error('promo_wrong_kind');
+  if (amount < (p.min_amount_vnd || 0)) throw minimumError(p.min_amount_vnd);
   if (p.max_redemptions != null && p.redeemed_count >= p.max_redemptions) throw new Error('promo_exhausted');
   return {
     id: p.id,
@@ -69,10 +84,44 @@ export async function handlePromoCheck(env, request) {
   const settings = await runtimeSettings(env);
   try {
     const p = await getPromo(env, settings, code, Number(b?.amount_vnd) || 0, user.sub);
-    return json(env, request, { ok: true, bonus_points: p.bonus, bonus_label: `+${p.bonus} Point` });
+    return json(env, request, { ok: true, kind: p.kind ?? 'topup_bonus', bonus_points: p.bonus, bonus_label: `+${p.bonus} Point` });
   } catch (e) {
-    return json(env, request, { error: e.message }, 400);
+    return json(env, request, { error: e.message, min_amount_vnd: e.minAmountVnd }, 400);
   }
+}
+export async function handlePromoRedeem(env, request) {
+  if (!trustedOrigin(env, request)) return json(env, request, { error: 'invalid_origin' }, 403);
+  const user = await readSession(env, request);
+  if (!user) return json(env, request, { error: 'unauthorized' }, 401);
+  const b = await bodyJson(request);
+  const code = String(b?.promo_code || '').trim().toUpperCase();
+  const requestKey = String(b?.request_key || '');
+  if (!/^[A-Z0-9_-]{2,40}$/.test(code) || !/^[a-zA-Z0-9_-]{8,100}$/.test(requestKey)) return json(env, request, { error: 'bad_request' }, 400);
+  const settings = await runtimeSettings(env);
+  if (!settings.config) return json(env, request, { error: 'promo_disabled' }, 400);
+  const existing = await env.DB.prepare('SELECT promo_id,points FROM backend_promo_redemptions WHERE user_id=? AND request_key=?').bind(user.sub, requestKey).first();
+  const existingCode = settings.config.billing.promos.find(p => p.code === code);
+  if (existing) return existingCode?.id === existing.promo_id ? json(env, request, { ok: true, points: existing.points, replayed: true }) : json(env, request, { error: 'invalid_promo' }, 400);
+  if (!settings.config.billing.enabled || settings.config.operations.maintenance) return json(env, request, { error: 'promo_disabled' }, 400);
+  let promo;
+  try { promo = await getPromo(env, settings, code, 0, user.sub, 'direct_points'); }
+  catch (e) { return json(env, request, { error: e.message }, 400); }
+  const id = crypto.randomUUID(), now = new Date().toISOString();
+  const inserted = await env.DB.batch([
+    env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(user.sub, now),
+    env.DB.prepare(`INSERT INTO backend_promo_redemptions(id,promo_id,user_id,request_key,points,created_at)
+      SELECT ?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM backend_promo_redemptions WHERE promo_id=?)<?
+      AND (SELECT COUNT(*) FROM backend_promo_redemptions WHERE promo_id=? AND user_id=?)<?
+      AND NOT EXISTS(SELECT 1 FROM backend_promo_redemptions WHERE user_id=? AND request_key=?)`).bind(id,promo.id,user.sub,requestKey,promo.bonus,now,promo.id,promo.limit,promo.id,user.sub,promo.perUser,user.sub,requestKey),
+    env.DB.prepare("INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,?,?, 'promo_direct',?,? WHERE changes()=1").bind(crypto.randomUUID(),user.sub,promo.bonus,id,now),
+    env.DB.prepare('UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1').bind(promo.bonus,now,user.sub),
+  ]);
+  if (!inserted[1].meta.changes) {
+    const replay = await env.DB.prepare('SELECT promo_id,points FROM backend_promo_redemptions WHERE user_id=? AND request_key=?').bind(user.sub, requestKey).first();
+    if (replay?.promo_id === promo.id) return json(env, request, { ok: true, points: replay.points, replayed: true });
+    return json(env, request, { error: 'promo_exhausted' }, 400);
+  }
+  return json(env, request, { ok: true, points: promo.bonus });
 }
 export async function handleTopupCreate(env, request, fetchImpl = fetch) {
   if (!trustedOrigin(env, request)) return json(env, request, { error: 'invalid_origin' }, 403);
@@ -99,9 +148,10 @@ export async function handleTopupCreate(env, request, fetchImpl = fetch) {
         .toUpperCase(),
       amount,
       session.sub,
+      'topup_bonus',
     );
   } catch (e) {
-    return json(env, request, { error: e.message }, 400);
+    return json(env, request, { error: e.message, min_amount_vnd: e.minAmountVnd }, 400);
   }
   const points = pkg.points + (promo?.bonus || 0);
   if (!Number.isSafeInteger(points) || points < 1) return json(env, request, { error: 'invalid_package' }, 422);

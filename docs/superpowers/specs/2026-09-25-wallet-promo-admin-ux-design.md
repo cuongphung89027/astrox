@@ -17,3 +17,13 @@ Ngày: 2026-09-25. Chủ sở hữu: Codex. Nhánh: `codex/wallet-promo-admin-ux
 - Promo cấu hình mới đi qua cùng luồng draft, publish, revision và runtime settings hiện có. Các đơn đã tạo giữ snapshot bất biến; sửa promo về sau không đổi Point của đơn cũ.
 - Kiểm thử trọng tâm: một lần tải `/api/me` khi đăng nhập; refresh sau nạp/tiêu/điều chỉnh và đổi tài khoản; kiểm tra promo đúng/sai ngưỡng, hết hạn, hết lượt và cạnh tranh đồng thời; direct credit đúng một lần; ô tìm Admin; giá trên nút khớp popup và báo giá backend. Chạy typecheck, lint/build, test liên quan, `git diff --check`, rồi `codegraph sync` trước handoff.
 - Kiểm chứng production chỉ thực hiện trong quy trình release riêng sau khi merge, migration, Worker và Pages cùng SHA; cần thử route, API và phiên đăng nhập thật.
+
+## Cập nhật sau triển khai (25/09/2026, nhánh `codex/paid-price-badge`)
+
+Mục 6 tinh chỉnh theo phản hồi người dùng, qua ba lần thể hiện:
+
+- `e96bfcc` (bản đầu): giá nối thẳng vào label nút dạng `· x Point` — bị chê rối, trông như một câu dài.
+- `0b92c03`: tách thành pill `PaidPriceBadge` riêng (viền vàng, nền kem) trên 9 call-site.
+- `afb1576`: pill gọn lại thành đồng xu `PointCoin` + số Point (~36px); dịch vụ cấu hình free hiển thị pill "Free" frosted; lỗi tải báo giá thu thành pill "…". `usePaidPrice` thêm `points?: number` và `free?: boolean` — phân biệt "dịch vụ free" (hiện Free) với "nút không gắn dịch vụ" (ẩn). Popup xác nhận vẫn dùng báo giá backend đầy đủ "x Point" như mục 6.
+
+Kèm theo: `30cecd5` bỏ link "Xem cặp đôi ↗" trên trang Tử Vi và Bát Tự vì trùng lặp với các chế độ cặp đôi riêng của `/tuonghop`. Chi tiết phát hành xem `docs/releases/2026-09-25-paid-price-badge.md`.

@@ -4,8 +4,12 @@ import Link from "next/link";
 import { callAiText } from "@/lib/api";
 import { managedPrompt } from "@/lib/managed-prompts";
 import { usePaidPrice } from "@/lib/use-paid-price";
+import { isWellLit } from "@/lib/palm-camera";
+import type { HandPoint } from "@/lib/hand-tracker";
 import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
 import { parsePalmReading, type PalmReading } from "@/lib/palm";
+import { PalmCamera, type PalmCapture } from "@/components/discovery/PalmCamera";
+import { PalmGuide } from "@/components/discovery/PalmGuide";
 import s from "./Discovery.module.css";
 function HandArt() {
   return (
@@ -39,65 +43,27 @@ export function PalmReader() {
     [result, setResult] = useState<PalmReading | null>(null),
     [active, setActive] = useState(0),
     [overlay, setOverlay] = useState(true);
+  const [tips, setTips] = useState<HandPoint[] | null>(null);
   const price = usePaidPrice("palm", managedPrompt("palm.read.v1", [side, dominant, question]));
-  const video = useRef<HTMLVideoElement>(null),
-    stream = useRef<MediaStream | null>(null),
-    abort = useRef<AbortController | null>(null),
+  const abort = useRef<AbortController | null>(null),
     generation = useRef(0),
     upload = useRef<HTMLInputElement>(null);
-  function stop() {
-    stream.current?.getTracks().forEach((t) => t.stop());
-    stream.current = null;
-    setCamera(false);
-  }
   useEffect(
     () => () => {
       generation.current++;
-      stream.current?.getTracks().forEach((t) => t.stop());
       abort.current?.abort();
     },
     [],
   );
-  useEffect(() => {
-    if (camera && video.current && stream.current) {
-      video.current.srcObject = stream.current;
-      void video.current
-        .play()
-        .catch(() =>
-          setError("Không mở được camera. Bạn có thể chọn ảnh từ thư viện."),
-        );
-    }
-  }, [camera]);
-  async function start() {
+  function start() {
+    generation.current++;
     setError("");
-    const token = ++generation.current;
-    try {
-      if (!navigator.mediaDevices?.getUserMedia)
-        throw new Error(
-          "Camera chưa khả dụng. Hãy mở bằng HTTPS hoặc chọn ảnh.",
-        );
-      const media = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 } },
-        audio: false,
-      });
-      if (token !== generation.current) {
-        media.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      stream.current?.getTracks().forEach((t) => t.stop());
-      stream.current = media;
-      setCamera(true);
-      setResult(null);
-    } catch {
-      if (token === generation.current)
-        setError(
-          "Không mở được camera. Cho phép truy cập camera hoặc chọn ảnh từ thư viện.",
-        );
-    }
+    setCamera(true);
   }
   function process(source: CanvasImageSource, width: number, height: number) {
     if (Math.min(width, height) < 350)
       throw new Error("Ảnh quá nhỏ. Chọn ảnh rõ hơn, đủ lòng bàn tay.");
+    const tooDarkOrBright = !isWellLit(source, width, height);
     const ratio = Math.min(1, 1200 / Math.max(width, height)),
       canvas = document.createElement("canvas");
     canvas.width = Math.round(width * ratio);
@@ -109,12 +75,44 @@ export function PalmReader() {
     if (data.length > 1150000) data = canvas.toDataURL("image/jpeg", 0.6);
     if (data.length > 1150000)
       throw new Error("Ảnh còn quá lớn. Hãy chọn ảnh khác.");
+    applyPhoto(data, canvas.width, canvas.height, null);
+    // Đúng spec §3.4: sáng tối chỉ cảnh báo, không chặn người dùng.
+    if (tooDarkOrBright)
+      setError(
+        "Ảnh hơi tối hoặc hơi chói — kết quả có thể kém chính xác. Nên chụp lại ở nơi sáng.",
+      );
+  }
+  function applyPhoto(
+    data: string,
+    w: number,
+    h: number,
+    next: HandPoint[] | null,
+  ) {
     setPhoto(data);
-    setSize({ w: canvas.width, h: canvas.height });
+    setSize({ w, h });
+    setTips(next);
     setResult(null);
     setConsent(false);
     setError("");
-    stop();
+    setCamera(false);
+  }
+  /**
+   * I1 (review Task 6): flash cảnh báo tối/chói trong PalmCamera chết cùng nhịp
+   * unmount nên người dùng không thấy — đo lại trên chính ảnh vừa chụp. Chỉ cảnh
+   * báo (spec §3.4), không chặn: ảnh vẫn được áp ngay, lời nhắc tới sau khi decode.
+   */
+  function lightWarning(dataUrl: string, w: number, h: number): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () =>
+        resolve(
+          isWellLit(img, w, h)
+            ? ""
+            : "Ảnh hơi tối hoặc hơi chói — kết quả có thể kém chính xác. Nên chụp lại ở nơi sáng.",
+        );
+      img.onerror = () => resolve("");
+      img.src = dataUrl;
+    });
   }
   async function load(file?: File) {
     if (!file) return;
@@ -174,7 +172,8 @@ export function PalmReader() {
   function reset() {
     abort.current?.abort();
     generation.current++;
-    stop();
+    setCamera(false);
+    setTips(null);
     setPhoto("");
     setResult(null);
     setError("");
@@ -191,90 +190,125 @@ export function PalmReader() {
       </header>
       <div className={`${s.grid} ${!photo ? s.captureOnly : ""}`}>
         <section>
-          <div
-            className={`${s.art} ${!photo && !camera ? s.emptyArt : ""}`}
-            style={
-              photo
-                ? { aspectRatio: `${size.w}/${size.h}`, maxHeight: "none" }
-                : {}
-            }
-          >
-            {camera ? (
-              <video
-                ref={video}
-                muted
-                playsInline
-                aria-label="Camera chụp bàn tay"
-              />
-            ) : photo ? (
-              <img src={photo} alt="Ảnh lòng bàn tay bạn đã chọn" />
-            ) : (
-              <HandArt />
-            )}
-            {busy && <div className={s.scan} />}{" "}
-            {photo && !camera && overlay && result?.quality === "ok" && (
-              <svg
-                viewBox="0 0 1000 1000"
-                preserveAspectRatio="none"
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                }}
-                aria-label="Đường gợi ý trên ảnh"
+          {camera ? (
+            <PalmCamera
+              onCapture={(shot: PalmCapture) => {
+                try {
+                  if (Math.min(shot.w, shot.h) < 350) {
+                    // PalmCamera đã nhả stream trong capture() trước khi báo về, nên giữ
+                    // nó mounted sẽ thành khung hình chết — đóng camera rồi báo lỗi.
+                    setCamera(false);
+                    throw new Error("Ảnh quá nhỏ. Đưa tay sát hơn rồi chụp lại.");
+                  }
+                  const token = generation.current;
+                  // Đo sáng khởi động trước nhưng không chặn: ảnh vẫn được áp ngay.
+                  const light = lightWarning(shot.dataUrl, shot.w, shot.h);
+                  applyPhoto(shot.dataUrl, shot.w, shot.h, shot.fingertips);
+                  void light.then((warn) => {
+                    // reset()/unmount đã tăng generation → cảnh báo lượt chụp cũ bị bỏ.
+                    if (warn && token === generation.current) setError(warn);
+                  });
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+              }}
+              onClose={() => {
+                generation.current++;
+                setCamera(false);
+              }}
+              onFatal={(message) => {
+                setError(message);
+                setCamera(false);
+              }}
+            />
+          ) : (
+            <>
+              <div
+                className={`${s.art} ${!photo ? s.emptyArt : ""}`}
+                style={
+                  photo
+                    ? { aspectRatio: `${size.w}/${size.h}`, maxHeight: "none" }
+                    : {}
+                }
               >
-                {result.lines.map((line, i) => (
-                  <polyline
-                    key={i}
-                    points={line.points
-                      .map(([x, y]) => `${x * 1000},${y * 1000}`)
-                      .join(" ")}
-                    fill="none"
-                    stroke={i === active ? "#f3cf79" : "#e0e8d4"}
-                    strokeWidth={i === active ? 7 : 4}
-                    vectorEffect="non-scaling-stroke"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    onClick={() => setActive(i)}
+                {photo ? (
+                  <img src={photo} alt="Ảnh lòng bàn tay bạn đã chọn" />
+                ) : (
+                  <HandArt />
+                )}
+                {busy && <div className={s.scan} />}{" "}
+                {photo && overlay && result?.quality === "ok" && (
+                  <svg
+                    viewBox="0 0 1000 1000"
+                    preserveAspectRatio="none"
                     style={{
-                      cursor: "pointer",
-                      opacity: i === active ? 1 : 0.6,
+                      position: "absolute",
+                      inset: 0,
+                      width: "100%",
+                      height: "100%",
                     }}
-                  />
-                ))}
-              </svg>
-            )}
-          </div>
-          <div className={s.actions}>
-            {camera ? (
-              <>
-                <button
-                  className={s.button}
-                  onClick={() => {
-                    const v = video.current;
-                    if (v)
-                      try {
-                        process(v, v.videoWidth, v.videoHeight);
-                      } catch (e) {
-                        setError((e as Error).message);
-                      }
-                  }}
-                >
-                  Chụp ảnh
-                </button>
-                <button
-                  className={s.secondary}
-                  onClick={() => {
-                    generation.current++;
-                    stop();
-                  }}
-                >
-                  Tắt camera
-                </button>
-              </>
-            ) : (
-              <>
+                    aria-label="Đường gợi ý trên ảnh"
+                  >
+                    {result.lines.map((line, i) => (
+                      <polyline
+                        key={i}
+                        points={line.points
+                          .map(([x, y]) => `${x * 1000},${y * 1000}`)
+                          .join(" ")}
+                        fill="none"
+                        stroke={i === active ? "#f3cf79" : "#e0e8d4"}
+                        strokeWidth={i === active ? 7 : 4}
+                        vectorEffect="non-scaling-stroke"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        pathLength={100}
+                        className={s.revealLine}
+                        onClick={() => setActive(i)}
+                        style={{
+                          cursor: "pointer",
+                          animationDelay: `${i * 0.55}s`,
+                          opacity: i === active ? 1 : 0.6,
+                        }}
+                      />
+                    ))}
+                    {result.lines.map((line, i) => (
+                      <g key={`d${i}`}>
+                        {[
+                          line.points[0],
+                          line.points[line.points.length - 1],
+                        ].map(([x, y], j) => (
+                          <circle
+                            key={j}
+                            cx={x * 1000}
+                            cy={y * 1000}
+                            r={9}
+                            fill={i === active ? "#f3cf79" : "#e0e8d4"}
+                            className={s.revealDot}
+                            style={{ animationDelay: `${i * 0.55 + 0.7}s` }}
+                          />
+                        ))}
+                      </g>
+                    ))}
+                    {tips &&
+                      tips.length > 0 &&
+                      tips.map((p, i) => (
+                        <circle
+                          key={`t${i}`}
+                          cx={p.x * 1000}
+                          cy={p.y * 1000}
+                          r={7}
+                          fill="#f3cf79"
+                          opacity={0.85}
+                          className={s.revealDot}
+                          style={{
+                            animationDelay: `${result.lines.length * 0.55 + 0.3}s`,
+                          }}
+                        />
+                      ))}
+                  </svg>
+                )}
+              </div>
+              <div className={s.actions}>
                 <button
                   className={s.button}
                   disabled={busy}
@@ -289,19 +323,21 @@ export function PalmReader() {
                 >
                   Chọn ảnh
                 </button>
-              </>
-            )}
-            <input
-              ref={upload}
-              type="file"
-              hidden
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => {
-                void load(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-          </div>
+              </div>
+            </>
+          )}
+          {!photo && !camera && <PalmGuide />}
+          {/* Input file nằm ngoài nhánh camera: đổi trạng thái camera không làm mất ref ảnh. */}
+          <input
+            ref={upload}
+            type="file"
+            hidden
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => {
+              void load(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
           {photo && (
             <button
               className={s.secondary}
@@ -439,6 +475,12 @@ export function PalmReader() {
                 >
                   Dừng phân tích
                 </button>
+              )}
+              {busy && (
+                <p className={s.waitNote} aria-live="polite">
+                  Sẽ đọc: đường Tâm · đường Đầu · đường Sống · đường Tài Lộc —
+                  đường nào thấy rõ mới hiện.
+                </p>
               )}
             </form>
           ) : null}

@@ -298,6 +298,67 @@
   box-shadow: 0 0 25px 8px #c2a15d55;
   animation: scan 2.4s ease-in-out infinite;
 }
+.cameraWrap {
+  display: grid;
+  gap: 14px;
+}
+.cameraBox {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #101512;
+  width: 100%;
+}
+.cameraBox video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.cameraOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.countdown {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 44px;
+  padding: 6px 10px;
+  border-radius: 16px;
+  background: #f3cf79;
+  color: #24352c;
+  font-family: var(--font-display);
+  font-size: 24px;
+  text-align: center;
+}
+.guideLine {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: #101512cc;
+  color: #f8f3e7;
+  font-size: 13px;
+  text-align: center;
+}
+.lensBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 6px 12px;
+  border-radius: 14px;
+  border: 1px solid #f3cf7955;
+  background: #101512cc;
+  color: #f8f3e7;
+  font-size: 12px;
+}
 .reading {
   white-space: pre-wrap;
   line-height: 1.9;
@@ -327,6 +388,54 @@
   border-radius: 20px;
   background: #e8eddf;
   font-size: 12px;
+}
+.guide {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.guideCard {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid #d9dfcc;
+  background: #fdfaf1;
+}
+.guideGood {
+  border-color: #c9d6c2;
+  background: #eef3e6;
+}
+.guideBad {
+  grid-template-columns: repeat(3, 1fr);
+}
+.guideCard svg {
+  width: 100%;
+  height: auto;
+  color: #698360;
+}
+.guideBad svg {
+  color: #a96a4d;
+}
+.guideCard p,
+.guideCard figcaption {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #55645c;
+  margin: 0;
+  text-align: center;
+}
+.guideBad figure {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.guideNote {
+  font-size: 13px;
+  color: #74836e;
+  line-height: 1.6;
+  margin: 0;
 }
 .check {
   display: flex;
@@ -634,5 +743,41 @@
 @media (max-width: 720px) {
   .monthNav input {
     font-size: 14px;
+  }
+}
+
+.waitNote {
+  font-size: 13px;
+  color: #74836e;
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+.revealLine {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawLine 0.9s ease-out forwards;
+}
+.revealDot {
+  opacity: 0;
+  animation: fadeDot 0.35s ease-out forwards;
+}
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes fadeDot {
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .revealLine {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .revealDot {
+    animation: none;
+    opacity: 1;
   }
 }

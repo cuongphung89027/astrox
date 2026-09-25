@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendor wasm runtime shipped as-is in public/ — not project source.
+    "public/**",
   ]),
 ]);
 

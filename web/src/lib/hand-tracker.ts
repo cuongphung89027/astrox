@@ -5,6 +5,10 @@
  * trong trình duyệt.
  */
 
+import type { HandLandmarker } from "@mediapipe/tasks-vision";
+
+export type { HandLandmarker };
+
 export type HandPoint = { x: number; y: number };
 export type HandVerdict = "none" | "far" | "tilt" | "ready";
 export type HandFrame = { present: boolean; bboxRatio: number; aspect: number; motion: number };
@@ -59,4 +63,48 @@ export const FINGERTIP_INDEXES = [4, 8, 12, 16, 20] as const;
 
 export function fingertipsOf(pts: HandPoint[]): HandPoint[] {
   return FINGERTIP_INDEXES.map((i) => pts[i]).filter(Boolean);
+}
+
+/** Nạp HandLandmarker on-device; GPU trước, rơi về CPU nếu GPU fail. */
+export async function loadHandTracker(): Promise<HandLandmarker> {
+  const vision = await import("@mediapipe/tasks-vision");
+  const fileset = await vision.FilesetResolver.forVisionTasks("/mediapipe/wasm");
+  const make = (delegate: "GPU" | "CPU") =>
+    vision.HandLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: "/models/hand_landmarker.task", delegate },
+      runningMode: "VIDEO",
+      numHands: 1,
+    });
+  try {
+    return await make("GPU");
+  } catch {
+    return await make("CPU");
+  }
+}
+
+/** Vòng dò ~15fps; timestamp phải tăng đơn điệu hoặc MediaPipe ném lỗi. */
+export function startDetectLoop(
+  video: HTMLVideoElement,
+  landmarker: HandLandmarker,
+  onFrame: (pts: HandPoint[] | null) => void,
+): () => void {
+  let raf = 0;
+  let last = 0;
+  let ts = 0;
+  const tick = () => {
+    raf = requestAnimationFrame(tick);
+    const now = performance.now();
+    if (now - last < 66 || video.readyState < 2) return;
+    last = now;
+    ts = Math.max(ts + 1, Math.round(now));
+    try {
+      const res = landmarker.detectForVideo(video, ts);
+      const pts = (res?.landmarks?.[0] as HandPoint[] | undefined) ?? null;
+      onFrame(pts);
+    } catch {
+      /* frame chưa sẵn sàng — bỏ qua */
+    }
+  };
+  raf = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(raf);
 }

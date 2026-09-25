@@ -1,6 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { isWellLit, openBackCamera, type LensCandidate } from "@/lib/palm-camera";
+import {
+  isWellLit,
+  openBackCamera,
+  switchToLens,
+  type LensCandidate,
+} from "@/lib/palm-camera";
 import {
   assessHand,
   bumpStable,
@@ -14,6 +19,7 @@ import {
   type HandPoint,
   type HandVerdict,
 } from "@/lib/hand-tracker";
+import { PALM_HAND_PATH } from "@/components/discovery/PalmGuide";
 import s from "./Discovery.module.css";
 
 const CONNECTIONS: [number, number][] = [
@@ -51,7 +57,6 @@ export function PalmCamera({
   const countingRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const loadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cbs = useRef({ onCapture, onClose, onFatal });
   useEffect(() => {
     cbs.current = { onCapture, onClose, onFatal };
@@ -65,6 +70,8 @@ export function PalmCamera({
   const [warn, setWarn] = useState("");
   const [trackerOff, setTrackerOff] = useState(false);
   const [trackerReady, setTrackerReady] = useState(false);
+  const [streamReady, setStreamReady] = useState(false);
+  const [loaderGone, setLoaderGone] = useState(false);
 
   function cleanup() {
     stopLoopRef.current();
@@ -72,8 +79,6 @@ export function PalmCamera({
     timerRef.current = null;
     if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
     warnTimerRef.current = null;
-    if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
-    loadTimerRef.current = null;
     countingRef.current = false;
     landmarkerRef.current?.close();
     landmarkerRef.current = null;
@@ -185,6 +190,14 @@ export function PalmCamera({
     };
   }, []);
 
+  // Model sẵn sàng thì giữ màn loading thêm 550ms cho hiệu ứng vẽ tay kịp khép
+  // vòng rồi mới mờ đi — trước đây hết 4s là tự tắt, chờ model thật thì lâu hơn.
+  useEffect(() => {
+    if (!trackerReady) return;
+    const timer = setTimeout(() => setLoaderGone(true), 550);
+    return () => clearTimeout(timer);
+  }, [trackerReady]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -199,16 +212,15 @@ export function PalmCamera({
         if (v) {
           v.srcObject = opened.stream;
           await v.play().catch(() => {});
+          if (!cancelled) setStreamReady(true);
         }
         setBackList(opened.backList);
-        setLensIdx(0);
+        // Chỉ số phải trỏ đúng lens đang mở: openBackCamera có thể chọn lens khác
+        // backList[0], lệch chỉ số thì "Đổi ống kính" mở lại chính nó rồi mới
+        // nhảy về lens mặc định (và ghi nhớ nhầm lens mặc định đó).
+        setLensIdx(Math.max(0, opened.backList.findIndex((c) => c.deviceId === opened.deviceId)));
         setNote("Đưa lòng bàn tay vào khung");
         try {
-          setNote("Đang tải bộ nhận diện tay…");
-          // Model ~8MB: quá 4s thì chuyển copy chụp thủ công, không bắt người dùng chờ.
-          loadTimerRef.current = setTimeout(() => {
-            if (!landmarkerRef.current) setTrackerOff(true);
-          }, 4000);
           const lm = await loadHandTracker();
           if (cancelled) {
             lm.close();
@@ -216,7 +228,6 @@ export function PalmCamera({
           }
           landmarkerRef.current = lm;
           setTrackerReady(true);
-          setTrackerOff(false);
           if (videoRef.current)
             stopLoopRef.current = startDetectLoop(videoRef.current, lm, (pts) => {
               const frame = frameFromLandmarks(pts, prevPtsRef.current);
@@ -251,10 +262,9 @@ export function PalmCamera({
     if (backList.length < 2) return;
     const next = backList[(lensIdx + 1) % backList.length];
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: next.deviceId }, width: { ideal: 1280 } },
-        audio: false,
-      });
+      // switchToLens ghi luôn lựa chọn vào localStorage: máy không có tín hiệu
+      // zoom vẫn mở đúng lens này ở lần sau.
+      const stream = await switchToLens(next.deviceId);
       const prev = streamRef.current;
       if (!prev) {
         // camera đã bị dọn trong lúc chờ (chụp/tắt/unmount) — đóng stream vừa mở
@@ -299,9 +309,29 @@ export function PalmCamera({
             Đổi ống kính
           </button>
         )}
+        {!loaderGone && !trackerOff && (
+          <div className={`${s.loadOverlay} ${trackerReady ? s.loadDone : ""}`} role="status">
+            <svg viewBox="0 0 240 320" className={s.loadHand} aria-hidden="true">
+              <path d={PALM_HAND_PATH} pathLength={100} />
+            </svg>
+            <p className={s.loadTitle}>
+              {streamReady ? "Đang tải bộ nhận diện tay…" : "Đang mở camera…"}
+            </p>
+            <small className={s.loadHint}>
+              Lần đầu tải khoảng 8 MB — những lần sau mở lại là tức thì
+            </small>
+          </div>
+        )}
       </div>
       <div className={s.actions}>
-        <button type="button" className={s.button} onClick={capture}>
+        <button
+          type="button"
+          className={s.button}
+          // Màn loading che preview: chụp lúc này là chụp mù. Loader tắt theo
+          // trackerOff nên nút tự bật lại đúng lúc copy chụp thủ công hiện.
+          disabled={!loaderGone && !trackerOff}
+          onClick={capture}
+        >
           Chụp ảnh
         </button>
         <button

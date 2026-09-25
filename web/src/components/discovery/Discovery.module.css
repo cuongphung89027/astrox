@@ -781,3 +781,98 @@
     opacity: 1;
   }
 }
+/* Popup hướng dẫn trước khi chụp — trên nav (40), dock (60) và sheet (50). */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #24352cd9;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.modalCard {
+  background: #f8f3e7;
+  border-radius: 24px;
+  padding: 22px;
+  max-width: 430px;
+  width: 100%;
+  max-height: 82vh;
+  overflow: auto;
+  box-shadow: 0 24px 60px #12231b5c;
+}
+.modalActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+.loadOverlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  background: #101512;
+  color: #f8f3e7;
+  text-align: center;
+  padding: 24px;
+  transition: opacity 0.45s ease;
+  /* Khung xem trước 16:9 rất thấp: cho bàn tay co theo chiều cao khung để
+     tiêu đề và dòng gợi ý không bị cắt (đo trên khung 412x214). */
+  container-type: size;
+}
+.loadDone {
+  opacity: 0;
+  pointer-events: none;
+}
+.loadHand {
+  height: min(150px, 46cqh);
+  width: auto;
+  max-width: 46%;
+  overflow: visible;
+}
+.loadHand path {
+  fill: none;
+  stroke: #f3cf79;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawHand 2.6s ease-in-out infinite;
+}
+.loadTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+.loadHint {
+  color: #9aa79b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+@keyframes drawHand {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  55% {
+    stroke-dashoffset: 0;
+  }
+  82% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 100;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loadHand path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .loadOverlay {
+    transition: none;
+  }
+}

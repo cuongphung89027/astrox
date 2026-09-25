@@ -9,8 +9,29 @@ import type { HandPoint } from "@/lib/hand-tracker";
 import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
 import { parsePalmReading, type PalmReading } from "@/lib/palm";
 import { PalmCamera, type PalmCapture } from "@/components/discovery/PalmCamera";
-import { PalmGuide } from "@/components/discovery/PalmGuide";
+import { PalmGuide, PALM_HAND_PATH } from "@/components/discovery/PalmGuide";
 import s from "./Discovery.module.css";
+
+const GUIDE_SEEN_KEY = "palmGuideSeen";
+
+/** Hướng dẫn chụp chỉ hiện một lần mỗi phiên — không làm phiền lần chụp sau. */
+function guideSeen(): boolean {
+  try {
+    if (typeof sessionStorage === "undefined") return false;
+    return sessionStorage.getItem(GUIDE_SEEN_KEY) !== null;
+  } catch {
+    return false; // chế độ riêng tư — coi như chưa xem
+  }
+}
+
+function markGuideSeen(): void {
+  try {
+    if (typeof sessionStorage !== "undefined") sessionStorage.setItem(GUIDE_SEEN_KEY, "1");
+  } catch {
+    /* không ghi được thì lần sau vẫn hiện hướng dẫn */
+  }
+}
+
 function HandArt() {
   return (
     <svg
@@ -21,11 +42,7 @@ function HandArt() {
       strokeWidth="2"
       aria-hidden="true"
     >
-      <path d="M79 290c0-33-5-47-24-71l-27-48c-8-17 10-25 20-13l25 31-9-101c-2-22 19-24 22-3l10 69-1-117c0-22 23-22 24 0l3 110 7-128c1-20 23-19 23 2l-2 130 15-108c3-19 25-16 22 6l-11 114 18-71c5-20 26-15 21 7l-13 80c-3 50-15 84-30 113l-1 21Z" />
-      <path
-        d="M84 190c15-18 27-13 39 5 15 23 8 51-3 68M100 174c22-11 42-3 67 2M94 211c27-8 49-8 69-20"
-        opacity=".45"
-      />
+      <path d={PALM_HAND_PATH} strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="124" cy="167" r="112" strokeDasharray="2 8" opacity=".25" />
     </svg>
   );
@@ -44,10 +61,13 @@ export function PalmReader() {
     [active, setActive] = useState(0),
     [overlay, setOverlay] = useState(true);
   const [tips, setTips] = useState<HandPoint[] | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
   const price = usePaidPrice("palm", managedPrompt("palm.read.v1", [side, dominant, question]));
   const abort = useRef<AbortController | null>(null),
     generation = useRef(0),
-    upload = useRef<HTMLInputElement>(null);
+    upload = useRef<HTMLInputElement>(null),
+    guidePrimary = useRef<HTMLButtonElement>(null),
+    guideReturn = useRef<HTMLElement | null>(null);
   useEffect(
     () => () => {
       generation.current++;
@@ -55,10 +75,34 @@ export function PalmReader() {
     },
     [],
   );
+  useEffect(() => {
+    if (!guideOpen) return;
+    // preventScroll: card cuộn xuống để lộ nút là mất phần hình minh hoạ trên đầu.
+    guidePrimary.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setGuideOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      // Mọi đường đóng popup (Escape, nút, bấm nền) đều trả focus về nơi đã mở.
+      guideReturn.current?.focus();
+      guideReturn.current = null;
+    };
+  }, [guideOpen]);
   function start() {
     generation.current++;
     setError("");
     setCamera(true);
+  }
+  /** Lần đầu trong phiên: mở popup hướng dẫn trước khi xin quyền camera. */
+  function beginCapture() {
+    if (guideSeen()) {
+      start();
+      return;
+    }
+    guideReturn.current = document.activeElement as HTMLElement | null;
+    setGuideOpen(true);
   }
   function process(source: CanvasImageSource, width: number, height: number) {
     if (Math.min(width, height) < 350)
@@ -312,7 +356,7 @@ export function PalmReader() {
                 <button
                   className={s.button}
                   disabled={busy}
-                  onClick={() => void start()}
+                  onClick={() => void beginCapture()}
                 >
                   Chụp bàn tay
                 </button>
@@ -486,6 +530,37 @@ export function PalmReader() {
           ) : null}
         </section>
       </div>
+      {guideOpen && (
+        <div
+          className={s.modalOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Hướng dẫn chụp bàn tay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setGuideOpen(false);
+          }}
+        >
+          <div className={s.modalCard}>
+            <PalmGuide />
+            <div className={s.modalActions}>
+              <button
+                ref={guidePrimary}
+                className={s.button}
+                onClick={() => {
+                  markGuideSeen();
+                  setGuideOpen(false);
+                  start();
+                }}
+              >
+                Chụp ngay
+              </button>
+              <button className={s.secondary} onClick={() => setGuideOpen(false)}>
+                Để sau
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

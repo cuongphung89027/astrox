@@ -1,0 +1,4 @@
+/models/*
+  Cache-Control: public, max-age=31536000, immutable
+/mediapipe/*
+  Cache-Control: public, max-age=31536000, immutable

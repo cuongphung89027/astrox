@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 
 /**
  * TuViClient — module Tử Vi, 3 khối cuộn: (1) Lập lá số 12 cung bằng iztro,
@@ -87,7 +86,6 @@ export function TuViClient() {
   return (
     <main className={styles.page}>
       <h1 className="sr-only">Tử Vi</h1>
-      <Link href="/tuonghop?mode=tuvi" style={{display:"inline-flex",alignItems:"center",minHeight:44,padding:"8px 16px",textDecoration:"underline",textUnderlineOffset:4}}>Xem cặp đôi ↗</Link>
       <div className={styles.workspace}>
         {profile && <div className={styles.profileSummary}>
           <div><p className={styles.eyebrow}>HỒ SƠ CỦA BẠN</p><p className={styles.profileName}>{profile.name || "Thông tin đã lưu"}</p></div>

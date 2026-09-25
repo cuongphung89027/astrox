@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeZoomUnit, pickLens, needsRescan, luminanceMean, lightVerdict } from "../src/lib/palm-camera.ts";
+import { normalizeZoomUnit, pickLens, needsRescan, luminanceMean, lightVerdict, lensOpenPlan } from "../src/lib/palm-camera.ts";
 
 const lens = (deviceId, zoomMin) => ({ deviceId, label: deviceId, zoomMin });
 
@@ -39,4 +39,26 @@ test("lightVerdict separates dark, ok and bright", () => {
   assert.equal(lightVerdict(10), "dark");
   assert.equal(lightVerdict(120), "ok");
   assert.equal(lightVerdict(240), "bright");
+});
+
+test("pickLens returns the sole candidate of a 1-item backList without zoom info", () => {
+  assert.equal(pickLens([lens("solo", null)])?.deviceId, "solo");
+});
+
+test("lensOpenPlan targets the wide lens with the default as fallback", () => {
+  assert.deepEqual(lensOpenPlan([lens("tele", 3), lens("wide", 1)], "tele"), {
+    primary: "wide",
+    fallback: "tele",
+  });
+});
+
+test("lensOpenPlan has no distinct fallback when the default is already the best", () => {
+  assert.deepEqual(lensOpenPlan([lens("only", 1)], "only"), { primary: "only", fallback: "only" });
+});
+
+test("lensOpenPlan keeps the default when no zoom info separates candidates", () => {
+  assert.deepEqual(lensOpenPlan([lens("a", null), lens("b", null)], "a"), {
+    primary: "a",
+    fallback: "a",
+  });
 });

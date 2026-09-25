@@ -77,7 +77,8 @@ export function PalmReader() {
   );
   useEffect(() => {
     if (!guideOpen) return;
-    guidePrimary.current?.focus();
+    // preventScroll: card cuộn xuống để lộ nút là mất phần hình minh hoạ trên đầu.
+    guidePrimary.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setGuideOpen(false);
     };

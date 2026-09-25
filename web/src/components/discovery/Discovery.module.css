@@ -745,3 +745,39 @@
     font-size: 14px;
   }
 }
+
+.waitNote {
+  font-size: 13px;
+  color: #74836e;
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+.revealLine {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: drawLine 0.9s ease-out forwards;
+}
+.revealDot {
+  opacity: 0;
+  animation: fadeDot 0.35s ease-out forwards;
+}
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes fadeDot {
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .revealLine {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .revealDot {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -43,8 +43,7 @@ export function PalmReader() {
     [result, setResult] = useState<PalmReading | null>(null),
     [active, setActive] = useState(0),
     [overlay, setOverlay] = useState(true);
-  // Task 8 (overlay vẽ đầu ngón) đọc `tips`; chưa bind getter vì noUnusedLocals chặn biến chưa dùng.
-  const [, setTips] = useState<HandPoint[] | null>(null);
+  const [tips, setTips] = useState<HandPoint[] | null>(null);
   const price = usePaidPrice("palm", managedPrompt("palm.read.v1", [side, dominant, question]));
   const abort = useRef<AbortController | null>(null),
     generation = useRef(0),
@@ -257,13 +256,50 @@ export function PalmReader() {
                         vectorEffect="non-scaling-stroke"
                         strokeLinecap="round"
                         strokeLinejoin="round"
+                        pathLength={100}
+                        className={s.revealLine}
                         onClick={() => setActive(i)}
                         style={{
                           cursor: "pointer",
+                          animationDelay: `${i * 0.55}s`,
                           opacity: i === active ? 1 : 0.6,
                         }}
                       />
                     ))}
+                    {result.lines.map((line, i) => (
+                      <g key={`d${i}`}>
+                        {[
+                          line.points[0],
+                          line.points[line.points.length - 1],
+                        ].map(([x, y], j) => (
+                          <circle
+                            key={j}
+                            cx={x * 1000}
+                            cy={y * 1000}
+                            r={9}
+                            fill={i === active ? "#f3cf79" : "#e0e8d4"}
+                            className={s.revealDot}
+                            style={{ animationDelay: `${i * 0.55 + 0.7}s` }}
+                          />
+                        ))}
+                      </g>
+                    ))}
+                    {tips &&
+                      tips.length > 0 &&
+                      tips.map((p, i) => (
+                        <circle
+                          key={`t${i}`}
+                          cx={p.x * 1000}
+                          cy={p.y * 1000}
+                          r={7}
+                          fill="#f3cf79"
+                          opacity={0.85}
+                          className={s.revealDot}
+                          style={{
+                            animationDelay: `${result.lines.length * 0.55 + 0.3}s`,
+                          }}
+                        />
+                      ))}
                   </svg>
                 )}
               </div>
@@ -434,6 +470,12 @@ export function PalmReader() {
                 >
                   Dừng phân tích
                 </button>
+              )}
+              {busy && (
+                <p className={s.waitNote} aria-live="polite">
+                  Sẽ đọc: đường Tâm · đường Đầu · đường Sống · đường Tài Lộc —
+                  đường nào thấy rõ mới hiện.
+                </p>
               )}
             </form>
           ) : null}

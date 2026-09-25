@@ -10,7 +10,7 @@ import { cacheFingerprint, refreshPromptRevision } from "@/lib/state";
  * "Tạo lại".
  */
 import { ReadingLoader } from "@/components/kit/ReadingLoader";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Btn, Chip } from "@/components/kit";
 import { LikeButton, PanelReveal } from "@/components/motion";
 import { FeatureIcon } from "@/components/kit/FeatureIcon";
@@ -18,7 +18,8 @@ import styles from "./Tarot.module.css";
 import { TarotReading } from "./TarotReading";
 import { useProfileModal, useRequireProfile } from "@/components/profile/ProfileModal";
 import { PROMPT_VERSION } from "@/lib/config";
-import { runAiPrompt, servicePrices } from "@/lib/api";
+import { runAiPrompt } from "@/lib/api";
+import { usePaidPrice } from "@/lib/use-paid-price";
 import { profileContextText } from "@/lib/numerology";
 import { readAiCache, writeAiCache } from "@/lib/state";
 import type { Profile } from "@/lib/types";
@@ -44,19 +45,11 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
   const [text, setText] = useState("");
   const [state, setState] = useState<AiState>("idle");
   const [errMsg, setErrMsg] = useState("");
-  const [price, setPrice] = useState<number | null>(null);
-  const markFresh = useFeatureResult(text, spread.id === "three" ? `tarot--three--${spread.frames?.find(f=>f.label===frameLabel)?.id || "ppf"}` : `tarot--${spread.id}`, state === "done" && !!profile);
+  const serviceId = spread.id === "three" ? `tarot--three--${spread.frames?.find(f=>f.label===frameLabel)?.id || "ppf"}` : `tarot--${spread.id}`;
+  const pricePrompt = profile ? buildTarotPrompt({spread,frameLabel,deck,question,cards:drawn,positionLabels,profileContext:profileContextText(profile)}) : undefined;
+  const price = usePaidPrice(serviceId, pricePrompt);
+  const markFresh = useFeatureResult(text, serviceId, state === "done" && !!profile);
   const forceRef = useRef(false);
-
-  // Giá dịch vụ trả phí (nếu admin bật tarot = paid) — hiện chip để user biết trước.
-  useEffect(() => {
-    let alive = true;
-    servicePrices().then((map) => {
-      const info = map["tarot"];
-      if (alive && info && info.status === "paid" && info.points > 0) setPrice(info.points);
-    }).catch(() => {});
-    return () => { alive = false; };
-  }, []);
 
   const load = useCallback(async () => {
     const fingerprint = cacheFingerprint();
@@ -144,15 +137,15 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
           <Btn
             size="lg"
             arrow
+            disabled={price.pending}
             onClick={() => {
               if (requireProfile()) {
                 void load();
               }
             }}
           >
-            Luận giải trải bài
+            Luận giải trải bài{price.paid && ` · ${price.text}`}
           </Btn>
-          {price !== null && <Chip tone="kim">Dịch vụ trả phí − {price.toLocaleString("vi-VN")} Point / lượt</Chip>}
         </div>
       ) : state === "loading" ? (
         <ReadingLoader kind="tarot" />
@@ -164,12 +157,13 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
               <Btn
                 variant="ghost"
                 size="sm"
+                disabled={price.pending}
                 onClick={() => {
                   forceRef.current = true;
                   void load();
                 }}
               >
-                Tạo lại
+                Tạo lại{price.paid && ` · ${price.text}`}
               </Btn>
               <LikeButton label="Thích luận giải này" />
             </div>

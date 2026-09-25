@@ -4,6 +4,8 @@ import { Fields, Card, Empty, fmt, uid } from "../ui";
 import { quotePackage } from "../../../../../services/admin/config";
 import type { AdminPanelProps } from "../useAdminApi";
 import s from "../AdminDashboard.module.css";
+import { promoExpiryLocal, promoExpiryIso } from "../promo-time";
+import type { Spec } from "../ui";
 
 export function BillingPanel({ config, update, renderFields }: AdminPanelProps) {
   return (
@@ -149,6 +151,8 @@ export function BillingPanel({ config, update, renderFields }: AdminPanelProps) 
                           d.billing.promos.push({
                             id: uid("promo"),
                             code: "",
+                            kind: "topup_bonus",
+                            minAmountVnd: 0,
                             bonus: 0,
                             limit: 100,
                             perUser: 1,
@@ -169,27 +173,27 @@ export function BillingPanel({ config, update, renderFields }: AdminPanelProps) 
                     <details open className={s.record} key={p.id}>
                       <summary>{p.code || "Mã khuyến mãi mới"}</summary>
                       <Fields
-                        value={p}
+                        value={{ ...p, kind: p.kind ?? "topup_bonus", minAmountVnd: p.minAmountVnd ?? 0 }}
                         specs={[
                           ["code", "Mã (chữ hoa, số, gạch ngang)", "text"],
+                          ["kind", "Loại mã", ["topup_bonus", "direct_points"]],
                           ["bonus", "Point thưởng", "number"],
+                          ...(p.kind === "direct_points" ? [] : [["minAmountVnd", "Nạp tối thiểu (VND)", "number"] as Spec]),
                           ["limit", "Tổng lượt dùng tối đa", "number"],
                           ["perUser", "Lượt mỗi người", "number"],
-                          [
-                            "expiresAt",
-                            "Hết hạn (ISO 8601, để trống nếu không hạn)",
-                            "text",
-                          ],
                           ["enabled", "Kích hoạt mã", "boolean"],
                         ]}
                         onChange={(key, value) =>
-                          update((d) =>
-                            Object.assign(d.billing.promos[i], {
-                              [key]: value,
-                            }),
-                          )
+                          update((d) => {
+                            Object.assign(d.billing.promos[i], { [key]: value });
+                            if (key === "kind" && value === "direct_points") d.billing.promos[i].minAmountVnd = 0;
+                          })
                         }
                       />
+                      <label className={s.promoExpiry}>
+                        <span>Hết hạn (giờ Việt Nam, để trống nếu không hạn)</span>
+                        <input type="datetime-local" value={promoExpiryLocal(p.expiresAt)} onChange={event => update(d => { d.billing.promos[i].expiresAt = promoExpiryIso(event.target.value); })} />
+                      </label>
                       <button
                         className={s.danger}
                         onClick={() =>

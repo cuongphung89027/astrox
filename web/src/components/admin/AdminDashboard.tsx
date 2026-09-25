@@ -10,7 +10,7 @@ import { ExpertManager } from "./ExpertManager";
 import { AiMetrics } from "./AiMetrics";
 import { AdminInsights, type InsightView } from "./AdminInsights";
 import { AdminLogo, Fields, type Spec } from "./ui";
-import { configViews, insightViews, navigation, type View } from "./navigation";
+import { configViews, insightViews, navigation, searchNavigation, type View } from "./navigation";
 import { useAdminApi, type AdminPanelProps } from "./useAdminApi";
 import { SetupPanel } from "./panels/SetupPanel";
 import { PromptsPanel } from "./panels/PromptsPanel";
@@ -45,6 +45,7 @@ export function AdminDashboard() {
   const api = useAdminApi();
   const { session, snapshot, config, loading, busy, error, message, dirty, canWrite, act, boot, reload, setMessage } = api;
   const [expandedGroups,setExpandedGroups]=useState<string[]>(['TỔNG QUAN','NGƯỜI DÙNG & SỬ DỤNG','POINT & TĂNG TRƯỞNG']);
+  const [navQuery, setNavQuery] = useState("");
   const [view, setView] = useState<View>("overview"),
     [drawer, setDrawer] = useState(false),
     [password, setPassword] = useState(""),
@@ -226,15 +227,20 @@ export function AdminDashboard() {
         <a className={s.brand} href="/admin">
           <AdminLogo />
         </a>
+        <label className={s.navSearch}>
+          <span className={s.srOnly}>Tìm trong Admin</span>
+          <input type="search" value={navQuery} onChange={event => setNavQuery(event.target.value)} placeholder="Tìm trong Admin…" aria-label="Tìm trong Admin" />
+        </label>
         <nav aria-label="Điều hướng quản trị">
-          {[...new Set(navigation.map(item=>item[3]))].map(group=>{
+          {searchNavigation(navQuery).length === 0 && <p className={s.navEmpty}>Không tìm thấy mục phù hợp.</p>}
+          {[...new Set(searchNavigation(navQuery).map(item=>item[3]))].map(group=>{
             const activeGroup=navigation.some(([id,,,g])=>id===view&&g===group);
-            const expanded=expandedGroups.includes(group)||activeGroup;
+            const expanded=!!navQuery.trim()||expandedGroups.includes(group)||activeGroup;
             return <section className={s.navGroup} key={group}>
               <button className={s.groupToggle} aria-expanded={expanded} onClick={()=>setExpandedGroups(groups=>expanded?groups.filter(g=>g!==group):[...groups,group])} disabled={activeGroup}>
                 {group}<i aria-hidden="true">{expanded?'−':'+'}</i>
               </button>
-              {expanded&&<div className={s.navItems}>{navigation.filter(item=>item[3]===group).map(([id,label,icon])=><button key={id} className={view===id?s.active:''} onClick={()=>go(id)} aria-current={view===id?'page':undefined}><span aria-hidden>{icon}</span>{label}{view===id&&<i/>}</button>)}</div>}
+              {expanded&&<div className={s.navItems}>{searchNavigation(navQuery).filter(item=>item[3]===group).map(([id,label,icon])=><button key={id} className={view===id?s.active:''} onClick={()=>{go(id);setNavQuery("");}} aria-current={view===id?'page':undefined}><span aria-hidden>{icon}</span>{label}{view===id&&<i/>}</button>)}</div>}
             </section>;
           })}
         </nav>

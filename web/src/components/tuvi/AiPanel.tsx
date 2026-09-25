@@ -10,6 +10,7 @@ import { ReadingLoader } from "@/components/kit/ReadingLoader";
 import { Btn } from "@/components/kit";
 import { SavedReading } from "@/components/kit/SavedReading";
 import { PanelReveal } from "@/components/motion";
+import { usePaidPrice } from "@/lib/use-paid-price";
 
 interface AiPanelProps {
   cached: string;
@@ -19,9 +20,12 @@ interface AiPanelProps {
   emptyText?: string;
   loadingLabel?: string;
   onRun: (force: boolean) => void;
+  serviceId: string;
+  prompt: string;
 }
 
-export function AiPanel({ cached, loading, error, runLabel = "Luận giải", emptyText, loadingLabel, onRun }: AiPanelProps) {
+export function AiPanel({ cached, loading, error, runLabel = "Luận giải", emptyText, loadingLabel, onRun, serviceId, prompt }: AiPanelProps) {
+  const price = usePaidPrice(serviceId, prompt);
   if (loading) {
     return (
       <ReadingLoader kind="tuvi" label={loadingLabel} />
@@ -48,8 +52,8 @@ export function AiPanel({ cached, loading, error, runLabel = "Luận giải", em
         <p className="max-w-md text-sm leading-relaxed text-muc-2">
           {emptyText ?? "Chưa có luận giải cho mục này. AstroX sẽ đọc trực tiếp dữ liệu lá số đã tính — không tự bịa dữ kiện."}
         </p>
-        <Btn size="sm" onClick={() => onRun(false)}>
-          {error ? "Thử lại" : runLabel}
+        <Btn size="sm" onClick={() => onRun(false)} disabled={price.pending}>
+          {error ? "Thử lại" : runLabel}{price.paid && ` · ${price.text}`}
         </Btn>
       </div>
     </div>

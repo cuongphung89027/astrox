@@ -8,6 +8,15 @@ test('safe defaults have unlimited referrals, no active billing and no assumed p
   assert.equal(c.billing.packages.length, 0);
   assert.equal(validateConfig(c).length, 0);
 });
+test('promo config validates kind, positive Point and nonnegative minimum while accepting old codes', () => {
+  const c = defaultConfig();
+  c.billing.promos = [{ id:'old', code:'OLD', bonus:10, limit:2, perUser:1, enabled:true, expiresAt:'' }];
+  assert.equal(validateConfig(c).length, 0);
+  c.billing.promos[0] = { ...c.billing.promos[0], kind:'direct_points', bonus:0, minAmountVnd:1000 };
+  const errors = validateConfig(c);
+  assert.ok(errors.some(e => e.path === 'billing.promos.bonus'));
+  assert.ok(errors.some(e => e.path === 'billing.promos.minAmountVnd'));
+});
 test('reject duplicate milestones, fractional money and disabled fallback targets', () => {
   const c = defaultConfig();
   c.rewards.milestones.push({ ...c.rewards.milestones[0], id: 'duplicate-day' });

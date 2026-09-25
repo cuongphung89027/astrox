@@ -88,6 +88,8 @@ export const optionLabels: Record<string, string> = {
   compat: "Tương Hợp",
   rate: "Theo tỷ giá",
   fixed: "Point cố định",
+  topup_bonus: "Thưởng Point khi nạp",
+  direct_points: "Cộng Point trực tiếp",
   responses: "Responses API",
   chat: "Chat Completions",
   anthropic: "Anthropic Messages",

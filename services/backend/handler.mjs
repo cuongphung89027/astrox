@@ -5,7 +5,7 @@ import { chargeAi, refundAi, completeAi, quoteAi } from './ai-operations.mjs';
 import { readPublished } from '../admin/store.mjs';
 import { runtimeSettings, capabilities, legacySnapshot } from './config.mjs';
 import { readSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } from './auth.mjs';
-import { handlePayosWebhook, handleTopupCreate, handlePromoCheck } from './payments.mjs';
+import { handlePayosWebhook, handleTopupCreate, handlePromoCheck, handlePromoRedeem } from './payments.mjs';
 import { handlePointsHistory } from './points.mjs';
 import { handleRewardsSummary, handleRewardsCheckin } from './rewards.mjs';
 import { json, corsHeaders, trustedOrigin } from './http.mjs';
@@ -81,12 +81,10 @@ export async function publicFetch(request, env) {
     if (path === '/api/me' && method === 'GET') {
       const session = await readSession(env, request);
       if (!session) return json(env, request, { user: null });
-      const user = await env.DB.prepare('SELECT id,display_name,email,avatar_url FROM app_users WHERE id=?')
-        .bind(session.sub)
-        .first();
-      const wallet = await env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?')
-        .bind(session.sub)
-        .first();
+      const [user, wallet] = await Promise.all([
+        env.DB.prepare('SELECT id,display_name,email,avatar_url FROM app_users WHERE id=?').bind(session.sub).first(),
+        env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(session.sub).first(),
+      ]);
       return json(env, request, { user, points: wallet?.balance || 0 });
     }
     if (path === '/api/module-access' && method === 'GET') return await moduleAccess(env, request);
@@ -96,6 +94,7 @@ export async function publicFetch(request, env) {
     }
     if (path === '/api/topup/create' && method === 'POST') return await handleTopupCreate(env, request);
     if (path === '/api/topup/promo-check' && method === 'POST') return await handlePromoCheck(env, request);
+    if (path === '/api/promos/redeem' && method === 'POST') return await handlePromoRedeem(env, request);
     if (path === '/api/topup/history' && method === 'GET') {
       const session = await readSession(env, request);
       if (!session) return json(env, request, { error: 'unauthorized' }, 401);

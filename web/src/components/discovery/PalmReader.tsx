@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { callAiText } from "@/lib/api";
 import { managedPrompt } from "@/lib/managed-prompts";
+import { usePaidPrice } from "@/lib/use-paid-price";
 import { parsePalmReading, type PalmReading } from "@/lib/palm";
 import s from "./Discovery.module.css";
 function HandArt() {
@@ -37,6 +38,7 @@ export function PalmReader() {
     [result, setResult] = useState<PalmReading | null>(null),
     [active, setActive] = useState(0),
     [overlay, setOverlay] = useState(true);
+  const price = usePaidPrice("palm", managedPrompt("palm.read.v1", [side, dominant, question]));
   const video = useRef<HTMLVideoElement>(null),
     stream = useRef<MediaStream | null>(null),
     abort = useRef<AbortController | null>(null),
@@ -421,9 +423,9 @@ export function PalmReader() {
               </label>
               <button
                 className={s.button}
-                disabled={!photo || !consent || busy || camera}
+                disabled={!photo || !consent || busy || camera || price.pending}
               >
-                {busy ? "Đang quan sát ảnh…" : "Khám phá chỉ tay ↗"}
+                {busy ? "Đang quan sát ảnh…" : `Khám phá chỉ tay${price.paid ? ` · ${price.text}` : ''} ↗`}
               </button>
               {busy && (
                 <button

@@ -20,6 +20,20 @@ import { routeModule } from "../../../services/admin/modules.ts";
 
 const AI_REQUEST_TIMEOUT = 120000;
 const AI_PARTIAL_MIN_RATIO = 0.25;
+const displayedPrices = new Map<string, number>();
+const priceKey = (serviceId: string, descriptor: unknown) => `${serviceId}:${JSON.stringify(descriptor ?? null)}`;
+export function rememberDisplayedPrice(serviceId: string, descriptor: unknown, points: number) {
+  displayedPrices.set(priceKey(serviceId, descriptor), points);
+  if (displayedPrices.size > 128) displayedPrices.delete(displayedPrices.keys().next().value!);
+}
+function assertDisplayedPrice(serviceId: string, descriptor: unknown, points: number) {
+  const key = priceKey(serviceId, descriptor), shown = displayedPrices.get(key);
+  if (shown !== undefined && shown !== points) {
+    displayedPrices.delete(key);
+    window.dispatchEvent(new Event('astrox:price-changed'));
+    throw new Error('Giá dịch vụ vừa thay đổi. Vui lòng xem lại số Point trên nút trước khi tiếp tục.');
+  }
+}
 
 export const SYSTEM_PROMPT_BASE = `Bạn là một chuyên gia chiêm tinh & dịch lý kỳ cựu, viết tiếng Việt tự nhiên, thẳng thắn.
 QUY TẮC BẮT BUỘC:
@@ -50,9 +64,13 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
       if(!qr.ok)throw new Error(qr.status===401?'Vui lòng đăng nhập để mở khóa dịch vụ.':'Chưa lấy được giá mở khóa. Vui lòng thử lại.');
       const quote=await qr.json();
       assertOwner();
+      const leaf=quote.offers?.find((offer:{id:string;points:number})=>offer.id===body.serviceId);
+      if(!leaf||!Number.isSafeInteger(leaf.points))throw new Error('Chưa xác nhận được giá dịch vụ. Vui lòng thử lại sau.');
+      assertDisplayedPrice(String(body.serviceId),body.promptDescriptor,leaf.points);
       const selection=await confirmReading({...quote,name:price.name||'Luận giải AstroX',points:price.points},signal);
       body={...body,selection,expectedPoints:selection?.points};
     } else {
+      assertDisplayedPrice(String(body.serviceId),body.promptDescriptor,price.points);
       await confirmReading({name:price.name||'Luận giải AstroX',points:price.points},signal);
       body={...body,expectedPoints:price.points};
     }
@@ -97,12 +115,18 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
   }
   if (!res) throw new Error("Không kết nối được máy chủ AstroX.");
   if (!res.ok) {
+    if (price.status === 'paid') void import("./points").then(m => m.refreshPoints(true));
     let msg = String(res.status);
     try {
       const j = await res.json();
+      if (["quote_changed", "price_changed"].includes(j?.code || j?.error)) {
+        window.dispatchEvent(new Event('astrox:price-changed'));
+        throw new Error('Giá dịch vụ vừa thay đổi. Vui lòng xem lại số Point trên nút trước khi tiếp tục.');
+      }
       const detail = j.error || j.message;
       msg = typeof detail === "string" ? detail : detail ? JSON.stringify(detail) : msg;
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Giá dịch vụ vừa thay đổi')) throw error;
       /* giữ msg mặc định */
     }
     throw new Error(`Lỗi dịch vụ AstroX ${res.status}: ${msg}`);
@@ -118,7 +142,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
     if(Number.isSafeInteger(data.configRevision))recordPromptResult(content,data.configRevision);
     if (finish !== "length") {finishAiOperation(operation.key);void import("./points").then(m=>m.refreshPoints(true));return content;}
     const ceiling = Math.max(Number(body.max_tokens) || 0, 2400);
-    if (content.length / ceiling >= AI_PARTIAL_MIN_RATIO) {finishAiOperation(operation.key);return content;}
+    if (content.length / ceiling >= AI_PARTIAL_MIN_RATIO) {finishAiOperation(operation.key);if(price.status==='paid')void import("./points").then(m=>m.refreshPoints(true));return content;}
     throw new Error("AstroX dừng sớm (length).");
   }
   throw new Error(finish && finish !== "stop" ? `AstroX dừng sớm (${finish}).` : "AstroX không trả về nội dung.");
@@ -223,16 +247,11 @@ export async function fetchModuleAccessAstrox(): Promise<Record<string, boolean>
 }
 
 export async function fetchMeWithPoints(): Promise<{ user: AstroxUser | null; points: number }> {
-  try {
-    const res = await fetch(`${AUTH_API_BASE}/api/me`, { credentials: "include" });
-    if (res.ok) {
-      const d = await res.json();
-      return { user: d?.user || null, points: d?.points || 0 };
-    }
-  } catch {
-    /* bỏ qua */
-  }
-  return { user: null, points: 0 };
+  const res = await fetch(`${AUTH_API_BASE}/api/me`, { credentials: "include" });
+  if (res.status === 401) return { user: null, points: 0 };
+  if (!res.ok) throw new Error("Không tải được tài khoản và số dư Point.");
+  const d = await res.json();
+  return { user: d?.user || null, points: Number.isSafeInteger(d?.points) ? d.points : 0 };
 }
 
 export interface TopupPackage {
@@ -281,7 +300,7 @@ export async function loadPointsHistory(cursor?: string): Promise<{ transactions
 }
 
 /** Tạo lệnh nạp PayOS; trả về checkoutUrl hoặc mã lỗi promo. */
-export async function createTopup(amountVnd: number, promoCode?: string): Promise<{ checkoutUrl?: string; error?: string }> {
+export async function createTopup(amountVnd: number, promoCode?: string): Promise<{ checkoutUrl?: string; error?: string; minAmountVnd?: number }> {
   const res = await fetch(`${AUTH_API_BASE}/api/topup/create`, {
     method: "POST",
     credentials: "include",
@@ -290,27 +309,34 @@ export async function createTopup(amountVnd: number, promoCode?: string): Promis
   });
   const d = await res.json().catch(() => ({}));
   if (!res.ok || !d?.checkoutUrl) {
-    if (["invalid_promo", "promo_expired", "promo_exhausted"].includes(d?.error)) return { error: "promo" };
+    if (String(d?.error || "").startsWith("promo_") || d?.error === "invalid_promo") return { error: d.error, minAmountVnd: d.min_amount_vnd };
     if (d?.error === "payos_not_configured") return { error: "payos" };
     return { error: "create_failed" };
   }
   return { checkoutUrl: d.checkoutUrl };
 }
 
-export async function promoCheck(code: string): Promise<{ ok: boolean; bonus?: number; error?: string }> {
+export async function promoCheck(code: string, amountVnd?: number): Promise<{ ok: boolean; kind?: string; bonus?: number; error?: string; minAmountVnd?: number }> {
   try {
     const res = await fetch(`${AUTH_API_BASE}/api/topup/promo-check`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ promo_code: code }),
+      body: JSON.stringify({ promo_code: code, amount_vnd: amountVnd ?? 0 }),
     });
     const d = await res.json().catch(() => ({}));
-    if (res.ok && d?.ok) return { ok: true, bonus: d.bonus_points };
-    return { ok: false, error: d?.error || "invalid" };
+    if (res.ok && d?.ok) return { ok: true, kind: d.kind, bonus: d.bonus_points };
+    return { ok: false, error: d?.error || "invalid", minAmountVnd: d?.min_amount_vnd };
   } catch {
     return { ok: false, error: "network" };
   }
+}
+export async function redeemPromo(code: string, requestKey: string): Promise<{ ok: boolean; points?: number; error?: string }> {
+  try {
+    const res = await fetch(`${AUTH_API_BASE}/api/promos/redeem`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ promo_code: code, request_key: requestKey }) });
+    const data = await res.json().catch(() => ({}));
+    return res.ok && data.ok ? { ok: true, points: data.points } : { ok: false, error: data.error || "network" };
+  } catch { return { ok: false, error: "network" }; }
 }
 
 /* ------------------------------------------------------------------ */

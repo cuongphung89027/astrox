@@ -13,7 +13,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./Batu.module.css";
 import { ReadingQuestion } from "@/components/kit/ReadingQuestion";
 import { FeatureIcon, type FeatureName } from "@/components/kit/FeatureIcon";
-import { Btn } from "@/components/kit";
 import { LikeButton, PanelReveal } from "@/components/motion";
 import { useRequireProfile } from "@/components/profile/ProfileModal";
 import { runAiPrompt } from "@/lib/api";
@@ -96,9 +95,9 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
   return <section className={styles.topicReading}>
     <button className={styles.back} onClick={()=>setReading(false)}>← Các chủ đề</button>
     <ReadingQuestion label="GÓC NHÌN BẠN CHỌN">{topic.title}</ReadingQuestion>
-    {aiState==="idle"&&<ReadingInvitation label="Đọc luận giải" onRun={run}/>}
+    {aiState==="idle"&&<ReadingInvitation label="Đọc luận giải" onRun={run} serviceId={`batu--${topic.id}`} prompt={buildBatuPromptBody(topic.prompt, chart, profile)}/>}
     {aiState==="loading"&&<ReadingLoader kind="battu"/>}
-    {aiState==="error"&&<div><p role="alert">{errorMsg}</p><Btn onClick={run}>Thử lại</Btn></div>}
+    {aiState==="error"&&<div><p role="alert">{errorMsg}</p><ReadingInvitation label="Thử lại" onRun={run} serviceId={`batu--${topic.id}`} prompt={buildBatuPromptBody(topic.prompt, chart, profile)}/></div>}
     {done&&<PanelReveal open><SavedReading text={text}/><div className={styles.like}><LikeButton label={`Thích bài ${topic.title}`}/></div></PanelReveal>}
   </section>;
 }

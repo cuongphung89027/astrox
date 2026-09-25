@@ -35,15 +35,29 @@ function subscribe(l: () => void) {
 
 const STALE_MS = 60_000;
 let inflight: Promise<void> | null = null;
+let queuedOn: Promise<void> | null = null;
+let queuedAfter: Promise<void> | null = null;
 
 let account:string|null=null,epoch=0;
 const serverState:PointsState={points:null,status:'idle',fetchedAt:0};
 export function setPointsAccount(userId:string|null){
- if(account===userId)return;account=userId;epoch++;inflight=null;commit({...serverState});
+ if(account===userId)return;account=userId;epoch++;inflight=null;queuedOn=null;queuedAfter=null;commit({...serverState});
+}
+/** Seed the wallet from the authenticated /api/me response. */
+export function seedPointsBalance(userId:string,points:number){
+ if(account!==userId||!Number.isSafeInteger(points)||points<0)return;
+ commit({points,status:'ready',fetchedAt:Date.now()});
 }
 export function refreshPoints(force=false):Promise<void>{
  if(!account)return Promise.resolve();
- if(inflight)return inflight;
+ if(inflight){
+  if(!force)return inflight;
+  if(queuedOn===inflight&&queuedAfter)return queuedAfter;
+  const current=inflight,id=epoch;
+  queuedOn=current;
+  queuedAfter=current.then(()=>id===epoch?refreshPoints(true):undefined);
+  return queuedAfter;
+ }
  if(!force&&state.status==='ready'&&Date.now()-state.fetchedAt<STALE_MS)return Promise.resolve();
  const id=epoch,owner=account;
  if(state.points===null)commit({...state,status:'loading'});

@@ -215,7 +215,10 @@ export function PalmCamera({
           if (!cancelled) setStreamReady(true);
         }
         setBackList(opened.backList);
-        setLensIdx(0);
+        // Chỉ số phải trỏ đúng lens đang mở: openBackCamera có thể chọn lens khác
+        // backList[0], lệch chỉ số thì "Đổi ống kính" mở lại chính nó rồi mới
+        // nhảy về lens mặc định (và ghi nhớ nhầm lens mặc định đó).
+        setLensIdx(Math.max(0, opened.backList.findIndex((c) => c.deviceId === opened.deviceId)));
         setNote("Đưa lòng bàn tay vào khung");
         try {
           const lm = await loadHandTracker();
@@ -321,7 +324,14 @@ export function PalmCamera({
         )}
       </div>
       <div className={s.actions}>
-        <button type="button" className={s.button} onClick={capture}>
+        <button
+          type="button"
+          className={s.button}
+          // Màn loading che preview: chụp lúc này là chụp mù. Loader tắt theo
+          // trackerOff nên nút tự bật lại đúng lúc copy chụp thủ công hiện.
+          disabled={!loaderGone && !trackerOff}
+          onClick={capture}
+        >
           Chụp ảnh
         </button>
         <button

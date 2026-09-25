@@ -22,6 +22,9 @@ const UNIT_THRESHOLD = 30;
 /** Nhãn tele/ultra/macro… — lens phụ, không dùng để chụp lòng bàn tay. */
 const SIDE_LENS_LABEL = /tele|ultra|macro|depth|portrait|bokeh|monochrome|zoom| closup/i;
 
+/** Nhãn camera trước — không mở cũng không đếm nó khi dò lens sau. */
+const FRONT_LABEL = /facing front|front|trước|selfie/i;
+
 /** Nhãn wide/main — tín hiệu cộng điểm khi máy có báo zoom nhưng lệch chuẩn. */
 const MAIN_LENS_LABEL = /wide|main/i;
 
@@ -110,7 +113,11 @@ export async function probeZoomMin(track: MediaStreamTrack): Promise<number | nu
 export async function listBackCameras(): Promise<LensCandidate[]> {
   const devices = await navigator.mediaDevices.enumerateDevices();
   const out: LensCandidate[] = [];
-  for (const d of devices.filter((v) => v.kind === "videoinput")) {
+  // Bỏ camera trước ngay từ danh sách: không mở nó chỉ để rồi loại theo
+  // facingMode — mỗi lần mở là một nhịp bật privacy indicator vô ích.
+  for (const d of devices.filter(
+    (v) => v.kind === "videoinput" && !FRONT_LABEL.test(v.label),
+  )) {
     let stream: MediaStream | null = null;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -174,7 +181,7 @@ function openLensStream(deviceId: string): Promise<MediaStream> {
 async function lensListFromDevices(activeId: string): Promise<LensCandidate[]> {
   const devices = await navigator.mediaDevices.enumerateDevices();
   const cams = devices.filter((d) => d.kind === "videoinput");
-  const back = cams.filter((d) => !/front|trước|selfie/i.test(d.label));
+  const back = cams.filter((d) => !FRONT_LABEL.test(d.label));
   const list = back.length > 0 ? back : cams;
   const ordered = [
     ...list.filter((d) => d.deviceId === activeId),
@@ -185,7 +192,9 @@ async function lensListFromDevices(activeId: string): Promise<LensCandidate[]> {
 }
 
 /** Mở lens đã chọn trước đó (localStorage rồi cache session) — khỏi dò lại. */
-async function openRememberedLens(deviceId: string): Promise<OpenedCamera | null> {
+async function openRememberedLens(
+  deviceId: string,
+): Promise<{ opened: OpenedCamera | null; gone: boolean }> {
   try {
     const stream = await openLensStream(deviceId);
     const backList =
@@ -193,10 +202,19 @@ async function openRememberedLens(deviceId: string): Promise<OpenedCamera | null
         ? cachedBackList
         : await lensListFromDevices(deviceId);
     cacheLens(deviceId, backList);
-    return { stream, deviceId, backList: [...backList] };
-  } catch {
-    return null; // thiết bị đã biến mất hoặc đang bận — rơi về luồng mặc định
+    return { opened: { stream, deviceId, backList: [...backList] }, gone: false };
+  } catch (err) {
+    // Thiết bị đã biến mất hoặc đang bận → rơi về luồng mặc định. Chỉ lỗi "không
+    // còn lens này" mới đáng bỏ lựa chọn đã nhớ; NotAllowedError/NotReadableError
+    // là tạm thời, xoá đi thì người dùng mất lựa chọn đã dạy cho máy.
+    return { opened: null, gone: isGoneError(err) };
   }
+}
+
+/** Lỗi khẳng định lens không còn tồn tại (khác lỗi tạm thời như bận/quyền). */
+function isGoneError(err: unknown): boolean {
+  const name = (err as { name?: string } | null | undefined)?.name;
+  return name === "NotFoundError" || name === "OverconstrainedError";
 }
 
 export type OpenedCamera = { stream: MediaStream; deviceId: string; backList: LensCandidate[] };
@@ -230,12 +248,12 @@ function cacheLens(deviceId: string, backList: LensCandidate[]): void {
 export async function openBackCamera(): Promise<OpenedCamera> {
   const stored = readStoredLens();
   if (stored) {
-    const opened = await openRememberedLens(stored);
+    const { opened, gone } = await openRememberedLens(stored);
     if (opened) return opened;
-    clearStoredLens(); // thiết bị đã biến mất — lựa chọn cũ không còn nghĩa
+    if (gone) clearStoredLens(); // lens đã nhớ không còn trên máy
   }
   if (cachedLensId) {
-    const opened = await openRememberedLens(cachedLensId);
+    const { opened } = await openRememberedLens(cachedLensId);
     if (opened) return opened;
     cachedLensId = null;
     cachedBackList = [];
@@ -248,9 +266,15 @@ export async function openBackCamera(): Promise<OpenedCamera> {
     label: track.label,
     zoomMin: await probeZoomMin(track),
   };
-  const deviceCount = (await navigator.mediaDevices.enumerateDevices()).filter(
+  const inputs = (await navigator.mediaDevices.enumerateDevices()).filter(
     (d) => d.kind === "videoinput",
-  ).length;
+  );
+  // Nhãn phân biệt được camera trước thì chỉ đếm camera sau: máy "1 sau + 1
+  // trước" không phải máy nhiều lens, dò vào cam trước chỉ tốn một nhịp mở
+  // camera vô ích. Nhãn không phân biệt được thì giữ cách đếm cũ.
+  const deviceCount = inputs.some((d) => FRONT_LABEL.test(d.label))
+    ? inputs.filter((d) => !FRONT_LABEL.test(d.label)).length
+    : inputs.length;
   if (deviceCount < 2) {
     // Một camera sau duy nhất — không có gì để chọn.
     cacheLens(defaultId, [defaultLens]);

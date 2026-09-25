@@ -66,7 +66,8 @@ export function PalmReader() {
   const abort = useRef<AbortController | null>(null),
     generation = useRef(0),
     upload = useRef<HTMLInputElement>(null),
-    guidePrimary = useRef<HTMLButtonElement>(null);
+    guidePrimary = useRef<HTMLButtonElement>(null),
+    guideReturn = useRef<HTMLElement | null>(null);
   useEffect(
     () => () => {
       generation.current++;
@@ -81,7 +82,12 @@ export function PalmReader() {
       if (e.key === "Escape") setGuideOpen(false);
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      // Mọi đường đóng popup (Escape, nút, bấm nền) đều trả focus về nơi đã mở.
+      guideReturn.current?.focus();
+      guideReturn.current = null;
+    };
   }, [guideOpen]);
   function start() {
     generation.current++;
@@ -94,6 +100,7 @@ export function PalmReader() {
       start();
       return;
     }
+    guideReturn.current = document.activeElement as HTMLElement | null;
     setGuideOpen(true);
   }
   function process(source: CanvasImageSource, width: number, height: number) {

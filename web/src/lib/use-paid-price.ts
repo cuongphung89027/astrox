@@ -7,7 +7,7 @@ import { AUTH_API_BASE } from "./config";
 import { useAuth } from "./auth";
 import { usePointsBalance } from "./points";
 
-type PriceState = { text: string; pending: boolean; paid: boolean; key?: string };
+type PriceState = { text: string; pending: boolean; paid: boolean; free?: boolean; points?: number; key?: string };
 const loading: PriceState = { text: "Đang tải giá…", pending: true, paid: true };
 
 /** Price for the exact service/scope shown on a paid CTA before consent opens. */
@@ -32,13 +32,13 @@ export function usePaidPrice(serviceId: string, prompt?: string): PriceState {
         const info = (await servicePrices(revision > 0))[serviceId];
         if (!alive) return;
         if (!info) throw new Error("price");
-        if (info.status === "free") { update({ text: "", pending: false, paid: false }); return; }
+        if (info.status === "free") { update({ text: "", pending: false, paid: false, free: true }); return; }
         if (info.status !== "paid") { update({ text: "Dịch vụ tạm ngưng", pending: true, paid: true }); return; }
         const base = info.points;
         const descriptor = prompt ? promptDescriptor(prompt) : undefined;
         if (!info.unlocks || info.policy === "session" || !astroxUser || astroxUser.id === "localhost-preview") {
           rememberDisplayedPrice(serviceId, descriptor, base);
-          update({ text: `${base.toLocaleString("vi-VN")} Point`, pending: false, paid: true });
+          update({ text: `${base.toLocaleString("vi-VN")} Point`, points: base, pending: false, paid: true });
           return;
         }
         if (!descriptor) { update({ text: "Chưa xác định được giá", pending: true, paid: true }); return; }
@@ -52,7 +52,7 @@ export function usePaidPrice(serviceId: string, prompt?: string): PriceState {
         const offer = quote.offers?.find((item: { id: string; points: number }) => item.id === serviceId);
         if (!offer || !Number.isSafeInteger(offer.points)) throw new Error("quote");
         rememberDisplayedPrice(serviceId, descriptor, offer.points);
-        update({ text: `${offer.points.toLocaleString("vi-VN")} Point`, pending: false, paid: true });
+        update({ text: `${offer.points.toLocaleString("vi-VN")} Point`, points: offer.points, pending: false, paid: true });
       } catch {
         if (alive) {
           update({ text: "Chưa tải được giá", pending: true, paid: true });

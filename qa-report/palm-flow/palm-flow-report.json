@@ -1,0 +1,338 @@
+{
+  "engine": "chromium",
+  "base": "http://127.0.0.1:3126",
+  "passed": 46,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "auth menu appears after hydration (guest server HTML replaced)",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "hydrated camera UI opens from the entry screen",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "synthetic camera stream reaches the video element",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "camera preview overlay clears before controls are used",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "wide lens wins over tele for the lens select",
+      "ok": true,
+      "detail": [
+        "camera2 0, facing back tele",
+        "camera2 1, facing back"
+      ]
+    },
+    {
+      "name": "torch and focus controls appear only because capabilities report them",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "camera controls are locked while a focus request is pending",
+      "ok": true,
+      "detail": {
+        "select": true,
+        "torch": true,
+        "focus": true
+      }
+    },
+    {
+      "name": "lens switch is unreachable while focus is pending (select disabled)",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "a never-settling focus request cannot latch the controls",
+      "ok": true,
+      "detail": {
+        "focusElapsed": 5014
+      }
+    },
+    {
+      "name": "focus deadline is bounded (~5s), not immediate",
+      "ok": true,
+      "detail": 5014
+    },
+    {
+      "name": "focus timeout reports an honest failure instead of success",
+      "ok": true,
+      "detail": "Camera không nhận yêu cầu lấy nét. Thử thay đổi khoảng cách."
+    },
+    {
+      "name": "torch control is locked while its request is pending",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "a never-settling torch request cannot latch the controls",
+      "ok": true,
+      "detail": {
+        "torchElapsed": 5041
+      }
+    },
+    {
+      "name": "torch deadline is bounded (~5s), not immediate",
+      "ok": true,
+      "detail": 5041
+    },
+    {
+      "name": "accepted focus still reports success and re-enables controls",
+      "ok": true,
+      "detail": 10
+    },
+    {
+      "name": "normalization keeps a sub-1200px photo at its own size",
+      "ok": true,
+      "detail": [
+        900,
+        700
+      ]
+    },
+    {
+      "name": "loading notice clears after a valid decode",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "normalization caps the long edge at 1200px",
+      "ok": true,
+      "detail": [
+        1200,
+        400
+      ]
+    },
+    {
+      "name": "EXIF orientation is honored on the createImageBitmap path",
+      "ok": true,
+      "detail": [
+        400,
+        800
+      ]
+    },
+    {
+      "name": "createImageBitmap unavailable falls back to an <img> decode",
+      "ok": true,
+      "detail": {
+        "fallbackDims": [
+          400,
+          800
+        ],
+        "fallbackError": [
+          ""
+        ]
+      }
+    },
+    {
+      "name": "fallback path shows no decode error",
+      "ok": true,
+      "detail": [
+        ""
+      ]
+    },
+    {
+      "name": "createImageBitmap rejection falls back to an <img> decode",
+      "ok": true,
+      "detail": [
+        400,
+        800
+      ]
+    },
+    {
+      "name": "invalid file during a pending decode clears the pending state",
+      "ok": true,
+      "detail": {
+        "notice": 0,
+        "error": [
+          "Chọn ảnh JPG, PNG hoặc WebP dưới 8 MB. Nếu ảnh là HEIC, hãy chuyển sang JPG."
+        ],
+        "chooseDisabled": false,
+        "captureDisabled": false,
+        "photoCount": 0
+      }
+    },
+    {
+      "name": "invalid file during a pending decode reports the gate error",
+      "ok": true,
+      "detail": [
+        "Chọn ảnh JPG, PNG hoặc WebP dưới 8 MB. Nếu ảnh là HEIC, hãy chuyển sang JPG."
+      ]
+    },
+    {
+      "name": "the superseded valid decode does not apply its stale result",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "8MB+ file is rejected before decoding",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "keyboard Tab focuses the analyze CTA at 320x568",
+      "ok": true,
+      "detail": {
+        "focused": true,
+        "covered": false,
+        "bottom": 415,
+        "dockTop": 492,
+        "scrollMarginBlockEnd": "96px",
+        "hit": "SPAN:Khám phá chỉ tay Free"
+      }
+    },
+    {
+      "name": "keyboard-focused analyze CTA is not under the dock at 320x568",
+      "ok": true,
+      "detail": {
+        "focused": true,
+        "covered": false,
+        "bottom": 415,
+        "dockTop": 492,
+        "scrollMarginBlockEnd": "96px",
+        "hit": "SPAN:Khám phá chỉ tay Free"
+      }
+    },
+    {
+      "name": "minimal scroll-into-view keeps the analyze CTA above the dock at 320x568",
+      "ok": true,
+      "detail": {
+        "focused": false,
+        "covered": false,
+        "bottom": 472,
+        "dockTop": 492,
+        "scrollMarginBlockEnd": "96px",
+        "hit": "SPAN:Khám phá chỉ tay Free"
+      }
+    },
+    {
+      "name": "keyboard Tab focuses the analyze CTA at 390x844",
+      "ok": true,
+      "detail": {
+        "focused": true,
+        "covered": false,
+        "bottom": 522,
+        "dockTop": 768,
+        "scrollMarginBlockEnd": "96px",
+        "hit": "SPAN:Khám phá chỉ tay Free"
+      }
+    },
+    {
+      "name": "keyboard-focused analyze CTA is not under the dock at 390x844",
+      "ok": true,
+      "detail": {
+        "focused": true,
+        "covered": false,
+        "bottom": 522,
+        "dockTop": 768,
+        "scrollMarginBlockEnd": "96px",
+        "hit": "SPAN:Khám phá chỉ tay Free"
+      }
+    },
+    {
+      "name": "minimal scroll-into-view keeps the analyze CTA above the dock at 390x844",
+      "ok": true,
+      "detail": {
+        "focused": false,
+        "covered": false,
+        "bottom": 748,
+        "dockTop": 768,
+        "scrollMarginBlockEnd": "96px",
+        "hit": "SPAN:Khám phá chỉ tay Free"
+      }
+    },
+    {
+      "name": "analysis button stays disabled before explicit consent",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "no AI request is made before explicit consent",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "reset while AI is pending prevents a stale result",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "reset while AI is pending returns to the entry stage",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "exactly one AI request is sent per consented analyze action",
+      "ok": true,
+      "detail": {
+        "before": 1,
+        "after": 2
+      }
+    },
+    {
+      "name": "the same normalized JPEG is used for display and for the AI request",
+      "ok": true,
+      "detail": {
+        "sameLength": true
+      }
+    },
+    {
+      "name": "honest unverified-overlay notice is preserved",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "line tabs expose a labelled group",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "line tab buttons keep aria-pressed state",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "zoom dialog opens with an accessible name",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "Escape closes the zoom dialog",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "focus returns to the zoom trigger after close",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "no uncaught page errors during the palm flows",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "no production request was fulfilled over the network",
+      "ok": true,
+      "detail": [
+        "https://api.theastrox.space/api/ai/session"
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "blockedExternalRequests": [
+    "https://api.theastrox.space/api/ai/session"
+  ],
+  "locallyFulfilledExternalRequests": [
+    "https://api.theastrox.space/api/ai/session"
+  ],
+  "aiRequests": 2
+}

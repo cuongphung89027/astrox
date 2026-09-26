@@ -23,27 +23,10 @@ test("unclear image cannot acquire fabricated annotations", () => {
     ),
   );
 });
-test("only bounded image coordinates are accepted", () => {
-  assert.throws(() =>
-    parsePalmReading(
-      JSON.stringify({
-        quality: "ok",
-        message: "",
-        summary: "Tổng quan",
-        lines: [
-          {
-            name: "Tâm đạo",
-            observation: "Nếp rõ",
-            reading: "Đọc",
-            points: [
-              [20, 30],
-              [40, 50],
-            ],
-          },
-        ],
-      }),
-    ),
-  );
+test("invalid image coordinates are discarded while text is retained", () => {
+  const result = parsePalmReading(JSON.stringify({ quality: "ok", message: "", summary: "Tổng quan", lines: [{ name: "Tâm đạo", observation: "Nếp rõ", reading: "Đọc", points: [[20,30],[40,50]] }] }));
+  assert.deepEqual(result.lines[0].points, []);
+  assert.equal(result.lines[0].overlayVerified, false);
 });
 test("accept explicit retake and visible-line reading", () => {
   assert.equal(

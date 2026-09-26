@@ -1,0 +1,342 @@
+{
+  "total": 48,
+  "failed": 0,
+  "results": [
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 320,
+      "height": 568,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 360,
+      "height": 780,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 360,
+      "height": 780,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 360,
+      "height": 780,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 360,
+      "height": 780,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 390,
+      "height": 844,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 412,
+      "height": 915,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 412,
+      "height": 915,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 412,
+      "height": 915,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 412,
+      "height": 915,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 768,
+      "height": 1024,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 768,
+      "height": 1024,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 768,
+      "height": 1024,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 768,
+      "height": 1024,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "chromium",
+      "width": 1440,
+      "height": 900,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 320,
+      "height": 568,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 320,
+      "height": 568,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 320,
+      "height": 568,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 320,
+      "height": 568,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 360,
+      "height": 780,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 360,
+      "height": 780,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 360,
+      "height": 780,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 360,
+      "height": 780,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 390,
+      "height": 844,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 390,
+      "height": 844,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 390,
+      "height": 844,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 390,
+      "height": 844,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 412,
+      "height": 915,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 412,
+      "height": 915,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 412,
+      "height": 915,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 412,
+      "height": 915,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 768,
+      "height": 1024,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 768,
+      "height": 1024,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 768,
+      "height": 1024,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 768,
+      "height": 1024,
+      "stage": "result",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 1440,
+      "height": 900,
+      "stage": "entry",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 1440,
+      "height": 900,
+      "stage": "guide",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 1440,
+      "height": 900,
+      "stage": "photo",
+      "ok": true
+    },
+    {
+      "engine": "webkit",
+      "width": 1440,
+      "height": 900,
+      "stage": "result",
+      "ok": true
+    }
+  ]
+}

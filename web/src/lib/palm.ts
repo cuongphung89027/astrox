@@ -3,6 +3,8 @@ export type PalmLine = {
   observation: string;
   reading: string;
   points: [number, number][];
+  /** Only an independently validated detector may authorize an image overlay. */
+  overlayVerified: false;
 };
 export type PalmReading = {
   quality: "ok" | "retake";
@@ -51,21 +53,15 @@ export function parsePalmReading(text: string): PalmReading {
       !validText(line.observation, 1500) ||
       !validText(line.reading, 2000) ||
       !line.name.trim() ||
-      !line.observation.trim() ||
-      !Array.isArray(line.points) ||
-      line.points.length < 2 ||
-      line.points.length > 24
+      !line.observation.trim()
     )
       return fail();
-    for (const p of line.points)
-      if (
-        !Array.isArray(p) ||
-        p.length !== 2 ||
-        p.some(
-          (v) => typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > 1,
-        )
-      )
-        return fail();
+    // Geometry must not turn a valid observation into an unusable response.
+    const validPoints = Array.isArray(line.points) && line.points.length >= 2 && line.points.length <= 24 &&
+      line.points.every((p: unknown) => Array.isArray(p) && p.length === 2 &&
+        p.every(v => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1));
+    if (!validPoints) line.points = [];
+
   }
   return {
     quality: data.quality,
@@ -76,6 +72,7 @@ export function parsePalmReading(text: string): PalmReading {
       observation: l.observation,
       reading: l.reading,
       points: l.points,
+      overlayVerified: false,
     })),
   };
 }

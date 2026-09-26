@@ -1,350 +1,199 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import {
-  isWellLit,
-  openBackCamera,
-  switchToLens,
-  type LensCandidate,
-} from "@/lib/palm-camera";
-import {
-  assessHand,
-  bumpStable,
-  fingertipsOf,
-  frameFromLandmarks,
-  loadHandTracker,
-  readyToCountdown,
-  startDetectLoop,
-  verdictMessage,
-  type HandLandmarker,
-  type HandPoint,
-  type HandVerdict,
-} from "@/lib/hand-tracker";
-import { PALM_HAND_PATH } from "@/components/discovery/PalmGuide";
-import s from "./Discovery.module.css";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Btn } from "@/components/kit";
+import { cameraControls, focusCamera, openBackCamera, setCameraTorch, switchToLens, type LensCandidate } from "@/lib/palm-camera";
+import { assessHand, bumpStable, frameFromLandmarks, loadHandTracker, readyToCountdown, startDetectLoop, verdictMessage, type HandLandmarker, type HandPoint } from "@/lib/hand-tracker";
+import s from "./Palm.module.css";
 
-const CONNECTIONS: [number, number][] = [
-  [0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 6], [6, 7], [7, 8], [5, 9],
-  [9, 10], [10, 11], [11, 12], [9, 13], [13, 14], [14, 15], [15, 16],
-  [13, 17], [17, 18], [18, 19], [19, 20], [0, 17],
-];
-const TIPS = [4, 8, 12, 16, 20];
+export type PalmCapture = { dataUrl: string; w: number; h: number };
+type Props = { onCapture: (shot: PalmCapture) => void; onClose: () => void; onFatal: (message: string) => void };
+const stopStream = (stream: MediaStream | null) => stream?.getTracks().forEach(t => t.stop());
 
-export type PalmCapture = {
-  dataUrl: string;
-  w: number;
-  h: number;
-  fingertips: HandPoint[] | null;
-};
-
-export function PalmCamera({
-  onCapture,
-  onClose,
-  onFatal,
-}: {
-  onCapture: (shot: PalmCapture) => void;
-  onClose: () => void;
-  onFatal: (message: string) => void;
-}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const landmarkerRef = useRef<HandLandmarker | null>(null);
-  const stopLoopRef = useRef<() => void>(() => {});
-  const stableRef = useRef(0);
-  const prevPtsRef = useRef<HandPoint[] | null>(null);
-  const tipsRef = useRef<HandPoint[] | null>(null);
-  const verdictRef = useRef<HandVerdict>("none");
-  const countingRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cbs = useRef({ onCapture, onClose, onFatal });
-  useEffect(() => {
-    cbs.current = { onCapture, onClose, onFatal };
-  }, [onCapture, onClose, onFatal]);
+export function PalmCamera(props: Props) {
+  const video = useRef<HTMLVideoElement>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const tracker = useRef<HandLandmarker | null>(null);
+  const stopLoop = useRef<() => void>(() => {});
+  const loadAbort = useRef<AbortController | null>(null);
+  const cameraAbort = useRef<AbortController | null>(null);
+  const alive = useRef(false), operation = useRef(0), switching = useRef(false);
+  const auto = useRef(false), stable = useRef(0), deadline = useRef(0);
+  const previous = useRef<HandPoint[] | null>(null);
+  const callbacks = useRef(props);
+  useEffect(() => { callbacks.current = props; }, [props]);
+  const [ready, setReady] = useState(false), [changing, setChanging] = useState(false);
+  const [cameras, setCameras] = useState<LensCandidate[]>([]), [device, setDevice] = useState("");
+  const [controls, setControls] = useState({ torch: false, focus: false });
+  const [torch, setTorch] = useState(false), [controlBusy, setControlBusy] = useState(false);
+  const [autoCapture, setAutoCapture] = useState(false), [count, setCount] = useState(0);
+  const [tracking, setTracking] = useState<"loading" | "ready" | "error">("loading");
+  const [hint, setHint] = useState("Đang mở camera…"), [warning, setWarning] = useState("");
   const [aspect, setAspect] = useState("3/4");
-  const [verdict, setVerdict] = useState<HandVerdict>("none");
-  const [count, setCount] = useState(0);
-  const [backList, setBackList] = useState<LensCandidate[]>([]);
-  const [lensIdx, setLensIdx] = useState(0);
-  const [note, setNote] = useState("Đang mở camera…");
-  const [warn, setWarn] = useState("");
-  const [trackerOff, setTrackerOff] = useState(false);
-  const [trackerReady, setTrackerReady] = useState(false);
-  const [streamReady, setStreamReady] = useState(false);
-  const [loaderGone, setLoaderGone] = useState(false);
 
-  function cleanup() {
-    stopLoopRef.current();
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = null;
-    if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
-    warnTimerRef.current = null;
-    countingRef.current = false;
-    landmarkerRef.current?.close();
-    landmarkerRef.current = null;
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-  }
-
-  /** Cảnh báo ngắn ưu tiên hơn hướng dẫn khung — lý do chụp hụt phải nhìn thấy được. */
-  function flash(msg: string) {
-    setWarn(msg);
-    if (warnTimerRef.current) clearTimeout(warnTimerRef.current);
-    warnTimerRef.current = setTimeout(() => setWarn(""), 2200);
-  }
-
-  function cancelCountdown() {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = null;
-    countingRef.current = false;
-    setCount(0);
-    stableRef.current = 0;
-  }
-
-  function capture() {
-    const v = videoRef.current;
-    if (!v || !v.videoWidth) return;
-    if (landmarkerRef.current && verdictRef.current === "none") {
-      flash("Không thấy bàn tay trong khung");
-      return;
-    }
-    if (!isWellLit(v, v.videoWidth, v.videoHeight))
-      flash("Ảnh hơi tối hoặc hơi chói — kết quả có thể kém chính xác");
+  const resetTracking = useCallback(() => {
+    stable.current = 0; deadline.current = 0; previous.current = null; setCount(0);
+  }, []);
+  const cleanup = useCallback(() => {
+    alive.current = false; operation.current++; cameraAbort.current?.abort(); loadAbort.current?.abort(); stopLoop.current();
+    tracker.current?.close(); tracker.current = null; stopStream(stream.current); stream.current = null;
+  }, []);
+  const capture = useCallback(() => {
+    const v = video.current;
+    if (!alive.current || switching.current || !v || v.readyState < 2 || !v.videoWidth) return;
+    const scale = Math.min(1, 1200 / Math.max(v.videoWidth, v.videoHeight));
     const canvas = document.createElement("canvas");
-    canvas.width = v.videoWidth;
-    canvas.height = v.videoHeight;
+    canvas.width = Math.round(v.videoWidth * scale); canvas.height = Math.round(v.videoHeight * scale);
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.drawImage(v, 0, 0);
-    let data = canvas.toDataURL("image/jpeg", 0.85);
-    if (data.length > 1150000) data = canvas.toDataURL("image/jpeg", 0.6);
-    if (data.length > 1150000) {
-      flash("Ảnh còn quá lớn. Hãy chụp lại gần hơn một chút.");
-      return;
-    }
-    const tips = tipsRef.current ? [...tipsRef.current] : null;
-    cleanup();
-    cbs.current.onCapture({ dataUrl: data, w: canvas.width, h: canvas.height, fingertips: tips });
-  }
+    if (!ctx) { setWarning("Không xử lý được ảnh. Hãy thử lại."); return; }
+    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+    let dataUrl = canvas.toDataURL("image/jpeg", .85);
+    if (dataUrl.length > 1150000) dataUrl = canvas.toDataURL("image/jpeg", .6);
+    if (dataUrl.length > 1150000) { setWarning("Ảnh quá lớn. Hãy chọn ảnh từ thư viện."); return; }
+    const shot = { dataUrl, w: canvas.width, h: canvas.height };
+    cleanup(); callbacks.current.onCapture(shot);
+  }, [cleanup]);
 
-  function beginCountdown() {
-    if (countingRef.current) return;
-    countingRef.current = true;
-    let n = 3;
-    setCount(3);
-    timerRef.current = setInterval(() => {
-      n -= 1;
-      if (n <= 0) {
-        cancelCountdown();
-        capture();
-      } else setCount(n);
-    }, 700);
-  }
+  const runTracker = useCallback(() => {
+    stopLoop.current(); resetTracking();
+    const v = video.current, lm = tracker.current;
+    if (!v || !lm || !alive.current) return;
+    stopLoop.current = startDetectLoop(v, lm, pts => {
+      if (!alive.current || switching.current) return;
+      if (document.hidden) { resetTracking(); return; }
+      const frame = frameFromLandmarks(pts, previous.current, v.videoWidth, v.videoHeight);
+      previous.current = pts;
+      stable.current = bumpStable(stable.current, frame);
+      setHint(verdictMessage(assessHand(frame)));
+      if (!auto.current || !readyToCountdown(stable.current)) { deadline.current = 0; setCount(0); return; }
+      if (!deadline.current) deadline.current = performance.now() + 3000;
+      const remaining = Math.ceil((deadline.current - performance.now()) / 1000);
+      setCount(Math.max(0, remaining));
+      if (remaining <= 0) capture();
+    }, () => {
+      if (!alive.current) return;
+      resetTracking(); setTracking("error"); setHint("Bạn vẫn có thể bấm chụp khi ảnh rõ.");
+    });
+  }, [capture, resetTracking]);
 
-  function drawOverlay(pts: HandPoint[] | null) {
-    const v = videoRef.current;
-    const c = canvasRef.current;
-    if (!v || !c || !v.videoWidth) return;
-    if (c.width !== v.videoWidth) {
-      c.width = v.videoWidth;
-      c.height = v.videoHeight;
-      // Box + overlay phải theo tỉ lệ buffer thật của video, không theo getSettings().
-      setAspect(`${v.videoWidth}/${v.videoHeight}`);
+  const initializeTracker = useCallback(async () => {
+    loadAbort.current?.abort(); stopLoop.current(); tracker.current?.close(); tracker.current = null;
+    const controller = new AbortController(); loadAbort.current = controller;
+    setTracking("loading"); resetTracking();
+    try {
+      const lm = await loadHandTracker({ signal: controller.signal });
+      if (!alive.current || controller.signal.aborted) { lm.close(); return; }
+      tracker.current = lm; setTracking("ready"); runTracker();
+    } catch {
+      if (alive.current && !controller.signal.aborted) setTracking("error");
     }
-    const ctx = c.getContext("2d");
-    if (!ctx) return;
-    ctx.clearRect(0, 0, c.width, c.height);
-    if (!pts) return;
-    const W = c.width;
-    const H = c.height;
-    ctx.strokeStyle = "rgba(194,161,93,.9)";
-    ctx.lineWidth = Math.max(2, W / 400);
-    ctx.beginPath();
-    for (const [a, b] of CONNECTIONS) {
-      ctx.moveTo(pts[a].x * W, pts[a].y * H);
-      ctx.lineTo(pts[b].x * W, pts[b].y * H);
-    }
-    ctx.stroke();
-    ctx.fillStyle = "#f3cf79";
-    for (const i of TIPS) {
-      ctx.beginPath();
-      ctx.arc(pts[i].x * W, pts[i].y * H, Math.max(4, W / 160), 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
+  }, [resetTracking, runTracker]);
 
-  // Khung hình thật đổi kích thước (mở camera, đổi ống kính, xoay máy) → cập nhật
-  // tỉ lệ box theo buffer video, kể cả khi tracker không chạy nên không có overlay.
-  useEffect(() => {
-    const v = videoRef.current;
+  const attach = useCallback(async (next: MediaStream) => {
+    stream.current = next;
+    const track = next.getVideoTracks()[0];
+    setControls(cameraControls(track)); setTorch(false);
+    const v = video.current;
     if (!v) return;
-    const sync = () => {
-      if (v.videoWidth && v.videoHeight) setAspect(`${v.videoWidth}/${v.videoHeight}`);
-    };
-    sync();
-    v.addEventListener("loadedmetadata", sync);
-    v.addEventListener("resize", sync);
-    return () => {
-      v.removeEventListener("loadedmetadata", sync);
-      v.removeEventListener("resize", sync);
-    };
+    v.srcObject = next;
+    await v.play();
   }, []);
 
-  // Model sẵn sàng thì giữ màn loading thêm 550ms cho hiệu ứng vẽ tay kịp khép
-  // vòng rồi mới mờ đi — trước đây hết 4s là tự tắt, chờ model thật thì lâu hơn.
   useEffect(() => {
-    if (!trackerReady) return;
-    const timer = setTimeout(() => setLoaderGone(true), 550);
-    return () => clearTimeout(timer);
-  }, [trackerReady]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+    alive.current = true;
+    const token = ++operation.current;
+    cameraAbort.current = new AbortController();
+    const cameraSignal = cameraAbort.current.signal;
+    void (async () => {
       try {
-        const opened = await openBackCamera();
-        if (cancelled) {
-          opened.stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        streamRef.current = opened.stream;
-        const v = videoRef.current;
-        if (v) {
-          v.srcObject = opened.stream;
-          await v.play().catch(() => {});
-          if (!cancelled) setStreamReady(true);
-        }
-        setBackList(opened.backList);
-        // Chỉ số phải trỏ đúng lens đang mở: openBackCamera có thể chọn lens khác
-        // backList[0], lệch chỉ số thì "Đổi ống kính" mở lại chính nó rồi mới
-        // nhảy về lens mặc định (và ghi nhớ nhầm lens mặc định đó).
-        setLensIdx(Math.max(0, opened.backList.findIndex((c) => c.deviceId === opened.deviceId)));
-        setNote("Đưa lòng bàn tay vào khung");
-        try {
-          const lm = await loadHandTracker();
-          if (cancelled) {
-            lm.close();
-            return;
-          }
-          landmarkerRef.current = lm;
-          setTrackerReady(true);
-          if (videoRef.current)
-            stopLoopRef.current = startDetectLoop(videoRef.current, lm, (pts) => {
-              const frame = frameFromLandmarks(pts, prevPtsRef.current);
-              prevPtsRef.current = pts;
-              stableRef.current = bumpStable(stableRef.current, frame);
-              const v = assessHand(frame);
-              verdictRef.current = v;
-              setVerdict(v);
-              if (pts) tipsRef.current = fingertipsOf(pts);
-              drawOverlay(pts);
-              if (countingRef.current && v !== "ready") cancelCountdown();
-              else if (!countingRef.current && readyToCountdown(stableRef.current)) beginCountdown();
-            });
-        } catch {
-          setTrackerOff(true); // model tải fail → chụp thủ công, tính năng không vỡ
-        }
+        const opened = await openBackCamera(cameraSignal);
+        if (!alive.current || operation.current !== token) { stopStream(opened.stream); return; }
+        await attach(opened.stream);
+        if (!alive.current || operation.current !== token) return;
+        setCameras(opened.backList); setDevice(opened.deviceId); setHint("Đặt trọn bàn tay vào khung, lòng tay hướng về máy.");
+        void initializeTracker();
       } catch {
-        if (!cancelled)
-          cbs.current.onFatal(
-            "Không mở được camera. Cho phép truy cập camera hoặc chọn ảnh từ thư viện.",
-          );
+        if (alive.current && operation.current === token) {
+          cleanup(); callbacks.current.onFatal("Không mở được camera. Kiểm tra quyền camera hoặc chọn ảnh từ thư viện.");
+        }
       }
     })();
-    return () => {
-      cancelled = true;
-      cleanup();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const hide = () => { if (document.hidden) { stopLoop.current(); resetTracking(); } else if (!switching.current) runTracker(); };
+    document.addEventListener("visibilitychange", hide);
+    return () => { document.removeEventListener("visibilitychange", hide); cleanup(); };
+  }, [attach, cleanup, initializeTracker, resetTracking, runTracker]);
 
-  async function switchLens() {
-    if (backList.length < 2) return;
-    const next = backList[(lensIdx + 1) % backList.length];
+  async function changeLens(id: string) {
+    if (switching.current || id === device) return;
+    switching.current = true; setChanging(true); setReady(false); setWarning("");
+    const token = ++operation.current, oldId = device;
+    stopLoop.current(); resetTracking(); stopStream(stream.current); stream.current = null;
     try {
-      // switchToLens ghi luôn lựa chọn vào localStorage: máy không có tín hiệu
-      // zoom vẫn mở đúng lens này ở lần sau.
-      const stream = await switchToLens(next.deviceId);
-      const prev = streamRef.current;
-      if (!prev) {
-        // camera đã bị dọn trong lúc chờ (chụp/tắt/unmount) — đóng stream vừa mở
-        stream.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      prev.getTracks().forEach((t) => t.stop());
-      streamRef.current = stream;
-      setLensIdx(backList.indexOf(next));
-      cancelCountdown();
-      const v = videoRef.current;
-      if (v) {
-        v.srcObject = stream;
-        await v.play().catch(() => {});
-      }
-      setNote("Đã đổi ống kính — đặt lòng bàn tay vào khung");
+      let next: MediaStream;
+      let selected = id;
+      try { next = await switchToLens(id); }
+      catch { if (!alive.current || operation.current !== token) return; next = await switchToLens(oldId); selected = oldId; if (alive.current) setWarning("Không mở được camera đã chọn. Đã quay về camera trước."); }
+      if (!alive.current || operation.current !== token) { stopStream(next); return; }
+      await attach(next); setDevice(selected);
     } catch {
-      setNote("Không đổi được ống kính");
+      if (alive.current) { cleanup(); callbacks.current.onFatal("Camera đang bận. Đóng ứng dụng dùng camera rồi thử lại."); }
+    } finally {
+      switching.current = false;
+      if (alive.current) { setChanging(false); runTracker(); }
     }
   }
-
-  return (
-    <div className={s.cameraWrap}>
-      <div className={s.cameraBox} style={{ aspectRatio: aspect }}>
-        <video ref={videoRef} muted playsInline aria-label="Camera chụp bàn tay" />
-        <canvas ref={canvasRef} className={s.cameraOverlay} aria-hidden="true" />
-        {count > 0 && (
-          <span className={s.countdown} role="status">
-            {count}
-          </span>
-        )}
-        <span className={s.guideLine} aria-live="polite">
-          {warn ||
-            (trackerOff
-              ? "Chụp thủ công: đặt lòng bàn tay vào khung rồi bấm chụp"
-              : trackerReady
-                ? verdictMessage(verdict)
-                : note)}
-        </span>
-        {backList.length > 1 && (
-          <button type="button" className={s.lensBtn} onClick={() => void switchLens()}>
-            Đổi ống kính
-          </button>
-        )}
-        {!loaderGone && !trackerOff && (
-          <div className={`${s.loadOverlay} ${trackerReady ? s.loadDone : ""}`} role="status">
-            <svg viewBox="0 0 240 320" className={s.loadHand} aria-hidden="true">
-              <path d={PALM_HAND_PATH} pathLength={100} />
-            </svg>
-            <p className={s.loadTitle}>
-              {streamReady ? "Đang tải bộ nhận diện tay…" : "Đang mở camera…"}
-            </p>
-            <small className={s.loadHint}>
-              Lần đầu tải khoảng 8 MB — những lần sau mở lại là tức thì
-            </small>
-          </div>
-        )}
-      </div>
-      <div className={s.actions}>
-        <button
-          type="button"
-          className={s.button}
-          // Màn loading che preview: chụp lúc này là chụp mù. Loader tắt theo
-          // trackerOff nên nút tự bật lại đúng lúc copy chụp thủ công hiện.
-          disabled={!loaderGone && !trackerOff}
-          onClick={capture}
-        >
-          Chụp ảnh
-        </button>
-        <button
-          type="button"
-          className={s.secondary}
-          onClick={() => {
-            cleanup();
-            cbs.current.onClose();
-          }}
-        >
-          Tắt camera
-        </button>
+  async function toggleTorch() {
+    const track = stream.current?.getVideoTracks()[0];
+    if (!track || controlBusy) return;
+    setControlBusy(true); const next = !torch;
+    const ok = await setCameraTorch(track, next);
+    if (alive.current && stream.current?.getVideoTracks()[0] === track) {
+      if (ok) { setTorch(next); setWarning(""); }
+      else setWarning("Camera không xác nhận thay đổi đèn. Hãy dùng nguồn sáng bên ngoài.");
+    }
+    if (alive.current) setControlBusy(false);
+  }
+  async function focusAt(e: React.PointerEvent<HTMLVideoElement>) {
+    const track = stream.current?.getVideoTracks()[0];
+    if (!track || !controls.focus || changing || controlBusy) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setControlBusy(true); resetTracking();
+    const ok = await focusCamera(track, (e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
+    if (alive.current) {
+      // Cảnh báo gắn với track đã yêu cầu; nhưng cờ bận thuộc phiên nên luôn được trả về.
+      if (stream.current?.getVideoTracks()[0] === track) {
+        setWarning(ok ? "Đã gửi yêu cầu lấy nét. Kiểm tra ảnh rõ trước khi chụp." : "Camera không nhận yêu cầu lấy nét. Thử thay đổi khoảng cách.");
+      }
+      setControlBusy(false);
+    }
+  }
+  function syncVideo() {
+    const v = video.current;
+    if (!v?.videoWidth || !v.videoHeight) return;
+    setAspect(`${v.videoWidth}/${v.videoHeight}`); setReady(v.readyState >= 2);
+  }
+  return <section className={s.camera} aria-label="Chụp bàn tay">
+    <div className={s.cameraTop}><span>CAMERA</span><button className={s.textButton} onClick={() => { cleanup(); callbacks.current.onClose(); }}>Đóng</button></div>
+    <div className={s.cameraStage}>
+      <div className={s.cameraFrame} style={{ aspectRatio: aspect }}>
+        <video ref={video} muted playsInline onLoadedData={syncVideo} onResize={syncVideo} onPointerDown={focusAt} aria-label="Camera chụp bàn tay" />
+        {(!ready || changing) && <div className={s.cameraPending} role="status">{changing ? "Đang đổi camera…" : "Đang mở camera…"}</div>}
+        {count > 0 && <span className={s.countdown} role="status">{count}</span>}
       </div>
     </div>
-  );
+    <p className={s.cameraHint} role="status">{warning || hint}</p>
+    <div className={s.cameraTools}>
+      {cameras.length > 1 && <label>Camera<select value={device} disabled={changing || controlBusy} onChange={e => void changeLens(e.target.value)}>{cameras.map((c, i) => <option key={c.deviceId} value={c.deviceId}>{c.label || `Camera ${i + 1}`}</option>)}</select></label>}
+      {controls.torch && <button className={s.toolButton} disabled={!ready || changing || controlBusy} aria-pressed={torch} onClick={() => void toggleTorch()}>{torch ? "Tắt đèn" : "Bật đèn"}</button>}
+      {controls.focus && <button className={s.toolButton} disabled={!ready || changing || controlBusy} onClick={async () => { const t = stream.current?.getVideoTracks()[0]; if (t) { const ok = await focusCamera(t, .5, .5); if (alive.current) setWarning(ok ? "Đã gửi yêu cầu lấy nét giữa ảnh." : "Không lấy nét được. Thử thay đổi khoảng cách."); } }}>Lấy nét giữa ảnh</button>}
+    </div>
+    <p className={s.muted}>{controls.focus ? "Chạm lên ảnh để yêu cầu lấy nét." : "Camera tự lấy nét theo thiết bị. Giữ tay cách máy khoảng 25–35 cm."} {!controls.torch && "Nếu ảnh tối, hãy thêm nguồn sáng bên ngoài."}</p>
+    <div className={s.trackerStatus} role="status">
+      <span>{tracking === "loading" ? "Đang chuẩn bị hỗ trợ căn tay… Bạn có thể chụp ngay." : tracking === "error" ? "Hỗ trợ căn tay chưa sẵn sàng. Chụp thủ công vẫn dùng được." : "Hỗ trợ căn tay đã sẵn sàng."}</span>
+      {tracking === "error" && <button className={s.textButton} disabled={changing} onClick={() => void initializeTracker()}>Thử lại</button>}
+    </div>
+    <div className={s.captureActions}>
+      <label className={s.check}><input type="checkbox" checked={autoCapture} disabled={tracking !== "ready" || changing} onChange={e => { auto.current = e.target.checked; setAutoCapture(e.target.checked); resetTracking(); }} />Tự chụp khi giữ yên</label>
+      <Btn disabled={!ready || changing} onClick={capture}>Chụp ảnh</Btn>
+    </div>
+  </section>;
 }

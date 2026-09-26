@@ -234,8 +234,8 @@ test("openBackCamera rescans and moves off a tele default even with no zoom sign
     assert.equal(opened.deviceId, "1");
     // mặc định → quét từng lens → mở lại lens đã chọn
     assert.deepEqual(env.calls, ["default", "0", "1", "1"]);
-    assert.equal(env.store.get("astrox.palm.lensId"), "1");
-    assert.ok(logs.some((l) => l.includes("[palm] lens scan")));
+    assert.equal(env.store.get("astrox.palm.lensId"), undefined); // only explicit choices persist
+    assert.equal(logs.length, 0);
   } finally {
     console.info = info;
   }
@@ -316,4 +316,91 @@ test("the opened lens is not always backList[0] — the UI index must sync to it
 test("the camera flow stubs restore navigator/localStorage for later tests", () => {
   assert.equal(typeof localStorage, "undefined");
   assert.equal(navigator.mediaDevices, undefined);
+});
+
+test('explicit main lens wins over anonymous camera digital zoom range', () => {
+  assert.equal(scoreLenses([lens('unknown', 1, 'Camera 0'), lens('wide', null, 'Back Main Camera')]).deviceId, 'wide');
+});
+
+function observeStreams() {
+  const streams = [];
+  const open = navigator.mediaDevices.getUserMedia;
+  navigator.mediaDevices.getUserMedia = async constraints => {
+    const stream = await open(constraints);
+    const entry = { stream, stopped: false };
+    stream.getTracks()[0].stop = () => { entry.stopped = true; };
+    streams.push(entry);
+    return stream;
+  };
+  return streams;
+}
+
+test('enumeration failure stops initial and remembered camera streams', async t => {
+  fakeCameras(t, { cameras: [BACK], stored: '1' });
+  const streams = observeStreams();
+  navigator.mediaDevices.enumerateDevices = async () => { throw new Error('enumeration failed'); };
+  const { openBackCamera } = await import('../src/lib/palm-camera.ts?enumeration-cleanup');
+  await assert.rejects(openBackCamera());
+  assert.ok(streams.length > 0);
+  assert.ok(streams.every(s => s.stopped));
+});
+
+test('already aborted opening never activates the camera', async t => {
+  const env = fakeCameras(t, { cameras: [BACK] });
+  const controller = new AbortController(); controller.abort();
+  const { openBackCamera } = await import('../src/lib/palm-camera.ts?abort-before-open');
+  await assert.rejects(openBackCamera(controller.signal), { name: 'AbortError' });
+  assert.deepEqual(env.calls, []);
+});
+
+test('cancel during camera scan stops current stream and prevents later probes', async t => {
+  const env = fakeCameras(t, { cameras: [TELE, BACK] });
+  const streams = observeStreams();
+  const controller = new AbortController();
+  const open = navigator.mediaDevices.getUserMedia;
+  navigator.mediaDevices.getUserMedia = async constraints => {
+    const stream = await open(constraints);
+    if (constraints.video.deviceId) controller.abort();
+    return stream;
+  };
+  const { openBackCamera } = await import('../src/lib/palm-camera.ts?abort-probe');
+  await assert.rejects(openBackCamera(controller.signal), { name: 'AbortError' });
+  assert.deepEqual(env.calls, ['default', '0']);
+  assert.ok(streams.every(s => s.stopped));
+});
+
+test('cancel during pending enumeration promptly stops the acquired stream', async t => {
+  fakeCameras(t, { cameras: [BACK] });
+  const streams = observeStreams();
+  const controller = new AbortController();
+  let enumerateStarted;
+  const started = new Promise(resolve => { enumerateStarted = resolve; });
+  let finishEnumeration;
+  navigator.mediaDevices.enumerateDevices = () => { enumerateStarted(); return new Promise(resolve => { finishEnumeration = resolve; }); };
+  const { openBackCamera } = await import('../src/lib/palm-camera.ts?abort-enumeration');
+  const pending = openBackCamera(controller.signal);
+  await started; controller.abort();
+  const outcome = await Promise.race([pending.then(() => 'opened', e => e.name), new Promise(resolve => setTimeout(() => resolve('hung'), 30))]);
+  const stoppedOnAbort = streams.every(s => s.stopped);
+  finishEnumeration([{ kind: 'videoinput', deviceId: '1', label: BACK.label }]);
+  await pending.catch(() => {});
+  assert.equal(outcome, 'AbortError');
+  assert.equal(stoppedOnAbort, true);
+});
+
+test('a camera granted after cancellation is immediately stopped', async t => {
+  const env = fakeCameras(t, { cameras: [BACK] });
+  const streams = observeStreams();
+  const controller = new AbortController();
+  const open = navigator.mediaDevices.getUserMedia;
+  let grant;
+  navigator.mediaDevices.getUserMedia = constraints => new Promise(resolve => { grant = async () => resolve(await open(constraints)); });
+  const { openBackCamera } = await import('../src/lib/palm-camera.ts?late-grant');
+  const pending = openBackCamera(controller.signal);
+  controller.abort();
+  await assert.rejects(pending, { name: 'AbortError' });
+  await grant();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(env.calls, ['default']);
+  assert.equal(streams[0].stopped, true);
 });

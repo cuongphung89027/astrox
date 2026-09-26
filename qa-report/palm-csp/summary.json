@@ -1,0 +1,472 @@
+{
+  "date": "2026-09-26T03:33:11.013Z",
+  "base": "http://127.0.0.1:<ephemeral>",
+  "engines": [
+    "chromium",
+    "webkit"
+  ],
+  "requiredTotal": 14,
+  "requiredPassed": 14,
+  "requiredFailed": 0,
+  "checks": [
+    {
+      "engine": "chromium",
+      "id": "R1-csp-header-derived",
+      "required": true,
+      "pass": true,
+      "detail": "header from onRequest: nonce+strict-dynamic+wasm-unsafe-eval=true, bare-unsafe-eval absent=true"
+    },
+    {
+      "engine": "chromium",
+      "id": "R2-nonce-injected-in-html",
+      "required": true,
+      "pass": true,
+      "detail": "middleware adapter nonced 16 script tags, header nonce present=true"
+    },
+    {
+      "engine": "chromium",
+      "id": "R3-eval-blocked-in-page",
+      "required": true,
+      "pass": true,
+      "detail": "in-page new Function blocked=true (EvalError)"
+    },
+    {
+      "engine": "chromium",
+      "id": "R4-wasm-compile-allowed-in-page",
+      "required": true,
+      "pass": true,
+      "detail": "in-page WebAssembly.compile=allowed"
+    },
+    {
+      "engine": "chromium",
+      "id": "R5-real-handlandmarker-detect-close",
+      "required": true,
+      "pass": true,
+      "detail": "real tasks-vision: delegate=GPU, create 163ms, detectForVideo 5/5 frames ok on input=video-capturestream (0 with landmarks — synthetic frame, accuracy not asserted), closed=true"
+    },
+    {
+      "engine": "chromium",
+      "id": "R6-spa-nav-inherited-csp",
+      "required": true,
+      "pass": true,
+      "detail": "/tarot -> /chitay via Next Link (same document): no navigational /chitay reload=true, evalBlocked=true (page-triggered), wasm=allowed, mediapipe=ok input=video-capturestream delegate=GPU (entry quick probes ok; total 753"
+    },
+    {
+      "engine": "chromium",
+      "id": "R7-negative-no-wasm-token-blocks-wasm",
+      "required": true,
+      "pass": true,
+      "detail": "same middleware policy minus 'wasm-unsafe-eval': WebAssembly.compile=blocked (CompileError), evalBlocked=true, violation event=true, header derived=true (50ms)"
+    },
+    {
+      "engine": "webkit",
+      "id": "R1-csp-header-derived",
+      "required": true,
+      "pass": true,
+      "detail": "header from onRequest: nonce+strict-dynamic+wasm-unsafe-eval=true, bare-unsafe-eval absent=true"
+    },
+    {
+      "engine": "webkit",
+      "id": "R2-nonce-injected-in-html",
+      "required": true,
+      "pass": true,
+      "detail": "middleware adapter nonced 16 script tags, header nonce present=true"
+    },
+    {
+      "engine": "webkit",
+      "id": "R3-eval-blocked-in-page",
+      "required": true,
+      "pass": true,
+      "detail": "in-page new Function blocked=true (EvalError)"
+    },
+    {
+      "engine": "webkit",
+      "id": "R4-wasm-compile-allowed-in-page",
+      "required": true,
+      "pass": true,
+      "detail": "in-page WebAssembly.compile=allowed"
+    },
+    {
+      "engine": "webkit",
+      "id": "R5-real-handlandmarker-detect-close",
+      "required": true,
+      "pass": true,
+      "detail": "real tasks-vision: delegate=GPU, create 159ms, detectForVideo 5/5 frames ok on input=canvas-direct (0 with landmarks — synthetic frame, accuracy not asserted), closed=true"
+    },
+    {
+      "engine": "webkit",
+      "id": "R6-spa-nav-inherited-csp",
+      "required": true,
+      "pass": true,
+      "detail": "/tarot -> /chitay via Next Link (same document): no navigational /chitay reload=true, evalBlocked=true (page-triggered), wasm=allowed, mediapipe=ok input=canvas-direct delegate=GPU (entry quick probes ok; total 12565ms)"
+    },
+    {
+      "engine": "webkit",
+      "id": "R7-negative-no-wasm-token-blocks-wasm",
+      "required": true,
+      "pass": true,
+      "detail": "same middleware policy minus 'wasm-unsafe-eval': WebAssembly.compile=blocked (CompileError), evalBlocked=true, violation event=true, header derived=true (25ms)"
+    }
+  ],
+  "externalRequestsBlocked": {
+    "total": 8,
+    "byHost": {
+      "api.theastrox.space": 8
+    }
+  },
+  "htmlDocumentsServed": 62,
+  "documentRequests": [
+    {
+      "pathname": "/chitay",
+      "dest": "document",
+      "purpose": ""
+    },
+    {
+      "pathname": "/",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/banggia",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/dieukhoan",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/cunghoangdao",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/kinhdich",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/battu",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/thansohoc",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tarot",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tuonghop",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/licham",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chitay",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chuyengia",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tuvi",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/hoso",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tarot",
+      "dest": "document",
+      "purpose": ""
+    },
+    {
+      "pathname": "/",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/cunghoangdao",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/kinhdich",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/battu",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/dieukhoan",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/thansohoc",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tarot",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tuonghop",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/licham",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chitay",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chuyengia",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tuvi",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/hoso",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/banggia",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/qa-harness/negative",
+      "dest": "document",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chitay",
+      "dest": "document",
+      "purpose": ""
+    },
+    {
+      "pathname": "/",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/banggia",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/dieukhoan",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/cunghoangdao",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/kinhdich",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/battu",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/thansohoc",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tarot",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tuonghop",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/licham",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chitay",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chuyengia",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tuvi",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/hoso",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tarot",
+      "dest": "document",
+      "purpose": ""
+    },
+    {
+      "pathname": "/",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/cunghoangdao",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/banggia",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/dieukhoan",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/kinhdich",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/battu",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/thansohoc",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tarot",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tuonghop",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/licham",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chitay",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/chuyengia",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/tuvi",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/hoso",
+      "dest": "empty",
+      "purpose": ""
+    },
+    {
+      "pathname": "/qa-harness/negative",
+      "dest": "document",
+      "purpose": ""
+    }
+  ],
+  "scenarioB": {
+    "chromium": {
+      "url": "/chitay",
+      "loadedAt": 1790393563959.2,
+      "runs": [
+        "direct-quick",
+        "spa-full"
+      ],
+      "nav": [
+        {
+          "name": "/tarot",
+          "type": "navigate",
+          "activationStart": 0
+        }
+      ]
+    },
+    "webkit": {
+      "url": "/chitay",
+      "loadedAt": 1790393578233,
+      "runs": [
+        "direct-quick",
+        "spa-full"
+      ],
+      "nav": [
+        {
+          "name": "/tarot",
+          "type": "navigate"
+        }
+      ]
+    }
+  },
+  "engineVariants": {
+    "chromium": "chromium-full(new-headless)",
+    "webkit": "webkit"
+  },
+  "artifacts": "/Users/Thsonjpg/.codex/worktrees/palm-redesign/astrox/qa-report/palm-csp",
+  "boundaries": {
+    "csp": "real onRequest middleware via minimal test HTMLRewriter adapter; policy never duplicated in this script",
+    "runtime": "real @mediapipe/tasks-vision 0.10.35 from local node_modules + local /mediapipe/wasm + local /models/hand_landmarker.task; no mocked landmarker",
+    "frames": "synthetic canvas.captureStream frames; no camera; landmark counts prove invocation only, not accuracy",
+    "navigation": "static export web/out; /tarot -> /chitay via actual Next Link client navigation"
+  }
+}

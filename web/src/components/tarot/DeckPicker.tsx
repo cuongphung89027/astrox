@@ -34,21 +34,31 @@ export function DeckPicker({ value, onChange }: { value: string; onChange: (id: 
   // Âm thanh mặc định tắt tiếng — người dùng bật lại bằng nút loa, giữ nguyên khi đổi bộ.
   const [soundOn, setSoundOn] = useState(false);
   const rail = useRef<HTMLDivElement>(null);
-  // Chỉ coi scroll là "đổi bộ" khi có ý định thật (vuốt/bánh xe/nút điều hướng).
+  // Chỉ coi scroll là "đổi bộ" khi có ý định thật (vuốt/bánh xe/nút/mũi tên).
   // Khi load, scroll-snap có thể tự re-snap sang slide kề — không được hiểu là chọn bộ.
+  // Cờ tắt theo THỜI GIAN IM (180ms không cuộn) chứ không theo vị trí: sự kiện
+  // scroll đầu của smooth animation xuất phát cách điểm snap 1–2px, nếu so vị trí
+  // sẽ tắt cờ ngay nhịp đầu → rail trôi mà value đứng yên (mất đồng bộ dot/deck).
   const scrollIntent = useRef(false);
+  const scrollSettle = useRef<number | undefined>(undefined);
+  const armIntent = (ms: number) => {
+    scrollIntent.current = true;
+    window.clearTimeout(scrollSettle.current);
+    scrollSettle.current = window.setTimeout(() => { scrollIntent.current = false; }, ms);
+  };
+  useEffect(() => () => window.clearTimeout(scrollSettle.current), []);
   const index = TAROT_DECKS.findIndex(deck => deck.id === value);
   const go = (next: number) => {
     const element = rail.current;
     if (!element) return;
-    scrollIntent.current = true;
+    armIntent(600);
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motion === "reduced";
     element.scrollTo({left: next * element.clientWidth, behavior: reduced ? "instant" : "smooth"});
   };
   return <div className={styles.deckPreview}>
     <div ref={rail} className={styles.deckRail} role="region" aria-label="Chọn bộ bài Tarot" tabIndex={0}
-      onPointerDown={() => { scrollIntent.current = true; }}
-      onWheel={() => { scrollIntent.current = true; }}
+      onPointerDown={() => armIntent(400)}
+      onWheel={() => armIntent(400)}
       onKeyDown={event => {
         if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); go(Math.max(0, Math.min(TAROT_DECKS.length - 1, index + (event.key === "ArrowRight" ? 1 : -1)))); }
       }} onScroll={event => {
@@ -56,7 +66,7 @@ export function DeckPicker({ value, onChange }: { value: string; onChange: (id: 
         const el = event.currentTarget;
         const next = Math.round(el.scrollLeft / el.clientWidth);
         if (TAROT_DECKS[next] && TAROT_DECKS[next].id !== value) onChange(TAROT_DECKS[next].id);
-        if (Math.abs(el.scrollLeft - next * el.clientWidth) < 2) scrollIntent.current = false; // đã nghỉ trên điểm snap
+        armIntent(180); // im 180ms coi như hết cú cuộn
       }}>
       {TAROT_DECKS.map((deck, i) => <article key={deck.id} className={styles.deckSlide} aria-label={`${i + 1} / ${TAROT_DECKS.length}: ${deck.nameVi}`}>
         {deck.status === "available" ? <div className={styles.deckArt}>

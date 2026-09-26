@@ -36,3 +36,7 @@ Kiểm chứng: prod browser check 3 vòng ←→ + vuốt drag đều synced, 0
 ## Follow-up 2 — `e8b13a3` shiba lên slide đầu + nhãn "Mới"
 
 Shiba thành deck mở mặc định (slide 1, rút bài mặc định), raccoon chuyển thành "bộ kinh điển" ở slide 2. Nhãn "Mới" (`isNew` trong registry): pill vàng ấm gradient khớp accent vàng của app, quầng sáng thở 2.8s (tắt theo prefers-reduced-motion), góc phải trên deckArt; article label có "(mới ra mắt)" cho screen reader. Legacy index.html đồng bộ (badge Mới/Mặc định). Kiểm chứng: badge 1280/390 không đè; prod shiba slide đầu + dot synced + video chạy + chuyển ←→/drag synced + 0 console error; tarot-feature-qa 60/60, ui-30viewports 518/518 ×2 engine; 344 unit test. Rollback: redeploy `f918c48`.
+
+## Follow-up 3 — `665299e` motion cho nhãn "Mới"
+
+Ba lớp: pop-in spring lúc xuất hiện (scale .4 xoay → vọt 1.14 → khớp, .55s), vệt sheen trắng quét ngang pill mỗi 3.4s (kiểu satin, clip trong pill), quầng glow thở 2.8s. Cả ba tắt theo prefers-reduced-motion / html[data-motion=reduced] (badge tĩnh). Kiểm chứng: computed animation trên prod đủ 3 lớp, 0 console error; frame soi giữa-cuối vệt sheen; tarot-feature-qa 60/60, ui-30viewports 518/518 ×2 engine. Rollback: redeploy `c45e251`.

@@ -51,16 +51,28 @@
   .deckVideo { height: 224px; width: 128px; border-radius: 9px; box-shadow: 0 12px 26px #15382c35, 0 0 0 4px #fffaf060; }
 }
 
-/* Nhãn "Mới" cho deck vừa ra mắt — vàng ấm của brand (khớp pill giá),
-   viền trắng mảnh cho định hình, quầng sáng thở chậm để dẫn mắt. */
-.deckNewBadge { position: absolute; top: 14px; right: 14px; z-index: 3; padding: 5px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #4a3410; background: linear-gradient(150deg, #f9e6ab, #eccb74 58%, #dfae52); border: 1px solid #fffdf3b0; box-shadow: 0 8px 18px #15382c2e; animation: deckNewGlow 2.8s ease-out infinite; }
+/* Nhãn "Mới" cho deck vừa ra mắt — vàng ấm của brand (khớp pill giá).
+   Motion 3 lớp: pop-in spring lúc xuất hiện, vệt sheen quét ngang pill
+   (~3.4s một nhịp, kiểu satin), quầng glow thở chậm để dẫn mắt. */
+.deckNewBadge { position: absolute; top: 14px; right: 14px; z-index: 3; padding: 5px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #4a3410; background: linear-gradient(150deg, #f9e6ab, #eccb74 58%, #dfae52); border: 1px solid #fffdf3b0; box-shadow: 0 8px 18px #15382c2e; overflow: hidden; animation: deckNewIn .55s cubic-bezier(.18,.9,.32,1.28) .15s both, deckNewGlow 2.8s ease-out 1.2s infinite; }
+.deckNewBadge::after { content: ""; position: absolute; top: -20%; bottom: -20%; left: -45%; width: 38%; transform: skewX(-18deg) translateX(0); background: linear-gradient(105deg, transparent, #fffdf5cc 55%, transparent); animation: deckNewSheen 3.4s ease-in-out 1.6s infinite; }
+@keyframes deckNewIn {
+  0% { transform: scale(.4) rotate(-10deg); opacity: 0; }
+  55% { transform: scale(1.14) rotate(2.5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes deckNewSheen {
+  0%, 12% { transform: skewX(-18deg) translateX(0); }
+  38%, 100% { transform: skewX(-18deg) translateX(480%); }
+}
 @keyframes deckNewGlow {
   0% { box-shadow: 0 8px 18px #15382c2e, 0 0 0 0 #e8c56d59; }
   70%, 100% { box-shadow: 0 8px 18px #15382c2e, 0 0 0 9px #e8c56d00; }
 }
 @media(max-width:750px) { .deckNewBadge { top: 10px; right: 10px; padding: 4px 9px; font-size: 9px; letter-spacing: .12em; } }
-@media(prefers-reduced-motion:reduce) { .deckNewBadge { animation: none; } }
-html[data-motion="reduced"] .deckNewBadge { animation: none; }
+@media(prefers-reduced-motion:reduce) { .deckNewBadge, .deckNewBadge::after { animation: none; opacity: 1; } .deckNewBadge::after { opacity: 0; } }
+html[data-motion="reduced"] .deckNewBadge, html[data-motion="reduced"] .deckNewBadge::after { animation: none; }
+html[data-motion="reduced"] .deckNewBadge::after { opacity: 0; }
 
 .deckArt { --deck-side-offset: 94px; }
 @media(max-width:750px) { .deckArt { --deck-side-offset: clamp(66px,20vw,86px); } }

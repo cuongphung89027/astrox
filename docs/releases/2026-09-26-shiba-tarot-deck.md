@@ -26,3 +26,9 @@ Bộ bài thứ hai "Tarot Chó Shiba" chuyển từ teaser "Sắp ra mắt" th�
 
 - Pages: redeploy commit `e0c982e` (trước nhánh) hoặc chọn deployment trước đó trên dashboard `theastrox`.
 - Worker: không đổi; D1: không đổi.
+
+## Follow-up cùng ngày — `38e2706` fix mất đồng bộ khi đổi bộ
+
+Báo cáo từ video màn hình 09:05 (bấm ←→ giữa 2 bộ): dot/bCaption kẹt ở deck cũ trong khi rail đã sang deck mới — nặng nhất là lượt rút bài/AI prompt vẫn dùng deck cũ. Nguyên nhân: cú scroll event đầu của smooth animation xuất phát cách snap point 1–2px, điều kiện xả cờ intent cũ (so vị trí `<2px`) ăn ngay event này. Fix: cờ tắt theo thời gian im (180ms sau event scroll cuối), không phụ thuộc vị trí. Trên màn 120Hz delta đầu ~1px nên dính chắc; headless 60Hz thường ≥2px nên không tái hiện được.
+
+Kiểm chứng: prod browser check 3 vòng ←→ + vuốt drag đều synced, 0 console error; tarot-feature-qa 60/60, ui-30viewports 518/518 (đều ×2 engine). Rollback: redeploy `27b8479`.

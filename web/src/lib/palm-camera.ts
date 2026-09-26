@@ -54,7 +54,7 @@ export function scoreLenses(candidates: LensCandidate[]): LensCandidate | null {
   const scored = pool.map((c) => {
     const zoom = zoomOf.get(c) ?? null;
     let score = zoom === null ? NEUTRAL_SCORE : 1 / (Math.abs(zoom - 1) + 0.05);
-    if (MAIN_LENS_LABEL.test(c.label)) score += 1;
+    if (MAIN_LENS_LABEL.test(c.label) && !SIDE_LENS_LABEL.test(c.label)) score += 100;
     return { candidate: c, score };
   });
   // So sánh nghiêm ngặt: điểm bằng nhau thì giữ candidate đầu tiên của pool.
@@ -109,27 +109,49 @@ export async function probeZoomMin(track: MediaStreamTrack): Promise<number | nu
   return null;
 }
 
-/** Liệt kê camera sau kèm đáy dải zoom — mở ngắn từng thiết bị để nhận diện. */
-export async function listBackCameras(): Promise<LensCandidate[]> {
-  const devices = await navigator.mediaDevices.enumerateDevices();
+function checkCameraAbort(signal?: AbortSignal): void {
+  if (signal?.aborted) throw new DOMException("Đã đóng camera", "AbortError");
+}
+const stopCameraStream = (stream: MediaStream) => stream.getTracks().forEach(track => track.stop());
+
+/** Browser camera promises cannot be cancelled; dispose results arriving after close. */
+function cameraAwait<T>(pending: Promise<T>, signal?: AbortSignal, dispose?: (value: T) => void): Promise<T> {
+  if (!signal) return pending;
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => reject(new DOMException("Đã đóng camera", "AbortError"));
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) abort();
+    pending.then(value => {
+      signal.removeEventListener("abort", abort);
+      if (signal.aborted) { dispose?.(value); abort(); }
+      else resolve(value);
+    }, error => { signal.removeEventListener("abort", abort); reject(error); });
+  });
+}
+
+/** Liệt kê camera sau; đóng từng stream cả khi hủy hoặc probe thất bại. */
+export async function listBackCameras(signal?: AbortSignal): Promise<LensCandidate[]> {
+  checkCameraAbort(signal);
+  const devices = await cameraAwait(navigator.mediaDevices.enumerateDevices(), signal);
+  checkCameraAbort(signal);
   const out: LensCandidate[] = [];
-  // Bỏ camera trước ngay từ danh sách: không mở nó chỉ để rồi loại theo
-  // facingMode — mỗi lần mở là một nhịp bật privacy indicator vô ích.
-  for (const d of devices.filter(
-    (v) => v.kind === "videoinput" && !FRONT_LABEL.test(v.label),
-  )) {
+  for (const d of devices.filter(v => v.kind === "videoinput" && !FRONT_LABEL.test(v.label))) {
+    checkCameraAbort(signal);
     let stream: MediaStream | null = null;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: d.deviceId } },
-      });
+      stream = await cameraAwait(navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: d.deviceId } }, audio: false }), signal, stopCameraStream);
+      checkCameraAbort(signal);
       const track = stream.getVideoTracks()[0];
-      if (track.getSettings().facingMode === "environment")
-        out.push({ deviceId: d.deviceId, label: d.label, zoomMin: await probeZoomMin(track) });
+      if (track.getSettings().facingMode === "environment" || (!track.getSettings().facingMode && /back|rear|sau|wide|main/i.test(d.label))) {
+        const zoomMin = await cameraAwait(probeZoomMin(track), signal);
+        checkCameraAbort(signal);
+        out.push({ deviceId: d.deviceId, label: d.label, zoomMin });
+      }
     } catch {
-      /* thiết bị không mở được — bỏ qua */
+      checkCameraAbort(signal);
+      // An unavailable lens does not prevent trying the remaining devices.
     } finally {
-      stream?.getTracks().forEach((t) => t.stop());
+      if (stream) stopCameraStream(stream);
     }
   }
   return out;
@@ -166,11 +188,12 @@ export function persistLensChoice(deviceId: string): void {
   }
 }
 
-function openLensStream(deviceId: string): Promise<MediaStream> {
-  return navigator.mediaDevices.getUserMedia({
+function openLensStream(deviceId: string, signal?: AbortSignal): Promise<MediaStream> {
+  checkCameraAbort(signal);
+  return cameraAwait(navigator.mediaDevices.getUserMedia({
     video: { deviceId: { exact: deviceId }, width: { ideal: 1280 } },
     audio: false,
-  });
+  }), signal, stopCameraStream);
 }
 
 /**
@@ -178,8 +201,10 @@ function openLensStream(deviceId: string): Promise<MediaStream> {
  * vì không thể mở camera thứ hai): chỉ liệt kê thiết bị, bỏ camera trước nếu
  * nhận ra qua nhãn. Lens đang dùng luôn đứng đầu để chỉ số khớp UI.
  */
-async function lensListFromDevices(activeId: string): Promise<LensCandidate[]> {
-  const devices = await navigator.mediaDevices.enumerateDevices();
+async function lensListFromDevices(activeId: string, signal?: AbortSignal): Promise<LensCandidate[]> {
+  checkCameraAbort(signal);
+  const devices = await cameraAwait(navigator.mediaDevices.enumerateDevices(), signal);
+  checkCameraAbort(signal);
   const cams = devices.filter((d) => d.kind === "videoinput");
   const back = cams.filter((d) => !FRONT_LABEL.test(d.label));
   const list = back.length > 0 ? back : cams;
@@ -194,19 +219,22 @@ async function lensListFromDevices(activeId: string): Promise<LensCandidate[]> {
 /** Mở lens đã chọn trước đó (localStorage rồi cache session) — khỏi dò lại. */
 async function openRememberedLens(
   deviceId: string,
+  signal?: AbortSignal,
 ): Promise<{ opened: OpenedCamera | null; gone: boolean }> {
+  let stream: MediaStream | null = null;
   try {
-    const stream = await openLensStream(deviceId);
+    stream = await openLensStream(deviceId, signal);
+    checkCameraAbort(signal);
     const backList =
-      cachedBackList.some((c) => c.deviceId === deviceId) && cachedBackList.length > 1
+      cachedBackList.some(c => c.deviceId === deviceId) && cachedBackList.length > 1
         ? cachedBackList
-        : await lensListFromDevices(deviceId);
+        : await lensListFromDevices(deviceId, signal);
+    checkCameraAbort(signal);
     cacheLens(deviceId, backList);
     return { opened: { stream, deviceId, backList: [...backList] }, gone: false };
   } catch (err) {
-    // Thiết bị đã biến mất hoặc đang bận → rơi về luồng mặc định. Chỉ lỗi "không
-    // còn lens này" mới đáng bỏ lựa chọn đã nhớ; NotAllowedError/NotReadableError
-    // là tạm thời, xoá đi thì người dùng mất lựa chọn đã dạy cho máy.
+    if (stream) stopCameraStream(stream);
+    checkCameraAbort(signal);
     return { opened: null, gone: isGoneError(err) };
   }
 }
@@ -245,61 +273,68 @@ function cacheLens(deviceId: string, backList: LensCandidate[]): void {
  * `needsRescan` không còn là cổng chặn (máy không expose zoom từng bị giữ
  * nguyên lens mặc định, thường là tele).
  */
-export async function openBackCamera(): Promise<OpenedCamera> {
+export async function openBackCamera(signal?: AbortSignal): Promise<OpenedCamera> {
+  checkCameraAbort(signal);
   const stored = readStoredLens();
   if (stored) {
-    const { opened, gone } = await openRememberedLens(stored);
+    const { opened, gone } = await openRememberedLens(stored, signal);
+    if (signal?.aborted && opened) stopCameraStream(opened.stream);
+    checkCameraAbort(signal);
     if (opened) return opened;
-    if (gone) clearStoredLens(); // lens đã nhớ không còn trên máy
+    if (gone) clearStoredLens();
   }
   if (cachedLensId) {
-    const { opened } = await openRememberedLens(cachedLensId);
+    const { opened } = await openRememberedLens(cachedLensId, signal);
+    if (signal?.aborted && opened) stopCameraStream(opened.stream);
+    checkCameraAbort(signal);
     if (opened) return opened;
     cachedLensId = null;
     cachedBackList = [];
   }
-  const stream = await navigator.mediaDevices.getUserMedia({ video: BASE_VIDEO, audio: false });
-  const track = stream.getVideoTracks()[0];
-  const defaultId = track.getSettings().deviceId ?? "";
-  const defaultLens: LensCandidate = {
-    deviceId: defaultId,
-    label: track.label,
-    zoomMin: await probeZoomMin(track),
-  };
-  const inputs = (await navigator.mediaDevices.enumerateDevices()).filter(
-    (d) => d.kind === "videoinput",
-  );
-  // Nhãn phân biệt được camera trước thì chỉ đếm camera sau: máy "1 sau + 1
-  // trước" không phải máy nhiều lens, dò vào cam trước chỉ tốn một nhịp mở
-  // camera vô ích. Nhãn không phân biệt được thì giữ cách đếm cũ.
-  const deviceCount = inputs.some((d) => FRONT_LABEL.test(d.label))
-    ? inputs.filter((d) => !FRONT_LABEL.test(d.label)).length
-    : inputs.length;
-  if (deviceCount < 2) {
-    // Một camera sau duy nhất — không có gì để chọn.
-    cacheLens(defaultId, [defaultLens]);
-    return { stream, deviceId: defaultId, backList: [...cachedBackList] };
-  }
-  // Nhiều lens: nhả stream mặc định TRƯỚC khi quét — Android/Chrome từ chối mở
-  // camera thứ hai khi camera thứ nhất còn giữ (NotReadableError).
-  stream.getTracks().forEach((t) => t.stop());
-  const backList: LensCandidate[] = [defaultLens];
-  const others = await listBackCameras();
-  for (const c of others) if (c.deviceId !== defaultId) backList.push(c);
-  const plan = lensOpenPlan(backList, defaultId);
-  console.info("[palm] lens scan", JSON.stringify(backList));
+  checkCameraAbort(signal);
+  const stream = await cameraAwait(navigator.mediaDevices.getUserMedia({ video: BASE_VIDEO, audio: false }), signal, stopCameraStream);
+  let keepDefault = false;
+  let defaultLens: LensCandidate;
   try {
-    const opened = await openLensStream(plan.primary);
-    if (plan.primary !== defaultId) persistLensChoice(plan.primary);
-    cacheLens(plan.primary, backList);
-    return { stream: opened, deviceId: plan.primary, backList: [...cachedBackList] };
-  } catch (err) {
-    if (plan.fallback === plan.primary) throw err; // không còn lens dự phòng
-    // Mở lens tốt nhất hụt — mở lại lens mặc định để caller luôn có preview.
-    const reopened = await openLensStream(plan.fallback);
-    cacheLens(plan.fallback, backList);
-    return { stream: reopened, deviceId: plan.fallback, backList: [...cachedBackList] };
+    checkCameraAbort(signal);
+    const track = stream.getVideoTracks()[0];
+    defaultLens = {
+      deviceId: track.getSettings().deviceId ?? "",
+      label: track.label,
+      zoomMin: await cameraAwait(probeZoomMin(track), signal),
+    };
+    checkCameraAbort(signal);
+    const inputs = (await cameraAwait(navigator.mediaDevices.enumerateDevices(), signal)).filter(d => d.kind === "videoinput");
+    checkCameraAbort(signal);
+    const deviceCount = inputs.some(d => FRONT_LABEL.test(d.label))
+      ? inputs.filter(d => !FRONT_LABEL.test(d.label)).length : inputs.length;
+    if (deviceCount < 2) {
+      cacheLens(defaultLens.deviceId, [defaultLens]);
+      keepDefault = true;
+      return { stream, deviceId: defaultLens.deviceId, backList: [...cachedBackList] };
+    }
+  } finally {
+    if (!keepDefault) stopCameraStream(stream);
   }
+  // Android requires releasing the default stream before probing another lens.
+  const backList: LensCandidate[] = [defaultLens];
+  const others = await listBackCameras(signal);
+  checkCameraAbort(signal);
+  for (const c of others) if (c.deviceId !== defaultLens.deviceId) backList.push(c);
+  const plan = lensOpenPlan(backList, defaultLens.deviceId);
+  let opened: MediaStream;
+  let selected = plan.primary;
+  try {
+    opened = await openLensStream(plan.primary, signal);
+  } catch (err) {
+    checkCameraAbort(signal);
+    if (plan.fallback === plan.primary) throw err;
+    opened = await openLensStream(plan.fallback, signal);
+    selected = plan.fallback;
+  }
+  if (signal?.aborted) { stopCameraStream(opened); checkCameraAbort(signal); }
+  cacheLens(selected, backList);
+  return { stream: opened, deviceId: selected, backList: [...cachedBackList] };
 }
 
 /**
@@ -337,4 +372,68 @@ export function isWellLit(source: CanvasImageSource, w: number, h: number): bool
   if (!ctx) return true;
   ctx.drawImage(source, 0, 0, w, h, 0, 0, 64, 64);
   return lightVerdict(luminanceMean(ctx.getImageData(0, 0, 64, 64).data)) === "ok";
+}
+
+type CaptureCapabilities = MediaTrackCapabilities & {
+  torch?: boolean;
+  focusMode?: string[];
+  pointsOfInterest?: unknown;
+};
+function capabilities(track: MediaStreamTrack): CaptureCapabilities {
+  try { return track.getCapabilities?.() ?? {}; } catch { return {}; }
+}
+export function cameraControls(track: MediaStreamTrack): { torch: boolean; focus: boolean } {
+  const caps = capabilities(track);
+  return { torch: caps.torch === true, focus: !!caps.pointsOfInterest && !!caps.focusMode?.some(m => m === "single-shot" || m === "continuous") };
+}
+
+/** Yêu cầu điều khiển phải tự kết thúc; track treo không được giữ UI khóa vô hạn. */
+export const CONTROL_SETTLE_MS = 5000;
+
+export type SettleResult<T> = { settled: true; value: T } | { settled: false; reason: "timeout" | "error" };
+
+/**
+ * Kết quả trong hạn hay không. Promise đến muộn (sau deadline) bị bỏ qua nhưng
+ * vẫn có handler nên không sinh unhandled rejection.
+ */
+export function settleWithin<T>(pending: Promise<T>, timeoutMs: number = CONTROL_SETTLE_MS): Promise<SettleResult<T>> {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (result: SettleResult<T>) => { if (!done) { done = true; resolve(result); } };
+    const timer = setTimeout(() => finish({ settled: false, reason: "timeout" }), timeoutMs);
+    pending.then(
+      (value) => { clearTimeout(timer); finish({ settled: true, value }); },
+      () => { clearTimeout(timer); finish({ settled: false, reason: "error" }); },
+    );
+  });
+}
+
+type ControlOptions = { timeoutMs?: number };
+
+export async function setCameraTorch(track: MediaStreamTrack, enabled: boolean, options: ControlOptions = {}): Promise<boolean> {
+  if (!cameraControls(track).torch) return false;
+  const applied = await settleWithin(
+    (async () => {
+      await track.applyConstraints({ advanced: [{ torch: enabled } as MediaTrackConstraintSet] });
+      return (track.getSettings() as MediaTrackSettings & { torch?: boolean }).torch === enabled;
+    })(),
+    options.timeoutMs,
+  );
+  return applied.settled && applied.value;
+}
+/** True means the focus request was accepted; it cannot prove optical sharpness. */
+export async function focusCamera(track: MediaStreamTrack, x: number, y: number, options: ControlOptions = {}): Promise<boolean> {
+  if (!cameraControls(track).focus || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+  const caps = capabilities(track);
+  const applied = await settleWithin(
+    (async () => {
+      await track.applyConstraints({ advanced: [{
+        focusMode: caps.focusMode?.includes("single-shot") ? "single-shot" : "continuous",
+        pointsOfInterest: [{ x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) }],
+      } as MediaTrackConstraintSet] });
+      return true;
+    })(),
+    options.timeoutMs,
+  );
+  return applied.settled && applied.value;
 }

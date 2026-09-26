@@ -80,3 +80,17 @@ test('wallet HTML gets a fresh matching CSP nonce and cannot be cached across us
     globalThis.HTMLRewriter = previous;
   }
 });
+
+test('documents permit WASM after client navigation without enabling JavaScript eval', async () => {
+  const previous = globalThis.HTMLRewriter;
+  globalThis.HTMLRewriter = class { on() { return this; } transform(r) { return r; } };
+  try {
+    for (const path of ['/chitay', '/chitay/', '/tarot']) {
+      const r = await onRequest({ request: new Request(`https://theastrox.space${path}`), env: { ASSETS: { fetch: async () => new Response('<html/>', {headers: {'content-type':'text/html'}}) } } });
+      const csp = r.headers.get('content-security-policy');
+      assert.equal(csp.includes("'wasm-unsafe-eval'"), true);
+      assert.equal(csp.includes("'unsafe-eval'"), false);
+      assert.ok(csp.includes("'strict-dynamic'"));
+    }
+  } finally { globalThis.HTMLRewriter = previous; }
+});

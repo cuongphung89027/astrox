@@ -21,7 +21,7 @@ export const HAND_THRESHOLDS = {
   readyFrames: 12,    // frame "ready" liên tiếp (~0.8s ở 15fps) trước khi đếm ngược
 } as const;
 
-export function frameFromLandmarks(pts: HandPoint[] | null, prev: HandPoint[] | null): HandFrame {
+export function frameFromLandmarks(pts: HandPoint[] | null, prev: HandPoint[] | null, sourceWidth = 1, sourceHeight = 1): HandFrame {
   if (!pts || pts.length === 0) return { present: false, bboxRatio: 0, aspect: 0, motion: 1 };
   const xs = pts.map((p) => p.x);
   const ys = pts.map((p) => p.y);
@@ -31,7 +31,7 @@ export function frameFromLandmarks(pts: HandPoint[] | null, prev: HandPoint[] | 
     prev && prev.length === pts.length
       ? Math.max(...pts.map((p, i) => Math.hypot(p.x - prev[i].x, p.y - prev[i].y)))
       : 1;
-  return { present: true, bboxRatio: w * h, aspect: w / Math.max(h, 1e-6), motion };
+  return { present: true, bboxRatio: w * h, aspect: (w / Math.max(h, 1e-6)) * (sourceWidth > 0 && sourceHeight > 0 ? sourceWidth / sourceHeight : 1), motion };
 }
 
 export function assessHand(f: HandFrame): HandVerdict {
@@ -65,46 +65,94 @@ export function fingertipsOf(pts: HandPoint[]): HandPoint[] {
   return FINGERTIP_INDEXES.map((i) => pts[i]).filter(Boolean);
 }
 
-/** Nạp HandLandmarker on-device; GPU trước, rơi về CPU nếu GPU fail. */
-export async function loadHandTracker(): Promise<HandLandmarker> {
-  const vision = await import("@mediapipe/tasks-vision");
-  const fileset = await vision.FilesetResolver.forVisionTasks("/mediapipe/wasm");
-  const make = (delegate: "GPU" | "CPU") =>
-    vision.HandLandmarker.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: "/models/hand_landmarker.task", delegate },
-      runningMode: "VIDEO",
-      numHands: 1,
-    });
+export type HandTrackerLoadOptions = { signal?: AbortSignal; timeoutMs?: number };
+
+/** Nạp có giới hạn thời gian; giải phóng model đến muộn sau khi hủy. */
+export async function loadHandTracker(options: HandTrackerLoadOptions = {}): Promise<HandLandmarker> {
+  const { signal, timeoutMs = 20_000 } = options;
+  let cancelled: Error | null = null;
+  const abortError = () => new DOMException("Đã dừng tải nhận diện bàn tay", "AbortError");
+  if (signal?.aborted) throw abortError();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let onAbort: () => void = () => {};
+  const deadline = new Promise<never>((_, reject) => {
+    onAbort = () => { cancelled = abortError(); reject(cancelled); };
+    signal?.addEventListener("abort", onAbort, { once: true });
+    timer = setTimeout(() => {
+      cancelled = new DOMException("Tải nhận diện bàn tay quá lâu. Hãy thử lại hoặc chụp thủ công.", "TimeoutError");
+      reject(cancelled);
+    }, Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 20_000);
+  });
+  const checkCancelled = () => { if (cancelled) throw cancelled; };
+  const loading = async () => {
+    const vision = await import("@mediapipe/tasks-vision");
+    checkCancelled();
+    const fileset = await vision.FilesetResolver.forVisionTasks("/mediapipe/wasm");
+    checkCancelled();
+    const make = async (delegate: "GPU" | "CPU") => {
+      const tracker = await vision.HandLandmarker.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: "/models/hand_landmarker.task", delegate },
+        runningMode: "VIDEO",
+        numHands: 1,
+      });
+      if (cancelled) {
+        tracker.close();
+        throw cancelled;
+      }
+      return tracker;
+    };
+    try {
+      return await make("GPU");
+    } catch {
+      checkCancelled();
+      return await make("CPU");
+    }
+  };
   try {
-    return await make("GPU");
-  } catch {
-    return await make("CPU");
+    return await Promise.race([loading(), deadline]);
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", onAbort);
   }
 }
 
-/** Vòng dò ~15fps; timestamp phải tăng đơn điệu hoặc MediaPipe ném lỗi. */
+/** Vòng dò ~15fps; chỉ dò frame mới và báo lỗi khi bộ dò không thể tiếp tục. */
 export function startDetectLoop(
   video: HTMLVideoElement,
   landmarker: HandLandmarker,
   onFrame: (pts: HandPoint[] | null) => void,
+  onError?: (error: Error) => void,
 ): () => void {
   let raf = 0;
   let last = 0;
   let ts = 0;
+  let lastVideoTime = -1;
+  let failures = 0;
+  let stopped = false;
+  const stop = () => { stopped = true; cancelAnimationFrame(raf); };
   const tick = () => {
+    if (stopped) return;
     raf = requestAnimationFrame(tick);
     const now = performance.now();
-    if (now - last < 66 || video.readyState < 2) return;
+    if (now - last < 66 || video.readyState < 2 || video.currentTime === lastVideoTime) return;
     last = now;
+    lastVideoTime = video.currentTime;
     ts = Math.max(ts + 1, Math.round(now));
+    let pts: HandPoint[] | null;
     try {
       const res = landmarker.detectForVideo(video, ts);
-      const pts = (res?.landmarks?.[0] as HandPoint[] | undefined) ?? null;
-      onFrame(pts);
-    } catch {
-      /* frame chưa sẵn sàng — bỏ qua */
+      pts = (res?.landmarks?.[0] as HandPoint[] | undefined) ?? null;
+      failures = 0;
+    } catch (error) {
+      failures++;
+      if (failures >= 3) {
+        stop();
+        onError?.(error instanceof Error ? error : new Error(String(error)));
+      }
+      return;
     }
+    onFrame(pts);
   };
   raf = requestAnimationFrame(tick);
-  return () => cancelAnimationFrame(raf);
+  return stop;
 }

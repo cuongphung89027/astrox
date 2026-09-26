@@ -78,11 +78,11 @@ export const TAROT_DECKS: TarotDeck[] = [
     id: "shiba",
     name: "The Shiba Tarot",
     nameVi: "Tarot Chó Shiba",
-    status: "soon",
-    base: "",
-    ext: "",
-    back: "",
-    desc: "Sắp ra mắt — bộ bài minh hoạ chú chó Shiba.",
+    status: "available",
+    base: "/assets/tarot/shiba/",
+    ext: ".webp",
+    back: "/assets/tarot/shiba/back.webp",
+    desc: "Chú Shiba phiêu bạt giữa núi non và hoa đào theo phong cách tranh khắc gỗ Nhật Bản.",
   },
 
 ];

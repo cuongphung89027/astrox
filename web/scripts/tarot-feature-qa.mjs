@@ -21,41 +21,49 @@ const OUT_DIR = fileURLToPath(new URL("../qa-report/tarot-feature/", import.meta
 mkdirSync(OUT_DIR, { recursive: true });
 
 const now = Date.now();
+const PROFILE_SEED = { name: "Mực Demo", gender: "Nam", dob: "1998-04-12", hourChi: "Tí (23:00–01:00)", place: "Hà Nội" };
+// Fingerprint của profile seed (state.ts stableHash) — từ khi nhật ký lọc theo
+// fingerprint, entry thiếu trường này không còn hiện (bản seed 22/09 lỗi thời).
+const FINGERPRINT = [2166136261, 374761393, 668265263, 2246822519]
+  .map(seed => { let h = seed; const value = JSON.stringify({ profile: PROFILE_SEED, image: "" }); for (let i = 0; i < value.length; i++) h = Math.imul(h ^ value.charCodeAt(i), 16777619); return (h >>> 0).toString(16).padStart(8, "0"); })
+  .join("");
 const cards = [
   "major_00_fool", "major_01_magician", "major_02_high_priestess", "major_03_empress",
   "major_04_emperor", "major_05_hierophant", "major_06_lovers", "major_07_chariot",
   "major_08_strength", "major_09_hermit", "major_10_wheel_of_fortune", "major_11_justice",
 ];
 const HISTORY = [
-  { id: "seed1", savedAt: now - 3 * 3600e3, question: "Mình có nên đổi sang hướng nghiệp mới không?", deckId: "raccoon", spreadId: "three", spreadName: "Trải 3 lá", frameLabel: "Quá khứ – Hiện tại – Tương lai",
+  { id: "seed1", fingerprint: FINGERPRINT, savedAt: now - 3 * 3600e3, question: "Mình có nên đổi sang hướng nghiệp mới không?", deckId: "raccoon", spreadId: "three", spreadName: "Trải 3 lá", frameLabel: "Quá khứ – Hiện tại – Tương lai",
     cards: [
       { id: cards[0], reversed: false, position: "Quá khứ", nameEn: "The Fool" },
       { id: cards[1], reversed: true, position: "Hiện tại", nameEn: "The Magician" },
       { id: cards[2], reversed: false, position: "Tương lai", nameEn: "The High Priestess" },
     ],
     text: "**Quá khứ — The Fool**\nBạn từng khởi đầu với tâm thế tự do, dám bước khỏi vùng an toàn.\n\n**Hiện tại — The Magician (ngược)**\nNăng lượng sáng tạo đang bị phân tán; bạn có nhiều ý tưởng nhưng chưa biến thành hành động.\n\n**Tổng hợp**\nBài khuyến nghị lấy lại trọng tâm trước khi quyết định lớn." },
-  { id: "seed2", savedAt: now - 26 * 3600e3, question: "", deckId: "raccoon", spreadId: "celtic10", spreadName: "Celtic Cross", frameLabel: "",
+  { id: "seed2", fingerprint: FINGERPRINT, savedAt: now - 26 * 3600e3, question: "", deckId: "raccoon", spreadId: "celtic10", spreadName: "Celtic Cross", frameLabel: "",
     cards: cards.slice(0, 10).map((id, i) => ({ id, reversed: i % 3 === 0, position: `Vị trí ${i + 1}`, nameEn: `Card ${i + 1}` })),
     text: "**Hiện tại**\nMột giai đoạn chuyển mình.\n\n**Kết quả cuối cùng**\nKết quả phụ thuộc vào kỷ luật của bạn trong ba tháng tới." },
-  { id: "seed3", savedAt: now - 8 * 24 * 3600e3, question: "Tuần này nên tập trung vào điều gì?", deckId: "raccoon", spreadId: "one", spreadName: "Rút 1 lá", frameLabel: "",
+  { id: "seed3", fingerprint: FINGERPRINT, savedAt: now - 8 * 24 * 3600e3, question: "Tuần này nên tập trung vào điều gì?", deckId: "raccoon", spreadId: "one", spreadName: "Rút 1 lá", frameLabel: "",
     cards: [{ id: cards[5], reversed: false, position: "Thông điệp", nameEn: "The Lovers" }],
     text: "**Thông điệp — The Lovers**\nSự lựa chọn đến từ trái tim chứ không phải nỗi sợ." },
-  { id: "seed4", savedAt: now - 20 * 24 * 3600e3, question: "Hai đứa đang đi về đâu?", deckId: "raccoon", spreadId: "relationship5", spreadName: "Tình Yêu & Mối Quan Hệ", frameLabel: "",
+  { id: "seed4", fingerprint: FINGERPRINT, savedAt: now - 20 * 24 * 3600e3, question: "Hai đứa đang đi về đâu?", deckId: "raccoon", spreadId: "relationship5", spreadName: "Tình Yêu & Mối Quan Hệ", frameLabel: "",
     cards: cards.slice(6, 11).map((id, i) => ({ id, reversed: i % 2 === 0, position: ["Bạn", "Đối phương", "Nền tảng mối quan hệ", "Thách thức chung", "Tiềm năng / hướng đi"][i], nameEn: `Card ${i + 7}` })),
     text: "**Bạn**\nĐang cần được lắng nghe.\n\n**Đối phương**\nCó sự quan tâm nhưng cách thể hiện khác." },
 ];
 
-const PROFILE_STATE = { profile: { name: "Mực Demo", gender: "Nam", dob: "1998-04-12", hourChi: "Tí (23:00–01:00)", place: "Hà Nội" }, onboarded: true, aiCache: { version: 2, profiles: {}, legacy: {} } };
+const PROFILE_STATE = { profile: PROFILE_SEED, onboarded: true, aiCache: { version: 2, profiles: {}, legacy: {} } };
 
 const results = [];
 const check = (name, ok, detail = "") => { results.push({ name, ok, detail }); console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`); };
 
 const overflowOk = async (page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1);
 
-/** Trên prod (guest) modal mời đăng nhập mở sau mỗi lần load — tự đóng để test. */
+/** Trên prod (guest) modal mời đăng nhập mở sau mỗi lần load — tự đóng để test.
+ *  Popup 23/09 dùng nút "Khám phá trước"; giữ regex bản cũ để chạy ngược được. */
 async function dismissInvites(page) {
-  const later = page.getByRole("button", { name: /Để sau, mình muốn khám phá trước/ });
-  try { await later.waitFor({ state: "visible", timeout: 2500 }); await later.click(); }
+  const later = page.getByRole("button", { name: /^Khám phá trước$/ })
+    .or(page.getByRole("button", { name: /Để sau, mình muốn khám phá trước/ }));
+  try { await later.first().waitFor({ state: "visible", timeout: 2500 }); await later.first().click(); }
   catch { /* localhost preview không có modal này */ }
 }
 
@@ -80,16 +88,20 @@ async function run(engine) {
     const muteBtn = page.getByRole("button", { name: /Bật tiếng video giới thiệu bộ bài/ });
     await muteBtn.waitFor({ state: "visible", timeout: 8000 });
     check(`[${engine}] nút bật tiếng hiển thị`, true);
-    const mutedBefore = await page.locator("video").evaluate((v) => v.muted);
+    // Chỉ slide đang chọn mới mount video có src (slide kia là placeholder không src).
+    const video = page.locator("video[src]");
+    const mutedBefore = await video.evaluate((v) => v.muted);
     check(`[${engine}] video mặc định tắt tiếng`, mutedBefore === true, `muted=${mutedBefore}`);
     await muteBtn.click();
-    const mutedAfter = await page.locator("video").evaluate((v) => v.muted);
+    const mutedAfter = await video.evaluate((v) => v.muted);
     const pressed = await page.getByRole("button", { name: /Tắt tiếng video giới thiệu bộ bài/ }).getAttribute("aria-pressed");
     check(`[${engine}] click → bật tiếng + aria-pressed`, mutedAfter === false && pressed === "true", `muted=${mutedAfter}, pressed=${pressed}`);
-    const playing = await page.locator("video").evaluate((v) => !v.paused && !v.ended);
+    const playing = await video.evaluate((v) => !v.paused && !v.ended);
     check(`[${engine}] video vẫn đang phát sau khi bật tiếng`, playing, `paused check=${playing}`);
+    await page.waitForTimeout(400); // nhịp người dùng: đợi commit React trước cú click kế
     await page.getByRole("button", { name: /Tắt tiếng video giới thiệu bộ bài/ }).click();
-    check(`[${engine}] tắt tiếng lại được`, await page.locator("video").evaluate((v) => v.muted) === true);
+    const mutedAgain = await page.waitForFunction(() => document.querySelectorAll("video")[0]?.muted === true, undefined, { timeout: 3000 }).then(() => true).catch(() => false);
+    check(`[${engine}] tắt tiếng lại được`, mutedAgain);
 
     /* ---------- 2. Lối vào nhật ký ở setup ---------- */
     // Lần đầu chưa có lượt nào: link vẫn phải hiện (không còn ẩn).

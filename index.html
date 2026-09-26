@@ -4653,14 +4653,14 @@ document.getElementById("info-modal").addEventListener("click",(e)=>{ if(e.targe
    kiem tra STATE.profile). Duoc dua vao lockModuleForView de admin co the khoa.
    ============================================================================ */
 const TAROT_DECKS = [
+  { id:"shiba", name:"The Shiba Tarot", nameVi:"Tarot Chó Shiba", status:"available",
+    base:"assets/tarot/shiba/", ext:".webp", back:"assets/tarot/shiba/back.webp",
+    video:"assets/tarot/shiba/intro.mp4", isNew:true,
+    desc:"Chú Shiba phiêu bạt giữa núi non và hoa đào theo phong cách tranh khắc gỗ Nhật Bản." },
   { id:"raccoon", name:"The Raccoon Tarot", nameVi:"Tarot Gấu Mèo", status:"available",
     base:"assets/tarot/raccoon/", ext:".webp", back:"assets/tarot/raccoon/back.webp",
     video:"assets/tarot/raccoon/intro.mp4",
-    desc:"Bộ bài mặc định — chú gấu mèo ấm áp giữa khung cảnh đồng quê mùa thu." },
-  { id:"shiba", name:"The Shiba Tarot", nameVi:"Tarot Chó Shiba", status:"available",
-    base:"assets/tarot/shiba/", ext:".webp", back:"assets/tarot/shiba/back.webp",
-    video:"assets/tarot/shiba/intro.mp4",
-    desc:"Chú Shiba phiêu bạt giữa núi non và hoa đào theo phong cách tranh khắc gỗ Nhật Bản." },
+    desc:"Bộ bài kinh điển — chú gấu mèo ấm áp giữa khung cảnh đồng quê mùa thu." },
   { id:"vajrayana", name:"Vajrayana Tarot", nameVi:"Tarot Kim Cương Thừa", status:"soon",
     desc:"Sắp ra mắt — bộ bài lấy cảm hứng từ Mật Tông Kim Cương Thừa." }
 ];
@@ -4715,7 +4715,7 @@ function renderTarotDeckGrid(){
     const locked = d.status!=="available";
     const cover = !locked ? `<img src="${d.back}" alt="${escapeHtml(d.name)}">` : `<span class="tdc-soon">✦</span>`;
     return `<button type="button" class="tarot-deck-card${locked?" locked":""}" data-deck="${d.id}"${locked?" disabled":""}>
-      <span class="tarot-deck-badge ${locked?"soon":"active"}">${locked?"Sắp ra mắt":"Mặc định"}</span>
+      <span class="tarot-deck-badge ${locked?"soon":(d.isNew?"active":"")}">${locked?"Sắp ra mắt":(d.isNew?"Mới":"Mặc định")}</span>
       <span class="tarot-deck-cover">${cover}</span>
       <span class="tarot-deck-body" style="display:block;">
         <span class="tarot-deck-name" style="display:block;">${escapeHtml(d.name)}</span>

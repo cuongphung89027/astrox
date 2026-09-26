@@ -2,8 +2,8 @@ import { managedPrompt, managedJoin } from "./managed-prompts";
 /**
  * Tarot — port trung thực từ index.html (MODULE — TAROT): bộ bài, kiểu trải,
  * rút bài ngẫu nhiên + chiều xuôi/ngược, prompt luận giải AI và khoá cache.
- * Ảnh bộ raccoon: /assets/tarot/raccoon/{id}.webp + back.webp; dữ liệu lá:
- * fetch runtime /assets/tarot/cards.json (như app cũ).
+ * Ảnh từng bộ: /assets/tarot/{deck}/{id}.webp + back.webp (shiba, raccoon);
+ * dữ liệu lá: fetch runtime /assets/tarot/cards.json (như app cũ).
  */
 
 /* ------------------------------------------------------------------ */
@@ -35,6 +35,8 @@ export interface TarotDeck {
   ext: string;
   back: string;
   desc: string;
+  /** Bộ vừa ra mắt — DeckPicker gắn nhãn "Mới" trên slide. */
+  isNew?: boolean;
 }
 
 export interface TarotFrame {
@@ -65,16 +67,6 @@ export interface DrawnCard {
 
 export const TAROT_DECKS: TarotDeck[] = [
   {
-    id: "raccoon",
-    name: "The Raccoon Tarot",
-    nameVi: "Tarot Gấu Mèo",
-    status: "available",
-    base: "/assets/tarot/raccoon/",
-    ext: ".webp",
-    back: "/assets/tarot/raccoon/back.webp",
-    desc: "Bộ bài mặc định — chú gấu mèo ấm áp giữa khung cảnh đồng quê mùa thu.",
-  },
-  {
     id: "shiba",
     name: "The Shiba Tarot",
     nameVi: "Tarot Chó Shiba",
@@ -83,6 +75,17 @@ export const TAROT_DECKS: TarotDeck[] = [
     ext: ".webp",
     back: "/assets/tarot/shiba/back.webp",
     desc: "Chú Shiba phiêu bạt giữa núi non và hoa đào theo phong cách tranh khắc gỗ Nhật Bản.",
+    isNew: true,
+  },
+  {
+    id: "raccoon",
+    name: "The Raccoon Tarot",
+    nameVi: "Tarot Gấu Mèo",
+    status: "available",
+    base: "/assets/tarot/raccoon/",
+    ext: ".webp",
+    back: "/assets/tarot/raccoon/back.webp",
+    desc: "Bộ bài kinh điển — chú gấu mèo ấm áp giữa khung cảnh đồng quê mùa thu.",
   },
 
 ];

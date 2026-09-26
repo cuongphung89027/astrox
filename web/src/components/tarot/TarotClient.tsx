@@ -44,7 +44,7 @@ export function TarotClient() {
   const searchParams = useSearchParams();
   const inHistory = searchParams.get("history") === "1";
 
-  const [deckId, setDeckId] = useState("raccoon");
+  const [deckId, setDeckId] = useState(TAROT_DECKS[0].id);
   const [spreadId, setSpreadId] = useState("three");
   const [frameId, setFrameId] = useState("ppf");
   const [question, setQuestion] = useState("");

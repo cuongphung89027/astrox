@@ -68,15 +68,16 @@ export function DeckPicker({ value, onChange }: { value: string; onChange: (id: 
         if (TAROT_DECKS[next] && TAROT_DECKS[next].id !== value) onChange(TAROT_DECKS[next].id);
         armIntent(180); // im 180ms coi như hết cú cuộn
       }}>
-      {TAROT_DECKS.map((deck, i) => <article key={deck.id} className={styles.deckSlide} aria-label={`${i + 1} / ${TAROT_DECKS.length}: ${deck.nameVi}`}>
+      {TAROT_DECKS.map((deck, i) => <article key={deck.id} className={styles.deckSlide} aria-label={`${i + 1} / ${TAROT_DECKS.length}: ${deck.nameVi}${deck.isNew ? " (mới ra mắt)" : ""}`}>
         {deck.status === "available" ? <div className={styles.deckArt}>
+          {deck.isNew && <span className={styles.deckNewBadge}>Mới</span>}
           {[-1,1].map(side => <img key={side} src={deck.back} alt="" width={220} height={385} style={{transform: `translateX(calc(${side} * var(--deck-side-offset))) rotate(${side * 13}deg)`}} />)}
           {value === deck.id
             ? <DeckIntro deck={deck} soundOn={soundOn} onToggleSound={() => setSoundOn(on => !on)} />
             : <video className={styles.deckVideo} poster={deck.back} preload="none" tabIndex={-1} aria-hidden="true" />}
         </div> : <div className={`${styles.teaserArt} ${styles.shibaTeaser}`} aria-hidden="true"><i /><i /><div className={styles.sealedCard}><span>ASTROX COLLECTION</span><div className={styles.teaserSeal}>柴</div><small>MỘT NGƯỜI BẠN MỚI</small></div></div>}
         <div className={styles.deckCaption}><span>{deck.status === "available" ? "SẴN SÀNG KHÁM PHÁ" : "SẮP RA MẮT"}</span><h2>{deck.nameVi}</h2></div>
-        <p className={styles.deckHint}>{deck.id === "raccoon" ? "Vuốt để khám phá các bộ bài" : "Vuốt để đổi bộ bài bất cứ lúc nào."}</p>
+        <p className={styles.deckHint}>{i === 0 ? "Vuốt để khám phá các bộ bài" : "Vuốt để đổi bộ bài bất cứ lúc nào."}</p>
       </article>)}
     </div>
     <div className={styles.deckNavigation}><button aria-label="Bộ bài trước" disabled={index === 0} onClick={() => go(index - 1)}>←</button><div>{TAROT_DECKS.map((deck, i) => <button key={deck.id} aria-label={deck.nameVi} aria-current={i === index ? "true" : undefined} onClick={() => go(i)}><span /></button>)}</div><button aria-label="Bộ bài tiếp theo" disabled={index === TAROT_DECKS.length - 1} onClick={() => go(index + 1)}>→</button></div>

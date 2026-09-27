@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TermsNavigation } from "./TermsNavigation";
 import styles from "./TermsContent.module.css";
 
-const CONTACT_EMAIL = "tsonniverse@gmail.com";
+const CONTACT_EMAIL = "support@theastrox.space";
 const Contact = () => <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
 
 export function TermsContent() {
@@ -11,7 +11,7 @@ export function TermsContent() {
       <p className={styles.eyebrow}>ASTROX / THÔNG TIN PHÁP LÝ</p>
       <h1>Điều khoản<br /><span>&amp; thỏa thuận.</span></h1>
       <p className={styles.intro}>Những điều cần biết để bạn an tâm khám phá AstroX — từ cách sử dụng dịch vụ đến quyền riêng tư của mình.</p>
-      <div className={styles.meta}><span>Phiên bản 2.0</span><span>Cập nhật &amp; hiệu lực: 24.09.2026</span><span>03 văn bản</span></div>
+      <div className={styles.meta}><span>Phiên bản 2.0</span><span>Cập nhật &amp; hiệu lực: 27.09.2026</span><span>03 văn bản</span></div>
     </header>
     <div className={styles.layout}>
       <TermsNavigation />
@@ -25,7 +25,7 @@ export function TermsContent() {
           <header className={styles.sectionHead}><span className={styles.sectionNumber}>01 / SỬ DỤNG DỊCH VỤ</span><h2 id="terms-title">Điều khoản sử dụng</h2><p>Phạm vi dịch vụ, thanh toán và trách nhiệm của mỗi bên.</p></header>
           <div className={styles.body}>
             <h3>1.1. Ai vận hành AstroX?</h3>
-            <p>AstroX tại theastrox.space do cá nhân <strong>Ngô Thái Sơn</strong> vận hành và đại diện, là bên cung cấp dịch vụ trong văn bản này (“AstroX”, “chúng tôi”). Địa chỉ liên hệ: <strong>KĐT Vinhomes Ocean Park, Gia Lâm, TP. Hà Nội</strong>. Email hỗ trợ, giao dịch và dữ liệu cá nhân: <Contact />.</p>
+            <p><strong>The AstroX</strong> cung cấp dịch vụ tại theastrox.space, được gọi là “AstroX” hoặc “chúng tôi” trong văn bản này. Email hỗ trợ, giao dịch và dữ liệu cá nhân: <Contact />.</p>
             <h3>1.2. Dịch vụ và việc giao kết</h3>
             <p>AstroX cung cấp công cụ và nội dung tham khảo về Tử Vi, Bát Tự, Kinh Dịch, Thần Số Học, Cung Hoàng Đạo, Tarot, vận trình và tương hợp, có thể sử dụng trí tuệ nhân tạo (AI). Phạm vi từng tính năng, điều kiện miễn phí hoặc số Point cần dùng được công bố trước khi bạn xác nhận sử dụng.</p>
             <p>Bạn có thể đọc, lưu và yêu cầu giải thích điều khoản trước khi chấp nhận. Thỏa thuận sử dụng được xác lập khi bạn chủ động xác nhận đồng ý; giao dịch trả phí chỉ phát sinh khi bạn xác nhận giao dịch tương ứng. Chỉ truy cập trang không đồng nghĩa với đồng ý mọi hoạt động xử lý dữ liệu. Mục 02 làm rõ giới hạn nội dung; mục 03 giải thích cách xử lý dữ liệu và quyền của bạn.</p>
@@ -79,7 +79,7 @@ export function TermsContent() {
           <header className={styles.sectionHead}><span className={styles.sectionNumber}>03 / DỮ LIỆU &amp; QUYỀN RIÊNG TƯ</span><h2 id="privacy-title">Thỏa thuận xử lý và bảo mật thông tin cá nhân</h2><p>Dữ liệu nào được sử dụng, vì sao và cách bạn thực hiện quyền của mình.</p></header>
           <div className={styles.body}>
             <h3>3.1. Bên phụ trách và phạm vi</h3>
-            <p>Ngô Thái Sơn, cá nhân vận hành AstroX tại địa chỉ nêu ở mục 1.1, là đầu mối chịu trách nhiệm đối với việc kiểm soát, xử lý dữ liệu trong phạm vi dịch vụ AstroX. Mọi yêu cầu về dữ liệu gửi tới <Contact />. Văn bản được xây dựng theo <a href="https://vanban.chinhphu.vn/?pageid=27160&docid=214590">Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15</a>, <a href="https://vanban.chinhphu.vn/?pageid=27160&docid=216387">Nghị định 356/2025/NĐ-CP</a> và quy định liên quan.</p>
+            <p>The AstroX là đầu mối chịu trách nhiệm đối với việc kiểm soát, xử lý dữ liệu trong phạm vi dịch vụ AstroX. Mọi yêu cầu về dữ liệu gửi tới <Contact />. Văn bản được xây dựng theo <a href="https://vanban.chinhphu.vn/?pageid=27160&docid=214590">Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15</a>, <a href="https://vanban.chinhphu.vn/?pageid=27160&docid=216387">Nghị định 356/2025/NĐ-CP</a> và quy định liên quan.</p>
             <h3>3.2. Loại dữ liệu và mục đích</h3>
             <dl className={styles.dataList}>
               <div><dt>Tài khoản</dt><dd>Mã định danh, tên hiển thị, ảnh đại diện và thông tin do phương thức đăng nhập cung cấp: dùng để xác thực, quản lý tài khoản, hỗ trợ và đồng bộ.</dd></div>
@@ -122,7 +122,7 @@ export function TermsContent() {
         <footer id="lien-he-phap-ly" className={styles.footer}>
           <p className={styles.eyebrow}>CHÚNG TÔI SẴN SÀNG LẮNG NGHE</p>
           <h2>Cần làm rõ một điều?</h2><p>Gửi câu hỏi, yêu cầu hỗ trợ hoặc yêu cầu về dữ liệu cá nhân tới:</p><Contact />
-          <p className={styles.contactMeta}>Ngô Thái Sơn · Đại diện AstroX<br />KĐT Vinhomes Ocean Park, Gia Lâm, TP. Hà Nội<br />Phản hồi ban đầu trong 2 ngày làm việc.</p>
+          <p className={styles.contactMeta}>The AstroX<br />Phản hồi ban đầu trong 2 ngày làm việc.</p>
           <Link className={styles.backHome} href="/">← Về trang chủ AstroX</Link>
         </footer>
       </div>

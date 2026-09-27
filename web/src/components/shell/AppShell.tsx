@@ -127,7 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main className="flex-1 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-0 pt-16"><PublishedNotice>{children}</PublishedNotice></main>
         </ProfileModalProvider>
 
-        <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-5 px-5 py-5 pb-32 text-sm text-muc-2 lg:pb-5"><Link href="/banggia">Bảng giá</Link><Link href="/dieukhoan">Điều khoản & bảo mật</Link><a href="mailto:tsonniverse@gmail.com">Hỗ trợ</a></div>
+        <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-5 px-5 py-5 pb-32 text-sm text-muc-2 lg:pb-5"><Link href="/banggia">Bảng giá</Link><Link href="/dieukhoan">Điều khoản & bảo mật</Link><a href="mailto:support@theastrox.space">Hỗ trợ</a></div>
         <PaidReadingConsent/>
         <BottomDock key={pathname} />
         <LoginPrompt />

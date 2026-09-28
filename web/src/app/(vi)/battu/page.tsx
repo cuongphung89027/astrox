@@ -1,10 +1,15 @@
-import type { Metadata } from "next";
-import { BatuClient } from "@/components/batu/BatuClient";
+import type { Metadata } from 'next';
+import { BatuClient } from '@/components/batu/BatuClient';
 
 export const metadata: Metadata = {
-  title: "Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AstroX",
-  description: "Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AstroX.",
-  openGraph: { title: "Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AstroX", description: "Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AstroX.", images: ["/assets/og/battu.png"] },
+  alternates: { canonical: '/battu', languages: { vi: '/battu', en: '/en/ba-zi', 'x-default': '/battu' } },
+  title: 'Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AstroX',
+  description: 'Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AstroX.',
+  openGraph: {
+    title: 'Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AstroX',
+    description: 'Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AstroX.',
+    images: ['/assets/og/battu.png'],
+  },
 };
 
 export default function Page() {

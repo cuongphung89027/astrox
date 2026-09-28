@@ -13,5 +13,6 @@ export {
   visibleModules,
   resolveRoute,
   localeOfPath,
+  crossLocalePath,
 } from '../../../services/admin/markets.ts';
 export type { Locale, Market, WalletUnit, RouteId, ResolvedRoute } from '../../../services/admin/markets.ts';

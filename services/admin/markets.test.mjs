@@ -8,6 +8,8 @@ import {
   moduleRoute,
   visibleModules,
   resolveRoute,
+  localeOfPath,
+  crossLocalePath,
 } from './markets.ts';
 
 /** Route map contract fixed by docs/plans/2026-09-28-english-us-implementation.md §C. */
@@ -98,6 +100,25 @@ test('market never derives from locale', () => {
   }
   // The allowlist is fixed: both markets exist independently of either locale.
   for (const locale of LOCALES) {
-    assert.equal(resolveMarket('VN') !== null && resolveMarket('US') !== null, true, `markets exist for locale ${locale}`);
+    assert.equal(
+      resolveMarket('VN') !== null && resolveMarket('US') !== null,
+      true,
+      `markets exist for locale ${locale}`,
+    );
   }
+});
+
+test('crossLocalePath maps equivalent pages with query strings preserved', () => {
+  assert.equal(crossLocalePath('/tuvi?topic=a&sub=b', 'en'), '/en/zi-wei?topic=a&sub=b');
+  assert.equal(crossLocalePath('/en/zi-wei?topic=a', 'vi'), '/tuvi?topic=a');
+  assert.equal(crossLocalePath('/', 'en'), '/en');
+  assert.equal(crossLocalePath('/en', 'vi'), '/');
+  assert.equal(crossLocalePath('/hoangdao', 'en'), '/en/astrology'); // legacy alias canonicalizes
+  assert.equal(crossLocalePath('/tuvi', 'vi'), '/tuvi'); // same locale is a no-op
+});
+
+test('crossLocalePath returns empty for unilingual or unknown pages', () => {
+  assert.equal(crossLocalePath('/chuyengia', 'en'), ''); // experts: VI-only by design
+  assert.equal(crossLocalePath('/admin', 'en'), '');
+  assert.equal(crossLocalePath('/khong-ton-tai', 'en'), '');
 });

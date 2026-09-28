@@ -70,7 +70,7 @@ export function moduleRoute(id: RouteId, locale: Locale): string {
   assertLocale(locale);
   if (locale === 'en') return EN_ROUTES[id] ?? '';
   const module = MODULES.find(m => m.id === id);
-  return module ? module.route : VI_APP_ROUTES[id as Exclude<RouteId, ModuleId>] ?? '';
+  return module ? module.route : (VI_APP_ROUTES[id as Exclude<RouteId, ModuleId>] ?? '');
 }
 
 /** Modules visible in a locale: Vietnamese keeps all ten, English drops experts. */
@@ -102,4 +102,19 @@ export function resolveRoute(pathname: string): ResolvedRoute | null {
 /** Locale carried by a pathname, when the path belongs to the locale route space. */
 export function localeOfPath(pathname: string): Locale | null {
   return resolveRoute(pathname)?.locale ?? null;
+}
+
+/**
+ * Equivalent page in another locale, query string preserved; '' when the path
+ * has no counterpart (unilingual pages like /admin, or unmatched paths).
+ * Legacy Vietnamese aliases resolve to their canonical English route.
+ */
+export function crossLocalePath(pathname: string, target: Locale): string {
+  const resolved = resolveRoute(pathname);
+  if (!resolved) return '';
+  const target_ = target === resolved.locale ? pathname : moduleRoute(resolved.id, target);
+  if (!target_) return '';
+  if (target_ === pathname) return pathname;
+  const query = pathname.includes('?') ? pathname.slice(pathname.indexOf('?')) : '';
+  return target_ + query;
 }

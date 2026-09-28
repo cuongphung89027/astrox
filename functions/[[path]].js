@@ -1,6 +1,26 @@
 /** Preserve each exported Next route. Pages use per-response script nonces
- * so Google Publisher Tag can load its changing dependencies with strict CSP. */
+ * so Google Publisher Tag can load its changing dependencies with strict CSP.
+ * Locale entry routing (plan Task 04): only GET/HEAD `/` may redirect to /en —
+ * deep links, API, webhooks and assets always pass through untouched. Gated by
+ * AX_EN_ROUTING so the release owner keeps current behavior while the English
+ * edition is not yet published (independent kill switch). */
+import { entryLocale, cookieLocale } from './lib/locale-routing.js';
+
 export async function onRequest({ request, env }) {
+  const url = new URL(request.url);
+  if (env.AX_EN_ROUTING === '1' && url.pathname === '/' && (request.method === 'GET' || request.method === 'HEAD')) {
+    const locale = entryLocale({
+      saved: cookieLocale(request.headers.get('cookie')),
+      country: request.cf?.country,
+      acceptLanguage: request.headers.get('accept-language') || '',
+    });
+    if (locale === 'en') {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: `/en${url.search}`, 'Cache-Control': 'private, no-store' },
+      });
+    }
+  }
   const response = await env.ASSETS.fetch(request);
   if (response.status !== 200 || !response.headers.get('content-type')?.includes('text/html')) return response;
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))));

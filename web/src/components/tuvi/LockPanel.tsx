@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
 /**
  * LockPanel — panel khoá module khi tài khoản chưa được cấp quyền "tuvi"
  * (useAuth().isModuleAllowed === false). Port ngữ cảnh gate của app cũ.
  */
-import Link from "next/link";
-import { ModuleLockBadge } from "@/components/kit";
+import Link from 'next/link';
+import { ModuleLockBadge } from '@/components/kit';
 
 export function LockPanel() {
   return (
@@ -16,7 +16,8 @@ export function LockPanel() {
           Chưa được cấp quyền truy cập Tử Vi
         </h1>
         <p className="max-w-md text-sm leading-relaxed text-muc-2">
-          Tính năng này hiện chưa được mở cho tài khoản của bạn. Xem bảng giá và liên hệ AstroX để được hỗ trợ; nạp Point không tự động thay đổi quyền truy cập.
+          Tính năng này hiện chưa được mở cho tài khoản của bạn. Xem bảng giá và liên hệ AstroX để được hỗ trợ; nạp
+          Point không tự động thay đổi quyền truy cập.
         </p>
         <Link
           href="/banggia"

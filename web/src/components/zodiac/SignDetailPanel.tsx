@@ -1,30 +1,22 @@
-"use client";
-import { useFeatureResult } from "@/lib/use-feature-result";
-import { refreshPromptRevision } from "@/lib/state";
-import styles from "./Zodiac.module.css";
-import { ReadingLoader } from "@/components/kit/ReadingLoader";
-import { SavedReading, ReadingInvitation } from "@/components/kit/SavedReading";
+'use client';
+import { useFeatureResult } from '@/lib/use-feature-result';
+import { refreshPromptRevision } from '@/lib/state';
+import styles from './Zodiac.module.css';
+import { ReadingLoader } from '@/components/kit/ReadingLoader';
+import { SavedReading, ReadingInvitation } from '@/components/kit/SavedReading';
 
 /**
  * SignDetailPanel — đặc tính tĩnh của cung đang chọn (port từ dữ liệu
  * ZODIAC_SIGNS cũ) + luận giải sâu bằng AI (Bộ ba cốt lõi / Tình yêu /
  * Sự nghiệp — prompt port từ ZODIAC_TOPICS, cache nhóm "zodiacTopics").
  */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useToast } from "@/components/motion";
-import { useRequireProfile } from "@/components/profile/ProfileModal";
-import { readAiCache, setState, writeAiCache } from "@/lib/state";
-import { runAiPrompt } from "@/lib/api";
-import {
-  ZODIAC_DEEP_TOPICS,
-  buildNatalChart,
-  zodiacPromptBody,
-  type NatalChart,
-  type ZodiacSign,
-} from "@/lib/zodiac";
-import type { Profile } from "@/lib/types";
-
-
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useToast } from '@/components/motion';
+import { useRequireProfile } from '@/components/profile/ProfileModal';
+import { readAiCache, setState, writeAiCache } from '@/lib/state';
+import { runAiPrompt } from '@/lib/api';
+import { ZODIAC_DEEP_TOPICS, buildNatalChart, zodiacPromptBody, type NatalChart, type ZodiacSign } from '@/lib/zodiac';
+import type { Profile } from '@/lib/types';
 
 interface SignDetailPanelProps {
   sign: ZodiacSign;
@@ -35,16 +27,25 @@ interface SignDetailPanelProps {
 
 export function SignDetailPanel({ sign, profile, natalChart, className }: SignDetailPanelProps) {
   const [topicId, setTopicId] = useState(`${ZODIAC_DEEP_TOPICS[0].id}::${ZODIAC_DEEP_TOPICS[0].subId}`);
-  const [text, setText] = useState("");
+  const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const { show: toast } = useToast();
   const requireProfile = useRequireProfile();
   /** Chống race: chỉ nhận kết quả của request mới nhất. */
   const reqRef = useRef(0);
 
-  const topic = ZODIAC_DEEP_TOPICS.find((t) => `${t.id}::${t.subId}` === topicId) ?? ZODIAC_DEEP_TOPICS[0];
-  const pricePrompt = profile ? zodiacPromptBody(profile, natalChart ?? buildNatalChart(profile), topic.prompt.replace(/\{SIGN\}/g, `${sign.name} (${sign.en})`).replace(/\{ELEMENT\}/g, sign.element).replace(/\{RULER\}/g, sign.ruler)) : undefined;
+  const topic = ZODIAC_DEEP_TOPICS.find(t => `${t.id}::${t.subId}` === topicId) ?? ZODIAC_DEEP_TOPICS[0];
+  const pricePrompt = profile
+    ? zodiacPromptBody(
+        profile,
+        natalChart ?? buildNatalChart(profile),
+        topic.prompt
+          .replace(/\{SIGN\}/g, `${sign.name} (${sign.en})`)
+          .replace(/\{ELEMENT\}/g, sign.element)
+          .replace(/\{RULER\}/g, sign.ruler),
+      )
+    : undefined;
 
   const markFresh = useFeatureResult(text, `zodiac--${topic.id}--${topic.subId}`, !loading);
   const load = useCallback(
@@ -54,32 +55,39 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
       const req = ++reqRef.current;
       const cacheKey = `natal-v2::${topic.id}::${topic.subId}::${sign.id}`;
       await refreshPromptRevision();
-      const cached = readAiCache("zodiacTopics", cacheKey, force);
+      const cached = readAiCache('zodiacTopics', cacheKey, force);
       if (cached) {
         setText(cached);
-        setError("");
+        setError('');
         return;
       }
       setLoading(true);
-      setError("");
-      setText("");
+      setError('');
+      setText('');
       try {
         const chart = natalChart ?? buildNatalChart(profile);
         if (chart && chart !== natalChart) setState({ natalChart: chart });
         const q = zodiacPromptBody(
           profile,
           chart,
-          topic.prompt.replace(/\{SIGN\}/g, `${sign.name} (${sign.en})`).replace(/\{ELEMENT\}/g, sign.element).replace(/\{RULER\}/g, sign.ruler),
+          topic.prompt
+            .replace(/\{SIGN\}/g, `${sign.name} (${sign.en})`)
+            .replace(/\{ELEMENT\}/g, sign.element)
+            .replace(/\{RULER\}/g, sign.ruler),
         );
-        const result = await runAiPrompt(q, { withChartImage: false, serviceId: `zodiac--${topic.id}--${topic.subId}` });
+        const result = await runAiPrompt(q, {
+          withChartImage: false,
+          serviceId: `zodiac--${topic.id}--${topic.subId}`,
+        });
         if (req !== reqRef.current) return;
-        writeAiCache("zodiacTopics", cacheKey, result, { module: "zodiac", topic: topic.id });
-        markFresh(result); setText(result);
+        writeAiCache('zodiacTopics', cacheKey, result, { module: 'zodiac', topic: topic.id });
+        markFresh(result);
+        setText(result);
       } catch (e) {
         if (req !== reqRef.current) return;
-        const msg = e instanceof Error ? e.message : "Không lấy được phân tích.";
+        const msg = e instanceof Error ? e.message : 'Không lấy được phân tích.';
         setError(msg);
-        toast(`Lỗi phân tích: ${msg}`, "error");
+        toast(`Lỗi phân tích: ${msg}`, 'error');
       } finally {
         if (req === reqRef.current) setLoading(false);
       }
@@ -87,16 +95,55 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
     [markFresh, profile, natalChart, topic, sign, toast],
   );
 
-  const scope=topic.id+topic.subId+sign.id+JSON.stringify(profile),[previousScope,setPreviousScope]=useState<string|null>(null);
-  if(scope!==previousScope){
+  const scope = topic.id + topic.subId + sign.id + JSON.stringify(profile),
+    [previousScope, setPreviousScope] = useState<string | null>(null);
+  if (scope !== previousScope) {
     setPreviousScope(scope);
-    setText(readAiCache("zodiacTopics", `natal-v2::${topic.id}::${topic.subId}::${sign.id}`));
-    setError(""); setLoading(false);
+    setText(readAiCache('zodiacTopics', `natal-v2::${topic.id}::${topic.subId}::${sign.id}`));
+    setError('');
+    setLoading(false);
   }
-  useEffect(()=>()=>{reqRef.current++;},[scope]);
+  useEffect(
+    () => () => {
+      reqRef.current++;
+    },
+    [scope],
+  );
 
-  return <section className={`${styles.detail} ${className || ""}`}>
-    <div className={styles.topicChoices}>{ZODIAC_DEEP_TOPICS.map((item,i)=><button key={`${item.id}::${item.subId}`} aria-pressed={topicId===`${item.id}::${item.subId}`} onClick={()=>setTopicId(`${item.id}::${item.subId}`)}><span>0{i+1}</span><strong>{item.label}</strong><i aria-hidden="true">↗</i></button>)}</div>
-    <div className={styles.result} aria-live="polite">{loading ? <ReadingLoader kind="zodiac" /> : text ? <SavedReading text={text} /> : <>{error && <p role="alert">{error}</p>}<ReadingInvitation label={error ? "Thử lại" : `Khám phá ${topic.label.toLowerCase()}`} onRun={()=> { if (requireProfile()) void load(false); }} serviceId={`zodiac--${topic.id}--${topic.subId}`} prompt={pricePrompt}/></>}</div>
-  </section>;
+  return (
+    <section className={`${styles.detail} ${className || ''}`}>
+      <div className={styles.topicChoices}>
+        {ZODIAC_DEEP_TOPICS.map((item, i) => (
+          <button
+            key={`${item.id}::${item.subId}`}
+            aria-pressed={topicId === `${item.id}::${item.subId}`}
+            onClick={() => setTopicId(`${item.id}::${item.subId}`)}
+          >
+            <span>0{i + 1}</span>
+            <strong>{item.label}</strong>
+            <i aria-hidden="true">↗</i>
+          </button>
+        ))}
+      </div>
+      <div className={styles.result} aria-live="polite">
+        {loading ? (
+          <ReadingLoader kind="zodiac" />
+        ) : text ? (
+          <SavedReading text={text} />
+        ) : (
+          <>
+            {error && <p role="alert">{error}</p>}
+            <ReadingInvitation
+              label={error ? 'Thử lại' : `Khám phá ${topic.label.toLowerCase()}`}
+              onRun={() => {
+                if (requireProfile()) void load(false);
+              }}
+              serviceId={`zodiac--${topic.id}--${topic.subId}`}
+              prompt={pricePrompt}
+            />
+          </>
+        )}
+      </div>
+    </section>
+  );
 }

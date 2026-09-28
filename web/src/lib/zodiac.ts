@@ -6,6 +6,13 @@ import { formatDob, HOUR_CHI_OPTIONS } from './utils';
 import type { Profile } from './types';
 import { wallTimeCandidates, parseClock, parseIsoDate } from './birth-time.ts';
 import { resolveProfileZone } from './birth-location.ts';
+import {
+  PLANET_NAME_EN,
+  ASPECT_LABEL_EN,
+  ZODIAC_ELEMENT_EN,
+  ZODIAC_QUALITY_EN,
+  ZODIAC_TRAITS_EN,
+} from '../i18n/astrology-en';
 
 /* ------------------------------------------------------------------ */
 /* Dữ liệu 12 cung — port 1:1 ZODIAC_SIGNS                            */
@@ -238,10 +245,10 @@ export interface NatalChart {
   points: {
     ascendant: { name: string; longitude: number; sign: ZodiacAt };
     midheaven: { name: string; longitude: number; sign: ZodiacAt };
-  };
+  } | null;
   houses: NatalHouse[];
   aspects: NatalAspect[];
-  big3: { sun: NatalPlanet; moon: NatalPlanet; ascendant: { name: string; longitude: number; sign: ZodiacAt } };
+  big3: { sun: NatalPlanet; moon: NatalPlanet; ascendant: { name: string; longitude: number; sign: ZodiacAt } } | null;
 }
 
 const NATAL_BODIES: Array<[string, string, string]> = [
@@ -345,44 +352,87 @@ export function houseOf(longitude: number, houses: NatalHouse[]): number {
 }
 
 export function buildNatalChart(
-  profile: Pick<Profile, 'dob' | 'hourChi' | 'place' | 'birthTime'> | null,
+  profile: (Pick<Profile, 'dob' | 'hourChi' | 'place' | 'birthTime'> & { placeLat?: number; placeLon?: number }) | null,
+  locale: 'vi' | 'en' = 'vi',
 ): NatalChart | null {
   if (!profile?.dob) return null;
+  const en = locale === 'en';
+  // Sign display: English charts swap name/element/quality/traits from the stable
+  // sign table; index/degree never change (localization is not recomputation).
+  const signView = (longitude: number): ZodiacAt & { element?: string; quality?: string; traits?: string } => {
+    const s = zodiacAt(longitude);
+    if (!en) return s;
+    const full = ZODIAC_SIGNS[s.index];
+    return {
+      ...s,
+      name: full.en,
+      element: ZODIAC_ELEMENT_EN[full.element] || full.element,
+      quality: ZODIAC_QUALITY_EN[full.quality] || full.quality,
+      traits: ZODIAC_TRAITS_EN[full.id] || full.traits,
+    };
+  };
   const normalizedPlace = profile.place
     .trim()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
-  const coordinates = Object.entries(VN_COORDS).find(
-    ([name]) =>
-      name
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase() === normalizedPlace,
-  )?.[1];
-  if (!coordinates) return null;
-  const [lat, lon] = coordinates;
-  const date = natalTime(profile);
+  const coordinates =
+    typeof profile.placeLat === 'number' && typeof profile.placeLon === 'number'
+      ? ([profile.placeLat, profile.placeLon] as [number, number])
+      : Object.entries(VN_COORDS).find(
+          ([name]) =>
+            name
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .toLowerCase() === normalizedPlace,
+        )?.[1];
+  const date = natalTime(profile as Profile);
 
   const planets: NatalPlanet[] = NATAL_BODIES.map(([body, name, symbol]) => {
     const longitude = normDeg(eclipticLongitude(body, date));
-    return { body, name, symbol, longitude, sign: zodiacAt(longitude), house: 0 };
+    return {
+      body,
+      name: en ? PLANET_NAME_EN[name] || name : name,
+      symbol,
+      longitude,
+      sign: signView(longitude),
+      house: 0,
+    };
   });
 
+  const aspects = computeAspects(planets, en);
+  const base = { date: date.toISOString(), place: profile.place, planets, aspects };
+
+  // International births without coordinates still get full planetary positions;
+  // houses/angles are absent rather than blocking the whole chart (plan Task 08).
+  if (!coordinates) return { ...base, latitude: 0, longitude: 0, points: null, houses: [], big3: null };
+
+  const [lat, lon] = coordinates;
   const lst = normDeg(Astronomy.SiderealTime(date) * 15 + lon);
   const eps = Astronomy.e_tilt(Astronomy.MakeTime(date)).tobl;
   const cusps = placidusCusps(lst, lat, eps);
   const asc = cusps[0],
     mc = cusps[9];
-  const houses: NatalHouse[] = cusps.map((longitude, i) => ({ number: i + 1, longitude, sign: zodiacAt(longitude) }));
+  const houses: NatalHouse[] = cusps.map((longitude, i) => ({ number: i + 1, longitude, sign: signView(longitude) }));
 
   for (const p of planets) p.house = houseOf(p.longitude, houses);
 
   const points = {
-    ascendant: { name: 'Cung Mọc', longitude: asc, sign: zodiacAt(asc) },
-    midheaven: { name: 'Thiên Đỉnh (MC)', longitude: mc, sign: zodiacAt(mc) },
+    ascendant: { name: en ? 'Ascendant' : 'Cung Mọc', longitude: asc, sign: signView(asc) },
+    midheaven: { name: en ? 'Midheaven (MC)' : 'Thiên Đỉnh (MC)', longitude: mc, sign: signView(mc) },
   };
 
+  return {
+    ...base,
+    latitude: lat,
+    longitude: lon,
+    points,
+    houses,
+    big3: { sun: planets[0], moon: planets[1], ascendant: points.ascendant },
+  };
+}
+
+function computeAspects(planets: NatalPlanet[], en: boolean): NatalAspect[] {
   const aspects: NatalAspect[] = [];
   for (let i = 0; i < planets.length; i++) {
     for (let j = i + 1; j < planets.length; j++) {
@@ -396,22 +446,13 @@ export function buildNatalChart(
         [180, 'Đối đỉnh', 8],
       ];
       const hit = candidates.find(([deg, , orb]) => Math.abs(angle - deg) <= orb);
-      if (hit)
-        aspects.push({ a: planets[i].name, b: planets[j].name, aspect: hit[1], angle: Math.round(angle * 10) / 10 });
+      if (hit) {
+        const label = en ? ASPECT_LABEL_EN[hit[1]] || hit[1] : hit[1];
+        aspects.push({ a: planets[i].name, b: planets[j].name, aspect: label, angle: Math.round(angle * 10) / 10 });
+      }
     }
   }
-
-  return {
-    date: date.toISOString(),
-    place: profile.place,
-    latitude: lat,
-    longitude: lon,
-    planets,
-    points,
-    houses,
-    aspects,
-    big3: { sun: planets[0], moon: planets[1], ascendant: points.ascendant },
-  };
+  return aspects;
 }
 
 /* ------------------------------------------------------------------ */

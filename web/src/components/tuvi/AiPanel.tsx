@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * AiPanel — vùng kết quả AI dùng chung cho "Chủ đề luận giải" và "Vận trình":
@@ -6,12 +6,12 @@
  * - đang chạy → SunSpinner + Skeleton (aria-live polite).
  * - chưa có   → CTA chạy runAiPrompt; lỗi hiện lại nút "Thử lại".
  */
-import { ReadingLoader } from "@/components/kit/ReadingLoader";
-import { Btn } from "@/components/kit";
-import { SavedReading } from "@/components/kit/SavedReading";
-import { PanelReveal } from "@/components/motion";
-import { usePaidPrice } from "@/lib/use-paid-price";
-import { PaidPriceBadge } from "@/components/kit/PaidPriceBadge";
+import { ReadingLoader } from '@/components/kit/ReadingLoader';
+import { Btn } from '@/components/kit';
+import { SavedReading } from '@/components/kit/SavedReading';
+import { PanelReveal } from '@/components/motion';
+import { usePaidPrice } from '@/lib/use-paid-price';
+import { PaidPriceBadge } from '@/components/kit/PaidPriceBadge';
 
 interface AiPanelProps {
   cached: string;
@@ -25,19 +25,26 @@ interface AiPanelProps {
   prompt: string;
 }
 
-export function AiPanel({ cached, loading, error, runLabel = "Luận giải", emptyText, loadingLabel, onRun, serviceId, prompt }: AiPanelProps) {
+export function AiPanel({
+  cached,
+  loading,
+  error,
+  runLabel = 'Luận giải',
+  emptyText,
+  loadingLabel,
+  onRun,
+  serviceId,
+  prompt,
+}: AiPanelProps) {
   const price = usePaidPrice(serviceId, prompt);
   if (loading) {
-    return (
-      <ReadingLoader kind="tuvi" label={loadingLabel} />
-    );
+    return <ReadingLoader kind="tuvi" label={loadingLabel} />;
   }
 
   if (cached) {
     return (
       <PanelReveal open className="space-y-4">
         <SavedReading text={cached} />
-
       </PanelReveal>
     );
   }
@@ -51,10 +58,12 @@ export function AiPanel({ cached, loading, error, runLabel = "Luận giải", em
       ) : null}
       <div className="glass flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-card)] p-5">
         <p className="max-w-md text-sm leading-relaxed text-muc-2">
-          {emptyText ?? "Chưa có luận giải cho mục này. AstroX sẽ đọc trực tiếp dữ liệu lá số đã tính — không tự bịa dữ kiện."}
+          {emptyText ??
+            'Chưa có luận giải cho mục này. AstroX sẽ đọc trực tiếp dữ liệu lá số đã tính — không tự bịa dữ kiện.'}
         </p>
         <Btn size="sm" onClick={() => onRun(false)} disabled={price.pending}>
-          {error ? "Thử lại" : runLabel}<PaidPriceBadge price={price} />
+          {error ? 'Thử lại' : runLabel}
+          <PaidPriceBadge price={price} />
         </Btn>
       </div>
     </div>

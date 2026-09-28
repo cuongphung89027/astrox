@@ -1,4 +1,5 @@
 import { validateChartBirth, assertVietnameseChart } from './birth-input';
+import { BATU_STEM_EN, BATU_BRANCH_EN, BATU_SHISHEN_EN } from '../i18n/astrology-en';
 import { managedPrompt } from './managed-prompts';
 /**
  * BÁT TỰ (Tứ Trụ) — module độc lập, port trung thực từ MODULE "BAT TU (Tu Tru)"
@@ -54,6 +55,13 @@ export const BATU_BRANCH_VI: Record<string, BranchInfo> = {
   戌: { vi: 'Tuất', wxKey: 'tho', animal: 'Chó' },
   亥: { vi: 'Hợi', wxKey: 'thuy', animal: 'Lợn' },
 };
+
+const BATU_STEM_VI_LABELS: Record<string, string> = Object.fromEntries(
+  Object.entries(BATU_STEM_VI).map(([k, v]) => [k, (v as { vi: string }).vi]),
+);
+const BATU_BRANCH_VI_LABELS: Record<string, string> = Object.fromEntries(
+  Object.entries(BATU_BRANCH_VI).map(([k, v]) => [k, (v as { vi: string }).vi]),
+);
 
 /** Thập Thần — thư viện trả về Hán ngữ chuẩn; "日主" = Nhật Chủ (bản thân). */
 export const BATU_SHISHEN_VI: Record<string, string> = {
@@ -243,7 +251,7 @@ export interface BatuInput {
  * 105°E (~4 phút/độ) — cộng vào offset +07:00 rồi đọc lại Y/M/D/H/Min qua UTC
  * để tránh phụ thuộc múi giờ hệ thống (port 1:1 từ index.html).
  */
-export function buildBatuChart(input: BatuInput): BatuChart {
+export function buildBatuChart(input: BatuInput, locale: 'vi' | 'en' = 'vi'): BatuChart {
   validateChartBirth(input);
   const mid = hourChiMidHour(input.hourChi);
   if (mid < 0) throw new Error('Không đọc được giờ sinh — hãy chọn lại can giờ.');
@@ -275,6 +283,13 @@ export function buildBatuChart(input: BatuInput): BatuChart {
   const solar = Solar.fromYmdHms(y, mo, da, hh, mi, 0);
   const lunar = solar.getLunar();
   const ec = lunar.getEightChar();
+  const STEMS = locale === 'en' ? BATU_STEM_EN : BATU_STEM_VI_LABELS;
+  const BRANCHES = locale === 'en' ? BATU_BRANCH_EN : BATU_BRANCH_VI_LABELS;
+  const SHISHEN = locale === 'en' ? BATU_SHISHEN_EN : BATU_SHISHEN_VI;
+  const PILLAR_LABELS =
+    locale === 'en'
+      ? { year: 'Year', month: 'Month', day: 'Day', time: 'Hour' }
+      : { year: 'Năm', month: 'Tháng', day: 'Ngày', time: 'Giờ' };
   const mkPillar = (label: string, gan: string, zhi: string, ssGan: string, ssZhi: string[]): BatuPillar => {
     const g = BATU_STEM_VI[gan] || { vi: gan, wxKey: '', yy: '' };
     const z = BATU_BRANCH_VI[zhi] || { vi: zhi, wxKey: '', animal: '' };
@@ -282,21 +297,39 @@ export function buildBatuChart(input: BatuInput): BatuChart {
       label,
       hanGan: gan,
       hanZhi: zhi,
-      viGan: g.vi,
-      viZhi: z.vi,
+      viGan: STEMS[gan] || g.vi,
+      viZhi: BRANCHES[zhi] || z.vi,
       wxKeyGan: g.wxKey,
       wxKeyZhi: z.wxKey,
       yinYang: g.yy,
-      animal: z.animal,
-      shishenGan: BATU_SHISHEN_VI[ssGan] || ssGan || '',
-      shishenZhi: (ssZhi || []).map(s => BATU_SHISHEN_VI[s] || s),
+      animal: locale === 'en' ? BATU_BRANCH_EN[zhi]?.replace(/^.*\s\((.*)\)$/, '$1') || z.animal : z.animal,
+      shishenGan: SHISHEN[ssGan] || ssGan || '',
+      shishenZhi: (ssZhi || []).map(s => SHISHEN[s] || s),
     };
   };
   const pillars = {
-    year: mkPillar('Năm', ec.getYearGan(), ec.getYearZhi(), ec.getYearShiShenGan(), ec.getYearShiShenZhi()),
-    month: mkPillar('Tháng', ec.getMonthGan(), ec.getMonthZhi(), ec.getMonthShiShenGan(), ec.getMonthShiShenZhi()),
-    day: mkPillar('Ngày', ec.getDayGan(), ec.getDayZhi(), ec.getDayShiShenGan(), ec.getDayShiShenZhi()),
-    time: mkPillar('Giờ', ec.getTimeGan(), ec.getTimeZhi(), ec.getTimeShiShenGan(), ec.getTimeShiShenZhi()),
+    year: mkPillar(
+      PILLAR_LABELS.year,
+      ec.getYearGan(),
+      ec.getYearZhi(),
+      ec.getYearShiShenGan(),
+      ec.getYearShiShenZhi(),
+    ),
+    month: mkPillar(
+      PILLAR_LABELS.month,
+      ec.getMonthGan(),
+      ec.getMonthZhi(),
+      ec.getMonthShiShenGan(),
+      ec.getMonthShiShenZhi(),
+    ),
+    day: mkPillar(PILLAR_LABELS.day, ec.getDayGan(), ec.getDayZhi(), ec.getDayShiShenGan(), ec.getDayShiShenZhi()),
+    time: mkPillar(
+      PILLAR_LABELS.time,
+      ec.getTimeGan(),
+      ec.getTimeZhi(),
+      ec.getTimeShiShenGan(),
+      ec.getTimeShiShenZhi(),
+    ),
   };
   const wxCount: Record<WxKey, number> = { moc: 0, hoa: 0, tho: 0, kim: 0, thuy: 0 };
   Object.values(pillars).forEach(p => {
@@ -304,10 +337,10 @@ export function buildBatuChart(input: BatuInput): BatuChart {
     if (p.wxKeyZhi && wxCount[p.wxKeyZhi] !== undefined) wxCount[p.wxKeyZhi]++;
   });
   const relations = detectBatuRelations([
-    { label: 'Năm', zhi: pillars.year.viZhi },
-    { label: 'Tháng', zhi: pillars.month.viZhi },
-    { label: 'Ngày', zhi: pillars.day.viZhi },
-    { label: 'Giờ', zhi: pillars.time.viZhi },
+    { label: PILLAR_LABELS.year, zhi: pillars.year.viZhi },
+    { label: PILLAR_LABELS.month, zhi: pillars.month.viZhi },
+    { label: PILLAR_LABELS.day, zhi: pillars.day.viZhi },
+    { label: PILLAR_LABELS.time, zhi: pillars.time.viZhi },
   ]);
   let dayun: BatuDayunItem[] = [];
   try {
@@ -333,7 +366,10 @@ export function buildBatuChart(input: BatuInput): BatuChart {
   } catch {
     dayun = [];
   }
-  const lunarText = `Ngày ${lunar.getDay()} tháng ${Math.abs(lunar.getMonth())}${lunar.getMonth() < 0 ? ' (nhuận)' : ''} âm lịch, năm ${pillars.year.viGan} ${pillars.year.viZhi}`;
+  const lunarText =
+    locale === 'en'
+      ? `Lunar day ${lunar.getDay()}, month ${Math.abs(lunar.getMonth())}${lunar.getMonth() < 0 ? ' (leap)' : ''}, year ${pillars.year.viGan} ${pillars.year.viZhi}`
+      : `Ngày ${lunar.getDay()} tháng ${Math.abs(lunar.getMonth())}${lunar.getMonth() < 0 ? ' (nhuận)' : ''} âm lịch, năm ${pillars.year.viGan} ${pillars.year.viZhi}`;
   return { pillars, wuxing: wxCount, relations, dayun, lunarText };
 }
 

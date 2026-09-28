@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * NatalChartSection — bản đồ sao chi tiết (chế độ riêng truy cập từ hub):
@@ -7,10 +7,10 @@
  * đường góc chiếu nối giữa các hành tinh; kèm bảng hành tinh / 12 nhà /
  * góc chiếu. Vị trí giữ đúng phép chiếu cũ: natalPointAngle = 270 − kinh độ.
  */
-import { GlassCard } from "@/components/kit";
-import styles from "./Zodiac.module.css";
-import { AspectMatrix } from "./AspectMatrix";
-import { ZODIAC_SIGNS, normDeg, type NatalChart } from "@/lib/zodiac";
+import { GlassCard } from '@/components/kit';
+import styles from './Zodiac.module.css';
+import { AspectMatrix } from './AspectMatrix';
+import { ZODIAC_SIGNS, normDeg, type NatalChart } from '@/lib/zodiac';
 
 function polar(cx: number, cy: number, r: number, angleDeg: number): [number, number] {
   const rad = (angleDeg * Math.PI) / 180;
@@ -27,21 +27,22 @@ const R_PLANET = 94;
 const R_ASPECT = 78;
 
 const ASPECT_COLOR: Record<string, string> = {
-  "Trùng tụ": "var(--color-ngoc)",
-  "Lục hợp": "var(--color-ngoc)",
-  "Tam hợp": "var(--color-ngoc)",
-  "Vuông": "#819578",
-  "Đối đỉnh": "#ad9670",
+  'Trùng tụ': 'var(--color-ngoc)',
+  'Lục hợp': 'var(--color-ngoc)',
+  'Tam hợp': 'var(--color-ngoc)',
+  Vuông: '#819578',
+  'Đối đỉnh': '#ad9670',
 };
 
 function aspectColor(name: string): string {
-  return ASPECT_COLOR[name] || "var(--color-muc-2)";
+  return ASPECT_COLOR[name] || 'var(--color-muc-2)';
 }
 
 function NatalWheelSvg({ chart }: { chart: NatalChart }) {
-  const natalPointAngle = (deg: number) => normDeg(180 + chart.points.ascendant.longitude - deg);
+  const natalPointAngle = (deg: number) =>
+    normDeg(180 + (chart.points?.ascendant.longitude ?? chart.houses[0]?.longitude ?? 0) - deg);
   const planetPos = new Map<string, [number, number]>();
-  chart.planets.forEach((p) => {
+  chart.planets.forEach(p => {
     planetPos.set(p.name, polar(C, C, R_ASPECT, natalPointAngle(p.longitude)));
   });
 
@@ -53,16 +54,51 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
       className="mx-auto h-auto w-full max-w-[460px]"
     >
       {/* Vòng ngoài cách điệu + vòng cung hoàng đạo */}
-      <circle cx={C} cy={C} r={R_SIGN_OUT + 9} fill="none" stroke="#c2b17e" strokeOpacity={0.5} strokeWidth={1.6} strokeDasharray="0.5 7" />
-      <circle cx={C} cy={C} r={R_SIGN_OUT} fill="#819578" fillOpacity={0.05} stroke="#819578" strokeOpacity={0.35} strokeWidth={1.5} />
-      <circle cx={C} cy={C} r={R_SIGN_IN} fill="var(--color-kem)" stroke="#819578" strokeOpacity={0.35} strokeWidth={1.2} />
-      <circle cx={C} cy={C} r={R_HOUSE_IN} fill="#466b52" fillOpacity={0.05} stroke="#819578" strokeOpacity={0.3} strokeWidth={1} />
+      <circle
+        cx={C}
+        cy={C}
+        r={R_SIGN_OUT + 9}
+        fill="none"
+        stroke="#c2b17e"
+        strokeOpacity={0.5}
+        strokeWidth={1.6}
+        strokeDasharray="0.5 7"
+      />
+      <circle
+        cx={C}
+        cy={C}
+        r={R_SIGN_OUT}
+        fill="#819578"
+        fillOpacity={0.05}
+        stroke="#819578"
+        strokeOpacity={0.35}
+        strokeWidth={1.5}
+      />
+      <circle
+        cx={C}
+        cy={C}
+        r={R_SIGN_IN}
+        fill="var(--color-kem)"
+        stroke="#819578"
+        strokeOpacity={0.35}
+        strokeWidth={1.2}
+      />
+      <circle
+        cx={C}
+        cy={C}
+        r={R_HOUSE_IN}
+        fill="#466b52"
+        fillOpacity={0.05}
+        stroke="#819578"
+        strokeOpacity={0.3}
+        strokeWidth={1}
+      />
 
-      {Array.from({length:72},(_,i)=>{
-        const angle=natalPointAngle(i*5);
-        const [x1,y1]=polar(C,C,R_SIGN_IN,angle);
-        const [x2,y2]=polar(C,C,R_SIGN_IN-(i%6===0?8:3),angle);
-        return <line key={`tick-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#869779" strokeWidth={.6} />;
+      {Array.from({ length: 72 }, (_, i) => {
+        const angle = natalPointAngle(i * 5);
+        const [x1, y1] = polar(C, C, R_SIGN_IN, angle);
+        const [x2, y2] = polar(C, C, R_SIGN_IN - (i % 6 === 0 ? 8 : 3), angle);
+        return <line key={`tick-${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#869779" strokeWidth={0.6} />;
       })}
       {/* 12 cung: vạch chia + glyph */}
       {ZODIAC_SIGNS.map((s, i) => {
@@ -74,7 +110,7 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
           <g key={s.id}>
             <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#819578" strokeOpacity={0.35} strokeWidth={1.2} />
             <text x={gx} y={gy + 7} textAnchor="middle" fontSize={19} fill="#819578" fontWeight={600}>
-              {s.symbol.replace(/\uFE0F/g, "")}&#xfe0e;
+              {s.symbol.replace(/\uFE0F/g, '')}&#xfe0e;
             </text>
             <title>{`${s.name} (${s.en})`}</title>
           </g>
@@ -82,11 +118,16 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
       })}
 
       {/* 12 nhà: vạch đỉnh + số nhà giữa hai đỉnh */}
-      {chart.houses.map((h) => {
+      {chart.houses.map(h => {
         const cuspAngle = natalPointAngle(h.longitude);
         const [x1, y1] = polar(C, C, R_HOUSE_OUT, cuspAngle);
         const [x2, y2] = polar(C, C, R_HOUSE_IN, cuspAngle);
-        const [nx, ny] = polar(C, C, (R_HOUSE_OUT + R_HOUSE_IN) / 2, natalPointAngle(h.longitude + normDeg(chart.houses[h.number % 12].longitude - h.longitude) / 2));
+        const [nx, ny] = polar(
+          C,
+          C,
+          (R_HOUSE_OUT + R_HOUSE_IN) / 2,
+          natalPointAngle(h.longitude + normDeg(chart.houses[h.number % 12].longitude - h.longitude) / 2),
+        );
         return (
           <g key={h.number}>
             <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#819578" strokeOpacity={0.3} strokeWidth={1} />
@@ -98,10 +139,13 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
       })}
 
       {/* Cung Mọc / Thiên Đỉnh nhấn mạnh */}
-      {[
-        { p: chart.points.ascendant, label: "AC" },
-        { p: chart.points.midheaven, label: "MC" },
-      ].map(({ p, label }) => {
+      {(chart.points
+        ? [
+            { p: chart.points.ascendant, label: 'AC' },
+            { p: chart.points.midheaven, label: 'MC' },
+          ]
+        : []
+      ).map(({ p, label }) => {
         const a = natalPointAngle(p.longitude);
         const [x1, y1] = polar(C, C, R_SIGN_IN, a);
         const [x2, y2] = polar(C, C, R_HOUSE_IN, a);
@@ -138,7 +182,7 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
       })}
 
       {/* Glyph hành tinh theo kinh độ */}
-      {chart.planets.map((p) => {
+      {chart.planets.map(p => {
         const a = natalPointAngle(p.longitude);
         const [x, y] = polar(C, C, R_PLANET, a);
         return (
@@ -170,28 +214,108 @@ export function NatalChartSection({ chart, hasProfile, className, exactTime }: N
       <GlassCard className={className}>
         <div className="p-6 md:p-8">
           <p className="text-sm leading-relaxed text-muc-2">
-            {hasProfile ? "Chưa xác định được tọa độ nơi sinh. Hãy kiểm tra nơi sinh trong hồ sơ; AstroX không tự thay bằng một địa điểm khác." : "Bổ sung ngày, giờ và nơi sinh trong hồ sơ để lập bản đồ sao."}
+            {hasProfile
+              ? 'Chưa xác định được tọa độ nơi sinh. Hãy kiểm tra nơi sinh trong hồ sơ; AstroX không tự thay bằng một địa điểm khác.'
+              : 'Bổ sung ngày, giờ và nơi sinh trong hồ sơ để lập bản đồ sao.'}
           </p>
         </div>
       </GlassCard>
     );
   }
 
-  const big3 = [chart.big3.sun, chart.big3.moon, chart.big3.ascendant];
+  // International births without coordinates yield planets only (Task 08): show
+  // the wheel/aspects; the Big-Three strip requires angles.
+  const big3 = chart.big3 ? [chart.big3.sun, chart.big3.moon, chart.big3.ascendant] : null;
 
-  return <div className={`${styles.chartLayout} ${className || ""}`}>
-    <section className={styles.skyMap}>
-      <header><span>{exactTime ? "BẦU TRỜI LÚC BẠN SINH" : "BẢN ĐỒ ƯỚC TÍNH THEO KHUNG GIỜ"}</span><h2>Dấu ấn thiên thể</h2></header>
-      <NatalWheelSvg chart={chart} />
-      <div className={styles.mapLegend}><span>● Hài hòa</span><span>○ Thử thách</span></div>
-    </section>
-    <AspectMatrix chart={chart} />
-    <div className={styles.chartSidebar}>
-      <div className={styles.bigThree}>{big3.map((p,i)=><div key={p.name}><span>{["Mặt Trời","Mặt Trăng","Cung Mọc"][i]}</span><strong>{p.sign.name}</strong><small>{p.sign.degree.toFixed(1)}°</small></div>)}</div>
-      <div className={styles.chartNote}><strong>Hoàng đạo nhiệt đới · Hệ nhà Placidus</strong><p>{exactTime ? "Dùng giờ sinh đến phút." : "Chưa có giờ chính xác: đang dùng giữa khung giờ sinh."} Múi giờ UTC+7.</p><p>Tọa độ: {chart.latitude.toFixed(4)}° Bắc, {chart.longitude.toFixed(4)}° Đông · {chart.place}</p></div>
-      <details className={styles.chartDisclosure} open><summary>Hành tinh <span>{chart.planets.length}</span></summary><div className={styles.planetList}>{chart.planets.map(p=><div key={p.body}><span>{p.name}</span><strong>{p.sign.name}<small>{p.sign.degree.toFixed(1)}° · Nhà {p.house}</small></strong></div>)}</div></details>
-      <details className={styles.chartDisclosure}><summary>Mười hai nhà <span>12</span></summary><div className={styles.houseList}>{chart.houses.map(h=><div key={h.number}><span>{String(h.number).padStart(2,"0")}</span><strong>{h.sign.name}<small>{h.sign.degree.toFixed(1)}°</small></strong></div>)}</div></details>
-      <details className={styles.chartDisclosure}><summary>Góc chiếu <span>{chart.aspects.length}</span></summary><div className={styles.aspectList}>{chart.aspects.map((a,i)=><div key={i}><strong>{a.a} <span>↔</span> {a.b}</strong><small>{a.aspect} · {a.angle}°</small></div>)}{!chart.aspects.length && <p>Chưa có góc chiếu trong phạm vi đang xét.</p>}</div></details>
+  return (
+    <div className={`${styles.chartLayout} ${className || ''}`}>
+      <section className={styles.skyMap}>
+        <header>
+          <span>{exactTime ? 'BẦU TRỜI LÚC BẠN SINH' : 'BẢN ĐỒ ƯỚC TÍNH THEO KHUNG GIỜ'}</span>
+          <h2>Dấu ấn thiên thể</h2>
+        </header>
+        <NatalWheelSvg chart={chart} />
+        <div className={styles.mapLegend}>
+          <span>● Hài hòa</span>
+          <span>○ Thử thách</span>
+        </div>
+      </section>
+      <AspectMatrix chart={chart} />
+      <div className={styles.chartSidebar}>
+        {big3 && (
+          <div className={styles.bigThree}>
+            {big3.map((p, i) => (
+              <div key={p.name}>
+                <span>{['Mặt Trời', 'Mặt Trăng', 'Cung Mọc'][i]}</span>
+                <strong>{p.sign.name}</strong>
+                <small>{p.sign.degree.toFixed(1)}°</small>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className={styles.chartNote}>
+          <strong>Hoàng đạo nhiệt đới · Hệ nhà Placidus</strong>
+          <p>
+            {exactTime ? 'Dùng giờ sinh đến phút.' : 'Chưa có giờ chính xác: đang dùng giữa khung giờ sinh.'} Múi giờ
+            UTC+7.
+          </p>
+          <p>
+            Tọa độ: {chart.latitude.toFixed(4)}° Bắc, {chart.longitude.toFixed(4)}° Đông · {chart.place}
+          </p>
+        </div>
+        <details className={styles.chartDisclosure} open>
+          <summary>
+            Hành tinh <span>{chart.planets.length}</span>
+          </summary>
+          <div className={styles.planetList}>
+            {chart.planets.map(p => (
+              <div key={p.body}>
+                <span>{p.name}</span>
+                <strong>
+                  {p.sign.name}
+                  <small>
+                    {p.sign.degree.toFixed(1)}° · Nhà {p.house}
+                  </small>
+                </strong>
+              </div>
+            ))}
+          </div>
+        </details>
+        <details className={styles.chartDisclosure}>
+          <summary>
+            Mười hai nhà <span>12</span>
+          </summary>
+          <div className={styles.houseList}>
+            {chart.houses.map(h => (
+              <div key={h.number}>
+                <span>{String(h.number).padStart(2, '0')}</span>
+                <strong>
+                  {h.sign.name}
+                  <small>{h.sign.degree.toFixed(1)}°</small>
+                </strong>
+              </div>
+            ))}
+          </div>
+        </details>
+        <details className={styles.chartDisclosure}>
+          <summary>
+            Góc chiếu <span>{chart.aspects.length}</span>
+          </summary>
+          <div className={styles.aspectList}>
+            {chart.aspects.map((a, i) => (
+              <div key={i}>
+                <strong>
+                  {a.a} <span>↔</span> {a.b}
+                </strong>
+                <small>
+                  {a.aspect} · {a.angle}°
+                </small>
+              </div>
+            ))}
+            {!chart.aspects.length && <p>Chưa có góc chiếu trong phạm vi đang xét.</p>}
+          </div>
+        </details>
+      </div>
     </div>
-  </div>;
+  );
 }

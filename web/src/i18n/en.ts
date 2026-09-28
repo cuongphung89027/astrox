@@ -197,4 +197,12 @@ export const en: Record<string, string> = {
     'This saved reading still contains untranslated terms. The original is kept below for reference.',
   'aitext.legacyTranslated': 'Terms in this saved reading are shown translated; the original is preserved.',
   'aitext.original': 'View saved original',
+  'wizard.placePlaceholder': 'City or place of birth',
+  'wizard.pickZone': 'Select birth-place time zone',
+  'wizard.exactTime': 'Exact time (optional)',
+  'wizard.timeNonexistent': 'This clock time did not exist because of the DST change. Please double-check.',
+  'wizard.dstPrompt': 'Clock-change night — this time occurred twice:',
+  'wizard.dstFirst': 'First occurrence (before the shift)',
+  'wizard.dstSecond': 'Second occurrence (after the shift)',
+  'wizard.zoneLabel': 'Birth-place time zone',
 };

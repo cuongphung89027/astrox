@@ -196,4 +196,12 @@ export const vi: Record<string, string> = {
   'aitext.legacyUnresolved': 'Bài đã lưu còn thuật ngữ chưa được Việt hóa. Bản gốc được giữ bên dưới để bạn đối chiếu.',
   'aitext.legacyTranslated': 'Thuật ngữ trong bài đã lưu được hiển thị bằng tiếng Việt; bản gốc vẫn được giữ.',
   'aitext.original': 'Xem bản gốc đã lưu',
+  'wizard.placePlaceholder': 'Thành phố / nơi sinh',
+  'wizard.pickZone': 'Chọn múi giờ nơi sinh',
+  'wizard.exactTime': 'Giờ chính xác (tuỳ chọn)',
+  'wizard.timeNonexistent': 'Giờ này không tồn tại do chuyển đổi giờ mùa (DST). Hãy kiểm tra lại.',
+  'wizard.dstPrompt': 'Đêm đổi giờ — giờ này xuất hiện hai lần:',
+  'wizard.dstFirst': 'Lần đầu (trước khi kéo giờ)',
+  'wizard.dstSecond': 'Lần sau (sau khi kéo giờ)',
+  'wizard.zoneLabel': 'Múi giờ nơi sinh',
 };

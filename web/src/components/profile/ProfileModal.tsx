@@ -29,6 +29,8 @@ import { HOUR_CHI_OPTIONS } from '@/lib/utils';
 import styles from './ProfileModal.module.css';
 import { FeatureIcon } from '@/components/kit/FeatureIcon';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { searchBirthPlaces, timeZoneChoices, zoneHint, resolveProfileZone } from '@/lib/birth-location';
+import { wallTimeToInstant, parseIsoDate, parseClock, isValidZone } from '@/lib/birth-time';
 
 /* ------------------------------------------------------------------ */
 /* Context + registry (cho caller ngoài Provider —vd. AuthMenu header) */
@@ -159,6 +161,9 @@ export function ProfileModalProvider({ children }: { children: React.ReactNode }
               ...(draft.birthTime ? { birthTime: draft.birthTime } : {}),
               place: draft.place.trim(),
               ...(draft.fullName && draft.fullName.trim() ? { fullName: draft.fullName.trim() } : {}),
+              ...(draft.placeTz ? { placeTz: draft.placeTz } : {}),
+              ...(draft.birthTime ? { birthTime: draft.birthTime } : {}),
+              ...(draft.birthDst ? { birthDst: draft.birthDst } : {}),
             };
             setProfile(cleaned);
             forceClose();
@@ -217,9 +222,23 @@ interface WizardProps {
 
 function ProfileWizard({ closing, captive, editing, draft, panelRef, onDraft, onClose, onSave }: WizardProps) {
   const t = useLocale();
+  const international = t.locale === 'en';
   const [attempted, setAttempted] = useState(false);
   const nameValid = draft.name.trim().length >= 2;
-  const placeValid = draft.place.trim().length >= 2;
+  const placeValid = international
+    ? draft.place.trim().length >= 2 && isValidZone(draft.placeTz || '')
+    : draft.place.trim().length >= 2;
+  const wallZone = resolveProfileZone({ place: draft.place, placeTz: draft.placeTz });
+  const exact = parseClock(draft.birthTime);
+  const dobParts = parseIsoDate(draft.dob);
+  const wallCheck =
+    exact !== null && dobParts
+      ? wallTimeToInstant({ ...dobParts, hour: Math.floor(exact / 60), minute: exact % 60 }, wallZone)
+      : null;
+  const timeValid =
+    !wallCheck ||
+    (!wallCheck.nonexistent && (!wallCheck.ambiguous || draft.birthDst === 'first' || draft.birthDst === 'second'));
+  const zoneChoices = timeZoneChoices();
   useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -289,6 +308,9 @@ function ProfileWizard({ closing, captive, editing, draft, panelRef, onDraft, on
             }
             if (!placeValid) {
               document.getElementById('ax-pm-place')?.focus();
+              return;
+            }
+            if (!timeValid) {
               return;
             }
             onSave();
@@ -385,27 +407,98 @@ function ProfileWizard({ closing, captive, editing, draft, panelRef, onDraft, on
               </div>
               <label className={styles.field}>
                 {t.t('account.birthPlace')}
-                <select
-                  id="ax-pm-place"
-                  required
-                  value={draft.place}
-                  aria-invalid={attempted && !placeValid}
-                  onChange={e => onDraft(d => ({ ...d, place: e.target.value }))}
-                >
-                  <option value="" disabled>
-                    {t.t('wizard.pickPlace')}
-                  </option>
-                  {draft.place && !VN_PROVINCES.includes(draft.place) && (
-                    <option value={draft.place}>{draft.place}</option>
-                  )}
-                  {VN_PROVINCES.map(place => (
-                    <option key={place} value={place}>
-                      {place}
+                {international ? (
+                  <>
+                    <input
+                      id="ax-pm-place"
+                      required
+                      list="ax-pm-place-list"
+                      autoComplete="off"
+                      value={draft.place}
+                      placeholder={t.t('wizard.placePlaceholder')}
+                      aria-invalid={attempted && !placeValid}
+                      onChange={e => {
+                        const value = e.target.value;
+                        const match = searchBirthPlaces(value).find(
+                          p => p.label.toLowerCase() === value.trim().toLowerCase(),
+                        );
+                        onDraft(d => ({ ...d, place: value, ...(match ? { placeTz: match.zone } : {}) }));
+                      }}
+                    />
+                    <datalist id="ax-pm-place-list">
+                      {searchBirthPlaces('').map(p => (
+                        <option key={p.label} value={p.label}>
+                          {zoneHint(p.zone)}
+                        </option>
+                      ))}
+                    </datalist>
+                    <select
+                      required
+                      value={draft.placeTz || ''}
+                      aria-label={t.t('wizard.zoneLabel')}
+                      onChange={e => onDraft(d => ({ ...d, placeTz: e.target.value }))}
+                    >
+                      <option value="" disabled>
+                        {t.t('wizard.pickZone')}
+                      </option>
+                      {zoneChoices.map(p => (
+                        <option key={p.zone} value={p.zone}>
+                          {p.label} · {zoneHint(p.zone)}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                ) : (
+                  <select
+                    id="ax-pm-place"
+                    required
+                    value={draft.place}
+                    aria-invalid={attempted && !placeValid}
+                    onChange={e => onDraft(d => ({ ...d, place: e.target.value }))}
+                  >
+                    <option value="" disabled>
+                      {t.t('wizard.pickPlace')}
                     </option>
-                  ))}
-                </select>
+                    {draft.place && !VN_PROVINCES.includes(draft.place) && (
+                      <option value={draft.place}>{draft.place}</option>
+                    )}
+                    {VN_PROVINCES.map(place => (
+                      <option key={place} value={place}>
+                        {place}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {attempted && !placeValid && <small role="alert">{t.t('wizard.placeError')}</small>}
               </label>
+              <label className={styles.field}>
+                {t.t('wizard.exactTime')}
+                <input
+                  type="time"
+                  value={draft.birthTime || ''}
+                  onChange={e => onDraft(d => ({ ...d, birthTime: e.target.value }))}
+                />
+                {wallCheck?.nonexistent && <small role="alert">{t.t('wizard.timeNonexistent')}</small>}
+              </label>
+              {wallCheck?.ambiguous && draft.birthTime && (
+                <fieldset className={styles.gender}>
+                  <legend>{t.t('wizard.dstPrompt')}</legend>
+                  <div>
+                    {(['first', 'second'] as const).map(choice => (
+                      <label key={choice}>
+                        <input
+                          type="radio"
+                          name="birth-dst"
+                          value={choice}
+                          checked={(draft.birthDst || 'first') === choice}
+                          onChange={() => onDraft(d => ({ ...d, birthDst: choice }))}
+                        />
+                        <span>{choice === 'first' ? t.t('wizard.dstFirst') : t.t('wizard.dstSecond')}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
             </fieldset>
             <p className={styles.note}>{t.t('wizard.note')}</p>
           </div>

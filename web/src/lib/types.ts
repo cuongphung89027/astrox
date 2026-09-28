@@ -11,6 +11,10 @@ export interface Profile {
   hourChi: string;
   /** Exact local time (HH:mm), when known. */
   birthTime?: string;
+  /** IANA zone of the birth place (international profiles; VN legacy omits it). */
+  placeTz?: string;
+  /** Which occurrence of an ambiguous (fall-back) birth clock time; default first. */
+  birthDst?: 'first' | 'second';
   /** Nơi sinh (tự do). */
   place: string;
   /** Họ tên đầy đủ (tuỳ chọn — dùng cho Thần Số Học). */
@@ -34,9 +38,17 @@ export interface AiCacheEntry {
 
 export interface AiProfileCache {
   tuviTopics: Record<string, AiCacheEntry>;
-  tuviPeriod: { today: Record<string, AiCacheEntry>; week: Record<string, AiCacheEntry>; month: Record<string, AiCacheEntry> };
+  tuviPeriod: {
+    today: Record<string, AiCacheEntry>;
+    week: Record<string, AiCacheEntry>;
+    month: Record<string, AiCacheEntry>;
+  };
   zodiacTopics: Record<string, AiCacheEntry>;
-  zodiacPeriod: { today: Record<string, AiCacheEntry>; week: Record<string, AiCacheEntry>; month: Record<string, AiCacheEntry> };
+  zodiacPeriod: {
+    today: Record<string, AiCacheEntry>;
+    week: Record<string, AiCacheEntry>;
+    month: Record<string, AiCacheEntry>;
+  };
   kinhDich: Record<string, AiCacheEntry>;
   compatibility: Record<string, AiCacheEntry>;
   batuTopics: Record<string, AiCacheEntry>;

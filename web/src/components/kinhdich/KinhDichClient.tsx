@@ -26,6 +26,7 @@ import {
 } from '@/lib/kinhdich';
 import type { CastResult, KdHistoryEntry, KdMethod } from '@/lib/kinhdich';
 import styles from './KinhDich.module.css';
+import { useLocale } from '@/i18n/LocaleProvider';
 
 const METHOD_OPTIONS = {
   tube: 'Xóc ống quẻ (tự động)',
@@ -36,6 +37,8 @@ const METHOD_OPTIONS = {
 };
 
 export function KinhDichClient() {
+  const t = useLocale();
+  const en = t.locale === 'en';
   const [question, setQuestion] = useState('');
   const [method, setMethod] = useState<KdMethod | 'tube'>('tube');
   const [cast, setCast] = useState<CastResult | null>(null);
@@ -192,7 +195,7 @@ export function KinhDichClient() {
   }
   return (
     <section className={styles.page}>
-      <h1 className="sr-only">Kinh Dịch</h1>
+      <h1 className="sr-only">{en ? 'I Ching' : 'Kinh Dịch'}</h1>
       {!cast ? (
         <div className={styles.setup}>
           <div className={styles.methodHeader}>

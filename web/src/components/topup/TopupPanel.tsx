@@ -14,7 +14,7 @@ import {
   type TopupPackage,
 } from '@/lib/api';
 import { promoErrorMessage } from './promo-message';
-import { createLemonTopup } from '@/lib/api';
+import { createLemonTopup, chooseMarket } from '@/lib/api';
 import { currentMarket } from '@/lib/api';
 import { useLocale } from '@/i18n/LocaleProvider';
 import styles from './TopupPanel.module.css';
@@ -181,6 +181,17 @@ function TopupSession({ onClose }: { onClose: () => void }) {
     }
   }
 
+  // P1-7: a fresh account has NO market yet — choose explicitly before any
+  // wallet surface appears, so a US user never lands on the VN PayOS flow.
+  if (market === null)
+    return (
+      <MarketOnboarding
+        onClose={onClose}
+        onChosen={next => {
+          setMarket(next);
+        }}
+      />
+    );
   if (market === 'US') return <TopupUsCredits onClose={onClose} />;
   return (
     <dialog
@@ -468,7 +479,7 @@ function TopupUsCredits({ onClose }: { onClose: () => void }) {
             ? 'Prepaid credits for readings. Secure checkout by Lemon Squeezy.'
             : 'Credits trả trước cho luận giải. Thanh toán an toàn qua Lemon Squeezy.'}
         </p>
-        {packs === null ? (
+        {!Array.isArray(packs) ? (
           <p role="status">{t.t('common.loading')}</p>
         ) : packs.length === 0 ? (
           <p>{t.locale === 'en' ? 'Credit packages are not available yet.' : 'Gói Credits chưa mở bán.'}</p>
@@ -484,6 +495,65 @@ function TopupUsCredits({ onClose }: { onClose: () => void }) {
             ))}
           </ul>
         )}
+        {error && (
+          <p role="alert" className={styles.promoError}>
+            {error}
+          </p>
+        )}
+        <button type="button" className={styles.close} onClick={onClose} aria-label={t.t('common.close')}>
+          ×
+        </button>
+      </div>
+    </dialog>
+  );
+}
+
+/** First-wallet-open market choice (P1-7): explicit, server-stored, per account. */
+function MarketOnboarding({ onClose, onChosen }: { onClose: () => void; onChosen: (market: 'US' | 'VN') => void }) {
+  const t = useLocale();
+  const { astroxUser } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const choose = async (market: 'US' | 'VN') => {
+    if (busy) return;
+    if (!astroxUser) {
+      setError(t.locale === 'en' ? 'Please sign in first.' : 'Vui lòng đăng nhập trước khi chọn.');
+      return;
+    }
+    setBusy(true);
+    const ok = await chooseMarket(market);
+    setBusy(false);
+    if (ok) onChosen(market);
+    else
+      setError(
+        t.locale === 'en'
+          ? 'Could not save your choice. Please try again.'
+          : 'Chưa lưu được lựa chọn. Vui lòng thử lại.',
+      );
+  };
+  return (
+    <dialog open className={styles.dialog} aria-labelledby="ax-market-title" onCancel={onClose}>
+      <div className={styles.body}>
+        <h2 id="ax-market-title">{t.locale === 'en' ? 'Choose your wallet' : 'Chọn loại ví cho bạn'}</h2>
+        <p>
+          {t.locale === 'en'
+            ? 'AstroX has two wallets. This choice applies to purchases and cannot be switched while an order is processing.'
+            : 'AstroX có hai loại ví. Lựa chọn này áp dụng cho việc nạp và không đổi khi có giao dịch đang xử lý.'}
+        </p>
+        <ul className={styles.packages}>
+          <li>
+            <button type="button" onClick={() => choose('US')} disabled={busy}>
+              <strong>🇺🇸 Credits (USD)</strong>
+              <span>Google · Lemon Squeezy checkout</span>
+            </button>
+          </li>
+          <li>
+            <button type="button" onClick={() => choose('VN')} disabled={busy}>
+              <strong>🇻🇳 Point (VND)</strong>
+              <span>Zalo · PayOS</span>
+            </button>
+          </li>
+        </ul>
         {error && (
           <p role="alert" className={styles.promoError}>
             {error}

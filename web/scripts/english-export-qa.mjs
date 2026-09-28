@@ -136,6 +136,66 @@ async function httpChecks() {
   record('EXP-en-experts-404', '/en/experts is not a page', nf.status === 404 ? 'PASS' : 'FAIL', `status ${nf.status}`);
 }
 
+// Vietnamese markers that must NOT appear in visible English UI chrome.
+const VI_MARKERS = [
+  'Đăng nhập',
+  'Hồ sơ',
+  'Luận giải',
+  'Vận trình',
+  'Trải bài',
+  'Gieo quẻ',
+  'Điều khoản',
+  'Bảng giá',
+  'Khám phá',
+  'Đọc tiếp',
+  'Đăng xuất',
+  'Thử lại',
+  'Thần Số Học',
+  'Cung Hoàng Đạo',
+  'Kinh Dịch',
+  'Chỉ tay',
+  'Lịch âm',
+  'Tương Hợp',
+  'Chủ đề',
+  'Chỉnh sửa',
+  'Bổ sung',
+  'nạp',
+  'Nạp',
+  'vận hạn',
+  'điểm danh',
+];
+async function languageChecks() {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  for (const route of EN_ROUTES) {
+    try {
+      await page.goto(`http://localhost:${PORT}/${route}`, { waitUntil: 'networkidle', timeout: 20000 });
+      // Visible-chrome scan only: RSC/JS payloads legitimately keep the Vietnamese
+      // source for the VI tree in inline scripts — innerText must not see them, but
+      // we scope to real text elements to avoid false positives from any payload.
+      const text = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('h1,h2,h3,h4,p,button,a,span,li,label,summary,small,strong,dt,dd,option'))
+          .map(el => el.textContent || '')
+          .join('\n'),
+      );
+      const hits = VI_MARKERS.filter(m => text.includes(m));
+      const contexts = hits.map(m => {
+        const i = text.indexOf(m);
+        return `${m}: ${JSON.stringify(text.slice(Math.max(0, i - 40), i + 40))}`;
+      });
+      record(
+        `LANG-${route}`,
+        `English UI free of Vietnamese chrome`,
+        hits.length === 0 ? 'PASS' : 'FAIL',
+        contexts.slice(0, 2).join(' | '),
+      );
+    } catch (e) {
+      record(`LANG-${route}`, `English UI free of Vietnamese chrome`, 'FAIL', String(e).slice(0, 60));
+    }
+  }
+  await browser.close();
+}
+
 async function browserChecks() {
   for (const engine of [chromium, webkit]) {
     const name = engine === chromium ? 'chromium' : 'webkit';
@@ -193,6 +253,7 @@ async function main() {
   const server = await serve();
   try {
     await httpChecks();
+    await languageChecks();
     await browserChecks();
     // Honest G5-gated scope: interactive paid/login flows need staging creds.
     for (const [id, name] of [

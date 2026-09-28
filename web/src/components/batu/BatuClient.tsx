@@ -17,6 +17,7 @@ const ORDER = ['year', 'month', 'day', 'time'] as const;
 const TABS = ['Mệnh bàn', 'Luận giải', 'Đại vận'];
 export function BatuClient() {
   const t = useLocale();
+  const en = t.locale === 'en';
   const { isModuleAllowed } = useAuth();
   const profile = useProfile();
   const { open } = useProfileModal();
@@ -64,7 +65,7 @@ export function BatuClient() {
           <p>Mở mệnh bàn từ ngày giờ sinh của bạn.</p>
           {error && <p role="alert">{error}</p>}
           <button className={styles.primary} onClick={() => open()}>
-            {profile ? 'Chỉnh sửa hồ sơ' : 'Bổ sung hồ sơ'}
+            {en ? (profile ? 'Edit profile' : 'Add your profile') : profile ? 'Chỉnh sửa hồ sơ' : 'Bổ sung hồ sơ'}
             <span>↗</span>
           </button>
         </div>

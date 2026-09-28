@@ -12,6 +12,7 @@ import { SavedReading } from '@/components/kit/SavedReading';
 import { PanelReveal } from '@/components/motion';
 import { usePaidPrice } from '@/lib/use-paid-price';
 import { PaidPriceBadge } from '@/components/kit/PaidPriceBadge';
+import { useLocale } from '@/i18n/LocaleProvider';
 
 interface AiPanelProps {
   cached: string;
@@ -29,13 +30,16 @@ export function AiPanel({
   cached,
   loading,
   error,
-  runLabel = 'Luận giải',
+  runLabel,
   emptyText,
   loadingLabel,
   onRun,
   serviceId,
   prompt,
 }: AiPanelProps) {
+  const t = useLocale();
+  const en = t.locale === 'en';
+  const effectiveRunLabel = runLabel ?? (en ? 'Interpret' : 'Luận giải');
   const price = usePaidPrice(serviceId, prompt);
   if (loading) {
     return <ReadingLoader kind="tuvi" label={loadingLabel} />;
@@ -62,7 +66,7 @@ export function AiPanel({
             'Chưa có luận giải cho mục này. AstroX sẽ đọc trực tiếp dữ liệu lá số đã tính — không tự bịa dữ kiện.'}
         </p>
         <Btn size="sm" onClick={() => onRun(false)} disabled={price.pending}>
-          {error ? 'Thử lại' : runLabel}
+          {error ? (en ? 'Retry' : 'Thử lại') : effectiveRunLabel}
           <PaidPriceBadge price={price} />
         </Btn>
       </div>

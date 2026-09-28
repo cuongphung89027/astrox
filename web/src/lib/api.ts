@@ -530,6 +530,23 @@ export function currentMarket(): Promise<'US' | 'VN' | null> {
   return marketCache;
 }
 
+/** Market preference is account-scoped: reset whenever the active account changes. */
+export function resetMarketCache() {
+  marketCache = null;
+}
+
+/** Explicit market choice (plan Task 13/P1-7): authenticated POST, server stores it. */
+export async function chooseMarket(market: 'US' | 'VN'): Promise<boolean> {
+  const res = await fetch(`${AUTH_API_BASE}/api/market`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ market }),
+  });
+  resetMarketCache();
+  return res.ok;
+}
+
 /** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */
 type PriceInfo = { status: string; points: number; name?: string; policy?: string; unlocks?: boolean };
 let priceCache: Promise<Record<string, PriceInfo>> | null = null;

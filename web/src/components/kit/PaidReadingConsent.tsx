@@ -2,7 +2,11 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { registerReadingConsent, type ReadingQuote, type ReadingSelection } from '@/lib/reading-consent';
+import { useLocale } from '@/i18n/LocaleProvider';
 export function PaidReadingConsent() {
+  const t = useLocale();
+  const en = t.locale === 'en';
+
   const dialog = useRef<HTMLDialogElement>(null),
     finish = useRef<((decision: { accepted: boolean; selection?: ReadingSelection }) => void) | null>(null);
   const [quote, setQuote] = useState<ReadingQuote | null>(null),
@@ -67,12 +71,18 @@ export function PaidReadingConsent() {
       className="m-auto max-h-[90dvh] w-[calc(100%-32px)] max-w-lg overflow-y-auto rounded-3xl border border-[#ccd5bf] bg-[#fffaf0] p-6 text-[#244d40] backdrop:bg-black/35 sm:p-8"
     >
       <h2 id="paid-reading-title" className="font-display text-2xl">
-        {quote?.offers ? 'Chọn phần muốn mở' : 'Xác nhận lượt luận giải'}
+        {quote?.offers
+          ? en
+            ? 'Choose what to unlock'
+            : 'Chọn phần muốn mở'
+          : en
+            ? 'Confirm this reading'
+            : 'Xác nhận lượt luận giải'}
       </h2>
       <p className="mt-2 text-sm">{quote?.name}</p>
       {quote?.offers && (
         <fieldset className="mt-5 space-y-3">
-          <legend className="sr-only">Phạm vi mở khóa</legend>
+          <legend className="sr-only">{en ? 'Unlock scope' : 'Phạm vi mở khóa'}</legend>
           {quote.offers.map(o => (
             <label
               key={o.id}
@@ -88,11 +98,19 @@ export function PaidReadingConsent() {
               <span className="min-w-0 flex-1">
                 <strong className="block text-sm">{o.name}</strong>
                 <span className="mt-1 block text-xs">
-                  {o.owned ? 'Đã mở' : `${o.members.length} phần luận giải`} ·{' '}
-                  {o.expiresAt ? 'Kỳ hiện tại' : 'Theo hồ sơ'}
+                  {o.owned
+                    ? en
+                      ? 'Unlocked'
+                      : 'Đã mở'
+                    : en
+                      ? `${o.members.length} readings`
+                      : `${o.members.length} phần luận giải`}{' '}
+                  · {o.expiresAt ? (en ? 'This period' : 'Kỳ hiện tại') : en ? 'Per profile' : 'Theo hồ sơ'}
                 </span>
               </span>
-              <strong className="whitespace-nowrap text-sm">{o.points.toLocaleString('vi-VN')} Point</strong>
+              <strong className="whitespace-nowrap text-sm">
+                {o.points.toLocaleString(en ? 'en-US' : 'vi-VN')} {en ? 'Credits' : 'Point'}
+              </strong>
             </label>
           ))}
         </fieldset>
@@ -101,39 +119,68 @@ export function PaidReadingConsent() {
         <>
           <dl className="mt-5 space-y-2 text-sm">
             <div className="flex justify-between gap-4">
-              <dt>Giá niêm yết</dt>
-              <dd>{offer.basePoints.toLocaleString('vi-VN')} Point</dd>
+              <dt>{en ? 'List price' : 'Giá niêm yết'}</dt>
+              <dd>
+                {offer.basePoints.toLocaleString(en ? 'en-US' : 'vi-VN')} {en ? 'Credits' : 'Point'}
+              </dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt>{offer.owned ? 'Đã sở hữu' : 'Khấu trừ phần đã mua'}</dt>
-              <dd>−{(offer.owned ? offer.basePoints : offer.credit).toLocaleString('vi-VN')} Point</dd>
+              <dt>
+                {offer.owned
+                  ? en
+                    ? 'Already owned'
+                    : 'Đã sở hữu'
+                  : en
+                    ? 'Credit for owned parts'
+                    : 'Khấu trừ phần đã mua'}
+              </dt>
+              <dd>
+                −{(offer.owned ? offer.basePoints : offer.credit).toLocaleString(en ? 'en-US' : 'vi-VN')}{' '}
+                {en ? 'Credits' : 'Point'}
+              </dd>
             </div>
           </dl>
           <p className="mt-3 text-xs leading-6">
             {quote?.scopeLabel}
             {offer.expiresAt
-              ? ` · đến ${new Date(offer.expiresAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`
-              : '. Gói bao gồm các luận giải theo hồ sơ; dự báo theo kỳ được mua riêng.'}
+              ? ` · ${en ? 'until ' : 'đến '}${new Date(offer.expiresAt).toLocaleString(en ? 'en-US' : 'vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`
+              : en
+                ? '. The bundle covers profile-based readings; period forecasts are sold separately.'
+                : '. Gói bao gồm các luận giải theo hồ sơ; dự báo theo kỳ được mua riêng.'}
           </p>
         </>
       )}
       <p className="my-5 text-3xl font-semibold" aria-live="polite">
-        {points.toLocaleString('vi-VN')} Point
+        {points.toLocaleString(en ? 'en-US' : 'vi-VN')} {en ? 'Credits' : 'Point'}
       </p>
       <p className="text-sm leading-6">
         {offer?.owned
-          ? 'Phần này đã được mở cho hồ sơ đang xem. Lượt đọc này không trừ thêm Point.'
-          : 'Point được trừ khi bắt đầu. Nếu hệ thống không hoàn thành lượt này, Point sẽ được hoàn lại.'}
+          ? en
+            ? 'Already unlocked for this profile. This reading deducts nothing.'
+            : 'Phần này đã được mở cho hồ sơ đang xem. Lượt đọc này không trừ thêm Point.'
+          : en
+            ? 'Credits are deducted when the reading starts. If the system fails to complete it, they are refunded.'
+            : 'Point được trừ khi bắt đầu. Nếu hệ thống không hoàn thành lượt này, Point sẽ được hoàn lại.'}
       </p>
-      <Link href="/dieukhoan#dieu-khoan-su-dung" target="_blank" className="mt-3 block text-sm underline">
-        Điều khoản và chính sách hoàn Point
+      <Link
+        href={en ? '/en/terms#terms-of-use' : '/dieukhoan#dieu-khoan-su-dung'}
+        target="_blank"
+        className="mt-3 block text-sm underline"
+      >
+        {en ? 'Terms and refund policy' : 'Điều khoản và chính sách hoàn Point'}
       </Link>
       <div className="mt-6 flex gap-3">
         <button onClick={() => decide(false)} className="min-h-12 flex-1 rounded-xl border border-[#ccd5bf]">
-          Để sau
+          {en ? 'Later' : 'Để sau'}
         </button>
         <button onClick={() => decide(true)} className="min-h-12 flex-1 rounded-xl bg-[#244d40] px-3 text-white">
-          {points === 0 ? 'Đọc luận giải' : `Đồng ý · ${points} Point`}
+          {points === 0
+            ? en
+              ? 'Read'
+              : 'Đọc luận giải'
+            : en
+              ? `Agree · ${points} Credits`
+              : `Đồng ý · ${points} Point`}
         </button>
       </div>
     </dialog>

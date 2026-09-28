@@ -23,6 +23,7 @@ import { SignGrid } from './SignGrid';
 
 export function ZodiacClient() {
   const t = useLocale();
+  const en = t.locale === 'en';
   const profile = useProfile();
   const { isModuleAllowed } = useAuth();
   const allowed = isModuleAllowed('zodiac');
@@ -48,7 +49,7 @@ export function ZodiacClient() {
   if (!allowed) {
     return (
       <section className="mx-auto w-full max-w-5xl px-5 py-14">
-        <SectionTitle eyebrow="Cung Hoàng Đạo" title="Cung Hoàng Đạo" />
+        <SectionTitle eyebrow={en ? 'Astrology' : 'Cung Hoàng Đạo'} title={en ? 'Astrology' : 'Cung Hoàng Đạo'} />
         <GlassCard variant="premium" className="mt-8">
           <div className="flex flex-col items-center gap-4 p-8 text-center">
             <ModuleLockBadge />
@@ -69,7 +70,7 @@ export function ZodiacClient() {
 
   return (
     <section className={styles.page}>
-      <h1 className="sr-only">Cung Hoàng Đạo</h1>
+      <h1 className="sr-only">{en ? 'Astrology' : 'Cung Hoàng Đạo'}</h1>
       {!profile ? (
         <div className={styles.welcome}>
           <FeatureIcon name="zodiac" size={50} />
@@ -120,7 +121,7 @@ export function ZodiacClient() {
               </button>
             )}
           </details>
-          <div className={styles.tabs} role="tablist" aria-label="Cung Hoàng Đạo">
+          <div className={styles.tabs} role="tablist" aria-label={en ? 'Astrology' : 'Cung Hoàng Đạo'}>
             {(
               [
                 ['overview', 'Luận giải'],

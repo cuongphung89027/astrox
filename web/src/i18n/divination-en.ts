@@ -171,6 +171,15 @@ export const NUMEROLOGY_TOPICS_EN: Record<string, { title: string; desc: string 
   'personal-year': { title: 'Your current personal year', desc: "This year's theme within the 9-year cycle." },
 };
 
+export const NUMEROLOGY_EXTRA_EN: Record<string, { desc: string }> = {
+  'extra-personal-day': { desc: 'The number coloring today.' },
+  'extra-personal-month': { desc: 'The theme of this month.' },
+  'extra-personal-year': { desc: 'Where you are in the 9-year cycle.' },
+  'extra-birth-day': { desc: 'A gift you brought along.' },
+  'extra-maturity': { desc: 'What grows stronger after 35.' },
+  'extra-attitude': { desc: 'The first impression you give.' },
+};
+
 export const NUMEROLOGY_LABEL_EN: Record<string, string> = {
   'Số Chủ Đạo': 'Life Path',
   'Số Sứ Mệnh': 'Destiny',

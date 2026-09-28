@@ -1,8 +1,8 @@
 # English export certification
 
-2026-09-28T10:06:38.922Z
+2026-09-28T11:31:36.400Z
 
-**38 PASS · 0 FAIL · 3 BLOCKED**
+**51 PASS · 0 FAIL · 3 BLOCKED**
 
 | id | check | status | evidence |
 |---|---|---|---|
@@ -27,6 +27,19 @@
 | EXP-robots | robots disallows /en/profile | PASS |  |
 | EXP-sitemap | sitemap includes EN routes | PASS |  |
 | EXP-en-experts-404 | /en/experts is not a page | PASS | status 404 |
+| LANG-en | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/zi-wei | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/astrology | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/tarot | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/i-ching | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/ba-zi | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/numerology | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/compatibility | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/lunar-calendar | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/palm-reading | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/profile | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/pricing | English UI free of Vietnamese chrome | PASS |  |
+| LANG-en/terms | English UI free of Vietnamese chrome | PASS |  |
 | UI-chromium-390-en | chromium 390 /en renders | PASS | lang=en |
 | UI-chromium-390-en/tarot | chromium 390 /en/tarot renders | PASS | lang=en |
 | UI-chromium-390-en/palm-reading | chromium 390 /en/palm-reading renders | PASS | lang=en |

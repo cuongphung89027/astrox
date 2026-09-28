@@ -11,8 +11,11 @@ import { parsePalmReading, type PalmReading } from '@/lib/palm';
 import { PalmCamera, type PalmCapture } from './PalmCamera';
 import { PalmGuide, PalmIllustration } from './PalmGuide';
 import s from './Palm.module.css';
+import { useLocale } from '@/i18n/LocaleProvider';
 
 export function PalmReader() {
+  const t = useLocale();
+  const en = t.locale === 'en';
   const [photo, setPhoto] = useState('');
   const [camera, setCamera] = useState(false),
     [zoom, setZoom] = useState(false);
@@ -152,7 +155,7 @@ export function PalmReader() {
       <header className={s.heading}>
         <div>
           <span className={s.moduleLabel}>ASTROX / KHÁM PHÁ</span>
-          <h1>Chỉ tay</h1>
+          <h1>{en ? 'Palm Reading' : 'Chỉ tay'}</h1>
         </div>
         <span className={s.privateBadge}>Xử lý camera trên thiết bị</span>
       </header>

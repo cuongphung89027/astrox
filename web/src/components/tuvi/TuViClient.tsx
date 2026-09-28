@@ -23,19 +23,27 @@ import { TopicsPanel } from './TopicsPanel';
 import styles from './TuVi.module.css';
 
 function NoProfileCta({ onOpen }: { onOpen: () => void }) {
+  const t = useLocale();
+  const en = t.locale === 'en';
   return (
     <div className={styles.empty}>
       <FeatureIcon name="tuvi" size={52} className="text-ngoc-deep" />
-      <p className="font-display text-xl font-extrabold text-muc">Lá số bắt đầu từ bạn</p>
-      <p className="max-w-md text-sm leading-relaxed text-muc-2">
-        Hồ sơ của bạn chưa đủ thông tin sinh. Bổ sung một lần để AstroX tự lập lá số và sử dụng cho những lần sau.
+      <p className="font-display text-xl font-extrabold text-muc">
+        {en ? 'Your chart starts with you' : 'Lá số bắt đầu từ bạn'}
       </p>
-      <Btn onClick={onOpen}>Hoàn tất hồ sơ</Btn>
+      <p className="max-w-md text-sm leading-relaxed text-muc-2">
+        {en
+          ? 'Your profile is missing birth details. Add them once and AstroX will build your chart and reuse it.'
+          : 'Hồ sơ của bạn chưa đủ thông tin sinh. Bổ sung một lần để AstroX tự lập lá số và sử dụng cho những lần sau.'}
+      </p>
+      <Btn onClick={onOpen}>{en ? 'Complete your profile' : 'Hoàn tất hồ sơ'}</Btn>
     </div>
   );
 }
 
 function StepHint({ period = false, onOpen }: { period?: boolean; onOpen: () => void }) {
+  const t = useLocale();
+  const en = t.locale === 'en';
   return (
     <section className={styles.welcomePanel}>
       <div className={styles.welcomeMark} aria-hidden="true">
@@ -43,7 +51,7 @@ function StepHint({ period = false, onOpen }: { period?: boolean; onOpen: () => 
       </div>
       <span className={styles.welcomeEyebrow}>{period ? 'VẬN TRÌNH CỦA BẠN' : 'LUẬN GIẢI RIÊNG BẠN'}</span>
       <h2>{period ? 'Đón nhịp ngày mới' : 'Hiểu mình, từng khía cạnh'}</h2>
-      <p>Bổ sung ngày và giờ sinh để bắt đầu.</p>
+      <p>{en ? 'Add your birth date and hour to begin.' : 'Bổ sung ngày và giờ sinh để bắt đầu.'}</p>
       <div className={styles.welcomePreview} aria-label="Nội dung khám phá">
         {(period
           ? [
@@ -72,6 +80,7 @@ function StepHint({ period = false, onOpen }: { period?: boolean; onOpen: () => 
 
 export function TuViClient() {
   const t = useLocale();
+  const en = t.locale === 'en';
   const [tab, setTab] = useState<'chart' | 'topics' | 'period'>('chart');
   useEffect(() => {
     const view = new URLSearchParams(window.location.search).get('view');
@@ -147,8 +156,8 @@ export function TuViClient() {
           {(
             [
               ['chart', 'Lá số'],
-              ['topics', 'Luận giải'],
-              ['period', 'Vận trình'],
+              ['topics', en ? 'Readings' : 'Luận giải'],
+              ['period', en ? 'Fortune' : 'Vận trình'],
             ] as const
           ).map(([id, label], index, items) => (
             <button

@@ -90,6 +90,7 @@ function LoadingProgress({ completing }: { completing: boolean }) {
 
 export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
   const t = useLocale();
+  const en = t.locale === 'en';
   const settings = usePreferences();
   const [chosenPeriod, setPeriod] = useState<TuviPeriod | null>(null);
   const period = chosenPeriod ?? settings.period;
@@ -118,7 +119,7 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
   const periodIndex = PERIOD_TABS.findIndex(item => item.id === period);
 
   return (
-    <section className={styles.screen} aria-label="Vận trình của bạn">
+    <section className={styles.screen} aria-label={en ? 'Your fortune period' : 'Vận trình của bạn'}>
       <div className={styles.orbit} style={{ '--orbit-index': periodIndex } as CSSProperties}>
         <svg viewBox="0 0 600 90" preserveAspectRatio="none" aria-hidden="true">
           <path d="M0 18 Q300 136 600 18" />

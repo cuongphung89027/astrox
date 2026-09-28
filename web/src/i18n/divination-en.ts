@@ -195,3 +195,45 @@ export const COMPAT_LABELS_EN = {
   advice: 'Advice',
   percent: 'Compatibility score',
 };
+
+// ------------------------------------------------------- Lunar calendar ----
+/** Day-officer gods (Thiên tướng), solar terms, holiday and taboo glosses. */
+export const GODS_EN = [
+  'Azure Dragon',
+  'Bright Hall',
+  'Heavenly Punisher',
+  'Vermilion Bird',
+  'Golden Treasury',
+  'Heavenly Virtue',
+  'White Tiger',
+  'Jade Hall',
+  'Heavenly Prison',
+  'Dark Warrior',
+  'Commander',
+  'Hooked Array',
+];
+export const STEMS_SHORT_EN = ['Jia', 'Yi', 'Bing', 'Ding', 'Wu', 'Ji', 'Geng', 'Xin', 'Ren', 'Gui'];
+export const BRANCHES_SHORT_EN = ['Zi', 'Chou', 'Yin', 'Mao', 'Chen', 'Si', 'Wu', 'Wei', 'Shen', 'You', 'Xu', 'Hai'];
+export const HOLIDAYS_EN: Record<string, string> = {
+  '01-01': "New Year's Day (Gregorian)",
+  '03-08': "International Women's Day",
+  '04-30': 'Reunification Day (VN)',
+  '05-01': 'International Labor Day',
+  '06-01': "International Children's Day",
+  '09-02': 'Vietnam National Day',
+  '10-20': "Vietnamese Women's Day",
+  '11-20': "Vietnamese Teachers' Day",
+  '12-25': 'Christmas',
+};
+export const TABOOS_EN: Record<string, string> = { 'Tam nương': 'Tam Nuong days', 'Nguyệt kỵ': 'Moon-taboo days' };
+export const LUNAR_MONTH_LABEL_EN = (month: number, leap: boolean, day?: number) =>
+  `${day ? `Day ${day}, ` : ''}lunar month ${month}${leap ? ' (leap)' : ''}`;
+export const FESTIVALS_EN: Record<string, string> = {
+  '1/1': 'Lunar New Year (Tet)',
+  '15/1': 'First Full Moon',
+  '10/3': 'Hung Kings Commemoration',
+  '5/5': 'Mid-Year Festival (Doan Ngo)',
+  '15/7': 'Vu Lan Festival',
+  '15/8': 'Mid-Autumn Festival',
+  '23/12': 'Kitchen Gods Day',
+};

@@ -33,6 +33,8 @@ import { PointCoin } from './PointCoin';
 import { currentMarket } from '@/lib/api';
 import { AUTH_API_BASE } from '@/lib/config';
 import styles from './PointsHome.module.css';
+import { formatHistoryDelta } from '@/lib/format-history-delta';
+import { CreditsHistory } from './CreditsHistory';
 
 type Filter = 'all' | 'in' | 'out';
 
@@ -76,8 +78,6 @@ function formatWhen(iso: string): string {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} · ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-const signed = (dir: 1 | -1 | 0, n: number) => `${dir === -1 ? '−' : '+'}${n.toLocaleString('vi-VN')}`;
-
 /** Thời điểm tải module — dùng cho mốc thời gian của dòng lịch sử minh họa (preview). */
 const PREVIEW_NOW = typeof window === 'undefined' ? Date.parse('2026-09-22T09:00:00.000Z') : Date.now();
 
@@ -92,7 +92,15 @@ function txnToEntry(t: PointTxn, orders: Map<string, TopupOrder>): Entry {
     label = REASON_LABELS.topup_payos;
     const order = t.reference_id ? orders.get(t.reference_id) : undefined;
     const amount = order ? formatVnd(order.amount_vnd) : t.reference_id ? `đơn #${t.reference_id}` : '';
-    return { key: t.id, dir, label, sub: amount, display: signed(dir, t.delta), at: t.created_at, icon: 'coin' };
+    return {
+      key: t.id,
+      dir,
+      label,
+      sub: amount,
+      display: formatHistoryDelta(t.delta, 'vi-VN'),
+      at: t.created_at,
+      icon: 'coin',
+    };
   }
   if (known) {
     label =
@@ -107,7 +115,7 @@ function txnToEntry(t: PointTxn, orders: Map<string, TopupOrder>): Entry {
           ? 'calendar'
           : 'coin';
   }
-  return { key: t.id, dir, label, sub: '', display: signed(dir, t.delta), at: t.created_at, icon };
+  return { key: t.id, dir, label, sub: '', display: formatHistoryDelta(t.delta, 'vi-VN'), at: t.created_at, icon };
 }
 
 function EntryIcon({ icon }: { icon: Entry['icon'] }) {
@@ -694,31 +702,36 @@ function useUsWallet() {
         .then(d => d && setSummary(d))
         .catch(() => {});
   };
-  return { market, summary, busy, message, checkin };
+  return { market, summary, busy, message, checkin, userId: astroxUser?.id };
 }
 
 function UsCreditsHome({ wallet }: { wallet: ReturnType<typeof useUsWallet> }) {
   const s = wallet.summary;
   return (
-    <section aria-label="Credits wallet" className={styles.hero}>
-      <h2>Credits</h2>
-      {s === null ? (
-        <p role="status">Loading…</p>
-      ) : (
-        <>
-          <p>
-            <strong>{s.available.toLocaleString('en-US')}</strong> available
-            {s.reserved > 0 ? ` · ${s.reserved.toLocaleString('en-US')} reserved` : ''}
-          </p>
-          <p>
-            Purchased {s.purchased.toLocaleString('en-US')} · Bonus {s.bonus.toLocaleString('en-US')}
-          </p>
-          <button type="button" onClick={() => void wallet.checkin()} disabled={wallet.busy} aria-busy={wallet.busy}>
-            Daily check-in
-          </button>
-          {wallet.message && <p role="status">{wallet.message}</p>}
-        </>
+    <>
+      <section aria-label="Credits wallet" className={styles.hero}>
+        <h2>Credits</h2>
+        {s === null ? (
+          <p role="status">Loading…</p>
+        ) : (
+          <>
+            <p>
+              <strong>{s.available.toLocaleString('en-US')}</strong> available
+              {s.reserved > 0 ? ` · ${s.reserved.toLocaleString('en-US')} reserved` : ''}
+            </p>
+            <p>
+              Purchased {s.purchased.toLocaleString('en-US')} · Bonus {s.bonus.toLocaleString('en-US')}
+            </p>
+            <button type="button" onClick={() => void wallet.checkin()} disabled={wallet.busy} aria-busy={wallet.busy}>
+              Daily check-in
+            </button>
+            {wallet.message && <p role="status">{wallet.message}</p>}
+          </>
+        )}
+      </section>
+      {wallet.userId && (
+        <CreditsHistory key={wallet.userId} userId={String(wallet.userId)} refreshKey={wallet.summary} />
       )}
-    </section>
+    </>
   );
 }

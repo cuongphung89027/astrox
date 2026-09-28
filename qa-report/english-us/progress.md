@@ -63,3 +63,21 @@ Task 14 REMAINING (resume list, ưu tiên đúng thứ tự):
 5. Commit "feat: scope AI billing and grants by market".
 
 Then: Tasks 15–18 Lemon (checkout server-owned, webhook HMAC đúng một lần, refund/reconcile, rewards US) → 19–20 Admin+docs → 21–22 certification/RC → 23–24 release docs (KHÔNG deploy prod).
+
+
+## REVIEW ROUND 2 (28/09 night) — 9 P1s from Sơn's review; FIXED 6/9, paused safely
+| P1 | Status | Fix |
+|---|---|---|
+| 1 Lemon checkout custom_data sai contract | FIXED f2ac7e3 | checkout_data.custom.orderId; test asserts provider shape |
+| 2 fulfilled khi creditPurchase fail | FIXED f2ac7e3 | 503 + chỉ fulfilled sau khi ledger row tồn tại; repro: retry cộng đúng 10 |
+| 3 receipt không lưu payload / sai field refund | FIXED f2ac7e3 | payload_json lưu; reconcile đọc refunded_amount, thiếu thì park không đoán |
+| 4 commitReserved không nguyên tử | FIXED f2ac7e3 | 1 batch: UPDATE guard → INSERT WHERE changes()=1 → lot WHERE EXISTS ledger; repro: fail giữ reservation, audit ok |
+| 5 unlock US INSERT thiếu WHERE (market='0') | FIXED f2ac7e3 | WHERE added + quoteUnlock nhận market + pending check theo market |
+| 6 Google redirect sai host | FIXED f2ac7e3 | allowedReturn(path, APP_ORIGIN) → absolute URL, test 9/9 |
+| 7 Market onboarding flow thiếu | TODO | resume: chooseMarket POST helper trong api.ts + reset cache theo account + TopupPanel gate null→onboarding + AccountPage + test |
+| 8 Admin gate chưa isolate ServicesPanel/PromptsPanel | TODO | resume: PromptsPanel US sửa promptsEn; ServicesPanel US read-only coverage; test không cross-write |
+| 9 NumerologyClient EN + QA language scan | TODO | resume: dịch NumerologyClient + mở export-qa quét từ khoá Việt trên mọi route EN |
+
+Repro reviewer (/tmp/astrox-review-repro.mjs): FULFILL/REFUND/COMMIT đều sạch sau fix. Dòng UNLOCK_MARKET_SQL in '0' vì script hardcode chuỗi SQL CŨ — source đã có WHERE (chứng minh bằng service-unlocks tests + market-billing tests).
+G2/G3/G4 đang MỞ LẠI theo yêu cầu — chỉ đóng lại sau khi P1-7/8/9 xong + QA language scan pass.
+Worktree SẠCH tại f2ac7e3, 518/518 tests.

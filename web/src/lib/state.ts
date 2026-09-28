@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * Store client-side — port trung thực từ STATE/loadState/saveState và bộ máy
@@ -8,8 +8,8 @@
  * Dùng mô hình tiny store + subscribe để React đọc qua useSyncExternalStore
  * (xem src/lib/use-store.ts), không cần dependency ngoài.
  */
-import { DEFAULT_MODEL, PROMPT_VERSION, STORAGE_KEY } from "./config";
-import type { AiCache, AiProfileCache, AppState, Profile } from "./types";
+import { DEFAULT_MODEL, PROMPT_VERSION, STORAGE_KEY } from './config';
+import type { AiCache, AiProfileCache, AppState, Profile } from './types';
 
 function emptyAiProfileCache(): AiProfileCache {
   return {
@@ -29,7 +29,7 @@ function defaultState(): AppState {
   return {
     profile: null,
     chartImageBase64: null,
-    chartImageMime: "image/jpeg",
+    chartImageMime: 'image/jpeg',
     ziweiChart: null,
     natalChart: null,
     apiKey: null,
@@ -40,13 +40,15 @@ function defaultState(): AppState {
 }
 
 const serverSnapshot = defaultState();
-export function getServerState(): AppState { return serverSnapshot; }
+export function getServerState(): AppState {
+  return serverSnapshot;
+}
 
 function stableHash(value: string): string {
   const hash = (seed: number) => {
     let h = seed;
     for (let i = 0; i < value.length; i++) h = Math.imul(h ^ value.charCodeAt(i), 16777619);
-    return (h >>> 0).toString(16).padStart(8, "0");
+    return (h >>> 0).toString(16).padStart(8, '0');
   };
   return hash(2166136261) + hash(374761393) + hash(668265263) + hash(2246822519);
 }
@@ -55,9 +57,15 @@ function makeFingerprint(profile: Profile | null, chart: unknown, image: string 
   const p = profile || ({} as Profile);
   return stableHash(
     JSON.stringify({
-      profile: { name: p.name || "", gender: p.gender || "", dob: p.dob || "", hourChi: p.hourChi || "", place: p.place || "" },
+      profile: {
+        name: p.name || '',
+        gender: p.gender || '',
+        dob: p.dob || '',
+        hourChi: p.hourChi || '',
+        place: p.place || '',
+      },
       chart: chart || null,
-      image: image ? stableHash(image) : "",
+      image: image ? stableHash(image) : '',
       promptVersion: PROMPT_VERSION,
     }),
   );
@@ -65,42 +73,61 @@ function makeFingerprint(profile: Profile | null, chart: unknown, image: string 
 
 function migrateAiCache(state: AppState): AiCache {
   const old = state.aiCache as AiCache & Record<string, unknown>;
-  if (old && old.version === 2 && old.profiles && typeof old.profiles === "object") return old;
+  if (old && old.version === 2 && old.profiles && typeof old.profiles === 'object') return old;
   const next: AiCache = { version: 2, profiles: {}, legacy: {} };
   const target = state.profile
-    ? ((next.profiles[makeFingerprint(state.profile, state.ziweiChart, state.chartImageBase64)] = emptyAiProfileCache()))
+    ? (next.profiles[makeFingerprint(state.profile, state.ziweiChart, state.chartImageBase64)] = emptyAiProfileCache())
     : next.legacy;
-  (["tuviTopics", "tuviPeriod", "zodiacTopics", "zodiacPeriod"] as const).forEach((k) => {
+  (['tuviTopics', 'tuviPeriod', 'zodiacTopics', 'zodiacPeriod'] as const).forEach(k => {
     const v = (old as Record<string, unknown>)[k];
     if (v) (target as unknown as Record<string, unknown>)[k] = v;
   });
   return next;
 }
 
-let activeAccount:string|null=null;
-let accountResolved=false;
-let accountEpoch=0;
-export function getAccountEpoch(){return accountEpoch;}
-export function accountStorageKey(key:string){return activeAccount?`${key}:account:${activeAccount}`:key;}
-export function activateAccount(owner:string|null){
- if(accountResolved&&owner===activeAccount)return;
- if(accountResolved)saveState();
- let adopt=false;
- try{adopt=!!owner&&!localStorage.getItem(`${STORAGE_KEY}:claimed`)&&!localStorage.getItem(`${STORAGE_KEY}:account:${owner}`);}catch{}
- const guest=getState();
- if(adopt){
-  for(const key of [STORAGE_KEY,'astrox_tarot_history_v1','astrox_tarot_history_deleted_v1']){
-   try{const value=key===STORAGE_KEY?JSON.stringify(guest):localStorage.getItem(key);if(value)localStorage.setItem(`${key}:account:${owner}`,value);localStorage.removeItem(key);}catch{}
+let activeAccount: string | null = null;
+let accountResolved = false;
+let accountEpoch = 0;
+export function getAccountEpoch() {
+  return accountEpoch;
+}
+export function accountStorageKey(key: string) {
+  return activeAccount ? `${key}:account:${activeAccount}` : key;
+}
+export function activateAccount(owner: string | null) {
+  if (accountResolved && owner === activeAccount) return;
+  if (accountResolved) saveState();
+  let adopt = false;
+  try {
+    adopt =
+      !!owner &&
+      !localStorage.getItem(`${STORAGE_KEY}:claimed`) &&
+      !localStorage.getItem(`${STORAGE_KEY}:account:${owner}`);
+  } catch {}
+  const guest = getState();
+  if (adopt) {
+    for (const key of [STORAGE_KEY, 'astrox_tarot_history_v1', 'astrox_tarot_history_deleted_v1']) {
+      try {
+        const value = key === STORAGE_KEY ? JSON.stringify(guest) : localStorage.getItem(key);
+        if (value) localStorage.setItem(`${key}:account:${owner}`, value);
+        localStorage.removeItem(key);
+      } catch {}
+    }
   }
- }
- accountEpoch++;activeAccount=owner;accountResolved=true;hydrated=true;
- try{if(owner)localStorage.setItem(`${STORAGE_KEY}:claimed`,'1');}catch{}
- state=loadState();emit();
+  accountEpoch++;
+  activeAccount = owner;
+  accountResolved = true;
+  hydrated = true;
+  try {
+    if (owner) localStorage.setItem(`${STORAGE_KEY}:claimed`, '1');
+  } catch {}
+  state = loadState();
+  emit();
 }
 
 function loadState(): AppState {
   const base = defaultState();
-  if (typeof window === "undefined") return base;
+  if (typeof window === 'undefined') return base;
   try {
     const raw = localStorage.getItem(accountStorageKey(STORAGE_KEY));
     if (!raw) return base;
@@ -121,9 +148,12 @@ let hydrated = false;
 const listeners = new Set<() => void>();
 
 export function getState(): AppState {
-  if (!hydrated && typeof window !== "undefined") {
-    let claimed=false;try{claimed=!!localStorage.getItem(`${STORAGE_KEY}:claimed`);}catch{}
-    state = claimed&&!accountResolved?defaultState():loadState();
+  if (!hydrated && typeof window !== 'undefined') {
+    let claimed = false;
+    try {
+      claimed = !!localStorage.getItem(`${STORAGE_KEY}:claimed`);
+    } catch {}
+    state = claimed && !accountResolved ? defaultState() : loadState();
     state.apiKey = null;
     if (state.model !== DEFAULT_MODEL) state.model = DEFAULT_MODEL;
     hydrated = true;
@@ -137,7 +167,7 @@ export function subscribe(listener: () => void): () => void {
 }
 
 function emit() {
-  listeners.forEach((l) => l());
+  listeners.forEach(l => l());
 }
 
 export function saveState() {
@@ -174,7 +204,9 @@ function legacyCacheFingerprint(): string {
 }
 
 export function cacheFingerprint(): string {
-  return stableHash(JSON.stringify({ profile: state.profile, image: state.chartImageBase64 ? stableHash(state.chartImageBase64) : "" }));
+  return stableHash(
+    JSON.stringify({ profile: state.profile, image: state.chartImageBase64 ? stableHash(state.chartImageBase64) : '' }),
+  );
 }
 
 function getActiveAiCache(): AiProfileCache {
@@ -188,15 +220,35 @@ function getActiveAiCache(): AiProfileCache {
 }
 
 let activePromptRevision: number | null = null;
-const resultRevisions=new Map<string,number>();
-const resultLanguagePolicies=new Map<string,string>();
-export function recordLanguageResult(text:string,version:string){resultLanguagePolicies.set(text,version);if(resultLanguagePolicies.size>32)resultLanguagePolicies.delete(resultLanguagePolicies.keys().next().value!);}
-export function recordPromptResult(text:string,revision:number){resultRevisions.set(text,revision);if(resultRevisions.size>32)resultRevisions.delete(resultRevisions.keys().next().value!);}
-export function setPromptRevision(revision:number){if(Number.isSafeInteger(revision)&&(activePromptRevision===null||revision>activePromptRevision)){activePromptRevision=revision;emit();}}
-export async function refreshPromptRevision(){try{const r=await fetch('/api/site-config',{cache:'no-store'});if(!r.ok)return;const d=await r.json();setPromptRevision(d.revision??0);}catch{/* Keep the last known revision during a transient outage. */}}
+const resultRevisions = new Map<string, number>();
+const resultLanguagePolicies = new Map<string, string>();
+export function recordLanguageResult(text: string, version: string) {
+  resultLanguagePolicies.set(text, version);
+  if (resultLanguagePolicies.size > 32) resultLanguagePolicies.delete(resultLanguagePolicies.keys().next().value!);
+}
+export function recordPromptResult(text: string, revision: number) {
+  resultRevisions.set(text, revision);
+  if (resultRevisions.size > 32) resultRevisions.delete(resultRevisions.keys().next().value!);
+}
+export function setPromptRevision(revision: number) {
+  if (Number.isSafeInteger(revision) && (activePromptRevision === null || revision > activePromptRevision)) {
+    activePromptRevision = revision;
+    emit();
+  }
+}
+export async function refreshPromptRevision() {
+  try {
+    const r = await fetch('/api/site-config', { cache: 'no-store' });
+    if (!r.ok) return;
+    const d = await r.json();
+    setPromptRevision(d.revision ?? 0);
+  } catch {
+    /* Keep the last known revision during a transient outage. */
+  }
+}
 function cacheText(entry: unknown): string {
-  if (typeof entry === "string") return entry;
-  return entry && typeof (entry as { text?: string }).text === "string" ? (entry as { text: string }).text : "";
+  if (typeof entry === 'string') return entry;
+  return entry && typeof (entry as { text?: string }).text === 'string' ? (entry as { text: string }).text : '';
 }
 
 function cacheEntryUsable(entry: unknown, force: boolean): boolean {
@@ -211,21 +263,27 @@ function cacheEntryUsable(entry: unknown, force: boolean): boolean {
 
 type CacheGroup =
   | keyof AiProfileCache
-  | "tuviPeriod.today"
-  | "tuviPeriod.week"
-  | "tuviPeriod.month"
-  | "zodiacPeriod.today"
-  | "zodiacPeriod.week"
-  | "zodiacPeriod.month";
+  | 'tuviPeriod.today'
+  | 'tuviPeriod.week'
+  | 'tuviPeriod.month'
+  | 'zodiacPeriod.today'
+  | 'zodiacPeriod.week'
+  | 'zodiacPeriod.month';
+
+/** Locale-namespaced cache key: an English reading never collides with the
+ * Vietnamese one for the same service/scope (plan Task 07; AI-03). */
+export function localeCacheKey(locale: 'vi' | 'en', key: string): string {
+  return locale === 'en' ? `en::${key}` : key;
+}
 
 export function readAiCache(group: CacheGroup, key: string, force = false): string {
   const cache = getActiveAiCache();
   const entry = resolveBucket(cache, group)?.[key];
   // A config outage or publication must never hide an already purchased reading.
   // Revision stamps describe provenance, not ownership or permission to read.
-  const repeatable = group.includes("Period.") || group === "tarot" || group === "kinhDich";
+  const repeatable = group.includes('Period.') || group === 'tarot' || group === 'kinhDich';
   // Fixed reports remain readable across prompt upgrades and cannot be regenerated by force.
-  return repeatable ? (cacheEntryUsable(entry, force) ? cacheText(entry) : "") : cacheText(entry);
+  return repeatable ? (cacheEntryUsable(entry, force) ? cacheText(entry) : '') : cacheText(entry);
 }
 
 export function writeAiCache(
@@ -238,15 +296,20 @@ export function writeAiCache(
   const cache = getActiveAiCache();
   const bucket = resolveBucket(cache, group);
   if (!bucket) return;
-  const previous=bucket[key];
-  if(previous&&(previous.configRevision!==activePromptRevision||previous.languagePolicyVersion!==resultLanguagePolicies.get(text)))bucket[`${key}::history::${previous.configRevision??'legacy'}::${previous.updatedAt}`]=previous;
+  const previous = bucket[key];
+  if (
+    previous &&
+    (previous.configRevision !== activePromptRevision ||
+      previous.languagePolicyVersion !== resultLanguagePolicies.get(text))
+  )
+    bucket[`${key}::history::${previous.configRevision ?? 'legacy'}::${previous.updatedAt}`] = previous;
   bucket[key] = {
-    languagePolicyVersion:resultLanguagePolicies.get(text),
+    languagePolicyVersion: resultLanguagePolicies.get(text),
     configRevision: resultRevisions.get(text) ?? activePromptRevision ?? undefined,
     text,
-    module: meta.module || "",
-    topic: meta.topic || "",
-    period: meta.period || "",
+    module: meta.module || '',
+    topic: meta.topic || '',
+    period: meta.period || '',
     fingerprint: cacheFingerprint(),
     promptVersion: PROMPT_VERSION,
     model: state.lastAiModel || state.model,
@@ -258,14 +321,17 @@ export function writeAiCache(
   notifyDataDirty();
 }
 
-function resolveBucket(cache: AiProfileCache, group: CacheGroup): Record<string, import("./types").AiCacheEntry> | null {
-  if (group === "tuviPeriod.today") return cache.tuviPeriod.today;
-  if (group === "tuviPeriod.week") return cache.tuviPeriod.week;
-  if (group === "tuviPeriod.month") return cache.tuviPeriod.month;
-  if (group === "zodiacPeriod.today") return cache.zodiacPeriod.today;
-  if (group === "zodiacPeriod.week") return cache.zodiacPeriod.week;
-  if (group === "zodiacPeriod.month") return cache.zodiacPeriod.month;
-  return (cache as unknown as Record<string, Record<string, import("./types").AiCacheEntry>>)[group] || null;
+function resolveBucket(
+  cache: AiProfileCache,
+  group: CacheGroup,
+): Record<string, import('./types').AiCacheEntry> | null {
+  if (group === 'tuviPeriod.today') return cache.tuviPeriod.today;
+  if (group === 'tuviPeriod.week') return cache.tuviPeriod.week;
+  if (group === 'tuviPeriod.month') return cache.tuviPeriod.month;
+  if (group === 'zodiacPeriod.today') return cache.zodiacPeriod.today;
+  if (group === 'zodiacPeriod.week') return cache.zodiacPeriod.week;
+  if (group === 'zodiacPeriod.month') return cache.zodiacPeriod.month;
+  return (cache as unknown as Record<string, Record<string, import('./types').AiCacheEntry>>)[group] || null;
 }
 
 /* Đồng bộ user-data: state.ts chỉ phát tín hiệu dirty; việc fetch nằm ở auth.tsx. */
@@ -277,5 +343,5 @@ export function onDataDirty(cb: () => void): () => void {
   };
 }
 export function notifyDataDirty() {
-  dirtyListeners.forEach((cb) => cb());
+  dirtyListeners.forEach(cb => cb());
 }

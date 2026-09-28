@@ -5,9 +5,15 @@ import {
   languageRepairMessages,
   VIETNAMESE_READING_POLICY,
   LANGUAGE_POLICY_VERSION,
+  inspectEnglishReading,
+  englishRepairMessages,
+  applyEnglishTranslations,
+  ENGLISH_READING_POLICY,
+  ENGLISH_LANGUAGE_POLICY_VERSION,
 } from './reading-language.ts';
 import { normalizeUsage, estimateCost } from './metrics.ts';
 import { providerRoutes } from './provider-models.ts';
+import { ENGLISH_SYSTEM_PROMPT as ENGLISH_SYSTEM_PROMPT_RUNTIME } from './english-prompts.ts';
 /** Server-only adapters. No wallet mutations; callers own auth, rate limits and idempotency. */
 export class RuntimeError extends Error {
   constructor(code, status = 503, attempts = []) {
@@ -95,9 +101,24 @@ function messagesFor(config, input) {
   if (input.serviceId && !service) fail('UNKNOWN_SERVICE', 400);
   const parent =
     service && service.id !== service.module ? config.billing.services.find(s => s.id === service.module) : null;
+  // English requests use the English system + policy only; the admin-managed
+  // Vietnamese prompts never leak into an English conversation (plan Task 07).
+  if (input.locale === 'en') {
+    return {
+      service,
+      parent,
+      locale: 'en',
+      messages: [
+        { role: 'system', content: ENGLISH_SYSTEM_PROMPT_RUNTIME },
+        ...(service ? [{ role: 'system', content: ENGLISH_READING_POLICY }] : []),
+        ...messages,
+      ],
+    };
+  }
   return {
     service,
     parent,
+    locale: 'vi',
     messages: [
       ...(config.ai.systemPrompt ? [{ role: 'system', content: config.ai.systemPrompt }] : []),
       ...(parent?.prompt ? [{ role: 'system', content: parent.prompt }] : []),
@@ -234,7 +255,10 @@ export async function executeProviderChain(
           p.protocol === 'anthropic'
             ? {
                 model: p.model,
-                messages: providerMessages(messages.filter(m => m.role !== 'system'), p.protocol),
+                messages: providerMessages(
+                  messages.filter(m => m.role !== 'system'),
+                  p.protocol,
+                ),
                 system: messages
                   .filter(m => m.role === 'system')
                   .map(m => m.content)
@@ -300,9 +324,12 @@ export async function executeProviderChain(
         recordUsage(raw, attempt);
         const result = normalize(raw, p.protocol, p.model, attempts);
         if (service) {
+          const en = input.locale === 'en';
           let plan;
           try {
-            plan = inspectReading(result.choices[0].message.content);
+            plan = en
+              ? inspectEnglishReading(result.choices[0].message.content)
+              : inspectReading(result.choices[0].message.content);
           } catch {
             attempt.language = 'blocked';
             fail('READING_LANGUAGE_INVALID', 502, attempts);
@@ -329,7 +356,7 @@ export async function executeProviderChain(
             attempts.push(repair);
             const repairStarted = now();
             try {
-              const repairMessages = languageRepairMessages(plan);
+              const repairMessages = en ? englishRepairMessages(plan) : languageRepairMessages(plan);
               const repairBody =
                 p.protocol === 'anthropic'
                   ? { ...body, system: repairMessages[0].content, messages: [repairMessages[1]], temperature: 0 }
@@ -359,7 +386,9 @@ export async function executeProviderChain(
               recordUsage(repairRaw, repair);
               const correction = normalize(repairRaw, p.protocol, p.model, attempts);
               if (correction.choices[0].finish_reason !== 'stop') fail('READING_LANGUAGE_INVALID', 502, attempts);
-              result.choices[0].message.content = applyTranslations(plan, correction.choices[0].message.content);
+              result.choices[0].message.content = en
+                ? applyEnglishTranslations(plan, correction.choices[0].message.content)
+                : applyTranslations(plan, correction.choices[0].message.content);
               repair.language = 'repaired';
               repair.outcome = 'success';
             } catch (error) {
@@ -369,7 +398,8 @@ export async function executeProviderChain(
               repair.durationMs = Math.max(0, now() - repairStarted);
             }
           }
-          result.languagePolicyVersion = LANGUAGE_POLICY_VERSION;
+          result.languagePolicyVersion =
+            input.locale === 'en' ? ENGLISH_LANGUAGE_POLICY_VERSION : LANGUAGE_POLICY_VERSION;
         }
         if (attempt.outcome !== 'language_detected') attempt.outcome = 'success';
         try {

@@ -2,6 +2,7 @@ import { supportsUnlock } from '../backend/service-unlocks.mjs';
 import { normalizeMessages, withManagedText } from './vision.mjs';
 import { limitAi } from './ai-rate-limit.mjs';
 import { renderServicePrompt } from './prompt-engine.ts';
+import { defaultEnglishPromptSettings } from './english-prompts.ts';
 import { backendStatus, connectionSecretAvailable } from './backend.mjs';
 import { state, readPublished, readSecret, recordAudit, sql } from './store.mjs';
 import { publicConfig } from './config.ts';
@@ -60,6 +61,8 @@ function normalizedInput(input) {
     (input.operationId !== undefined && (typeof input.operationId !== 'string' || input.operationId.length > 120))
   )
     throw new RuntimeError('INVALID_MESSAGES', 400);
+  if (input.locale !== undefined && input.locale !== 'vi' && input.locale !== 'en')
+    throw new RuntimeError('INVALID_LOCALE', 400);
   return {
     messages,
     serviceId: input.serviceId,
@@ -68,6 +71,7 @@ function normalizedInput(input) {
     selection: input.selection,
     promptDescriptor: input.promptDescriptor,
     compact: input.compact === true,
+    locale: input.locale === 'en' ? 'en' : 'vi',
   };
 }
 export async function handleAdminRuntime(path, request, env, user) {
@@ -193,21 +197,44 @@ export async function handleConfiguredAi(request, env) {
       ),
       b => b.toString(16).padStart(2, '0'),
     ).join('');
+    const enSettings =
+      input.locale === 'en'
+        ? (() => {
+            const base = defaultEnglishPromptSettings();
+            return {
+              templates: { ...base.templates, ...(c.promptsEn?.templates || {}) },
+              tasks: { ...base.tasks, ...(c.promptsEn?.tasks || {}) },
+            };
+          })()
+        : null;
     if (input.promptDescriptor) {
       try {
-        input.messages = withManagedText(input.messages, renderServicePrompt(input.promptDescriptor, input.serviceId, c.prompts));
-      } catch {
-        throw new RuntimeError('INVALID_MESSAGES', 400);
+        input.messages = withManagedText(
+          input.messages,
+          renderServicePrompt(input.promptDescriptor, input.serviceId, input.locale === 'en' ? enSettings : c.prompts, {
+            locale: input.locale,
+          }),
+        );
+      } catch (error) {
+        throw new RuntimeError(error?.message === 'EN_PROMPT_MISSING' ? 'EN_PROMPT_MISSING' : 'INVALID_MESSAGES', 400);
       }
     }
-    if (input.compact) input.messages.push({ role: 'user', content: c.prompts.templates['shared.compact'] });
+    if (input.compact)
+      input.messages.push({
+        role: 'user',
+        content: input.locale === 'en' ? enSettings.templates['shared.compact'] : c.prompts.templates['shared.compact'],
+      });
     const limited = await limitAi(request, env);
     if (limited) {
       outcome = limited.status === 429 ? 'rate_limited' : 'ai_safety_unavailable';
       return limited;
     }
     if (service.status === 'paid') {
-      if (!supportsUnlock(c, input.serviceId) && input.expectedPoints !== undefined && input.expectedPoints !== service.points) {
+      if (
+        !supportsUnlock(c, input.serviceId) &&
+        input.expectedPoints !== undefined &&
+        input.expectedPoints !== service.points
+      ) {
         outcome = 'price_changed';
         return json({ error: 'Giá vừa thay đổi. Vui lòng xem lại và xác nhận giá mới.', code: 'price_changed' }, 409);
       }
@@ -371,7 +398,19 @@ export async function handleAiQuote(request, env) {
   try {
     const input = await parse(request);
     const headers = new Headers({ 'content-type': 'application/json' });
-    for (const name of ['cookie', 'authorization']) { const value=request.headers.get(name); if(value)headers.set(name,value); }
-    return await env.ASTROX_BACKEND.fetch(new Request('https://astrox-internal/internal/ai/quote', { method:'POST', headers, body:JSON.stringify({serviceId:input.serviceId,promptDescriptor:input.promptDescriptor}), signal:AbortSignal.timeout(15000) }));
-  } catch(e) { return json({error:'quote_unavailable'},e.status||503); }
+    for (const name of ['cookie', 'authorization']) {
+      const value = request.headers.get(name);
+      if (value) headers.set(name, value);
+    }
+    return await env.ASTROX_BACKEND.fetch(
+      new Request('https://astrox-internal/internal/ai/quote', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ serviceId: input.serviceId, promptDescriptor: input.promptDescriptor }),
+        signal: AbortSignal.timeout(15000),
+      }),
+    );
+  } catch (e) {
+    return json({ error: 'quote_unavailable' }, e.status || 503);
+  }
 }

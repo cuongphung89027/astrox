@@ -1,12 +1,20 @@
 import templates from './prompt-templates.ts';
 import originals from './original-prompts.ts';
+import { COMPAT_INCLUSION_GUIDANCE_EN } from './english-prompts.ts';
+
+export type PromptLocale = 'vi' | 'en';
 export type PromptNode = { id: string; values: (string | PromptNode)[] };
 export const COMPAT_INCLUSION_GUIDANCE =
   'Tôn trọng mọi cặp đôi, bao gồm LGBTQ+. Nam–Nam, Nữ–Nữ và Nam–Nữ được đối xử bình đẳng. Không suy đoán xu hướng tính dục từ giới tính; không giảm mức độ tương hợp chỉ vì hai người cùng giới. Dùng ‘bạn’, ‘người ấy’, ‘hai bạn’; không tự gán vai vợ/chồng hoặc vai trò nam/nữ. Giữ đúng định dạng trả lời đã yêu cầu.';
 export const ORIGINAL_SYSTEM_PROMPT = originals.system;
 export const PROMPT_TEMPLATES = templates;
 export const ORIGINAL_TOPICS = originals.topics;
-export function renderPrompt(node: PromptNode, overrides: Record<string, string> = {}, depth = 0): string {
+export function renderPrompt(
+  node: PromptNode,
+  overrides: Record<string, string> = {},
+  depth = 0,
+  locale: PromptLocale = 'vi',
+): string {
   if (depth > 12 || !node || typeof node.id !== 'string' || !Array.isArray(node.values))
     throw new Error('INVALID_PROMPT');
   if (node.id === '$join') {
@@ -15,6 +23,7 @@ export function renderPrompt(node: PromptNode, overrides: Record<string, string>
   }
   const entry = templates.find(t => t.id === node.id);
   if (!entry || node.values.length !== entry.variables.length) throw new Error('INVALID_PROMPT');
+  if (locale === 'en' && overrides[node.id] === undefined) throw new Error('EN_PROMPT_MISSING');
   const text = overrides[node.id] ?? entry.template;
   const result = text.replace(/\{\{v(\d+)\}\}/g, (_, index) => {
     const value = node.values[Number(index)];
@@ -23,7 +32,7 @@ export function renderPrompt(node: PromptNode, overrides: Record<string, string>
   });
   if (result.length > 100000) throw new Error('PROMPT_TOO_LARGE');
   return ['compat.original', 'zodiac.compatPrompt.0', 'compat.tuviPair.v1', 'compat.batuPair.v1'].includes(node.id)
-    ? `${result}\n\n${COMPAT_INCLUSION_GUIDANCE}`
+    ? `${result}\n\n${locale === 'en' ? COMPAT_INCLUSION_GUIDANCE_EN : COMPAT_INCLUSION_GUIDANCE}`
     : result;
 }
 export function originalTasks(): Record<string, string> {
@@ -56,7 +65,9 @@ export function renderServicePrompt(
   node: PromptNode,
   serviceId: string,
   settings: ReturnType<typeof defaultPromptSettings>,
+  options: { locale?: PromptLocale } = {},
 ): string {
+  const locale = options.locale ?? 'vi';
   const module = serviceId.split('--')[0];
   const visit = (n: PromptNode, depth = 0): PromptNode => {
     if (depth > 12 || !n || typeof n.id !== 'string' || !Array.isArray(n.values)) throw new Error('INVALID_PROMPT');
@@ -79,7 +90,12 @@ export function renderServicePrompt(
       }),
     };
   };
-  return renderPrompt(visit(node), settings.templates);
+  try {
+    return renderPrompt(visit(node), settings.templates, 0, locale);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'EN_PROMPT_MISSING') throw error;
+    throw error;
+  }
 }
 
 function renderTask(id: string, rendered: string, template: string): string {

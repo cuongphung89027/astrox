@@ -21,7 +21,11 @@ export async function connectionSecretAvailable(env, ref, status) {
 }
 export function importLegacyConfig(draft, legacy, { legacyAi = false } = {}) {
   const c = structuredClone(draft);
-  c.integrations = legacy.integrations;
+  // Legacy snapshots predate the Google integration; keep the disabled default.
+  c.integrations = {
+    ...legacy.integrations,
+    google: legacy.integrations.google || { enabled: false, clientId: '', callbackUrl: '', returnUrl: '/en/profile' },
+  };
   c.billing.enabled = legacy.integrations.payos.enabled;
   c.billing.vndPerPoint = 1000;
   c.billing.packages = legacy.packages.map(p => ({

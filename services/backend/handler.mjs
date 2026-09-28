@@ -7,6 +7,7 @@ import { runtimeSettings, capabilities, legacySnapshot } from './config.mjs';
 import { readSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } from './auth.mjs';
 import { googleLogin, googleCallback } from './google-auth.mjs';
 import { creditsBalance, creditsHistory, setMarket, marketOf } from './credits.mjs';
+import { createLemonCheckout, lemonOrderStatus } from './lemon.mjs';
 import { handlePayosWebhook, handleTopupCreate, handlePromoCheck, handlePromoRedeem } from './payments.mjs';
 import { handlePointsHistory } from './points.mjs';
 import { handleRewardsSummary, handleRewardsCheckin } from './rewards.mjs';
@@ -92,6 +93,41 @@ export async function publicFetch(request, env) {
         request,
         await creditsHistory(env, session.sub, { limit, before: url.searchParams.get('before') }),
       );
+    }
+    if (path === '/api/lemon/checkout' && method === 'POST') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      if (!trustedOrigin(env, request)) return json(env, request, { error: 'invalid_origin' }, 403);
+      const market = await marketOf(env, session.sub);
+      if (market !== 'US') return json(env, request, { error: 'market_unavailable' }, 403);
+      const s = await runtimeSettings(env);
+      const body = await request.json().catch(() => null);
+      const user = await env.DB.prepare('SELECT email FROM app_users WHERE id=?').bind(session.sub).first();
+      const r = await createLemonCheckout(
+        s.env,
+        { integrations: { lemon: s.lemon } },
+        {
+          userId: session.sub,
+          packageId: String(body?.packageId || ''),
+          requestKey: String(body?.requestKey || ''),
+          email: user?.email || '',
+        },
+      );
+      return json(
+        env,
+        request,
+        r.ok
+          ? { ok: true, orderId: r.order.id, checkoutUrl: r.order.checkoutUrl, status: r.order.status }
+          : { error: r.error },
+        r.ok ? 200 : r.status || 502,
+      );
+    }
+    if (path === '/api/lemon/order' && method === 'GET') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      const id = new URL(request.url).searchParams.get('id') || '';
+      const r = await lemonOrderStatus(env, session.sub, id);
+      return json(env, request, r.ok ? r.order : { error: r.error }, r.ok ? 200 : r.status);
     }
     if (path === '/api/market' && method === 'GET') {
       const session = await readSession(env, request);

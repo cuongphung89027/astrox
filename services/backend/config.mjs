@@ -5,6 +5,8 @@ export const secretBindings = {
   'payos:checksumKey': 'PAYOS_CHECKSUM_KEY',
   'zalo:appSecret': 'ZALO_APP_SECRET',
   'google:clientSecret': 'GOOGLE_CLIENT_SECRET',
+  'lemon:apiKey': 'LEMON_API_KEY',
+  'lemon:webhookSecret': 'LEMON_WEBHOOK_SECRET',
 };
 export function capabilities(env) {
   return {
@@ -50,6 +52,12 @@ export async function legacySnapshot(env) {
         callbackUrl: env.ZALO_REDIRECT_URI || 'https://api.theastrox.space/auth/zalo/callback',
         returnUrl: env.APP_ORIGIN || 'https://theastrox.space/',
       },
+      lemon: {
+        enabled: Boolean(env.LEMON_API_KEY),
+        environment: 'test',
+        storeIds: { test: '', live: '' },
+        packages: [],
+      },
       google: {
         enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
         clientId: env.GOOGLE_CLIENT_ID || '',
@@ -92,6 +100,12 @@ export async function runtimeSettings(env) {
     payos: config.integrations.payos,
     zalo: config.integrations.zalo,
     google: config.integrations.google || { enabled: false, clientId: '', callbackUrl: '', returnUrl: '/en/profile' },
+    lemon: config.integrations.lemon || {
+      enabled: false,
+      environment: 'test',
+      storeIds: { test: '', live: '' },
+      packages: [],
+    },
     packages:
       config.billing.enabled && config.integrations.payos.enabled && !config.operations.maintenance
         ? config.billing.packages

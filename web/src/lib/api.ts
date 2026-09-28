@@ -498,6 +498,27 @@ export async function rewardedAdAction(
   return data;
 }
 
+/** US Credits top-up via Lemon (plan Task 15): server-owned checkout, client sends no price. */
+export async function createLemonTopup(
+  packageId: string,
+  requestKey: string,
+): Promise<{ ok: boolean; orderId?: string; checkoutUrl?: string | null; status?: string; error?: string }> {
+  const res = await fetch(`${AUTH_API_BASE}/api/lemon/checkout`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ packageId, requestKey }),
+  });
+  return res.json().catch(() => ({ ok: false, error: 'network' }));
+}
+
+export async function lemonOrder(orderId: string): Promise<{ id: string; status: string } | null> {
+  const res = await fetch(`${AUTH_API_BASE}/api/lemon/order?id=${encodeURIComponent(orderId)}`, {
+    credentials: 'include',
+  });
+  return res.ok ? res.json() : null;
+}
+
 /** Market preference of the signed-in account (server-stored); null when unset. */
 let marketCache: Promise<'US' | 'VN' | null> | null = null;
 export function currentMarket(): Promise<'US' | 'VN' | null> {

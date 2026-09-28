@@ -25,6 +25,12 @@ export function importLegacyConfig(draft, legacy, { legacyAi = false } = {}) {
   c.integrations = {
     ...legacy.integrations,
     google: legacy.integrations.google || { enabled: false, clientId: '', callbackUrl: '', returnUrl: '/en/profile' },
+    lemon: legacy.integrations.lemon || {
+      enabled: false,
+      environment: 'test',
+      storeIds: { test: '', live: '' },
+      packages: [],
+    },
   };
   c.billing.enabled = legacy.integrations.payos.enabled;
   c.billing.vndPerPoint = 1000;

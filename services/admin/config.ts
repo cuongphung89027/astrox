@@ -95,6 +95,19 @@ export type AdminConfig = {
     payos: { enabled: boolean; clientId: string; returnUrl: string; cancelUrl: string; expiryMinutes: number };
     zalo: { enabled: boolean; appId: string; callbackUrl: string; returnUrl: string };
     google: { enabled: boolean; clientId: string; callbackUrl: string; returnUrl: string };
+    lemon: {
+      enabled: boolean;
+      environment: 'test' | 'live';
+      storeIds: { test: string; live: string };
+      packages: Array<{
+        id: string;
+        name: string;
+        credits: number;
+        amountUsdCents: number;
+        variantId: string;
+        enabled: boolean;
+      }>;
+    };
     wallet: { enabled: boolean; label: string };
   };
   rewards: {
@@ -154,7 +167,7 @@ export { MODULES };
 /** New discovery routes are free until an Admin explicitly assigns a price/status. */
 function seedDiscoveryServices(existing: ServicePrice[]): ServicePrice[] {
   const missing = new Set(['palm', 'lunar-calendar', 'experts'].filter(id => !existing.some(s => s.id === id)));
-  return addMissingServices(existing).map(s => missing.has(s.id) ? { ...s, status: 'free' as const } : s);
+  return addMissingServices(existing).map(s => (missing.has(s.id) ? { ...s, status: 'free' as const } : s));
 }
 export function defaultConfig(): AdminConfig {
   return {
@@ -189,7 +202,7 @@ export function defaultConfig(): AdminConfig {
           module: m.id,
           name: m.name,
           points: 0,
-          status: ['palm', 'lunar-calendar', 'experts'].includes(m.id) ? 'free' as const : 'draft' as const,
+          status: ['palm', 'lunar-calendar', 'experts'].includes(m.id) ? ('free' as const) : ('draft' as const),
           policy: m.policy,
           prompt: '',
           chain: [],
@@ -207,6 +220,7 @@ export function defaultConfig(): AdminConfig {
       },
       zalo: { enabled: false, appId: '', callbackUrl: '', returnUrl: 'https://theastrox.space/' },
       google: { enabled: false, clientId: '', callbackUrl: '', returnUrl: '/en/profile' },
+      lemon: { enabled: false, environment: 'test', storeIds: { test: '', live: '' }, packages: [] },
       wallet: { enabled: false, label: 'AstroX Wallet' },
     },
     rewards: {
@@ -394,23 +408,28 @@ export function validateConfig(input: unknown): ConfigError[] {
   if (errors.length) return errors;
   integer(c.billing.unlocks.credit.numerator, 'billing.unlocks.credit.numerator', 0, 10000);
   integer(c.billing.unlocks.credit.denominator, 'billing.unlocks.credit.denominator', 1, 10000);
-  if (c.billing.unlocks.credit.numerator > c.billing.unlocks.credit.denominator) add('billing.unlocks.credit', 'Tỷ lệ khấu trừ không vượt quá 100%.');
+  if (c.billing.unlocks.credit.numerator > c.billing.unlocks.credit.denominator)
+    add('billing.unlocks.credit', 'Tỷ lệ khấu trừ không vượt quá 100%.');
   const bundles = bundleDefinitions();
   for (const b of c.billing.unlocks.bundles) {
     if (!bundles.some(d => d.id === b.id)) add('billing.unlocks.bundles', 'Gói không thuộc danh mục chức năng.');
     integer(b.points, 'billing.unlocks.bundles.points', b.enabled ? 1 : 0);
   }
-  list(c.billing.promos.map(p => ({ ...p, kind: p.kind ?? 'topup_bonus', minAmountVnd: p.minAmountVnd ?? 0 })), 'billing.promos', {
-    id: '',
-    code: '',
-    kind: '',
-    minAmountVnd: 0,
-    bonus: 0,
-    limit: 0,
-    perUser: 0,
-    enabled: false,
-    expiresAt: '',
-  });
+  list(
+    c.billing.promos.map(p => ({ ...p, kind: p.kind ?? 'topup_bonus', minAmountVnd: p.minAmountVnd ?? 0 })),
+    'billing.promos',
+    {
+      id: '',
+      code: '',
+      kind: '',
+      minAmountVnd: 0,
+      bonus: 0,
+      limit: 0,
+      perUser: 0,
+      enabled: false,
+      expiresAt: '',
+    },
+  );
   list(c.rewards.milestones, 'rewards.milestones', { id: '', day: 0, user: 0, inviter: 0 });
   list(c.content.notices, 'content.notices', {
     id: '',
@@ -474,7 +493,8 @@ export function validateConfig(input: unknown): ConfigError[] {
   }
   for (const s of c.billing.services) {
     const canonical = SERVICE_CATALOG.find(entry => entry.id === s.id);
-    if (canonical && (s.module !== canonical.module || (c.billing.unlocks.enabled && s.policy !== canonical.policy))) add('billing.services', 'Bộ môn và phạm vi mở khóa phải khớp chức năng trên web.');
+    if (canonical && (s.module !== canonical.module || (c.billing.unlocks.enabled && s.policy !== canonical.policy)))
+      add('billing.services', 'Bộ môn và phạm vi mở khóa phải khớp chức năng trên web.');
     str(s.name, 'billing.services.name');
     str(s.prompt, 'billing.services.prompt', 12000);
     integer(s.points, 'billing.services.points');
@@ -575,10 +595,12 @@ export function validateConfig(input: unknown): ConfigError[] {
     if (!/^[A-Z0-9_-]{2,40}$/.test(p.code) || codes.has(p.code))
       add('billing.promos.code', 'Mã phải duy nhất, chữ hoa/số/gạch ngang.');
     codes.add(p.code);
-    if (!['topup_bonus', 'direct_points'].includes(p.kind ?? 'topup_bonus')) add('billing.promos.kind', 'Loại mã không hợp lệ.');
+    if (!['topup_bonus', 'direct_points'].includes(p.kind ?? 'topup_bonus'))
+      add('billing.promos.kind', 'Loại mã không hợp lệ.');
     integer(p.bonus, 'billing.promos.bonus', 1);
     integer(p.minAmountVnd ?? 0, 'billing.promos.minAmountVnd', 0);
-    if (p.kind === 'direct_points' && p.minAmountVnd) add('billing.promos.minAmountVnd', 'Mã cộng Point trực tiếp không yêu cầu nạp tiền.');
+    if (p.kind === 'direct_points' && p.minAmountVnd)
+      add('billing.promos.minAmountVnd', 'Mã cộng Point trực tiếp không yêu cầu nạp tiền.');
     integer(p.limit, 'billing.promos.limit', 1);
     integer(p.perUser, 'billing.promos.perUser', 1);
     if (p.expiresAt && !Number.isFinite(Date.parse(p.expiresAt))) add('billing.promos.expiresAt', 'Ngày không hợp lệ.');
@@ -608,6 +630,11 @@ export function publicConfig(c: AdminConfig) {
       packages: c.billing.packages
         .filter(p => p.enabled)
         .map(p => ({ ...p, ...quotePackage(p, c.billing.vndPerPoint) })),
+      usPackages: c.integrations.lemon.enabled
+        ? c.integrations.lemon.packages
+            .filter(p => p.enabled)
+            .map(p => ({ id: p.id, name: p.name, credits: p.credits, amountUsdCents: p.amountUsdCents }))
+        : [],
       services: c.billing.services
         .filter(s => s.status !== 'draft' && s.status !== 'hidden')
         .map(({ id, module, name, points, status, policy }) => ({ id, module, name, points, status, policy })),
@@ -624,7 +651,11 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
     ...c,
     billing:
       c.billing && Array.isArray(c.billing.services)
-        ? { ...c.billing, unlocks: c.billing.unlocks === undefined ? defaultUnlockSettings() : c.billing.unlocks, services: seedDiscoveryServices(addCouplesServices(c.billing.services)) }
+        ? {
+            ...c.billing,
+            unlocks: c.billing.unlocks === undefined ? defaultUnlockSettings() : c.billing.unlocks,
+            services: seedDiscoveryServices(addCouplesServices(c.billing.services)),
+          }
         : c.billing,
     prompts: { templates: { ...p.templates, ...c.prompts?.templates }, tasks: { ...p.tasks, ...c.prompts?.tasks } },
     engines: { ...defaultConfig().engines, ...c.engines },

@@ -36,6 +36,24 @@ Hotfix `7828c80`: `hydrateConfig` merge defaults `google/lemon` (disabled) trong
 
 Rollback targets: Worker `56da6e6d` (`db614b2`), Pages `6dfb9e6c` (`db614b2`) — nhưng **không** rollback Worker về build trước schema `lemon_orders` (runbook §5); lỗi nghiệp vụ US thì tắt flag, deploy forward.
 
+## Bảng giá US đã set trong config (28/09, sau release)
+
+Publish `admin_versions` id **8** (API revision 7→8, `admin_state.revision` 11→12, audit `script:zcode-us-pricing`) theo đúng transaction `store.publish()` qua D1, `validateConfig()` 0 lỗi:
+
+- **Giá dịch vụ US = giá VN**: overlay `billing.usServices` để rỗng — code kế thừa `points` chung (`ai-operations.mjs`), đã đối chiếu 96 dịch vụ US (trừ experts) khớp từng giá VN.
+- **Gói Credits USD, rate 1 USD = 10 credits, bonus cộng sẵn vào credits** (như VN cộng vào `fixedPoints`), đều `enabled=false` chờ Variant ID Lemon:
+
+| Gói | USD | Credits | Bonus | Hiệu dụng |
+| --- | --- | --- | --- | --- |
+| pkg-us-5 | 5 | 50 | — | 10/USD |
+| pkg-us-10 | 10 | 120 | +20% | 12/USD |
+| pkg-us-20 | 20 | 260 | +30% | 13/USD |
+| pkg-us-50 | 50 | 700 | +40% | 14/USD |
+| pkg-us-100 | 100 | 1500 | +50% | 15/USD |
+
+- Kiểm chứng sau publish: config public VN **byte-identical** revision 7 (chưa publish gói VN nào thay đổi), `usPackages` vẫn `[]` (lemon đang tắt), draft trùng publish. Rate đối chiếu: VN `vndPerPoint`=1000đ → 1 USD ≈ 25,5 point; US 10 credits/USD thấp hơn đúng yêu cầu.
+- Lúc Lemon duyệt: Admin → US → Billing điền Store ID + Variant ID từng gói, bật gói, set `environment: live`, publish — packages hiện ngay trên `/en` topup.
+
 ## Còn lại (go-live G5, cần operator)
 
-Secrets `LEMON_API_KEY`/`LEMON_WEBHOOK_SECRET` chưa stage; Google production OAuth client + Lemon duyệt store/catalog; set giá USD + publish usPackages qua Admin; 1 giao dịch thật + hoàn tiền; 1 đăng nhập Google thật; nghiệm thu camera iPhone (palm). Thứ tự bật theo runbook §4.
+Secrets `LEMON_API_KEY`/`LEMON_WEBHOOK_SECRET` chưa stage; Google production OAuth client + Lemon duyệt store/catalog; 1 giao dịch thật + hoàn tiền; 1 đăng nhập Google thật; nghiệm thu camera iPhone (palm). Thứ tự bật theo runbook §4.

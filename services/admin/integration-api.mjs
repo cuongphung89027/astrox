@@ -63,6 +63,8 @@ function normalizedInput(input) {
     throw new RuntimeError('INVALID_MESSAGES', 400);
   if (input.locale !== undefined && input.locale !== 'vi' && input.locale !== 'en')
     throw new RuntimeError('INVALID_LOCALE', 400);
+  if (input.market !== undefined && input.market !== 'VN' && input.market !== 'US')
+    throw new RuntimeError('INVALID_MARKET', 400);
   return {
     messages,
     serviceId: input.serviceId,
@@ -72,6 +74,7 @@ function normalizedInput(input) {
     promptDescriptor: input.promptDescriptor,
     compact: input.compact === true,
     locale: input.locale === 'en' ? 'en' : 'vi',
+    market: input.market === 'US' ? 'US' : input.market === 'VN' ? 'VN' : undefined,
   };
 }
 export async function handleAdminRuntime(path, request, env, user) {
@@ -265,6 +268,7 @@ export async function handleConfiguredAi(request, env) {
         requestHash,
         promptDescriptor: input.promptDescriptor,
         selection: input.selection,
+        ...(input.market ? { market: input.market } : {}),
       });
       const charge = await chargeResponse.json().catch(() => null);
       if (!chargeResponse.ok) {
@@ -406,7 +410,11 @@ export async function handleAiQuote(request, env) {
       new Request('https://astrox-internal/internal/ai/quote', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ serviceId: input.serviceId, promptDescriptor: input.promptDescriptor }),
+        body: JSON.stringify({
+          serviceId: input.serviceId,
+          promptDescriptor: input.promptDescriptor,
+          ...(input.market === 'US' || input.market === 'VN' ? { market: input.market } : {}),
+        }),
         signal: AbortSignal.timeout(15000),
       }),
     );

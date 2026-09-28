@@ -1,9 +1,18 @@
 // @ts-check
-import { supportsUnlock, quoteUnlock, reserveUnlock, replayUnlock, completeUnlock, refundUnlock, reconcileUnlocks } from './service-unlocks.mjs';
+import {
+  supportsUnlock,
+  quoteUnlock,
+  reserveUnlock,
+  replayUnlock,
+  completeUnlock,
+  refundUnlock,
+  reconcileUnlocks,
+} from './service-unlocks.mjs';
 import { readAiSession } from './auth.mjs';
 import { readPublished } from '../admin/store.mjs';
 import { encrypt, decrypt, b64 } from '../admin/crypto.mjs';
 import { bodyJson } from './http.mjs';
+import { reserveCredits, commitReserved, releaseReserved, marketOf } from './credits.mjs';
 const reply = (body, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
 const LEASE_MS = 180000; // Provider runtime is capped at 120s; leave time for persistence.
 async function resultKey(env) {
@@ -27,6 +36,10 @@ export async function chargeAi(env, request) {
     !/^[a-f0-9]{64}$/.test(requestHash)
   )
     return reply({ error: 'invalid_operation' }, 400);
+  // Market is the account's stored preference, never the client's say-so: a VN
+  // wallet can never be charged by a US request and vice versa (MARKET-02).
+  const market = await resolveMarket(env, session.sub, b.market);
+  if (market.error) return market.error;
   // Check existing operation before current pricing: retries belong to the old snapshot.
   const existing = await env.DB.prepare('SELECT * FROM backend_ai_operations WHERE user_id=? AND operation_id=?')
     .bind(session.sub, operationId)
@@ -35,19 +48,25 @@ export async function chargeAi(env, request) {
   try {
     const unlocked = await replayUnlock(env, session.sub, b);
     if (unlocked) return reply(unlocked);
-  } catch (e) { return reply({ error: e.message }, e.status || 503); }
+  } catch (e) {
+    return reply({ error: e.message }, e.status || 503);
+  }
   const published = await readPublished(env);
   if (!published || published.revision !== b.revision) return reply({ error: 'revision_mismatch' }, 409);
   const c = published.config,
     service = c.billing.services.find(s => s.id === b.serviceId);
   if (supportsUnlock(c, b.serviceId)) {
-    try { return reply(await reserveUnlock(env, session.sub, c, published.revision, b)); }
-    catch (e) { return reply({ error: e.message }, e.status || 503); }
+    try {
+      return reply(await reserveUnlock(env, session.sub, c, published.revision, b, market.value));
+    } catch (e) {
+      return reply({ error: e.message }, e.status || 503);
+    }
   }
   const price =
     service?.status === 'paid' && Number.isSafeInteger(service.points) && service.points > 0 ? service.points : 0;
   if (!c.ai.enabled || !c.billing.enabled || c.operations.maintenance || !price)
     return reply({ error: 'service_not_paid' }, 403);
+  if (market.value === 'US') return chargeAiUsCredits(env, session.sub, b, service.id, price, requestHash);
   const chargeId = crypto.randomUUID(),
     now = Date.now(),
     iso = new Date(now).toISOString();
@@ -57,7 +76,7 @@ export async function chargeAi(env, request) {
       iso,
     ),
     env.DB.prepare(
-      "INSERT INTO backend_ai_operations(user_id,operation_id,charge_id,service_id,request_hash,config_revision,points,status,created_at,updated_at) SELECT ?,?,?,?,?,?,?,'running',?,? WHERE EXISTS(SELECT 1 FROM zalo_point_accounts WHERE user_id=? AND balance>=?) ON CONFLICT(user_id,operation_id) DO NOTHING",
+      "INSERT INTO backend_ai_operations(user_id,operation_id,charge_id,service_id,request_hash,config_revision,points,status,created_at,updated_at,market) SELECT ?,?,?,?,?,?,?,'running',?,?,'VN' WHERE EXISTS(SELECT 1 FROM zalo_point_accounts WHERE user_id=? AND balance>=?) ON CONFLICT(user_id,operation_id) DO NOTHING",
     ).bind(
       session.sub,
       operationId,
@@ -85,6 +104,46 @@ export async function chargeAi(env, request) {
   if (op.charge_id !== chargeId) return replay(env, op, b);
   return reply({ ok: true, chargeId, points: price });
 }
+/**
+ * Resolves the billing market: the stored account preference is authoritative;
+ * a client-sent market must match it exactly. No preference → the request's
+ * validated value (VN default) — matching pre-market behavior for VN users.
+ */
+export async function resolveMarket(env, userId, requested) {
+  if (requested !== undefined && requested !== 'VN' && requested !== 'US')
+    return { error: reply({ error: 'invalid_market' }, 400) };
+  const pref = await marketOf(env, userId);
+  const value = pref ?? (requested === 'US' ? 'US' : 'VN');
+  if (pref && requested && requested !== pref) return { error: reply({ error: 'market_mismatch', market: pref }, 409) };
+  return { value };
+}
+
+/** US per-service charge: reserve Credits, then persist the operation (or roll the reservation back). */
+async function chargeAiUsCredits(env, userId, b, serviceId, price, requestHash) {
+  const chargeId = crypto.randomUUID(),
+    now = Date.now();
+  const held = await reserveCredits(env, { userId, amount: price, operationKey: `ai:${b.operationId}` });
+  if (!held) return reply({ error: 'insufficient_credits', needed: price }, 402);
+  await env.DB.prepare(
+    "INSERT INTO backend_ai_operations(user_id,operation_id,charge_id,service_id,request_hash,config_revision,points,status,created_at,updated_at,market) SELECT ?,?,?,?,?,?,?,'running',?,?,'US' ON CONFLICT(user_id,operation_id) DO NOTHING",
+  )
+    .bind(userId, b.operationId, chargeId, serviceId, requestHash, b.revision, price, now, now)
+    .run();
+  const op = await env.DB.prepare('SELECT * FROM backend_ai_operations WHERE user_id=? AND operation_id=?')
+    .bind(userId, b.operationId)
+    .first();
+  if (!op) {
+    await releaseReserved(env, { userId, amount: price, operationKey: `ai:${b.operationId}` });
+    return reply({ error: 'operation_conflict' }, 409);
+  }
+  if (op.charge_id !== chargeId) {
+    // Another concurrent request won the operation row: roll our reservation back and replay.
+    await releaseReserved(env, { userId, amount: price, operationKey: `ai:${b.operationId}` });
+    return replay(env, op, b);
+  }
+  return reply({ ok: true, chargeId, points: price, market: 'US' });
+}
+
 async function replay(env, op, input) {
   if (op.request_hash !== input.requestHash || op.service_id !== input.serviceId)
     return reply({ error: 'operation_conflict' }, 409);
@@ -103,10 +162,41 @@ export async function completeAi(env, request) {
   if (!session) return reply({ error: 'unauthorized' }, 401);
   const b = await bodyJson(request, 600000);
   if (!b?.chargeId || !b?.response || !Array.isArray(b.response.choices)) return reply({ error: 'bad_request' }, 400);
-  const unlock = await env.DB.prepare('SELECT id FROM service_unlock_operations WHERE id=? AND user_id=?').bind(b.chargeId, session.sub).first();
+  const unlock = await env.DB.prepare('SELECT id FROM service_unlock_operations WHERE id=? AND user_id=?')
+    .bind(b.chargeId, session.sub)
+    .first();
   if (unlock) {
-    try { return reply(await completeUnlock(env, session.sub, b.chargeId, b.response)); }
-    catch (e) { return reply({ error: e.message }, e.status || 503); }
+    try {
+      return reply(await completeUnlock(env, session.sub, b.chargeId, b.response));
+    } catch (e) {
+      return reply({ error: e.message }, e.status || 503);
+    }
+  }
+  const opRow = await env.DB.prepare(
+    'SELECT market,points,operation_id FROM backend_ai_operations WHERE charge_id=? AND user_id=?',
+  )
+    .bind(b.chargeId, session.sub)
+    .first();
+  if (opRow?.market === 'US') {
+    // Commit the reserved credits exactly once, then seal the operation with its result.
+    await commitReserved(env, {
+      userId: session.sub,
+      amount: opRow.points,
+      operationKey: `ai:${opRow.operation_id}`,
+      meta: 'ai_service',
+    }).catch(() => {});
+    const value = await encrypt(await resultKey(env), b.chargeId, JSON.stringify(b.response)),
+      now = Date.now();
+    const rUs = await env.DB.prepare(
+      "UPDATE backend_ai_operations SET status='succeeded',response_json=?,updated_at=? WHERE charge_id=? AND user_id=? AND status='running' AND created_at>?",
+    )
+      .bind(value, now, b.chargeId, session.sub, now - LEASE_MS)
+      .run();
+    if (rUs.meta.changes) return reply({ ok: true });
+    const done = await env.DB.prepare('SELECT status FROM backend_ai_operations WHERE charge_id=? AND user_id=?')
+      .bind(b.chargeId, session.sub)
+      .first();
+    return done?.status === 'succeeded' ? reply({ ok: true }) : reply({ error: 'operation_not_running' }, 409);
   }
   const value = await encrypt(await resultKey(env), b.chargeId, JSON.stringify(b.response)),
     now = Date.now();
@@ -126,10 +216,15 @@ export async function refundAi(env, request) {
   if (!session) return reply({ error: 'unauthorized' }, 401);
   const b = await bodyJson(request);
   if (typeof b?.chargeId !== 'string') return reply({ error: 'bad_request' }, 400);
-  const unlock = await env.DB.prepare('SELECT id FROM service_unlock_operations WHERE id=? AND user_id=?').bind(b.chargeId, session.sub).first();
+  const unlock = await env.DB.prepare('SELECT id FROM service_unlock_operations WHERE id=? AND user_id=?')
+    .bind(b.chargeId, session.sub)
+    .first();
   if (unlock) {
-    try { return reply(await refundUnlock(env, session.sub, b.chargeId)); }
-    catch (e) { return reply({ error: e.message }, e.status || 503); }
+    try {
+      return reply(await refundUnlock(env, session.sub, b.chargeId));
+    } catch (e) {
+      return reply({ error: e.message }, e.status || 503);
+    }
   }
   const op = await env.DB.prepare('SELECT * FROM backend_ai_operations WHERE charge_id=? AND user_id=?')
     .bind(b.chargeId, session.sub)
@@ -137,6 +232,15 @@ export async function refundAi(env, request) {
   if (!op) return reply({ error: 'charge_not_found' }, 404);
   if (op.status === 'succeeded') return reply({ error: 'operation_completed' }, 409);
   if (op.status === 'refunded') return reply({ ok: true, refunded: false });
+  if (op.market === 'US') {
+    await releaseReserved(env, { userId: session.sub, amount: op.points, operationKey: `ai:${op.operation_id}` });
+    await env.DB.prepare(
+      "UPDATE backend_ai_operations SET status='refunded',updated_at=? WHERE charge_id=? AND user_id=? AND status='running'",
+    )
+      .bind(Date.now(), op.charge_id, session.sub)
+      .run();
+    return reply({ ok: true, refunded: true });
+  }
   await refundOperation(env, op.charge_id);
   const after = await env.DB.prepare('SELECT status FROM backend_ai_operations WHERE charge_id=?')
     .bind(op.charge_id)
@@ -172,7 +276,25 @@ export async function reconcileAi(env, now = Date.now()) {
   let failed = 0;
   for (const row of pending.results)
     try {
-      await refundOperation(env, row.charge_id, cutoff);
+      const op = await env.DB.prepare(
+        'SELECT market,operation_id,points,user_id FROM backend_ai_operations WHERE charge_id=?',
+      )
+        .bind(row.charge_id)
+        .first();
+      if (op?.market === 'US') {
+        await releaseReserved(env, {
+          userId: op.user_id,
+          amount: op.points,
+          operationKey: `ai:${op.operation_id}`,
+        }).catch(() => {});
+        await env.DB.prepare(
+          "UPDATE backend_ai_operations SET status='refunded',updated_at=? WHERE charge_id=? AND status='running'",
+        )
+          .bind(now, row.charge_id)
+          .run();
+      } else {
+        await refundOperation(env, row.charge_id, cutoff);
+      }
     } catch {
       failed++;
       console.error(JSON.stringify({ event: 'ai.refund_retry_failed', chargeId: row.charge_id }));
@@ -195,9 +317,22 @@ export async function quoteAi(env, request) {
   const session = await readAiSession(env, request);
   if (!session) return reply({ error: 'unauthorized' }, 401);
   try {
-    const input = await bodyJson(request, 300000), published = await readPublished(env);
+    const input = await bodyJson(request, 300000),
+      published = await readPublished(env);
     if (!published) return reply({ error: 'service_unavailable' }, 403);
-    const quote = await quoteUnlock(env, session.sub, published.config, published.revision, input);
+    const market = await resolveMarket(env, session.sub, input?.market);
+    if (market.error) return market.error;
+    const quote = await quoteUnlock(
+      env,
+      session.sub,
+      published.config,
+      published.revision,
+      input,
+      Date.now(),
+      market.value,
+    );
     return reply(quote);
-  } catch (e) { return reply({ error: e.message }, e.status || 503); }
+  } catch (e) {
+    return reply({ error: e.message }, e.status || 503);
+  }
 }

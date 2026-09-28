@@ -153,8 +153,13 @@ export async function creditsHistory(env, userId, { limit = 50, before = null } 
 
 /** Market preference: explicit, authenticated choice — never derived from IP/locale. */
 export async function marketOf(env, userId) {
-  const row = await env.DB.prepare('SELECT market FROM market_preferences WHERE user_id=?').bind(userId).first();
-  return row?.market ?? null;
+  try {
+    const row = await env.DB.prepare('SELECT market FROM market_preferences WHERE user_id=?').bind(userId).first();
+    return row?.market ?? null;
+  } catch {
+    // Table not migrated yet: every account is VN by definition in that window.
+    return null;
+  }
 }
 
 export async function setMarket(env, userId, market) {

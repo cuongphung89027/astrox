@@ -75,7 +75,11 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
       const qr = await fetch('/api/ai/quote', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ serviceId: body.serviceId, promptDescriptor: body.promptDescriptor }),
+        body: JSON.stringify({
+          serviceId: body.serviceId,
+          promptDescriptor: body.promptDescriptor,
+          market: (await currentMarket()) ?? undefined,
+        }),
         signal,
       });
       if (!qr.ok)
@@ -101,7 +105,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
   } else body = { ...body, expectedPoints: 0 };
   assertOwner();
   const operation = await pendingAiOperation(ticket?.userId || 'guest', body);
-  body = { ...body, operationId: operation.id };
+  body = { ...body, operationId: operation.id, market: (await currentMarket()) ?? undefined };
   trackFeature('feature_start', String(body.serviceId || ''), 'ai', operation.id);
   let res: Response | undefined;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -492,6 +496,17 @@ export async function rewardedAdAction(
         'Chưa xác nhận được lượt quảng cáo. Vui lòng kiểm tra lịch sử Point trước khi thử lại.',
     );
   return data;
+}
+
+/** Market preference of the signed-in account (server-stored); null when unset. */
+let marketCache: Promise<'US' | 'VN' | null> | null = null;
+export function currentMarket(): Promise<'US' | 'VN' | null> {
+  if (!marketCache)
+    marketCache = fetch(`${AUTH_API_BASE}/api/market`, { credentials: 'include' })
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: { market?: string } | null) => (d?.market === 'US' || d?.market === 'VN' ? d.market : null))
+      .catch(() => null);
+  return marketCache;
 }
 
 /** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */

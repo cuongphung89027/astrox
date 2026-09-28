@@ -66,7 +66,7 @@ const refundReceipt = (env, orderId, refundedCents) =>
       crypto.randomUUID(),
       'order_refunded',
       orderId,
-      JSON.stringify({ data: { attributes: { refund_amount: refundedCents, total: refundedCents } } }),
+      JSON.stringify({ data: { attributes: { refunded_amount: refundedCents } } }),
     )
     .run();
 

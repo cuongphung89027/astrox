@@ -74,11 +74,13 @@ export async function googleLogin(env, request, settings) {
   });
 }
 
-/** Only same-site relative paths may be used as the post-login return. */
-export function allowedReturn(value) {
-  if (typeof value !== 'string') return '/en/profile';
-  if (value.startsWith('/') && !value.startsWith('//')) return value;
-  return '/en/profile';
+/** Only same-site relative paths may be used as the post-login return; the
+ *  path is validated then resolved against the trusted frontend origin because
+ *  the callback runs on the API host (api.theastrox.space). */
+export function allowedReturn(value, origin = 'https://theastrox.space') {
+  const path = typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/en/profile';
+  const base = /^https:\/\/[a-z0-9.-]+$/i.test(origin) ? origin : 'https://theastrox.space';
+  return new URL(path, base + '/').href;
 }
 
 /** Verifies a Google id_token via Google's tokeninfo endpoint (signature-checked
@@ -195,7 +197,7 @@ export async function completeGoogleLogin(env, request, settings, me) {
     ['set-cookie', await sessionCookie(env, user.id)],
     ['set-cookie', 'astrox_google_oauth=; HttpOnly; Secure; SameSite=Lax; Path=/auth/google; Max-Age=0'],
   ];
-  const target = allowedReturn(settings?.google?.returnUrl);
+  const target = allowedReturn(settings?.google?.returnUrl, env.APP_ORIGIN);
   if (request.method === 'GET') {
     const headers = new Headers({ location: target, 'cache-control': 'no-store' });
     for (const [k, v] of cookies) headers.append(k, v);

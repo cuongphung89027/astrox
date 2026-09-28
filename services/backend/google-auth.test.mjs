@@ -60,6 +60,7 @@ async function fixture() {
   env.GOOGLE_CLIENT_SECRET = 'google-client-secret';
   env.GOOGLE_REDIRECT_URI = 'https://api.theastrox.space/auth/google/callback';
   env.SESSION_SECRET = 'test-secret';
+  env.APP_ORIGIN = 'https://theastrox.space';
   return env;
 }
 
@@ -118,7 +119,7 @@ test('valid token: first login creates exactly one user and one identity', async
     fetchImpl,
   );
   assert.equal(res.status, 302);
-  assert.equal(res.headers.get('location'), '/en/profile');
+  assert.equal(res.headers.get('location'), 'https://theastrox.space/en/profile');
   const identity = await env.DB.prepare(
     "SELECT user_id FROM zalo_identities WHERE provider='google' AND provider_subject='google-sub-1'",
   ).first();
@@ -250,10 +251,10 @@ test('concurrent first logins create exactly one user (unique identity wins)', a
 });
 
 test('return path allowlist refuses absolute and protocol-relative URLs', async () => {
-  assert.equal(allowedReturn('/en/profile'), '/en/profile');
-  assert.equal(allowedReturn('https://evil.example'), '/en/profile');
-  assert.equal(allowedReturn('//evil.example'), '/en/profile');
-  assert.equal(allowedReturn(undefined), '/en/profile');
+  assert.equal(allowedReturn('/en/profile'), 'https://theastrox.space/en/profile');
+  assert.equal(allowedReturn('https://evil.example'), 'https://theastrox.space/en/profile');
+  assert.equal(allowedReturn('//evil.example'), 'https://theastrox.space/en/profile');
+  assert.equal(allowedReturn(undefined), 'https://theastrox.space/en/profile');
 });
 
 test('tokeninfo failures surface as verification errors, never as logins', async () => {

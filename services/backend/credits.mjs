@@ -78,13 +78,16 @@ export async function commitReserved(env, { userId, amount, operationKey, meta =
     .bind(userId, operationKey)
     .first();
   if (already) return { committed: false, ledgerId: already.id };
-  const account = await env.DB.prepare(
-    'UPDATE credits_accounts SET balance=balance-?, reserved=reserved-?, updated_at=? WHERE user_id=? AND reserved>=? RETURNING balance',
-  )
-    .bind(amount, amount, nowIso(), userId, amount)
+  // Atomic commit: account deduction, FIFO lot consumption and the ledger row
+  // commit or roll back TOGETHER (one D1 batch = one transaction). The ledger
+  // INSERT only runs when the guarded account UPDATE changed exactly one row
+  // (changes()); lot updates only run once the ledger row exists — so a failed
+  // batch leaves the reservation intact for a clean retry, and a guard failure
+  // writes nothing at all.
+  const held = await env.DB.prepare('SELECT balance,reserved FROM credits_accounts WHERE user_id=? AND reserved>=?')
+    .bind(userId, amount)
     .first();
-  if (!account) throw new Error('reserve_not_held');
-  // FIFO lot consumption inside the same call; the account UPDATE above already won.
+  if (!held) throw new Error('reserve_not_held');
   const lots = (
     await env.DB.prepare(
       'SELECT id,remaining FROM credit_lots WHERE user_id=? AND remaining>0 ORDER BY created_at, rowid',
@@ -92,22 +95,34 @@ export async function commitReserved(env, { userId, amount, operationKey, meta =
       .bind(userId)
       .all()
   ).results;
+  const ledgerId = crypto.randomUUID();
+  const statements = [
+    env.DB.prepare(
+      'UPDATE credits_accounts SET balance=balance-?, reserved=reserved-?, updated_at=? WHERE user_id=? AND reserved>=?',
+    ).bind(amount, amount, nowIso(), userId, amount),
+    env.DB.prepare(
+      'INSERT INTO credits_ledger(id,user_id,delta,balance_after,kind,operation_key,source_order,lot_id,created_at) SELECT ?,?,?,NULL,?,?,?,?,? WHERE changes()=1',
+    ).bind(ledgerId, userId, -amount, 'spend', operationKey, meta || null, null, nowIso()),
+  ];
   let left = amount;
-  const statements = [];
   for (const lot of lots) {
     if (left <= 0) break;
     const take = Math.min(left, lot.remaining);
-    statements.push(env.DB.prepare('UPDATE credit_lots SET remaining=remaining-? WHERE id=?').bind(take, lot.id));
+    statements.push(
+      env.DB.prepare(
+        "UPDATE credit_lots SET remaining=remaining-? WHERE id=? AND EXISTS(SELECT 1 FROM credits_ledger WHERE user_id=? AND kind='spend' AND operation_key=?)",
+      ).bind(take, lot.id, userId, operationKey),
+    );
     left -= take;
   }
-  const ledgerId = crypto.randomUUID();
-  statements.push(
-    env.DB.prepare(
-      "INSERT INTO credits_ledger(id,user_id,delta,balance_after,kind,operation_key,source_order,lot_id,created_at) VALUES(?,?,?,?,'spend',?,?,?,?)",
-    ).bind(ledgerId, userId, -amount, account.balance, operationKey, meta || null, null, nowIso()),
-  );
   await env.DB.batch(statements);
-  return { committed: true, ledgerId, balanceAfter: account.balance };
+  const written = await env.DB.prepare(
+    "SELECT id FROM credits_ledger WHERE user_id=? AND kind='spend' AND operation_key=?",
+  )
+    .bind(userId, operationKey)
+    .first();
+  if (!written) throw new Error('reserve_not_held');
+  return { committed: true, ledgerId, balanceAfter: held.balance - amount };
 }
 
 /** Releases a reservation after failure/abort. Idempotent per operation. */

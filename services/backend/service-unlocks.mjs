@@ -200,7 +200,7 @@ export async function replayUnlock(env, userId, input) {
 export async function reserveUnlock(env, userId, c, revision, input, market = 'VN') {
   const replay = await replayUnlock(env, userId, input);
   if (replay) return replay;
-  const q = await quoteUnlock(env, userId, c, revision, input),
+  const q = await quoteUnlock(env, userId, c, revision, input, Date.now(), market),
     sel = input.selection;
   if (!sel || sel.revision !== revision || sel.version !== q.version || sel.scopeKey !== q.scopeKey)
     fail('quote_changed');
@@ -212,9 +212,9 @@ export async function reserveUnlock(env, userId, c, revision, input, market = 'V
     iso = new Date(now).toISOString(),
     module = SERVICE_CATALOG.find(s => s.id === input.serviceId).module;
   const pending = await env.DB.prepare(
-    "SELECT id FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND status='running'",
+    "SELECT id FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND status='running' AND market=?",
   )
-    .bind(userId, module, q.scopeKey)
+    .bind(userId, module, q.scopeKey, market === 'US' ? 'US' : 'VN')
     .first();
   if (pending) fail('purchase_in_progress');
   const us = market === 'US';
@@ -227,7 +227,7 @@ export async function reserveUnlock(env, userId, c, revision, input, market = 'V
       env.DB.prepare(
         `INSERT INTO service_unlock_operations(id,user_id,operation_id,request_hash,config_revision,module,service_id,offer_id,scope_key,members_json,credits_json,points,status,expires_at,created_at,updated_at,market)
      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,'running',?,?,?,'US'
-     AND NOT EXISTS(SELECT 1 FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND status='running')
+     WHERE NOT EXISTS(SELECT 1 FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND status='running')
      AND (SELECT COUNT(*) || ':' || COALESCE(SUM(version),0) FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND market='US')=?
      ON CONFLICT(user_id,operation_id) DO NOTHING`,
       ).bind(

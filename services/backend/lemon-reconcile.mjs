@@ -109,8 +109,15 @@ export async function reconcileLemon(env, { now = Date.now(), limit = 50 } = {})
       try {
         const payload = JSON.parse(receipt.payload_json || '{}');
         const a = payload?.data?.attributes || {};
-        // Provider reports cumulative refunded cents (refund_amount if present, else total of this refund event chain).
-        const cumulative = Number(a.refund_amount ?? a.total ?? a.refunded_total ?? 0);
+        // Lemon order object reports the cumulative refunded amount in cents as
+        // `refunded_amount`. Without it we cannot compute a delta — park the
+        // receipt for the operator instead of guessing (never treat unknown as 0
+        // or as full refund).
+        const cumulative = Number(a.refunded_amount);
+        if (!Number.isSafeInteger(cumulative) || cumulative < 0) {
+          report.failed.push({ receipt: receipt.id, error: 'refund_amount_missing' });
+          continue;
+        }
         const result = await refundLemonOrder(env, receipt.local_order_id, cumulative, now);
         await env.DB.prepare('UPDATE lemon_webhook_receipts SET processed=1 WHERE id=?').bind(receipt.id).run();
         report.refunds.push({ receipt: receipt.id, order: receipt.local_order_id, ...result });

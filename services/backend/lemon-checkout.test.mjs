@@ -81,7 +81,7 @@ test('checkout creates one server-owned order per (user, requestKey) — retry r
   assert.equal(a.order.checkoutUrl, b.order.checkoutUrl);
   assert.equal(calls.length, 1); // retry never creates a second provider checkout
   // The provider payload carries only the opaque local order id as custom data.
-  assert.equal(calls[0].body.data.attributes.custom_data.orderId, a.order.id);
+  assert.equal(calls[0].body.data.attributes.checkout_data.custom.orderId, a.order.id);
   assert.equal(JSON.stringify(calls[0].body).includes('sam@example.com'), true);
   assert.equal(JSON.stringify(calls[0].body.data.attributes).includes('custom_price'), false);
 });

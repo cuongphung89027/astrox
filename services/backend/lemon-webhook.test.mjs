@@ -189,3 +189,45 @@ test('signature helper: correct hex passes, wrong secret fails, length-safe', as
   assert.equal(await verifyLemonSignature(body, 'deadbeef', SECRET), false);
   assert.equal(await verifyLemonSignature(body, '', SECRET), false);
 });
+
+// --- Reviewer regression (2026-09-28): fulfillment vs credit failure ----------
+test('fulfillment failure returns 5xx and a retry credits the wallet exactly once', async () => {
+  const env = fixture();
+  const id = await seedOrder(env, {});
+  await env.DB.prepare("UPDATE lemon_orders SET store_id='11111', variant_id='424242' WHERE user_id='u1'").run();
+  const payload = event((await env.DB.prepare('SELECT id FROM lemon_orders').first()).id);
+  const originalBatch = env.DB.batch;
+  env.DB.batch = async () => {
+    throw Error('simulated D1 failure');
+  };
+  const failed = await handleLemonWebhook(env, signedRequest(payload));
+  env.DB.batch = originalBatch;
+  assert.equal(failed.status, 503); // provider retries
+  let order = await env.DB.prepare('SELECT status FROM lemon_orders').first();
+  assert.equal(order.status, 'pending'); // NOT fulfilled without the ledger row
+  assert.equal((await creditsBalance(env, 'u1')).balance, 0);
+  const retry = await handleLemonWebhook(env, signedRequest(payload));
+  assert.equal(retry.status, 200);
+  assert.equal((await creditsBalance(env, 'u1')).balance, 10); // 5 + 5 first-topup
+  order = await env.DB.prepare('SELECT status FROM lemon_orders').first();
+  assert.equal(order.status, 'fulfilled');
+});
+
+test('refund receipts persist the provider payload and reconcile reads refunded_amount', async () => {
+  const env = fixture();
+  await seedOrder(env, {});
+  await env.DB.prepare("UPDATE lemon_orders SET store_id='11111', variant_id='424242' WHERE user_id='u1'").run();
+  const id = (await env.DB.prepare('SELECT id FROM lemon_orders').first()).id;
+  await handleLemonWebhook(env, signedRequest(event(id)));
+  const refund = event(id, { status: 'refunded', refunded_amount: 499 });
+  refund.meta.event_name = 'order_refunded';
+  await handleLemonWebhook(env, signedRequest(refund));
+  const receipt = await env.DB.prepare(
+    "SELECT payload_json FROM lemon_webhook_receipts WHERE event_name='order_refunded'",
+  ).first();
+  assert.ok(receipt.payload_json && receipt.payload_json.includes('refunded_amount'));
+  const { reconcileLemon } = await import('./lemon-reconcile.mjs');
+  const report = await reconcileLemon(env);
+  assert.equal(report.refunds[0].deltaCredits, 5);
+  assert.equal((await creditsBalance(env, 'u1')).balance, 5); // bonus credits remain
+});

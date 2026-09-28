@@ -53,7 +53,7 @@ export async function handleLemonWebhook(env, request) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw)).then(hex);
   try {
     await env.DB.prepare(
-      'INSERT OR IGNORE INTO lemon_webhook_receipts(id,event_name,lemon_order_id,local_order_id,environment,store_id,payload_digest,received_at) VALUES(?,?,?,?,?,?,?,?)',
+      'INSERT OR IGNORE INTO lemon_webhook_receipts(id,event_name,lemon_order_id,local_order_id,environment,store_id,payload_digest,payload_json,received_at) VALUES(?,?,?,?,?,?,?,?,?)',
     )
       .bind(
         crypto.randomUUID(),
@@ -63,6 +63,8 @@ export async function handleLemonWebhook(env, request) {
         environment,
         storeId,
         digest,
+        // Reconciliation (refunds) replays provider facts from this payload.
+        raw.slice(0, 60000),
         new Date().toISOString(),
       )
       .run();
@@ -101,13 +103,26 @@ export async function handleLemonWebhook(env, request) {
     return reply(200, { ok: true, credited: false, problems: snapshot.problems || ['status_or_currency'] });
   }
 
-  // Exactly-once credit: operation key pins this order; UNIQUE constraint wins races.
-  await creditPurchase(env, {
-    userId: order.user_id,
-    amount: order.credits,
-    kind: order.package_id?.startsWith('bonus') ? 'bonus' : 'purchase',
-    orderId: `lemon:${order.id}`,
-  }).catch(() => {});
+  // Exactly-once credit: the order is only marked fulfilled AFTER the credits
+  // ledger row exists. Any failure returns 5xx so Lemon retries the event —
+  // a replay then re-enters here because the order is still pending.
+  let grant;
+  try {
+    grant = await creditPurchase(env, {
+      userId: order.user_id,
+      amount: order.credits,
+      kind: order.package_id?.startsWith('bonus') ? 'bonus' : 'purchase',
+      orderId: `lemon:${order.id}`,
+    });
+  } catch (e) {
+    return reply(503, { error: 'credit_pending_retry', detail: String(e?.message || e).slice(0, 120) });
+  }
+  const ledgerRow = await env.DB.prepare(
+    "SELECT id FROM credits_ledger WHERE user_id=? AND kind IN ('purchase','bonus') AND operation_key=?",
+  )
+    .bind(order.user_id, `credit:lemon:${order.id}`)
+    .first();
+  if (!ledgerRow) return reply(503, { error: 'credit_pending_retry' });
   const credited = await env.DB.prepare(
     "UPDATE lemon_orders SET status='fulfilled', lemon_order_id=?, updated_at=? WHERE id=? AND status IN ('pending','paid')",
   )

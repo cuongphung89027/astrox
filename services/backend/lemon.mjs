@@ -69,9 +69,12 @@ export async function createLemonCheckout(env, config, { userId, packageId, requ
         data: {
           type: 'checkouts',
           attributes: {
-            // Opaque local order id is the ONLY custom data — the webhook maps back through it.
-            custom_data: { orderId: id },
-            checkout_data: { email: String(email || '').slice(0, 320) },
+            // Lemon contract: custom data rides in checkout_data.custom and is echoed
+            // back on webhook events (meta.custom_data). Opaque local order id only.
+            checkout_data: {
+              email: String(email || '').slice(0, 320),
+              custom: { orderId: id },
+            },
             product_options: {
               enabled_variants: [pack.variantId],
               redirect_url: `https://theastrox.space/en/profile?topup=return`,

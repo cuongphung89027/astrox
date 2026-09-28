@@ -2,18 +2,18 @@
  * Btn — nút/anchor chuẩn của AstroX: 3 biến thể (primary son / ghost glass /
  * gold kim) × 3 cỡ. Hỗ trợ href (render <Link>) hoặc button. Hover nâng nhẹ.
  */
-import Link from "next/link";
-import type { ReactNode } from "react";
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 
-type Variant = "primary" | "ghost" | "gold";
-type Size = "sm" | "md" | "lg";
+type Variant = 'primary' | 'ghost' | 'gold';
+type Size = 'sm' | 'md' | 'lg';
 
 interface BtnProps {
   children: ReactNode;
   variant?: Variant;
   size?: Size;
   href?: string;
-  type?: "button" | "submit";
+  type?: 'button' | 'submit';
   onClick?: () => void;
   disabled?: boolean;
   /** Hiện mũi tên → chạy nhẹ khi hover. */
@@ -23,23 +23,23 @@ interface BtnProps {
 }
 
 const SIZES: Record<Size, string> = {
-  sm: "px-3.5 py-1.5 text-sm gap-1.5",
-  md: "px-5 py-2.5 text-sm gap-2",
-  lg: "px-6 py-3 text-base gap-2",
+  sm: 'px-3.5 py-1.5 text-sm gap-1.5',
+  md: 'px-5 py-2.5 text-sm gap-2',
+  lg: 'px-6 py-3 text-base gap-2',
 };
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-son text-white shadow-[var(--shadow-pop)] hover:-translate-y-0.5 active:translate-y-0",
-  ghost: "glass text-muc hover:-translate-y-0.5 active:translate-y-0",
-  gold: "bg-kim text-muc shadow-[0_14px_34px_-12px_rgba(199,134,10,0.55)] hover:-translate-y-0.5 active:translate-y-0",
+  primary: 'bg-son text-white shadow-[var(--shadow-pop)] hover:-translate-y-0.5 active:translate-y-0',
+  ghost: 'glass text-muc hover:-translate-y-0.5 active:translate-y-0',
+  gold: 'bg-kim text-muc shadow-[0_14px_34px_-12px_rgba(199,134,10,0.55)] hover:-translate-y-0.5 active:translate-y-0',
 };
 
 export function Btn({
   children,
-  variant = "primary",
-  size = "md",
+  variant = 'primary',
+  size = 'md',
   href,
-  type = "button",
+  type = 'button',
   onClick,
   disabled,
   arrow = false,
@@ -47,14 +47,14 @@ export function Btn({
   ariaLabel,
 }: BtnProps) {
   const cls = [
-    "group/btn inline-flex items-center justify-center rounded-full font-semibold transition-all duration-200",
+    'group/btn inline-flex items-center justify-center rounded-full font-semibold transition-all duration-200',
     SIZES[size],
     VARIANTS[variant],
-    disabled ? "pointer-events-none opacity-50" : "",
-    className ?? "",
+    disabled ? 'pointer-events-none opacity-50' : '',
+    className ?? '',
   ]
     .filter(Boolean)
-    .join(" ");
+    .join(' ');
 
   const inner = (
     <>

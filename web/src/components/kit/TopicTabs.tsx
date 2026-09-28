@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
 /**
  * TopicTabs — segmented control chỉ báo trượt (pattern tabs-sliding,
  * transitions.dev): JS đo offset của tab active ghi lên pill, CSS giữ mượt.
  * Hỗ trợ phím ←/→ (roving focus).
  */
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 export interface TabItem {
   id: string;
@@ -32,12 +32,12 @@ export function TopicTabs({ items, value, onChange, ariaLabel, className }: Topi
       const pill = pillRef.current;
       const btn = tabRefs.current.get(value);
       if (!pill || !btn) return;
-      if (!animate) pill.style.transition = "none";
+      if (!animate) pill.style.transition = 'none';
       pill.style.transform = `translateX(${btn.offsetLeft}px)`;
       pill.style.width = `${btn.offsetWidth}px`;
       if (!animate) {
         void pill.offsetHeight; // ép reflow rồi mới trả lại transition
-        pill.style.transition = "";
+        pill.style.transition = '';
       }
     },
     [value],
@@ -50,17 +50,17 @@ export function TopicTabs({ items, value, onChange, ariaLabel, className }: Topi
 
   useEffect(() => {
     const bar = barRef.current;
-    if (!bar || typeof ResizeObserver === "undefined") return;
+    if (!bar || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(() => place(false));
     ro.observe(bar);
     return () => ro.disconnect();
   }, [place]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
     e.preventDefault();
-    const idx = items.findIndex((it) => it.id === value);
-    const next = e.key === "ArrowRight" ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length;
+    const idx = items.findIndex(it => it.id === value);
+    const next = e.key === 'ArrowRight' ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length;
     const item = items[next];
     onChange(item.id);
     tabRefs.current.get(item.id)?.focus();
@@ -72,19 +72,19 @@ export function TopicTabs({ items, value, onChange, ariaLabel, className }: Topi
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
-      className={`glass relative inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className ?? ""}`}
+      className={`glass relative inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className ?? ''}`}
     >
       <span
         ref={pillRef}
         aria-hidden="true"
         className="absolute left-0 top-1 h-[calc(100%-0.5rem)] w-0 rounded-full bg-white shadow-[var(--shadow-glass)] transition-[transform,width] duration-[250ms] ease-[var(--ease-viet)] will-change-[transform,width]"
       />
-      {items.map((item) => {
+      {items.map(item => {
         const selected = item.id === value;
         return (
           <button
             key={item.id}
-            ref={(el) => {
+            ref={el => {
               tabRefs.current.set(item.id, el);
             }}
             type="button"
@@ -93,7 +93,7 @@ export function TopicTabs({ items, value, onChange, ariaLabel, className }: Topi
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(item.id)}
             className={`relative z-[1] whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold transition-colors duration-200 ${
-              selected ? "text-muc" : "text-muc-2 hover:text-muc"
+              selected ? 'text-muc' : 'text-muc-2 hover:text-muc'
             }`}
           >
             {item.label}

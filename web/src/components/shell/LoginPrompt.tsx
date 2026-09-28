@@ -1,13 +1,15 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import {usePathname} from "next/navigation";
-import { useAuth } from "@/lib/auth";
-import { closeLoginDialog, openLoginDialog, useLoginDialogOpen } from "@/lib/login-dialog";
-import { hasTermsConsent, saveTermsConsent, termsHref } from "@/lib/terms";
-import { GoogleG, ZaloWordmark } from "@/components/kit/BrandLogos";
-import styles from "./LoginPrompt.module.css";
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { closeLoginDialog, openLoginDialog, useLoginDialogOpen } from '@/lib/login-dialog';
+import { hasTermsConsent, saveTermsConsent, termsHref } from '@/lib/terms';
+import { GoogleG, ZaloWordmark } from '@/components/kit/BrandLogos';
+import { moduleRoute } from '@/lib/locale';
+import { useLocale } from '@/i18n/LocaleProvider';
+import styles from './LoginPrompt.module.css';
 
 /**
  * Popup đăng nhập trung tâm — mọi nút "Đăng nhập" trên site đều mở popup này
@@ -19,14 +21,15 @@ import styles from "./LoginPrompt.module.css";
  * ghi nhớ theo TERMS_VERSION — đổi phiên bản điều khoản thì hỏi lại.
  */
 export function LoginPrompt() {
-  const pathname=usePathname();
+  const t = useLocale();
+  const pathname = usePathname();
   const { ready, loggedIn, zaloLogin } = useAuth();
   const open = useLoginDialogOpen();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const checkboxRef = useRef<HTMLInputElement>(null);
   const invited = useRef(false);
   const [consent, setConsent] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   // Lần đầu mount: hiện checkbox theo sự đồng ý đã lưu. setTimeout(0) — đọc
   // localStorage sau khi hydration xong (pattern chung của app, tránh lệch SSR).
@@ -37,12 +40,12 @@ export function LoginPrompt() {
 
   // Mời khách một lần mỗi lượt ghé thăm (đóng rồi thì không tự mở lại trong phiên).
   useEffect(() => {
-    if (["/banggia","/dieukhoan"].includes(pathname)) return;
+    if ([moduleRoute('pricing', t.locale), moduleRoute('terms', t.locale)].includes(pathname)) return;
     if (ready && !loggedIn && !invited.current) {
       invited.current = true;
       openLoginDialog();
     }
-  }, [ready, loggedIn, pathname]);
+  }, [ready, loggedIn, pathname, t]);
 
   // Đồng bộ store ↔ <dialog> native (focus trap + Esc gratis từ showModal).
   useEffect(() => {
@@ -51,7 +54,7 @@ export function LoginPrompt() {
     if (open && !dialog.open) {
       const previousOverflow = document.body.style.overflow;
       dialog.showModal();
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
       return () => {
         dialog.close();
         document.body.style.overflow = previousOverflow;
@@ -64,17 +67,17 @@ export function LoginPrompt() {
   // sync store để nút Đăng nhập lần sau vẫn mở lại được thay vì no-op.
   function handleNativeClose() {
     if (open) closeLoginDialog();
-    document.body.style.overflow = "";
+    document.body.style.overflow = '';
   }
 
   function close() {
-    setError("");
+    setError('');
     closeLoginDialog();
   }
 
   function proceedZalo() {
     if (!consent) {
-      setError("Bạn cần đồng ý điều khoản để tiếp tục.");
+      setError(t.t('login.consentError'));
       checkboxRef.current?.focus();
       return;
     }
@@ -83,54 +86,90 @@ export function LoginPrompt() {
   }
 
   return (
-    <dialog ref={dialogRef} className={styles.dialog} aria-labelledby="login-prompt-title" aria-describedby="login-prompt-description" onClose={handleNativeClose}
-      onCancel={event => { event.preventDefault(); close(); }}
-      onClick={event => { if (event.target === event.currentTarget) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) close();
-      } }}>
-      <button type="button" className={styles.close} aria-label="Đóng hộp thoại đăng nhập" onClick={close} autoFocus>×</button>
+    <dialog
+      ref={dialogRef}
+      className={styles.dialog}
+      aria-labelledby="login-prompt-title"
+      aria-describedby="login-prompt-description"
+      onClose={handleNativeClose}
+      onCancel={event => {
+        event.preventDefault();
+        close();
+      }}
+      onClick={event => {
+        if (event.target === event.currentTarget) {
+          const rect = event.currentTarget.getBoundingClientRect();
+          if (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
+          )
+            close();
+        }
+      }}
+    >
+      <button type="button" className={styles.close} aria-label={t.t('login.closeAria')} onClick={close} autoFocus>
+        ×
+      </button>
       <header className={styles.hero}>
         <div className={styles.brand}>
           {/* eslint-disable-next-line @next/next/no-img-element -- Original brand asset. */}
           <img className={styles.logo} src="/assets/logo.png" alt="AstroX" width={56} height={56} />
         </div>
-        <h2 id="login-prompt-title">Chào bạn.</h2>
-        <p id="login-prompt-description" className={styles.description}>Đăng nhập để lưu hành trình của bạn.</p>
+        <h2 id="login-prompt-title">{t.t('login.title')}</h2>
+        <p id="login-prompt-description" className={styles.description}>
+          {t.t('login.description')}
+        </p>
         <span className={styles.orbit} aria-hidden="true" />
       </header>
       <div className={styles.body}>
-      <button type="button" className={styles.zalo} onClick={proceedZalo} aria-disabled={!consent}>
-        <ZaloWordmark size={20} />
-        <span>Tiếp tục với Zalo</span>
-        <span className={styles.arrow} aria-hidden="true">↗</span>
-      </button>
-      <button type="button" className={styles.google} disabled>
-        <GoogleG size={20} />
-        <span>Google</span>
-        <small>Đang phát triển</small>
-      </button>
-      <p className={styles.consentError} role={error ? "alert" : undefined}>{error}</p>
-      <div className={styles.consent}>
-        <input
-          ref={checkboxRef}
-          aria-labelledby="login-consent-label"
-          type="checkbox"
-          checked={consent}
-          onChange={event => {
-            setConsent(event.target.checked);
-            if (event.target.checked) setError("");
-          }}
-        />
-        <span id="login-consent-label">
-          Tôi đồng ý với{" "}
-          <Link href={termsHref("terms")} onClick={close} aria-label="Điều khoản sử dụng">Điều khoản sử dụng</Link>,{" "}
-          <Link href={termsHref("disclaimer")} onClick={close} aria-label="Tuyên bố miễn trừ trách nhiệm">Tuyên bố miễn trừ trách nhiệm</Link>{" "}
-          và <Link href={termsHref("privacy")} onClick={close} aria-label="Thỏa thuận xử lý và bảo mật thông tin cá nhân">Thỏa thuận xử lý và bảo mật thông tin cá nhân</Link>.
-        </span>
-      </div>
+        <button type="button" className={styles.zalo} onClick={proceedZalo} aria-disabled={!consent}>
+          <ZaloWordmark size={20} />
+          <span>{t.t('login.continueZalo')}</span>
+          <span className={styles.arrow} aria-hidden="true">
+            ↗
+          </span>
+        </button>
+        <button type="button" className={styles.google} disabled>
+          <GoogleG size={20} />
+          <span>Google</span>
+          <small>{t.t('login.googleSoon')}</small>
+        </button>
+        <p className={styles.consentError} role={error ? 'alert' : undefined}>
+          {error}
+        </p>
+        <div className={styles.consent}>
+          <input
+            ref={checkboxRef}
+            aria-labelledby="login-consent-label"
+            type="checkbox"
+            checked={consent}
+            onChange={event => {
+              setConsent(event.target.checked);
+              if (event.target.checked) setError('');
+            }}
+          />
+          <span id="login-consent-label">
+            {t.t('login.consentAgree')}{' '}
+            <Link href={termsHref('terms')} onClick={close} aria-label={t.t('login.terms')}>
+              {t.t('login.terms')}
+            </Link>
+            ,{' '}
+            <Link href={termsHref('disclaimer')} onClick={close} aria-label={t.t('login.disclaimer')}>
+              {t.t('login.disclaimer')}
+            </Link>{' '}
+            {t.t('login.and')}{' '}
+            <Link href={termsHref('privacy')} onClick={close} aria-label={t.t('login.privacy')}>
+              {t.t('login.privacy')}
+            </Link>
+            .
+          </span>
+        </div>
 
-      <button type="button" className={styles.later} onClick={close}>Khám phá trước</button>
+        <button type="button" className={styles.later} onClick={close}>
+          {t.t('login.later')}
+        </button>
       </div>
     </dialog>
   );

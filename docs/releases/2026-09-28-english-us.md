@@ -1,8 +1,8 @@
 # Release 28/09/2026 — English/US parity (market-isolated billing + Admin)
 
 - Merge fast-forward `codex/history-amount-sign` vào main: release SHA `422d4b6`, hotfix `7828c80` (SHA live cuối). Đã push `main` lên cả hai remotes (origin `ngthson553-create/astrox`, upstream `cuongphung89027/astrox`).
-- Worker `astrox-api`: deploy `scripts/deploy-worker.mjs` — `80d36f94` từ `422d4b6`, thay bằng `4aa0b4e2-73cd-4a48-b138-52ee7f29613f` từ `7828c80`; `--keep-vars` giữ `ZALO_BROWSER_FALLBACK_ENABLED=true`, binding D1 + cron `* * * * *` nguyên vẹn.
-- Pages `theastrox`: tự build từ upstream — `a44c331d` (`422d4b6`) rồi `c7415b6c-8a96-44d9-844f-e346e397cc7e` (`7828c80`, Active).
+- Worker `astrox-api`: deploy `scripts/deploy-worker.mjs` — live cuối **`943efcaa-e2b3-46f2-91e3-3e7a90b8e2c6`** từ `d55bc68` (code `7828c80`; chuỗi `80d36f94`→`4aa0b4e2` bị thay trong cùng đợt release); `--keep-vars` giữ `ZALO_BROWSER_FALLBACK_ENABLED=true`, binding D1 + cron `* * * * *` nguyên vẹn.
+- Pages `theastrox`: tự build từ upstream — live cuối **`cbc675d1-7210-4098-9ae6-b3c7061b43af`** từ `d55bc68` (trước đó `a44c331d` `422d4b6` → `c7415b6c` `7828c80`). Các commit docs-only sau note này chỉ rebuild Pages với code không đổi.
 
 ## Migration D1 (additive, theo thứ tự runbook)
 

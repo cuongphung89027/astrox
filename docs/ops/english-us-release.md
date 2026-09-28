@@ -90,8 +90,8 @@ reconciliation, or reading order/ledger history (ROLLBACK-01).
 | item | value |
 |---|---|
 | Release SHA | `422d4b6` + hotfix `7828c80` (live), both remotes fast-forwarded from `db614b2` |
-| Worker deployment id | `4aa0b4e2-73cd-4a48-b138-52ee7f29613f` (supersedes `80d36f94-8d93-4631-a0b8-b81095ee39c8`) |
-| Pages deployment id | `c7415b6c-8a96-44d9-844f-e346e397cc7e` (supersedes `a44c331d-9ba1-4c61-af32-e10799a9a66b`) |
+| Worker deployment id | `943efcaa-e2b3-46f2-91e3-3e7a90b8e2c6` from `d55bc68` (chain: `80d36f94`@`422d4b6` → `4aa0b4e2`@`7828c80`) |
+| Pages deployment id | `cbc675d1-7210-4098-9ae6-b3c7061b43af` from `d55bc68` (chain: `a44c331d` → `c7415b6c`) |
 | Migrations applied | All 8, manual `d1 execute` in runbook order; VN invariants unchanged; US tables empty; backup `~/astrox-backups/d1-pre-en-us-20260928.sql` |
 | Flags state | AX_EN_ROUTING unset, lemon.enabled=false, google.enabled=false, lemon.environment=test |
 | Rollback targets | Worker `56da6e6d` / Pages `6dfb9e6c` (both `db614b2`) — never roll Worker back past `lemon_orders` schema |

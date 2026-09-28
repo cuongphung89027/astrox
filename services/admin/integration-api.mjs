@@ -329,7 +329,7 @@ export async function handleConfiguredAi(request, env) {
       try {
         const result = await executeProviderChain(
           c,
-          { messages: input.messages, serviceId: input.serviceId },
+          { messages: input.messages, serviceId: input.serviceId, locale: input.locale },
           ref => readSecret(env, ref),
           { allowHosts: hosts(env), healthStore: providerHealth(env) },
         );
@@ -375,7 +375,7 @@ export async function handleConfiguredAi(request, env) {
 
     const result = await executeProviderChain(
       c,
-      { messages: input.messages, serviceId: input.serviceId },
+      { messages: input.messages, serviceId: input.serviceId, locale: input.locale },
       ref => readSecret(env, ref),
       { allowHosts: hosts(env), healthStore: providerHealth(env) },
     );

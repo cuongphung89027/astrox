@@ -248,6 +248,70 @@ test('free AI stays local when topups are enabled and persists sanitized metrics
     globalThis.fetch = original;
   }
 });
+test('English locale reaches the provider chain: English policy, no Vietnamese policy, Vietnamese reply repaired', async () => {
+  const { saveSecret } = await import('./store.mjs');
+  const env = testEnv();
+  env.PROVIDER_ALLOWED_HOSTS = 'api.example.com';
+  await state(env);
+  const c = defaultConfig();
+  c.ai.enabled = true;
+  c.ai.chain = ['a'];
+  c.ai.providers = [
+    {
+      id: 'a',
+      name: 'A',
+      model: 'model',
+      protocol: 'chat',
+      baseUrl: 'https://api.example.com/v1',
+      enabled: true,
+      timeoutMs: 1000,
+      retries: 0,
+      maxTokens: 100,
+      temperature: 0.5,
+      secretRef: 'provider:a',
+    },
+  ];
+  const id = 'tuvi--tim-hieu-ban-than--tinh-cach';
+  c.billing.services.find(s => s.id === 'tuvi').status = 'free';
+  c.billing.services.find(s => s.id === id).status = 'free';
+  await saveSecret(env, 'owner', 'provider:a', 'test');
+  await publish(env, 'owner', c, 0, 'test');
+  const vietnameseReply =
+    'Bạn có tính cách ôn hòa và sâu sắc. Cung Mệnh lập tại Ngọ với Thiên Phủ đồng cung cho thấy người đứng đắn, uy nghi và được người khác tin tưởng. Sự nghiệp của bạn thăng tiến mạnh vào đại vận thứ ba, đặc biệt ở các lĩnh vực quản lý và tài chính.';
+  const englishRewrite =
+    'Your character is gentle and perceptive. The Life palace at Wu with Tian Fu shows a dignified, trustworthy person whose career advances strongly in the third decade, especially in management and finance.';
+  const sent = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = async (u, o) => {
+    sent.push(JSON.parse(o.body));
+    return Response.json({
+      choices: [
+        { message: { role: 'assistant', content: sent.length === 1 ? vietnameseReply : englishRewrite }, finish_reason: 'stop' },
+      ],
+    });
+  };
+  try {
+    const res = await handleConfiguredAi(
+      request('/api/ai', { serviceId: id, locale: 'en', messages: [{ role: 'user', content: 'chart data' }] }),
+      env,
+    );
+    const body = await res.json();
+    assert.equal(res.status, 200);
+    assert.equal(body.languagePolicyVersion, 'en-reading-2');
+    const system = sent[0].messages.filter(m => m.role === 'system').map(m => m.content);
+    assert.ok(system.some(t => t.includes('natural, direct English')), 'English system prompt must reach the provider');
+    assert.ok(!system.some(t => t.includes('Viết toàn bộ')), 'Vietnamese reading policy must never be sent for en');
+    assert.equal(sent.length, 2, 'a Vietnamese reply must trigger exactly one English repair call');
+    assert.ok(
+      sent[1].messages.some(m => m.role === 'user' && m.content.includes('tính cách ôn hòa')),
+      'repair resends the original reading for a full rewrite',
+    );
+    assert.equal(body.choices[0].message.content, englishRewrite);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test('published leaf templates override client prose and engine switch blocks provider', async () => {
   const { saveSecret } = await import('./store.mjs');
   const env = testEnv();

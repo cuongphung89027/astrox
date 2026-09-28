@@ -34,5 +34,17 @@ Branch `codex/english-us`, worktree `../astrox-english-us`. Base `db614b2` (= or
 ## G2 status note (honest)
 Engine/label/locale plumbing for all 9 modules DONE (458/458 tests). REMAINING before G2 can pass: per-component EN pass over decorative panel copy (LunarCalendar 946 lines, PalmReader, TopicsPanel hints, compat/numerology/kinhdich client strings) — EN pages render EN charts/prompts/tabs but some panel strings remain VI. Task 21 certification must FAIL those rows; finish copy pass before RC.
 
-## Next up
-Tasks 11–14 commerce (Google identity, credits ledger, market billing) → 15–18 Lemon → 19–24.
+| 11 Google identity backend | 8c2f76d + 6c92b7a | DONE — google-identities.sql (nonce col + DROP idx_app_users_email vì email không phải khóa; zalo_identities tái dụng làm identity abstraction với UNIQUE(provider,provider_subject)); google-auth.mjs (state+PKCE+nonce single-use, tokeninfo verify + aud/iss/exp/nonce/email_verified local assert, no auto-link, atomic first login); routes /auth/google/{login,callback}; settings integrations.google (config.mjs + admin/config.ts default + legacy import merge); 9 tests. |
+| 12 Client Google + namespace | f226234 | DONE — /api/me trả provider; accountOwner() `google:`/`zalo:` namespace (legacy zalo keys byte-identical); googleLogin() qua AUTH_API_BASE; LoginPrompt EN: Continue with Google chính, ẩn Zalo; VI giữ nguyên; 3 tests. |
+| 13 US Credits ledger | 69fa0f9 | DONE — us-credits.sql (credits_accounts CHECK, credit_lots, credits_ledger UNIQUE(user,kind,op_key), market_preferences); credits.mjs reserve/commit/release exactly-once + FIFO lots + audit SUM(delta) + market setter chặn khi reserved>0; routes /api/credits/{balance,history} + /api/market; 8 tests real SQLite (AI-01 concurrency pass). |
+| 14 Market billing — PART 1 ONLY | 4c398ac | PARTIAL — market-ai-operations.sql (market col VN default trên backend_ai_operations + service_unlock_operations); quoteUnlock/reserveUnlock/completeUnlock/refundUnlock market-aware (US unlock mua bằng reserveCredits, grants filter market); VN 10/10 giữ nguyên. |
+
+## CHECKPOINT 2026-09-28 — paused safely here (user request)
+Task 14 REMAINING (resume list, ưu tiên đúng thứ tự):
+1. ai-operations.mjs: resolveMarketPref (b.market validate + marketOf so khớp, mismatch→409 market_mismatch — MARKET-02); chargeAi nhánh US direct-paid: reserveCredits(opKey `ai:${operationId}`) → INSERT op market='US' (nếu conflict → release + replay); completeAi: op.market US → commitReserved rồi flip status; refundAi/reconcile: US → releaseReserved; VN INSERT stamp market='VN'.
+2. functions/api/ai/quote.js + quoteAi: truyền market (từ preference) vào quoteUnlock, trả market trong quote payload.
+3. Client: ai-operation.ts/use-paid-price.ts/reading-consent.ts attach market (lấy từ GET /api/market cache) vào charge/quote body.
+4. services/backend/market-billing.test.mjs: MARKET-01/02, AI-01/02 bản US (double-click, tab race, stale quote, insufficient credits, provider timeout, crash-after-AI, reconnect đọc kết quả, reconcile không cấp miễn phí), upgrade eligibility chỉ grants cùng market (đã có filter, cần test).
+5. Commit "feat: scope AI billing and grants by market".
+
+Then: Tasks 15–18 Lemon (checkout server-owned, webhook HMAC đúng một lần, refund/reconcile, rewards US) → 19–20 Admin+docs → 21–22 certification/RC → 23–24 release docs (KHÔNG deploy prod).

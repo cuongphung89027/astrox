@@ -18,5 +18,14 @@ Branch `codex/english-us`, worktree `../astrox-english-us`. Base `db614b2` (= or
 - LoginPrompt on EN still shows Zalo primary + Google disabled ("Coming soon") — Google arrives Task 11–12.
 - hourChi + VN_PROVINCES in ProfileModal still VI-only → Task 06 replaces birth place/hour input.
 
+| 06 International birth inputs | 471a947 | DONE — birth-time.ts (Intl, DST gap/ambiguity, wallTimeCandidates), birth-location.ts (VN/US/world + resolveProfileZone), zodiac natalTime zone-aware, batu VN-true-solar kept + foreign civil path, Profile placeTz/birthDst fields, EN wizard place+zone+time+DST UI, birth-rules doc; 12+tests |
+| 07 Prompts/runtime/cache by locale | 588c738 | DONE — english-prompts.ts (EN system + 34 templates + 70 tasks, full coverage enforced), renderServicePrompt locale strict (EN_PROMPT_MISSING fail-closed), runtime EN system/policy/repair (Han≥4 only), integration-api locale enum + promptsEn config merge + digest includes locale, client localeCacheKey + body.locale + aiServiceIdForPath; 443/443 |
+
+## Key implementation facts (Tasks 06–07)
+- EN AI path: `input.locale==='en'` → English system + ENGLISH_READING_POLICY only (admin VI prompts skipped); prompt settings = defaultEnglishPromptSettings() merged with `c.promptsEn` (Task 19 wires Admin editor). EN request never falls back to VI template (strict render throws EN_PROMPT_MISSING).
+- EN language repair triggers ONLY on Han runs ≥4 chars; Latin Vietnamese names legit. Policy version en-reading-1 returned on results.
+- Cache: EN readings use `en::` key prefix via state.localeCacheKey; callers (Tasks 08–10) must use it + pass locale to callAiText.
+- Birth: profile.placeTz (IANA) + profile.birthDst('first'|'second'); resolveProfileZone default Asia/Ho_Chi_Minh keeps legacy charts byte-identical.
+
 ## Next up
-Task 06 (birth location/timezone) → 07 (prompt locale) → 08–10 (module translations) → G2.
+Tasks 08–10 (module translations: labels EN + EN chart facts + wire localeCacheKey/callAiText locale in module clients) → then 11–14 commerce.

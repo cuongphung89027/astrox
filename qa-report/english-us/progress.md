@@ -74,10 +74,10 @@ Then: Tasks 15–18 Lemon (checkout server-owned, webhook HMAC đúng một lầ
 | 4 commitReserved không nguyên tử | FIXED f2ac7e3 | 1 batch: UPDATE guard → INSERT WHERE changes()=1 → lot WHERE EXISTS ledger; repro: fail giữ reservation, audit ok |
 | 5 unlock US INSERT thiếu WHERE (market='0') | FIXED f2ac7e3 | WHERE added + quoteUnlock nhận market + pending check theo market |
 | 6 Google redirect sai host | FIXED f2ac7e3 | allowedReturn(path, APP_ORIGIN) → absolute URL, test 9/9 |
-| 7 Market onboarding flow thiếu | TODO | resume: chooseMarket POST helper trong api.ts + reset cache theo account + TopupPanel gate null→onboarding + AccountPage + test |
-| 8 Admin gate chưa isolate ServicesPanel/PromptsPanel | TODO | resume: PromptsPanel US sửa promptsEn; ServicesPanel US read-only coverage; test không cross-write |
-| 9 NumerologyClient EN + QA language scan | TODO | resume: dịch NumerologyClient + mở export-qa quét từ khoá Việt trên mọi route EN |
+| 7 Market onboarding flow | FIXED d517e08 | chooseMarket POST + resetMarketCache theo account; TopupPanel: market=null → MarketOnboarding dialog (US Credits / VN Point), guest bị chặn; 3 tests |
+| 8 Admin isolation | FIXED d517e08 | PromptsPanel market=US → PromptsPanelEn (sửa promptsEn, đụng config.prompts = test FAIL); ServicesPanel US → UsServicesCoverage read-only (0 edit buttons); 2 tests |
+| 9 EN flows + QA scan | FIXED d517e08 | NumerologyClient/TopicPanel/CipherBoard/TuViClient/Zodiac/KinhDich/Batu/LunarCalendar/PalmReader/Compat/PaidReadingConsent EN; export-qa thêm LANG-* scan 13 route × 27 từ khoá VI (chỉ text hiển thị) — **51 PASS · 0 FAIL**; bắt thêm bug ternary JSX thiếu {} render text thô |
 
 Repro reviewer (/tmp/astrox-review-repro.mjs): FULFILL/REFUND/COMMIT đều sạch sau fix. Dòng UNLOCK_MARKET_SQL in '0' vì script hardcode chuỗi SQL CŨ — source đã có WHERE (chứng minh bằng service-unlocks tests + market-billing tests).
-G2/G3/G4 đang MỞ LẠI theo yêu cầu — chỉ đóng lại sau khi P1-7/8/9 xong + QA language scan pass.
-Worktree SẠCH tại f2ac7e3, 518/518 tests.
+G2/G3/G4 đã đóng lại sau vòng sửa P1 (4394411): 523/523 tests, typecheck 0, lint 0 lỗi, export-QA 51/51 (thêm language scan), repro script (/tmp/astrox-review-repro.mjs) sạch cả 4 ca.
+Lưu ý: dòng UNLOCK_MARKET_SQL trong repro in '0' vì script hardcode chuỗi SQL cũ — source đã có WHERE (test riêng xác nhận).

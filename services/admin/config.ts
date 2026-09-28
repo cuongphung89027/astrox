@@ -770,7 +770,7 @@ export function publicConfig(source: AdminConfig, market: 'VN' | 'US' = 'VN') {
       packages: c.billing.packages
         .filter(p => p.enabled)
         .map(p => ({ ...p, ...quotePackage(p, c.billing.vndPerPoint) })),
-      usPackages: c.integrations.lemon.enabled
+      usPackages: c.integrations.lemon?.enabled
         ? c.integrations.lemon.packages
             .filter(p => p.enabled)
             .map(p => ({ id: p.id, name: p.name, credits: p.credits, amountUsdCents: p.amountUsdCents }))
@@ -809,5 +809,16 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
       tasks: { ...defaultEnglishPromptSettings().tasks, ...(c.promptsEn?.tasks || {}) },
     },
     engines: { ...defaultConfig().engines, ...c.engines },
+    // Configs published before the US market existed carry payos/zalo only;
+    // google/lemon must hydrate to disabled defaults or publicConfig/validateConfig throw.
+    integrations: (() => {
+      const d = defaultConfig().integrations;
+      return {
+        ...d,
+        ...c.integrations,
+        google: c.integrations?.google ?? d.google,
+        lemon: c.integrations?.lemon ?? d.lemon,
+      };
+    })(),
   };
 }

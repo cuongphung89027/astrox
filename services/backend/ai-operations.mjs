@@ -54,7 +54,10 @@ export async function chargeAi(env, request) {
   const published = await readPublished(env);
   if (!published || published.revision !== b.revision) return reply({ error: 'revision_mismatch' }, 409);
   const c = published.config,
-    service = c.billing.services.find(s => s.id === b.serviceId);
+    sharedService = c.billing.services.find(s => s.id === b.serviceId);
+  // US market: the sparse usServices overlay overrides price/status per service (P1-e).
+  const usOverlay = market.value === 'US' ? c.billing.usServices?.[b.serviceId] : null;
+  const service = usOverlay ? { ...sharedService, points: usOverlay.points, status: usOverlay.status } : sharedService;
   if (supportsUnlock(c, b.serviceId)) {
     try {
       return reply(await reserveUnlock(env, session.sub, c, published.revision, b, market.value));
@@ -178,13 +181,19 @@ export async function completeAi(env, request) {
     .bind(b.chargeId, session.sub)
     .first();
   if (opRow?.market === 'US') {
-    // Commit the reserved credits exactly once, then seal the operation with its result.
-    await commitReserved(env, {
-      userId: session.sub,
-      amount: opRow.points,
-      operationKey: `ai:${opRow.operation_id}`,
-      meta: 'ai_service',
-    }).catch(() => {});
+    // Credit commit must LAND before sealing; a swallowed failure strands the
+    // reservation on a succeeded operation. Idempotent per operation key — the
+    // client retries completeAi and the commit runs exactly once.
+    try {
+      await commitReserved(env, {
+        userId: session.sub,
+        amount: opRow.points,
+        operationKey: `ai:${opRow.operation_id}`,
+        meta: 'ai_service',
+      });
+    } catch {
+      return reply({ error: 'credit_commit_pending' }, 503);
+    }
     const value = await encrypt(await resultKey(env), b.chargeId, JSON.stringify(b.response)),
       now = Date.now();
     const rUs = await env.DB.prepare(

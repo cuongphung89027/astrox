@@ -240,6 +240,25 @@ async function browserChecks() {
     }
     await browser.close();
   }
+  // Interactive surfaces: the strings only appear after JS runs, not in static HTML.
+  const interactBrowser = await chromium.launch({ headless: true });
+  for (const [route, marker] of [
+    ['en/palm-reading', 'Mở camera'],
+    ['en/palm-reading', 'Chọn ảnh'],
+    ['en/i-ching', 'Cách lập quẻ'],
+    ['en/i-ching', 'Xóc quẻ'],
+  ]) {
+    const p2 = await interactBrowser.newPage({ viewport: { width: 390, height: 844 } });
+    await p2.goto(`http://localhost:${PORT}/${route}`, { waitUntil: 'networkidle', timeout: 20000 });
+    const text = await p2.evaluate(() => document.body.innerText);
+    record(
+      `INTERACT-${route}-${marker}`,
+      `${route} interactive "${marker}" is EN`,
+      !text.includes(marker) ? 'PASS' : 'FAIL',
+    );
+    await p2.close();
+  }
+  await interactBrowser.close();
   // Language switcher visible on the Vietnamese home.
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

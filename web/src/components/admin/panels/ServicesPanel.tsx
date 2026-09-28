@@ -17,7 +17,7 @@ const searchText = (v: string) =>
 const statuses = ['draft', 'free', 'paid', 'maintenance', 'hidden'];
 const definitions = bundleDefinitions();
 export function ServicesPanel({ config, update, market }: AdminPanelProps) {
-  if (market === 'US') return <UsServicesCoverage config={config} />;
+  if (market === 'US') return <UsServicesCoverage config={config} update={update} />;
   const [module, setModule] = useState(''),
     [query, setQuery] = useState(''),
     [status, setStatus] = useState('');
@@ -375,33 +375,66 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
 
 /** US market view (P1-8): prices/status are shared VN-side config — editing them
  *  from the US context is disabled; this view audits English readiness only. */
-function UsServicesCoverage({ config }: Pick<AdminPanelProps, 'config'>) {
-  const enTasks = Object.keys(config.promptsEn?.tasks || {});
+function UsServicesCoverage({ config, update }: Pick<AdminPanelProps, 'config' | 'update'>) {
+  const overlay = config.billing.usServices ?? {};
   const rows = config.billing.services.filter(r => r.id !== r.module && r.id !== 'experts');
-  const missing = rows.filter(r => !enTasks.includes(r.id) && r.policy !== 'session' && r.policy !== 'period');
+  const setUs = (id: string, patch: { points?: number; status?: string }) =>
+    update(d => {
+      const current = d.billing.usServices[id] ?? { points: 0, status: 'draft' };
+      d.billing.usServices[id] = { ...current, ...patch };
+    });
   return (
     <section>
-      <h2>US services (read-only)</h2>
+      <h2>US services (market overlay)</h2>
       <p className={s.notice}>
-        Giá và trạng thái dịch vụ là cấu hình dùng chung, đang quản lý trong bối cảnh Việt Nam. Chọn 🇻🇳 VN ở cổng để
-        chỉnh; ở đây chỉ kiểm tra độ phủ tiếng Anh.
+        Price and status overrides for the US market (Credits). Services without an override use the shared price. Edits
+        here never touch the Vietnamese config.
       </p>
-      <p>
-        {rows.length} dịch vụ · {rows.length - missing.length} đã có prompt EN · {missing.length} chưa có
-        (session/period không cần task riêng).
-      </p>
-      {missing.length > 0 && (
-        <details>
-          <summary>Chưa có English task ({missing.length})</summary>
-          <ul>
-            {missing.map(r => (
-              <li key={r.id}>
-                <code>{r.id}</code>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
+      <div className={s.packList}>
+        {rows.map(r => {
+          const us = overlay[r.id];
+          return (
+            <div key={r.id} className={s.packRow}>
+              <code>{r.id}</code>
+              <label>
+                <input
+                  type="number"
+                  value={us?.points ?? r.points}
+                  min={0}
+                  aria-label={'US Credits ' + r.id}
+                  onChange={e => setUs(r.id, { points: Math.max(0, Number(e.target.value) || 0) })}
+                />
+              </label>
+              <label>
+                <select
+                  value={us?.status ?? r.status}
+                  aria-label={'US status ' + r.id}
+                  onChange={e => setUs(r.id, { status: e.target.value })}
+                >
+                  {['draft', 'free', 'paid', 'maintenance', 'hidden'].map(st => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {us && (
+                <button
+                  className={s.danger}
+                  onClick={() =>
+                    update(d => {
+                      delete d.billing.usServices[r.id];
+                    })
+                  }
+                  aria-label="Remove override"
+                >
+                  ↺
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

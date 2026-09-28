@@ -653,6 +653,7 @@ export function PointsHome({ view = 'wallet' }: { view?: 'wallet' | 'earn' }) {
 
 /** US market wallet: Credits balance, purchased/bonus split, daily check-in (Task 18). */
 function useUsWallet() {
+  const { astroxUser } = useAuth();
   const [summary, setSummary] = useState<null | {
     available: number;
     balance: number;
@@ -665,7 +666,7 @@ function useUsWallet() {
   const [message, setMessage] = useState('');
   const [market, setMarket] = useState<'US' | 'VN' | null>(null);
   useEffect(() => {
-    void currentMarket().then(setMarket);
+    void currentMarket(astroxUser?.id ?? null).then(setMarket);
   }, []);
   useEffect(() => {
     if (market !== 'US') return;

@@ -1,8 +1,8 @@
 # English export certification
 
-2026-09-28T11:31:36.400Z
+2026-09-28T12:03:04.462Z
 
-**51 PASS · 0 FAIL · 3 BLOCKED**
+**55 PASS · 0 FAIL · 3 BLOCKED**
 
 | id | check | status | evidence |
 |---|---|---|---|
@@ -56,6 +56,10 @@
 | UI-webkit-1440-en/tarot | webkit 1440 /en/tarot renders | PASS | lang=en |
 | UI-webkit-1440-en/palm-reading | webkit 1440 /en/palm-reading renders | PASS | lang=en |
 | UI-webkit-1440-console | webkit 1440 no hydration errors | PASS |  |
+| INTERACT-en/palm-reading-Mở camera | en/palm-reading interactive "Mở camera" is EN | PASS |  |
+| INTERACT-en/palm-reading-Chọn ảnh | en/palm-reading interactive "Chọn ảnh" is EN | PASS |  |
+| INTERACT-en/i-ching-Cách lập quẻ | en/i-ching interactive "Cách lập quẻ" is EN | PASS |  |
+| INTERACT-en/i-ching-Xóc quẻ | en/i-ching interactive "Xóc quẻ" is EN | PASS |  |
 | UI-switcher | language switcher on VI home | PASS |  |
 | AUTH-live | Google login end-to-end (needs production/staging client) | BLOCKED | G5 dependency — operator credentials required |
 | PAY-live | Lemon checkout + webhook end-to-end (needs provider approval) | BLOCKED | G5 dependency — operator credentials required |

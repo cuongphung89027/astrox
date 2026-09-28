@@ -93,6 +93,8 @@ export type AdminConfig = {
     packages: TopupPackage[];
     services: ServicePrice[];
     promos: Promo[];
+    /** Sparse US overlay: price/status overrides keyed by service id (plan Task 19). */
+    usServices: Record<string, { points: number; status: string }>;
   };
   integrations: {
     payos: { enabled: boolean; clientId: string; returnUrl: string; cancelUrl: string; expiryMinutes: number };
@@ -199,6 +201,7 @@ export function defaultConfig(): AdminConfig {
       unlocks: defaultUnlockSettings(),
       enabled: false,
       vndPerPoint: 0,
+      usServices: {},
       packages: [],
       services: seedDiscoveryServices(
         MODULES.map(m => ({
@@ -662,7 +665,10 @@ export function publicConfig(c: AdminConfig) {
         : [],
       services: c.billing.services
         .filter(s => s.status !== 'draft' && s.status !== 'hidden')
-        .map(({ id, module, name, points, status, policy }) => ({ id, module, name, points, status, policy })),
+        .map(({ id, module, name, points, status, policy }) => {
+          const us = c.billing.usServices?.[id];
+          return { id, module, name, points: us?.points ?? points, status: us?.status ?? status, policy };
+        }),
     },
     rewards: { ...c.rewards },
     content: c.content,
@@ -672,16 +678,18 @@ export function publicConfig(c: AdminConfig) {
 
 export function hydrateConfig(c: AdminConfig): AdminConfig {
   const p = defaultPromptSettings();
+  const hydratedBilling =
+    c.billing && Array.isArray(c.billing.services)
+      ? {
+          ...c.billing,
+          unlocks: c.billing.unlocks === undefined ? defaultUnlockSettings() : c.billing.unlocks,
+          services: seedDiscoveryServices(addCouplesServices(c.billing.services)),
+          usServices: c.billing.usServices ?? {},
+        }
+      : c.billing;
   return {
     ...c,
-    billing:
-      c.billing && Array.isArray(c.billing.services)
-        ? {
-            ...c.billing,
-            unlocks: c.billing.unlocks === undefined ? defaultUnlockSettings() : c.billing.unlocks,
-            services: seedDiscoveryServices(addCouplesServices(c.billing.services)),
-          }
-        : c.billing,
+    billing: hydratedBilling,
     prompts: { templates: { ...p.templates, ...c.prompts?.templates }, tasks: { ...p.tasks, ...c.prompts?.tasks } },
     promptsEn: {
       templates: { ...defaultEnglishPromptSettings().templates, ...(c.promptsEn?.templates || {}) },

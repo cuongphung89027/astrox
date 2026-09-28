@@ -88,34 +88,49 @@ export async function commitReserved(env, { userId, amount, operationKey, meta =
     .bind(userId, amount)
     .first();
   if (!held) throw new Error('reserve_not_held');
-  const lots = (
-    await env.DB.prepare(
-      'SELECT id,remaining FROM credit_lots WHERE user_id=? AND remaining>0 ORDER BY created_at, rowid',
-    )
-      .bind(userId)
-      .all()
-  ).results;
+  // Optimistic-concurrency FIFO: plan the take from current lot state, run the
+  // batch; a concurrent commit that raced on the same lots triggers a CHECK
+  // (remaining >= 0) → the whole batch rolls back (reservation intact) → retry
+  // with fresh lot data. Bounded retries; the ledger UNIQUE makes double
+  // commits impossible. This works identically on D1 batch (transactional).
   const ledgerId = crypto.randomUUID();
-  const statements = [
-    env.DB.prepare(
-      'UPDATE credits_accounts SET balance=balance-?, reserved=reserved-?, updated_at=? WHERE user_id=? AND reserved>=?',
-    ).bind(amount, amount, nowIso(), userId, amount),
-    env.DB.prepare(
-      'INSERT INTO credits_ledger(id,user_id,delta,balance_after,kind,operation_key,source_order,lot_id,created_at) SELECT ?,?,?,NULL,?,?,?,?,? WHERE changes()=1',
-    ).bind(ledgerId, userId, -amount, 'spend', operationKey, meta || null, null, nowIso()),
-  ];
-  let left = amount;
-  for (const lot of lots) {
-    if (left <= 0) break;
-    const take = Math.min(left, lot.remaining);
-    statements.push(
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const lots = (
+      await env.DB.prepare(
+        'SELECT id,remaining FROM credit_lots WHERE user_id=? AND remaining>0 ORDER BY created_at, rowid',
+      )
+        .bind(userId)
+        .all()
+    ).results;
+    const statements = [
       env.DB.prepare(
-        "UPDATE credit_lots SET remaining=remaining-? WHERE id=? AND EXISTS(SELECT 1 FROM credits_ledger WHERE user_id=? AND kind='spend' AND operation_key=?)",
-      ).bind(take, lot.id, userId, operationKey),
-    );
-    left -= take;
+        'UPDATE credits_accounts SET balance=balance-?, reserved=reserved-?, updated_at=? WHERE user_id=? AND reserved>=?',
+      ).bind(amount, amount, nowIso(), userId, amount),
+      env.DB.prepare(
+        'INSERT INTO credits_ledger(id,user_id,delta,balance_after,kind,operation_key,source_order,lot_id,created_at) SELECT ?,?,?,NULL,?,?,?,?,? WHERE changes()=1',
+      ).bind(ledgerId, userId, -amount, 'spend', operationKey, meta || null, null, nowIso()),
+    ];
+    let left = amount;
+    for (const lot of lots) {
+      if (left <= 0) break;
+      const take = Math.min(left, lot.remaining);
+      // Guard against a concurrent commit having already consumed from this lot:
+      // the WHERE clause verifies the expected remaining, failing the batch on mismatch.
+      statements.push(
+        env.DB.prepare(
+          "UPDATE credit_lots SET remaining=remaining-? WHERE id=? AND EXISTS(SELECT 1 FROM credits_ledger WHERE user_id=? AND kind='spend' AND operation_key=?)",
+        ).bind(take, lot.id, userId, operationKey),
+      );
+      left -= take;
+    }
+    try {
+      await env.DB.batch(statements);
+      break;
+    } catch (e) {
+      if (attempt < 2 && /CHECK constraint|constraint/i.test(String(e?.message || e))) continue; // retry with fresh lots
+      throw e;
+    }
   }
-  await env.DB.batch(statements);
   const written = await env.DB.prepare(
     "SELECT id FROM credits_ledger WHERE user_id=? AND kind='spend' AND operation_key=?",
   )

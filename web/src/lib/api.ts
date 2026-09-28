@@ -78,7 +78,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
         body: JSON.stringify({
           serviceId: body.serviceId,
           promptDescriptor: body.promptDescriptor,
-          market: (await currentMarket()) ?? undefined,
+          market: (await currentMarket(ticket?.userId ?? null)) ?? undefined,
         }),
         signal,
       });
@@ -521,18 +521,26 @@ export async function lemonOrder(orderId: string): Promise<{ id: string; status:
 
 /** Market preference of the signed-in account (server-stored); null when unset. */
 let marketCache: Promise<'US' | 'VN' | null> | null = null;
-export function currentMarket(): Promise<'US' | 'VN' | null> {
-  if (!marketCache)
+let marketCacheAccount: string | null | undefined = undefined; // undefined = never fetched
+
+/** Market preference is account-scoped: the cache is keyed by the active account
+ *  id so login/logout/account-switch automatically invalidates it. */
+export function currentMarket(account?: string | number | null): Promise<'US' | 'VN' | null> {
+  const key = account != null ? String(account) : null;
+  if (marketCache === null || marketCacheAccount !== key) {
+    marketCacheAccount = key;
     marketCache = fetch(`${AUTH_API_BASE}/api/market`, { credentials: 'include' })
       .then(r => (r.ok ? r.json() : null))
       .then((d: { market?: string } | null) => (d?.market === 'US' || d?.market === 'VN' ? d.market : null))
       .catch(() => null);
+  }
   return marketCache;
 }
 
-/** Market preference is account-scoped: reset whenever the active account changes. */
+/** Explicit reset after a market choice POST or auth lifecycle change. */
 export function resetMarketCache() {
   marketCache = null;
+  marketCacheAccount = undefined;
 }
 
 /** Explicit market choice (plan Task 13/P1-7): authenticated POST, server stores it. */

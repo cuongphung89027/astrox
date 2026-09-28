@@ -199,7 +199,7 @@ export function KinhDichClient() {
       {!cast ? (
         <div className={styles.setup}>
           <div className={styles.methodHeader}>
-            <label htmlFor="kd-method">Cách lập quẻ</label>
+            <label htmlFor="kd-method">{en ? 'How to cast' : 'Cách lập quẻ'}</label>
             <select
               id="kd-method"
               className={styles.methodSelect}
@@ -219,11 +219,11 @@ export function KinhDichClient() {
             </select>
           </div>
           <div className={styles.intro}>
-            <span className={styles.eyebrow}>KINH DỊCH</span>
+            <span className={styles.eyebrow}>{en ? 'I CHING' : 'KINH DỊCH'}</span>
             <h2>
-              Một câu hỏi.
+              {en ? 'One question.' : 'Một câu hỏi.'}
               <br />
-              Nhiều cách tìm lời đáp.
+              {en ? 'Many ways to find the answer.' : 'Nhiều cách tìm lời đáp.'}
             </h2>
             {method === 'coins' ? (
               <div ref={coinScene} className={styles.coinScene}>
@@ -266,11 +266,15 @@ export function KinhDichClient() {
                         </div>
                         <span className={styles.coinCaption}>
                           {phase === 'tossing'
-                            ? 'Đang gieo'
+                            ? en
+                              ? 'Casting'
+                              : 'Đang gieo'
                             : face === undefined
                               ? `Xu ${i + 1}`
                               : face
-                                ? 'Ngửa · 3'
+                                ? en
+                                  ? 'Heads · 3'
+                                  : 'Ngửa · 3'
                                 : 'Sấp · 2'}
                         </span>
                       </div>
@@ -290,7 +294,15 @@ export function KinhDichClient() {
                   })}
                 </div>
                 <p className={styles.throwStatus} role="status">
-                  {rolling ? `Đang gieo lượt ${round} / 6` : manual ? 'Nhập kết quả của bạn' : ''}
+                  {rolling
+                    ? en
+                      ? `Casting round ${round} / 6`
+                      : `Đang gieo lượt ${round} / 6`
+                    : manual
+                      ? en
+                        ? 'Enter your results'
+                        : 'Nhập kết quả của bạn'
+                      : ''}
                 </p>
               </div>
             ) : (
@@ -300,7 +312,7 @@ export function KinhDichClient() {
           <div className={styles.formColumn}>
             <div className={styles.inputPanel}>
               <label htmlFor="kd-question">
-                Điều bạn đang băn khoăn <span>Tùy chọn</span>
+                {en ? "What's on your mind" : 'Điều bạn đang băn khoăn'} <span>{en ? 'Optional' : 'Tùy chọn'}</span>
               </label>
               <textarea
                 id="kd-question"
@@ -320,7 +332,7 @@ export function KinhDichClient() {
                       checked={manual}
                       onChange={e => setManual(e.target.checked)}
                     />{' '}
-                    Nhập kết quả gieo xu thật
+                    {en ? 'Enter actual coin results' : 'Nhập kết quả gieo xu thật'}
                   </label>
                   {manual ? (
                     <div className={styles.coinGrid}>
@@ -328,15 +340,29 @@ export function KinhDichClient() {
                         <label key={i}>
                           Hào {i + 1} {i === 0 ? '(dưới)' : i === 5 ? '(trên)' : ''}
                           <select
-                            aria-label={`Giá trị hào ${i + 1}`}
+                            aria-label={en ? `Line ${i + 1} value` : `Giá trị hào ${i + 1}`}
                             value={v}
                             onChange={e => setManualValues(a => a.map((x, j) => (j === i ? e.target.value : x)))}
                           >
-                            <option value="">Chọn</option>
+                            <option value="">{en ? 'Choose' : 'Chọn'}</option>
                             {[6, 7, 8, 9].map(x => (
                               <option key={x} value={x}>
                                 {x} ·{' '}
-                                {x === 6 ? 'Âm động' : x === 7 ? 'Dương tĩnh' : x === 8 ? 'Âm tĩnh' : 'Dương động'}
+                                {x === 6
+                                  ? en
+                                    ? 'Yin moving'
+                                    : 'Âm động'
+                                  : x === 7
+                                    ? en
+                                      ? 'Yang still'
+                                      : 'Dương tĩnh'
+                                    : x === 8
+                                      ? en
+                                        ? 'Yin still'
+                                        : 'Âm tĩnh'
+                                      : en
+                                        ? 'Yang moving'
+                                        : 'Dương động'}
                               </option>
                             ))}
                           </select>
@@ -348,16 +374,22 @@ export function KinhDichClient() {
                       <ol className={styles.coinThrows} aria-live="polite">
                         {values.map((v, i) => (
                           <li key={i}>
-                            <span>Hào {i + 1}</span>
-                            <span>{faces[i].map(f => (f ? 'Ngửa' : 'Sấp')).join(' · ')}</span>
+                            <span>{en ? `Line ${i + 1}` : `Hào ${i + 1}`}</span>
+                            <span>
+                              {faces[i].map(f => (f ? (en ? 'Heads' : 'Ngửa') : en ? 'Tails' : 'Sấp')).join(' · ')}
+                            </span>
                             <b>
                               {v}
-                              {v === 6 || v === 9 ? ' · động' : ''}
+                              {v === 6 || v === 9 ? (en ? ' · moving' : ' · động') : ''}
                             </b>
                           </li>
                         ))}
                       </ol>
-                      <p role="status">Đã gieo {values.length}/6 hào · từ dưới lên</p>
+                      <p role="status">
+                        {en
+                          ? `Cast ${values.length}/6 lines · from bottom`
+                          : `Đã gieo ${values.length}/6 hào · từ dưới lên`}
+                      </p>
 
                       {!rolling && values.length > 0 && (
                         <button
@@ -367,7 +399,7 @@ export function KinhDichClient() {
                             setFaces([]);
                           }}
                         >
-                          Hủy và gieo lại
+                          {en ? 'Reset and re-cast' : 'Hủy và gieo lại'}
                         </button>
                       )}
                     </>
@@ -383,7 +415,7 @@ export function KinhDichClient() {
                       checked={manualNumbers}
                       onChange={e => setManualNumbers(e.target.checked)}
                     />{' '}
-                    Tự nhập ba số
+                    {en ? 'Enter three numbers manually' : 'Tự nhập ba số'}
                   </label>
                   {manualNumbers && (
                     <div className={styles.numberInputs}>
@@ -391,7 +423,7 @@ export function KinhDichClient() {
                         <label key={i}>
                           Số {i + 1}
                           <input
-                            aria-label={`Số ${i + 1}`}
+                            aria-label={en ? `Number ${i + 1}` : `Số ${i + 1}`}
                             type="number"
                             min={1}
                             max={999}
@@ -427,13 +459,13 @@ export function KinhDichClient() {
             {method === 'coins' && !manual && (
               <div className={styles.formActions}>
                 <button className={styles.primary} onClick={start} disabled={rolling}>
-                  {rolling ? `Đang gieo ${round}/6…` : 'Gieo quẻ'}
+                  {rolling ? (en ? `Casting ${round}/6…` : `Đang gieo ${round}/6…`) : en ? 'Cast hexagram' : 'Gieo quẻ'}
                   <span aria-hidden="true">↗</span>
                 </button>
                 {rolling && (
                   <div className={styles.ritualActions}>
-                    <button onClick={stop}>Dừng gieo</button>
-                    <button onClick={reveal}>Hiện quẻ ngay</button>
+                    <button onClick={stop}>{en ? 'Stop casting' : 'Dừng gieo'}</button>
+                    <button onClick={reveal}>{en ? 'Reveal now' : 'Hiện quẻ ngay'}</button>
                   </div>
                 )}
               </div>
@@ -447,7 +479,14 @@ export function KinhDichClient() {
                     rolling || (method === 'coins' && (manual ? manualValues.some(v => !v) : values.length !== 6))
                   }
                 >
-                  {method === 'tube' || (method === 'numbers' && !manualNumbers) ? 'Xóc quẻ' : 'Lập quẻ'} <span>↗</span>
+                  {method === 'tube' || (method === 'numbers' && !manualNumbers)
+                    ? en
+                      ? 'Shake'
+                      : 'Xóc quẻ'
+                    : en
+                      ? 'Cast'
+                      : 'Lập quẻ'}{' '}
+                  <span>↗</span>
                 </button>
               )}
             </div>

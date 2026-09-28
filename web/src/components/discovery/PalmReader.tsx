@@ -77,7 +77,12 @@ export function PalmReader() {
     setCamera(true);
   }
   function applyPhoto(data: string, w: number, h: number) {
-    if (Math.min(w, h) < 350) throw new Error('Ảnh quá nhỏ. Chọn ảnh rõ hơn, đủ lòng bàn tay.');
+    if (Math.min(w, h) < 350)
+      throw new Error(
+        en
+          ? 'Photo too small. Choose a clearer one showing the full palm.'
+          : 'Ảnh quá nhỏ. Chọn ảnh rõ hơn, đủ lòng bàn tay.',
+      );
     setPhoto(data);
     setResult(null);
     setConsent(false);
@@ -157,7 +162,7 @@ export function PalmReader() {
           <span className={s.moduleLabel}>ASTROX / KHÁM PHÁ</span>
           <h1>{en ? 'Palm Reading' : 'Chỉ tay'}</h1>
         </div>
-        <span className={s.privateBadge}>Xử lý camera trên thiết bị</span>
+        <span className={s.privateBadge}>{en ? 'Processed on your device' : 'Xử lý camera trên thiết bị'}</span>
       </header>
       {error && (
         <p className={s.error} role="alert">
@@ -198,15 +203,15 @@ export function PalmReader() {
               </span>
               <div>
                 <strong>Nhận diện theo thời gian thực</strong>
-                <span>Căn tay · Giữ yên · Chụp ảnh</span>
+                <span>{en ? 'Align hand · Hold still · Capture' : 'Căn tay · Giữ yên · Chụp ảnh'}</span>
               </div>
             </div>
             <div className={s.scannerActions}>
               <button className={s.startCamera} disabled={loadingPhoto} onClick={beginCapture}>
-                Mở camera <span aria-hidden="true">↗</span>
+                {en ? 'Open camera' : 'Mở camera'} <span aria-hidden="true">↗</span>
               </button>
               <button className={s.uploadButton} disabled={loadingPhoto} onClick={() => upload.current?.click()}>
-                Chọn ảnh
+                {en ? 'Choose photo' : 'Chọn ảnh'}
               </button>
             </div>
           </div>
@@ -252,7 +257,7 @@ export function PalmReader() {
               <span>03 · Luận giải</span>
             </div>
             <details className={s.guideDetails}>
-              <summary>Hướng dẫn chụp</summary>
+              <summary>{en ? 'Photo guide' : 'Hướng dẫn chụp'}</summary>
               <PalmGuide />
             </details>
             <button
@@ -262,7 +267,7 @@ export function PalmReader() {
                 nativeCamera.current?.click();
               }}
             >
-              Dùng camera của điện thoại
+              {en ? 'Use your phone camera' : 'Dùng camera của điện thoại'}
             </button>
           </aside>
         </div>
@@ -276,8 +281,16 @@ export function PalmReader() {
                 Phóng to ↗
               </button>
             </div>
-            <button className={s.photoButton} onClick={() => setZoom(true)} aria-label="Phóng to ảnh bàn tay">
-              <img className={s.photo} src={photo} alt="Ảnh lòng bàn tay bạn đã chọn" />
+            <button
+              className={s.photoButton}
+              onClick={() => setZoom(true)}
+              aria-label={en ? 'Zoom palm photo' : 'Phóng to ảnh bàn tay'}
+            >
+              <img
+                className={s.photo}
+                src={photo}
+                alt={en ? 'Your selected palm photo' : 'Ảnh lòng bàn tay bạn đã chọn'}
+              />
             </button>
             <div className={s.photoActions}>
               <button className={s.textButton} disabled={busy || loadingPhoto} onClick={beginCapture}>
@@ -304,7 +317,11 @@ export function PalmReader() {
                   <p className={s.summary}>{result.summary}</p>
                   {result.lines.length > 0 && (
                     <>
-                      <div className={s.lineTabs} role="group" aria-label="Chọn đường chỉ tay">
+                      <div
+                        className={s.lineTabs}
+                        role="group"
+                        aria-label={en ? 'Select palm lines' : 'Chọn đường chỉ tay'}
+                      >
                         {result.lines.map((l, i) => (
                           <button key={`${l.name}-${i}`} aria-pressed={active === i} onClick={() => setActive(i)}>
                             {l.name}
@@ -339,14 +356,14 @@ export function PalmReader() {
                 >
                   <div className={s.fields}>
                     <label>
-                      Bàn tay trong ảnh
+                      {en ? 'Hand in photo' : 'Bàn tay trong ảnh'}
                       <select value={side} disabled={busy} onChange={e => setSide(e.target.value)}>
                         <option>Tay trái</option>
                         <option>Tay phải</option>
                       </select>
                     </label>
                     <label>
-                      Tay thuận
+                      {en ? 'Dominant hand' : 'Tay thuận'}
                       <select value={dominant} disabled={busy} onChange={e => setDominant(e.target.value)}>
                         <option>Tay phải</option>
                         <option>Tay trái</option>

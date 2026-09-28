@@ -119,7 +119,12 @@ export async function reconcileLemon(env, { now = Date.now(), limit = 50 } = {})
           continue;
         }
         const result = await refundLemonOrder(env, receipt.local_order_id, cumulative, now);
-        await env.DB.prepare('UPDATE lemon_webhook_receipts SET processed=1 WHERE id=?').bind(receipt.id).run();
+        // Only close the receipt when the refund actually landed. A refund that
+        // raced ahead of the paid webhook must stay pending — once the order
+        // fulfills, the next reconcile pass processes it.
+        if (result.applied || result.reason === 'order_not_found') {
+          await env.DB.prepare('UPDATE lemon_webhook_receipts SET processed=1 WHERE id=?').bind(receipt.id).run();
+        }
         report.refunds.push({ receipt: receipt.id, order: receipt.local_order_id, ...result });
       } catch (e) {
         report.failed.push({ receipt: receipt.id, error: String(e?.message || e) });

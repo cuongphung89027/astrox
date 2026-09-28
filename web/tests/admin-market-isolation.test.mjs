@@ -38,22 +38,30 @@ test('P1-8: PromptsPanel US branch edits promptsEn only; Vietnamese set untouche
   assert.deepEqual(touched[0].prompts.tasks, viTasksSnapshot);
 });
 
-test('P1-8: ServicesPanel US branch is read-only — no update call, no edit buttons', async () => {
+test('P1-8: ServicesPanel US branch edits the usServices overlay only — shared VN config untouched', async () => {
   const runtime = hookRuntime();
   const config = defaultConfig();
   config.promptsEn = defaultEnglishPromptSettings();
-  let updates = 0;
-  const update = () => {
-    updates++;
+  const sharedSnapshot = structuredClone(config.billing.services);
+  const touched = [];
+  const update = fn => {
+    const draft = structuredClone(config);
+    fn(draft);
+    touched.push(draft);
   };
   const { ServicesPanel } = await l('components/admin/panels/ServicesPanel.tsx', {
     mocks: { react: runtime.react },
     globals: {},
   });
   const branchEl = ServicesPanel({ config, update, market: 'US' });
-  assert.equal(branchEl.type?.name, 'UsServicesCoverage', 'US read-only branch selected');
+  assert.equal(branchEl.type?.name, 'UsServicesCoverage', 'US overlay branch selected');
   const tree = branchEl.type(branchEl.props);
-  assert.ok(nodes(tree).some(n => String(n.props?.children).includes('US services')), 'US coverage view renders');
-  assert.equal(nodes(tree).filter(n => n.type === 'button').length, 0, 'no edit affordances');
-  assert.equal(updates, 0);
+  assert.ok(nodes(tree).some(n => String(n.props?.children).includes('US services')), 'overlay editor renders');
+  // Edit a US price — the write goes to billing.usServices, never billing.services.
+  const input = nodes(tree).find(n => n.type === 'input' && n.props.type === 'number');
+  assert.ok(input, 'price input present');
+  input.props.onChange({ target: { value: '42' } });
+  assert.equal(touched.length, 1);
+  assert.ok(touched[0].billing.usServices, 'overlay written');
+  assert.deepEqual(touched[0].billing.services, sharedSnapshot, 'shared VN services byte-identical');
 });

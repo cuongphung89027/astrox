@@ -126,7 +126,10 @@ function available(c, service) {
 }
 export async function quoteUnlock(env, userId, c, revision, input, now = Date.now(), market = 'VN') {
   if (!input || typeof input.serviceId !== 'string' || input.serviceId.length > 80) fail('invalid_scope', 400);
-  const service = c.billing.services.find(s => s.id === input.serviceId);
+  const sharedService = c.billing.services.find(s => s.id === input.serviceId);
+  // US market: sparse overlay overrides price/status (P1-e).
+  const usOverlay = market === 'US' ? c.billing.usServices?.[input.serviceId] : null;
+  const service = usOverlay ? { ...sharedService, points: usOverlay.points, status: usOverlay.status } : sharedService;
   if (!supportsUnlock(c, input.serviceId) || !available(c, service) || service.status !== 'paid')
     fail('service_unavailable', 403);
   try {
@@ -220,9 +223,12 @@ export async function reserveUnlock(env, userId, c, revision, input, market = 'V
   const us = market === 'US';
   if (us) {
     // US purchases reserve Credits first; the unlock row commits only when funds hold.
-    await ensureCreditAccount(env, userId);
-    const held = await reserveCredits(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
-    if (!held) fail('insufficient_credits', 402);
+    // Zero-credit operations (already owned) skip the wallet entirely.
+    if (offer.points > 0) {
+      await ensureCreditAccount(env, userId);
+      const held = await reserveCredits(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
+      if (!held) fail('insufficient_credits', 402);
+    }
     await env.DB.batch([
       env.DB.prepare(
         `INSERT INTO service_unlock_operations(id,user_id,operation_id,request_hash,config_revision,module,service_id,offer_id,scope_key,members_json,credits_json,points,status,expires_at,created_at,updated_at,market)
@@ -257,11 +263,11 @@ export async function reserveUnlock(env, userId, c, revision, input, market = 'V
     ]);
     const opUs = await existingOperation(env, userId, input.operationId);
     if (!opUs) {
-      await releaseReserved(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
+      if (offer.points > 0) await releaseReserved(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
       fail('quote_changed');
     }
     if (opUs.id !== id) {
-      await releaseReserved(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
+      if (offer.points > 0) await releaseReserved(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
       return replayUnlock(env, userId, input);
     }
     return { ok: true, chargeId: id, points: offer.points, market: 'US' };
@@ -328,13 +334,24 @@ export async function completeUnlock(env, userId, id, response) {
   const encoded = await encrypt(await key(env), id, JSON.stringify(response)),
     now = Date.now();
   if (opRow?.market === 'US') {
-    // Commit the reserved credits exactly once, then flip status in the same batch.
-    await commitReserved(env, {
-      userId,
-      amount: opRow.points,
-      operationKey: `unlock:${id}`,
-      meta: 'service_unlock',
-    }).catch(() => {});
+    // Credit commit must LAND before the operation is marked succeeded — a swallowed
+    // failure here would strand the reservation on a terminal operation that reconcile
+    // no longer touches. commitReserved is idempotent per operation key, so the client
+    // simply retries completeUnlock and the same key commits exactly once.
+    if (opRow.points > 0) {
+      try {
+        await commitReserved(env, {
+          userId,
+          amount: opRow.points,
+          operationKey: `unlock:${id}`,
+          meta: 'service_unlock',
+        });
+      } catch (e) {
+        // Leave status='running': the operation stays in the reconcile loop and a
+        // retry of completeUnlock re-enters here with the reservation still held.
+        fail(String(e?.message || 'credit_commit_failed'), 503);
+      }
+    }
     await env.DB.batch([
       env.DB.prepare(
         "UPDATE service_unlock_operations SET status='succeeded',response_json=?,updated_at=?,version=version+1 WHERE id=? AND user_id=? AND status='running' AND created_at>?",
@@ -367,7 +384,8 @@ export async function refundUnlock(env, userId, id, cutoff = Date.now()) {
   if (!op) fail('charge_not_found', 404);
   if (op.status === 'succeeded') fail('operation_completed');
   if (op.market === 'US') {
-    await releaseReserved(env, { userId, amount: op.points, operationKey: `unlock:${id}` }).catch(() => {});
+    if (op.points > 0)
+      await releaseReserved(env, { userId, amount: op.points, operationKey: `unlock:${id}` }).catch(() => {});
     await env.DB.prepare(
       "UPDATE service_unlock_operations SET status='refunded',updated_at=?,version=version+1 WHERE id=? AND user_id=? AND status='running' AND created_at<=?",
     )

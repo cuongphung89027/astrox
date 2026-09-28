@@ -62,7 +62,7 @@ test('renderServicePrompt with English settings never falls back to Vietnamese t
 });
 
 test('English readings policy: Han-script body text is flagged, Latin diacritics are not', () => {
-  assert.equal(ENGLISH_LANGUAGE_POLICY_VERSION, 'en-reading-1');
+  assert.equal(ENGLISH_LANGUAGE_POLICY_VERSION, 'en-reading-2');
   assert.ok(ENGLISH_READING_POLICY.includes('English'));
   const flagged = inspectEnglishReading(
     'Great outlook. 無正曜明星 means no major star here. More text follows in English.',
@@ -73,6 +73,21 @@ test('English readings policy: Han-script body text is flagged, Latin diacritics
   const repair = englishRepairMessages(flagged);
   assert.equal(repair[0].role, 'system');
   assert.match(repair[0].content, /English/i);
+});
+
+test('English readings policy: Vietnamese Latin prose is flagged and repaired by full rewrite', () => {
+  const vietnameseProse =
+    'Bạn có tính cách ôn hòa và sâu sắc. Cung Mệnh lập tại Ngọ với Thiên Phủ đồng cung cho thấy người đứng đắn, uy nghi và được người khác tin tưởng. Sự nghiệp của bạn thăng tiến mạnh vào đại vận thứ ba, đặc biệt ở các lĩnh vực quản lý và tài chính.';
+  const flagged = inspectEnglishReading(vietnameseProse);
+  assert.ok(flagged.spans.length > 0, 'Vietnamese prose must be flagged for repair');
+  const mixed = inspectEnglishReading(
+    'Your chart shows strong leadership. ' + vietnameseProse + ' Overall a stable year.',
+  );
+  assert.ok(mixed.spans.length > 0, 'a Vietnamese paragraph inside an English answer must be flagged');
+  assert.equal(inspectEnglishReading(vietnameseProse.slice(0, 80)).spans.length, 0, 'short fragments stay unflagged');
+  const repair = englishRepairMessages(flagged);
+  assert.match(repair[1].content, /Bạn có tính cách/, 'full rewrite resends the original reading');
+  assert.doesNotMatch(repair[0].content, /translations/, 'repair asks for a rewrite, not span JSON');
 });
 
 test('catalog leaves without tasks are exactly the period services (served by EN period templates)', () => {

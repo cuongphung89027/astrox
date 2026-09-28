@@ -1,29 +1,29 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useRef, useState, type ComponentType } from "react";
-import type { AdminConfig } from "../../../../services/admin/config";
-import { adminRequest } from "@/lib/admin-client";
-import s from "./AdminDashboard.module.css";
-import { PreferencesEffect } from "@/components/profile/PreferencesEffect";
-import { ExpertManager } from "./ExpertManager";
-import { AiMetrics } from "./AiMetrics";
-import { AdminInsights, type InsightView } from "./AdminInsights";
-import { AdminLogo, Fields, type Spec } from "./ui";
-import { configViews, insightViews, navigation, searchNavigation, type View } from "./navigation";
-import { useAdminApi, type AdminPanelProps } from "./useAdminApi";
-import { SetupPanel } from "./panels/SetupPanel";
-import { PromptsPanel } from "./panels/PromptsPanel";
-import { ApisPanel } from "./panels/ApisPanel";
-import { ProvidersPanel } from "./panels/ProvidersPanel";
-import { BillingPanel } from "./panels/BillingPanel";
-import { ServicesPanel } from "./panels/ServicesPanel";
-import { IntegrationsPanel } from "./panels/IntegrationsPanel";
-import { RewardsPanel } from "./panels/RewardsPanel";
-import { ContentPanel } from "./panels/ContentPanel";
-import { OperationsPanel } from "./panels/OperationsPanel";
-import { AccessPanel } from "./panels/AccessPanel";
-import { DataPanel, DATA_VIEWS } from "./panels/DataPanel";
+import Link from 'next/link';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
+import type { AdminConfig } from '../../../../services/admin/config';
+import { adminRequest } from '@/lib/admin-client';
+import s from './AdminDashboard.module.css';
+import { PreferencesEffect } from '@/components/profile/PreferencesEffect';
+import { ExpertManager } from './ExpertManager';
+import { AiMetrics } from './AiMetrics';
+import { AdminInsights, type InsightView } from './AdminInsights';
+import { AdminLogo, Fields, type Spec } from './ui';
+import { configViews, insightViews, navigation, searchNavigation, type View } from './navigation';
+import { useAdminApi, type AdminPanelProps } from './useAdminApi';
+import { SetupPanel } from './panels/SetupPanel';
+import { PromptsPanel } from './panels/PromptsPanel';
+import { ApisPanel } from './panels/ApisPanel';
+import { ProvidersPanel } from './panels/ProvidersPanel';
+import { BillingPanel } from './panels/BillingPanel';
+import { ServicesPanel } from './panels/ServicesPanel';
+import { IntegrationsPanel } from './panels/IntegrationsPanel';
+import { RewardsPanel } from './panels/RewardsPanel';
+import { ContentPanel } from './panels/ContentPanel';
+import { OperationsPanel } from './panels/OperationsPanel';
+import { AccessPanel } from './panels/AccessPanel';
+import { DataPanel, DATA_VIEWS } from './panels/DataPanel';
 
 const CONFIG_PANELS: Partial<Record<View, ComponentType<AdminPanelProps>>> = {
   setup: SetupPanel,
@@ -43,21 +43,37 @@ const CONFIG_PANELS: Partial<Record<View, ComponentType<AdminPanelProps>>> = {
 
 export function AdminDashboard() {
   const api = useAdminApi();
-  const { session, snapshot, config, loading, busy, error, message, dirty, canWrite, act, boot, reload, setMessage } = api;
-  const [expandedGroups,setExpandedGroups]=useState<string[]>(['TỔNG QUAN','NGƯỜI DÙNG & SỬ DỤNG','POINT & TĂNG TRƯỞNG']);
-  const [navQuery, setNavQuery] = useState("");
-  const [view, setView] = useState<View>("overview"),
+  // Cổng chọn quốc gia trước khi vào chỉnh sửa (chỉ thị operator): một Admin chung,
+  // hai bối cảnh market — panels nhận market để đọc/ghi đúng cấu hình.
+  const [adminMarket, setAdminMarket] = useState<'VN' | 'US' | null>(null);
+  useEffect(() => {
+    const saved = sessionStorage.getItem('astrox_admin_market');
+    if (saved === 'VN' || saved === 'US') setAdminMarket(saved);
+  }, []);
+  const chooseMarket = (market: 'VN' | 'US') => {
+    sessionStorage.setItem('astrox_admin_market', market);
+    setAdminMarket(market);
+  };
+  const { session, snapshot, config, loading, busy, error, message, dirty, canWrite, act, boot, reload, setMessage } =
+    api;
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([
+    'TỔNG QUAN',
+    'NGƯỜI DÙNG & SỬ DỤNG',
+    'POINT & TĂNG TRƯỞNG',
+  ]);
+  const [navQuery, setNavQuery] = useState('');
+  const [view, setView] = useState<View>('overview'),
     [drawer, setDrawer] = useState(false),
-    [password, setPassword] = useState(""),
+    [password, setPassword] = useState(''),
     [showPassword, setShowPassword] = useState(false),
     [publish, setPublish] = useState(false),
     [rollbackId, setRollbackId] = useState<string | null>(null),
-    [note, setNote] = useState("");
+    [note, setNote] = useState('');
   const opener = useRef<HTMLElement | null>(null);
   const sidebarRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (drawer) {
-      sidebarRef.current?.querySelector<HTMLElement>("button,a")?.focus();
+      sidebarRef.current?.querySelector<HTMLElement>('button,a')?.focus();
     }
   }, [drawer]);
   useEffect(() => {
@@ -66,30 +82,30 @@ export function AdminDashboard() {
   useEffect(() => {
     const initial = setTimeout(() => {
       void boot();
-      const next = new URLSearchParams(location.search).get("view");
+      const next = new URLSearchParams(location.search).get('view');
       if (navigation.some(([id]) => id === next)) setView(next as View);
     }, 0);
     const pop = () => {
-      const next = new URLSearchParams(location.search).get("view");
-      setView(
-        navigation.some(([id]) => id === next) ? (next as View) : "overview",
-      );
+      const next = new URLSearchParams(location.search).get('view');
+      setView(navigation.some(([id]) => id === next) ? (next as View) : 'overview');
     };
-    window.addEventListener("popstate", pop);
+    window.addEventListener('popstate', pop);
     return () => {
       clearTimeout(initial);
-      window.removeEventListener("popstate", pop);
+      window.removeEventListener('popstate', pop);
     };
   }, [boot]);
   const go = (id: View) => {
     setView(id);
     setDrawer(false);
-    const url = new URL(location.href); url.searchParams.set("view", id); history.pushState({}, "", url);
+    const url = new URL(location.href);
+    url.searchParams.set('view', id);
+    history.pushState({}, '', url);
   };
   const openPublish = (versionId: string | null, from: HTMLElement) => {
     opener.current = from;
     setRollbackId(versionId);
-    setNote("");
+    setNote('');
     setPublish(true);
   };
   if (loading)
@@ -97,7 +113,17 @@ export function AdminDashboard() {
       <div className={s.login}>
         <div className={s.loginCard}>
           <div className={s.brand}>
-            <AdminLogo />
+            <AdminLogo />{' '}
+            <span className={s.marketBadge}>
+              {adminMarket === 'US' ? '🇺🇸 US · Credits' : '🇻🇳 VN · Point'}
+              <button
+                type="button"
+                onClick={() => setAdminMarket(null)}
+                style={{ border: 0, background: 'none', cursor: 'pointer', textDecoration: 'underline', fontSize: 11 }}
+              >
+                đổi
+              </button>
+            </span>
           </div>
           <p role="status">Đang tải…</p>
         </div>
@@ -111,9 +137,9 @@ export function AdminDashboard() {
         </Link>
         <form
           className={s.loginCard}
-          onSubmit={(e) => {
+          onSubmit={e => {
             e.preventDefault();
-            void api.login(password).then(() => setPassword(""));
+            void api.login(password).then(() => setPassword(''));
           }}
         >
           <div className={s.brand}>
@@ -131,27 +157,27 @@ export function AdminDashboard() {
               <input
                 aria-label="Mật khẩu quản trị"
                 autoComplete="current-password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
               />
               <button
                 type="button"
-                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 aria-pressed={showPassword}
-                onClick={() => setShowPassword((value) => !value)}
+                onClick={() => setShowPassword(value => !value)}
               >
-                {showPassword ? "Ẩn" : "Hiện"}
+                {showPassword ? 'Ẩn' : 'Hiện'}
               </button>
             </span>
           </label>
           <button className={s.primary} disabled={busy}>
-            {busy ? "Đang xác thực…" : "Đăng nhập"}
+            {busy ? 'Đang xác thực…' : 'Đăng nhập'}
           </button>
           <small>
-            Production sử dụng danh tính được bảo vệ bởi Cloudflare Access. Mật
-            khẩu chỉ dùng cho môi trường phát triển cục bộ.
+            Production sử dụng danh tính được bảo vệ bởi Cloudflare Access. Mật khẩu chỉ dùng cho môi trường phát triển
+            cục bộ.
           </small>
           <button type="button" onClick={() => void boot()}>
             Kiểm tra lại phiên truy cập
@@ -161,57 +187,77 @@ export function AdminDashboard() {
     );
   const title = navigation.find(([id]) => id === view)?.[1];
   const changed = Object.keys(config).filter(
-    (key) =>
+    key =>
       JSON.stringify(config[key as keyof AdminConfig]) !==
       JSON.stringify(snapshot.published?.[key as keyof AdminConfig]),
   );
   const groupNames: Record<string, string> = {
-    prompts: "Kho prompt",
-    engines: "API và bộ tính",
-    ai: "Cài đặt AI",
-    billing: "Gói nạp & giá dịch vụ",
-    integrations: "Tích hợp",
-    rewards: "Thưởng & giới thiệu",
-    content: "Nội dung",
-    operations: "Vận hành",
-    access: "Phân quyền",
+    prompts: 'Kho prompt',
+    engines: 'API và bộ tính',
+    ai: 'Cài đặt AI',
+    billing: 'Gói nạp & giá dịch vụ',
+    integrations: 'Tích hợp',
+    rewards: 'Thưởng & giới thiệu',
+    content: 'Nội dung',
+    operations: 'Vận hành',
+    access: 'Phân quyền',
   };
   const renderFields = (group: keyof AdminConfig, specs: Spec[]) => (
-    <Fields
-      value={config[group]}
-      specs={specs}
-      onChange={(key, value) => api.patch(group, key, value)}
-    />
+    <Fields value={config[group]} specs={specs} onChange={(key, value) => api.patch(group, key, value)} />
   );
   const Panel = CONFIG_PANELS[view];
   const panelProps: AdminPanelProps = {
-    config, snapshot, session, view, renderFields, go, dirty, canWrite, act, setMessage,
-    update: api.update, patch: api.patch, secret: api.secret,
+    config,
+    snapshot,
+    session,
+    view,
+    renderFields,
+    go,
+    dirty,
+    canWrite,
+    act,
+    setMessage,
+    update: api.update,
+    patch: api.patch,
+    secret: api.secret,
+    market: adminMarket ?? 'VN',
   };
+  if (!adminMarket)
+    return (
+      <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', background: 'var(--paper, #fbf6ec)' }}>
+        <div style={{ maxWidth: 720, padding: 32, textAlign: 'center' }}>
+          <h1 style={{ fontSize: 28, marginBottom: 8 }}>AstroX Admin</h1>
+          <p style={{ marginBottom: 24, opacity: 0.75 }}>Chọn thị trường bạn sẽ chỉnh sửa trong phiên làm việc này.</p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+            <button onClick={() => chooseMarket('VN')} className={s.cardBtn} style={{ padding: '20px 28px' }}>
+              <strong>🇻🇳 Việt Nam</strong>
+              <small>Point · PayOS · Zalo</small>
+            </button>
+            <button onClick={() => chooseMarket('US')} className={s.cardBtn} style={{ padding: '20px 28px' }}>
+              <strong>🇺🇸 United States</strong>
+              <small>Credits · Lemon · Google · English</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+
   return (
     <div className={s.shell}>
       <PreferencesEffect />
-      {drawer && (
-        <button
-          className={s.overlay}
-          aria-label="Đóng menu"
-          onClick={() => setDrawer(false)}
-        />
-      )}
+      {drawer && <button className={s.overlay} aria-label="Đóng menu" onClick={() => setDrawer(false)} />}
       <aside
         inert={publish}
         ref={sidebarRef}
-        className={`${s.sidebar} ${drawer ? s.open : ""}`}
-        role={drawer ? "dialog" : undefined}
+        className={`${s.sidebar} ${drawer ? s.open : ''}`}
+        role={drawer ? 'dialog' : undefined}
         aria-modal={drawer ? true : undefined}
         aria-label="Menu quản trị"
-        onKeyDown={(e) => {
+        onKeyDown={e => {
           if (!drawer) return;
-          if (e.key === "Escape") setDrawer(false);
-          if (e.key === "Tab") {
-            const items = e.currentTarget.querySelectorAll<HTMLElement>(
-              "button:not(:disabled),a",
-            );
+          if (e.key === 'Escape') setDrawer(false);
+          if (e.key === 'Tab') {
+            const items = e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),a');
             const first = items[0],
               last = items[items.length - 1];
             if (e.shiftKey && document.activeElement === first) {
@@ -229,19 +275,55 @@ export function AdminDashboard() {
         </a>
         <label className={s.navSearch}>
           <span className={s.srOnly}>Tìm trong Admin</span>
-          <input type="search" value={navQuery} onChange={event => setNavQuery(event.target.value)} placeholder="Tìm trong Admin…" aria-label="Tìm trong Admin" />
+          <input
+            type="search"
+            value={navQuery}
+            onChange={event => setNavQuery(event.target.value)}
+            placeholder="Tìm trong Admin…"
+            aria-label="Tìm trong Admin"
+          />
         </label>
         <nav aria-label="Điều hướng quản trị">
           {searchNavigation(navQuery).length === 0 && <p className={s.navEmpty}>Không tìm thấy mục phù hợp.</p>}
-          {[...new Set(searchNavigation(navQuery).map(item=>item[3]))].map(group=>{
-            const activeGroup=navigation.some(([id,,,g])=>id===view&&g===group);
-            const expanded=!!navQuery.trim()||expandedGroups.includes(group)||activeGroup;
-            return <section className={s.navGroup} key={group}>
-              <button className={s.groupToggle} aria-expanded={expanded} onClick={()=>setExpandedGroups(groups=>expanded?groups.filter(g=>g!==group):[...groups,group])} disabled={activeGroup}>
-                {group}<i aria-hidden="true">{expanded?'−':'+'}</i>
-              </button>
-              {expanded&&<div className={s.navItems}>{searchNavigation(navQuery).filter(item=>item[3]===group).map(([id,label,icon])=><button key={id} className={view===id?s.active:''} onClick={()=>{go(id);setNavQuery("");}} aria-current={view===id?'page':undefined}><span aria-hidden>{icon}</span>{label}{view===id&&<i/>}</button>)}</div>}
-            </section>;
+          {[...new Set(searchNavigation(navQuery).map(item => item[3]))].map(group => {
+            const activeGroup = navigation.some(([id, , , g]) => id === view && g === group);
+            const expanded = !!navQuery.trim() || expandedGroups.includes(group) || activeGroup;
+            return (
+              <section className={s.navGroup} key={group}>
+                <button
+                  className={s.groupToggle}
+                  aria-expanded={expanded}
+                  onClick={() =>
+                    setExpandedGroups(groups => (expanded ? groups.filter(g => g !== group) : [...groups, group]))
+                  }
+                  disabled={activeGroup}
+                >
+                  {group}
+                  <i aria-hidden="true">{expanded ? '−' : '+'}</i>
+                </button>
+                {expanded && (
+                  <div className={s.navItems}>
+                    {searchNavigation(navQuery)
+                      .filter(item => item[3] === group)
+                      .map(([id, label, icon]) => (
+                        <button
+                          key={id}
+                          className={view === id ? s.active : ''}
+                          onClick={() => {
+                            go(id);
+                            setNavQuery('');
+                          }}
+                          aria-current={view === id ? 'page' : undefined}
+                        >
+                          <span aria-hidden>{icon}</span>
+                          {label}
+                          {view === id && <i />}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </section>
+            );
           })}
         </nav>
         <Link className={s.back} href="/">
@@ -252,12 +334,7 @@ export function AdminDashboard() {
           <div>
             <strong>{session.user.email}</strong>
           </div>
-          <button
-            aria-label="Đăng xuất"
-            onClick={() =>
-              void api.logout()
-            }
-          >
+          <button aria-label="Đăng xuất" onClick={() => void api.logout()}>
             ↪
           </button>
         </div>
@@ -267,7 +344,7 @@ export function AdminDashboard() {
           <button
             className={s.menuButton}
             aria-label="Mở menu"
-            onClick={(e) => {
+            onClick={e => {
               opener.current = e.currentTarget;
               setDrawer(true);
             }}
@@ -279,10 +356,7 @@ export function AdminDashboard() {
           </span>
           <span className={s.version}>
             Bản nháp #{snapshot.revision}
-            <i />{" "}
-            {snapshot.publishedRevision === null
-              ? "Chưa xuất bản"
-              : `Đang chạy #${snapshot.publishedRevision}`}
+            <i /> {snapshot.publishedRevision === null ? 'Chưa xuất bản' : `Đang chạy #${snapshot.publishedRevision}`}
           </span>
         </div>
         <div className={s.page}>
@@ -293,9 +367,9 @@ export function AdminDashboard() {
                 <span>.</span>
               </h1>
             </div>
-            {(configViews.includes(view) || dirty) && <span className={s.status}>
-              {dirty ? "● Có thay đổi chưa lưu" : "✓ Bản nháp đã đồng bộ"}
-            </span>}
+            {(configViews.includes(view) || dirty) && (
+              <span className={s.status}>{dirty ? '● Có thay đổi chưa lưu' : '✓ Bản nháp đã đồng bộ'}</span>
+            )}
           </header>
           {error && (
             <div role="alert" className={s.error}>
@@ -307,32 +381,45 @@ export function AdminDashboard() {
               {message}
             </div>
           )}
-          {configViews.includes(view) && snapshot.revision === 0 && snapshot.publishedRevision === null && snapshot.integration.wallet && session.user.capabilities.includes("access.manage") && (
-            <div className={s.info}>
-              <p>Đã tìm thấy backend AstroX hiện có. Nhập gói nạp, Zalo, PayOS và dịch vụ vào bản nháp để kiểm tra trước khi áp dụng.</p>
-              <button disabled={busy || dirty} onClick={() => void act(async () => {
-                await adminRequest("import-legacy", session.csrf, { expectedRevision: snapshot.revision });
-                await reload();
-                setMessage("Đã nhập cấu hình cũ. Tài khoản, số dư và đơn hàng được giữ nguyên.");
-              })}>Nhập cấu hình backend hiện tại</button>
-            </div>
+          {configViews.includes(view) &&
+            snapshot.revision === 0 &&
+            snapshot.publishedRevision === null &&
+            snapshot.integration.wallet &&
+            session.user.capabilities.includes('access.manage') && (
+              <div className={s.info}>
+                <p>
+                  Đã tìm thấy backend AstroX hiện có. Nhập gói nạp, Zalo, PayOS và dịch vụ vào bản nháp để kiểm tra
+                  trước khi áp dụng.
+                </p>
+                <button
+                  disabled={busy || dirty}
+                  onClick={() =>
+                    void act(async () => {
+                      await adminRequest('import-legacy', session.csrf, { expectedRevision: snapshot.revision });
+                      await reload();
+                      setMessage('Đã nhập cấu hình cũ. Tài khoản, số dư và đơn hàng được giữ nguyên.');
+                    })
+                  }
+                >
+                  Nhập cấu hình backend hiện tại
+                </button>
+              </div>
+            )}
+          {view === 'bookings' && session.user.capabilities.includes('access.manage') && (
+            <ExpertManager csrf={session.csrf} />
           )}
-          {view === "bookings" && session.user.capabilities.includes("access.manage") && <ExpertManager csrf={session.csrf} />}
-          {view === "aiMetrics" && <AiMetrics config={config} />}
-          {insightViews.includes(view) && <AdminInsights view={view as InsightView} session={session} config={config} onNavigate={go} />}
-          <fieldset
-            disabled={
-              busy || (!canWrite && view !== "setup" && view !== "access")
-            }
-            className={s.editor}
-          >
+          {view === 'aiMetrics' && <AiMetrics config={config} />}
+          {insightViews.includes(view) && (
+            <AdminInsights view={view as InsightView} session={session} config={config} onNavigate={go} />
+          )}
+          <fieldset disabled={busy || (!canWrite && view !== 'setup' && view !== 'access')} className={s.editor}>
             {Panel && <Panel {...panelProps} />}
           </fieldset>
           {DATA_VIEWS.includes(view) && (
             <DataPanel
               key={view}
               view={view}
-              title={title || ""}
+              title={title || ''}
               session={session}
               revision={snapshot.revision}
               busy={busy}
@@ -346,37 +433,22 @@ export function AdminDashboard() {
         {(configViews.includes(view) || dirty) && (
           <div className={s.savebar}>
             <div>
-              <strong>
-                {dirty ? "Bạn có thay đổi chưa lưu" : "Bản nháp sẵn sàng"}
-              </strong>
+              <strong>{dirty ? 'Bạn có thay đổi chưa lưu' : 'Bản nháp sẵn sàng'}</strong>
               <small>
-                {dirty
-                  ? "Lưu để bảo toàn các chỉnh sửa của bạn."
-                  : "Áp dụng để đưa cấu hình đã kiểm tra vào vận hành."}
+                {dirty ? 'Lưu để bảo toàn các chỉnh sửa của bạn.' : 'Áp dụng để đưa cấu hình đã kiểm tra vào vận hành.'}
               </small>
             </div>
             <div>
-              <button
-                disabled={busy || !dirty}
-                onClick={api.discard}
-              >
+              <button disabled={busy || !dirty} onClick={api.discard}>
                 Hoàn tác
               </button>
-              <button
-                className={s.secondary}
-                disabled={busy || !dirty || !canWrite}
-                onClick={() => void api.save()}
-              >
-                {busy ? "Đang xử lý…" : "Lưu bản nháp"}
+              <button className={s.secondary} disabled={busy || !dirty || !canWrite} onClick={() => void api.save()}>
+                {busy ? 'Đang xử lý…' : 'Lưu bản nháp'}
               </button>
               <button
                 className={s.primary}
-                disabled={
-                  busy ||
-                  dirty ||
-                  !session.user.capabilities.includes("config.publish")
-                }
-                onClick={(e) => openPublish(null, e.currentTarget)}
+                disabled={busy || dirty || !session.user.capabilities.includes('config.publish')}
+                onClick={e => openPublish(null, e.currentTarget)}
               >
                 Áp dụng <span>↗</span>
               </button>
@@ -387,12 +459,10 @@ export function AdminDashboard() {
       {publish && (
         <div
           className={s.modalBackdrop}
-          onKeyDown={(e) => {
-            if (e.key === "Escape" && !busy) setPublish(false);
-            if (e.key === "Tab") {
-              const elements = e.currentTarget.querySelectorAll<HTMLElement>(
-                "button:not(:disabled),textarea,summary",
-              );
+          onKeyDown={e => {
+            if (e.key === 'Escape' && !busy) setPublish(false);
+            if (e.key === 'Tab') {
+              const elements = e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),textarea,summary');
               const first = elements[0],
                 last = elements[elements.length - 1];
               if (e.shiftKey && document.activeElement === first) {
@@ -405,22 +475,15 @@ export function AdminDashboard() {
             }
           }}
         >
-          <div
-            className={s.modal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="publish-title"
-          >
+          <div className={s.modal} role="dialog" aria-modal="true" aria-labelledby="publish-title">
             <p className={s.eyebrow}>KIỂM TRA TRƯỚC KHI ÁP DỤNG</p>
             <h2 id="publish-title">
-              {rollbackId
-                ? `Khôi phục phiên bản ${rollbackId}?`
-                : "Đưa cấu hình vào vận hành?"}
+              {rollbackId ? `Khôi phục phiên bản ${rollbackId}?` : 'Đưa cấu hình vào vận hành?'}
             </h2>
             <p>
               {rollbackId
-                ? "Phiên bản được chọn sẽ thay thế ngay cấu hình đang vận hành. Thao tác được ghi vào lịch sử và có thể khôi phục lại."
-                : "Các nhóm sau khác với phiên bản đang chạy:"}
+                ? 'Phiên bản được chọn sẽ thay thế ngay cấu hình đang vận hành. Thao tác được ghi vào lịch sử và có thể khôi phục lại.'
+                : 'Các nhóm sau khác với phiên bản đang chạy:'}
             </p>
             {error && (
               <div className={s.error} role="alert">
@@ -429,30 +492,21 @@ export function AdminDashboard() {
             )}
             {!rollbackId && !config.ai.enabled && (
               <p role="status">
-                AI đang tắt trong bản nháp. Khi áp dụng trên môi trường đã nối
-                Admin API, các lượt luận giải mới sẽ tạm dừng.
+                AI đang tắt trong bản nháp. Khi áp dụng trên môi trường đã nối Admin API, các lượt luận giải mới sẽ tạm
+                dừng.
               </p>
             )}
             {!rollbackId && (
               <div className={s.diff}>
                 {changed.length ? (
-                  changed.map((k) => (
+                  changed.map(k => (
                     <details key={k}>
                       <summary>{groupNames[k]}</summary>
                       <pre>
-                        {"ĐANG CHẠY\n" +
-                          JSON.stringify(
-                            snapshot.published?.[k as keyof AdminConfig] ??
-                              null,
-                            null,
-                            2,
-                          ) +
-                          "\n\nSAU KHI ÁP DỤNG\n" +
-                          JSON.stringify(
-                            config[k as keyof AdminConfig],
-                            null,
-                            2,
-                          )}
+                        {'ĐANG CHẠY\n' +
+                          JSON.stringify(snapshot.published?.[k as keyof AdminConfig] ?? null, null, 2) +
+                          '\n\nSAU KHI ÁP DỤNG\n' +
+                          JSON.stringify(config[k as keyof AdminConfig], null, 2)}
                       </pre>
                     </details>
                   ))
@@ -466,7 +520,7 @@ export function AdminDashboard() {
               <textarea
                 autoFocus
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={e => setNote(e.target.value)}
                 placeholder="Mô tả lý do áp dụng cấu hình…"
               />
             </label>
@@ -479,23 +533,19 @@ export function AdminDashboard() {
                 disabled={busy || !note.trim()}
                 onClick={() =>
                   void act(async () => {
-                    await adminRequest(
-                      rollbackId ? "rollback" : "publish",
-                      session.csrf,
-                      {
-                        ...(rollbackId ? { versionId: rollbackId } : {}),
-                        expectedRevision: snapshot.revision,
-                        note,
-                      },
-                    );
+                    await adminRequest(rollbackId ? 'rollback' : 'publish', session.csrf, {
+                      ...(rollbackId ? { versionId: rollbackId } : {}),
+                      expectedRevision: snapshot.revision,
+                      note,
+                    });
                     await reload();
                     setPublish(false);
-                    setNote("");
-                    setMessage("Đã áp dụng cấu hình mới.");
+                    setNote('');
+                    setMessage('Đã áp dụng cấu hình mới.');
                   })
                 }
               >
-                {busy ? "Đang áp dụng…" : "Xác nhận áp dụng"}
+                {busy ? 'Đang áp dụng…' : 'Xác nhận áp dụng'}
               </button>
             </div>
           </div>

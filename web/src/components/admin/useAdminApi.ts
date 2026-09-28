@@ -123,6 +123,8 @@ export type AdminApi = ReturnType<typeof useAdminApi>;
 /** Props every config tab receives; loaded session, snapshot and config are non-null. */
 export type AdminPanelProps = {
   config: AdminConfig;
+  /** Working market chosen at the admin gate (operator instruction): panels read/write the matching section. */
+  market: 'VN' | 'US';
   snapshot: ConfigSnapshot;
   session: AdminSession;
   view: View;

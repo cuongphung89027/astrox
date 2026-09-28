@@ -4,6 +4,7 @@ import { defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES } from 
 import { providerRoutes } from './provider-models.ts';
 import { addMissingServices, addCouplesServices, SERVICE_CATALOG } from './catalog.ts';
 import { MODULES } from './modules.ts';
+import { defaultEnglishPromptSettings } from './english-prompts.ts';
 /** Shared, non-secret contract. Secrets are stored by reference only. */
 export type Provider = {
   id: string;
@@ -64,6 +65,8 @@ export type Notice = {
 };
 export type AdminConfig = {
   prompts: ReturnType<typeof defaultPromptSettings>;
+  /** English prompt settings (plan Task 07/19): hydrated from code defaults, admin-editable. */
+  promptsEn: { templates: Record<string, string>; tasks: Record<string, string> };
   engines: {
     iztro: { enabled: boolean };
     astronomy: { enabled: boolean };
@@ -172,6 +175,7 @@ function seedDiscoveryServices(existing: ServicePrice[]): ServicePrice[] {
 export function defaultConfig(): AdminConfig {
   return {
     prompts: defaultPromptSettings(),
+    promptsEn: defaultEnglishPromptSettings(),
     engines: {
       iztro: { enabled: true },
       astronomy: { enabled: true },
@@ -587,6 +591,27 @@ export function validateConfig(input: unknown): ConfigError[] {
   url(pay.cancelUrl, 'integrations.payos.cancelUrl', pay.enabled);
   url(zalo.callbackUrl, 'integrations.zalo.callbackUrl', zalo.enabled);
   url(zalo.returnUrl, 'integrations.zalo.returnUrl', zalo.enabled);
+  const lemon = c.integrations.lemon;
+  const seenLemonIds = new Set<string>();
+  for (const pack of lemon.packages) {
+    str(pack.id, 'integrations.lemon.packages.id');
+    if (seenLemonIds.has(pack.id)) add('integrations.lemon.packages', 'ID gói Credits bị trùng.');
+    seenLemonIds.add(pack.id);
+    if (!Number.isSafeInteger(pack.credits) || pack.credits <= 0)
+      add('integrations.lemon.packages', 'Số Credits phải là số nguyên dương.');
+    if (!Number.isSafeInteger(pack.amountUsdCents) || pack.amountUsdCents <= 0)
+      add('integrations.lemon.packages', 'Giá USD cents phải là số nguyên dương.');
+    if (pack.enabled && !pack.variantId) add('integrations.lemon.packages', 'Gói bật bán cần Variant ID.');
+  }
+  if (lemon.enabled) {
+    const storeId = lemon.storeIds[lemon.environment];
+    if (!storeId) add('integrations.lemon.storeIds', `Chưa khai báo Store ID cho môi trường ${lemon.environment}.`);
+    if (lemon.environment === 'live' && lemon.packages.some(p => p.enabled))
+      add(
+        'integrations.lemon.environment',
+        'Môi trường live cần được operator xác nhận đã duyệt provider trước khi bật gói.',
+      );
+  }
   url(c.content.supportUrl, 'content.supportUrl');
   str(c.ai.systemPrompt, 'ai.systemPrompt', 12000);
   str(c.content.announcement, 'content.announcement', 1000);
@@ -658,6 +683,10 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
           }
         : c.billing,
     prompts: { templates: { ...p.templates, ...c.prompts?.templates }, tasks: { ...p.tasks, ...c.prompts?.tasks } },
+    promptsEn: {
+      templates: { ...defaultEnglishPromptSettings().templates, ...(c.promptsEn?.templates || {}) },
+      tasks: { ...defaultEnglishPromptSettings().tasks, ...(c.promptsEn?.tasks || {}) },
+    },
     engines: { ...defaultConfig().engines, ...c.engines },
   };
 }

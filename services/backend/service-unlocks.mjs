@@ -3,6 +3,7 @@ import { bundleDefinitions } from '../admin/service-tree.ts';
 import { upgradeQuote } from '../admin/service-pricing.ts';
 import { renderServicePrompt } from '../admin/prompt-engine.ts';
 import { encrypt, decrypt, b64 } from '../admin/crypto.mjs';
+import { reserveCredits, commitReserved, releaseReserved, ensureCreditAccount } from './credits.mjs';
 const LEASE_MS = 180000;
 const fail = (code, status = 409) => {
   throw Object.assign(new Error(code), { status });
@@ -123,7 +124,7 @@ function available(c, service) {
     }[service.module];
   return !engine || c.engines?.[engine]?.enabled !== false;
 }
-export async function quoteUnlock(env, userId, c, revision, input, now = Date.now()) {
+export async function quoteUnlock(env, userId, c, revision, input, now = Date.now(), market = 'VN') {
   if (!input || typeof input.serviceId !== 'string' || input.serviceId.length > 80) fail('invalid_scope', 400);
   const service = c.billing.services.find(s => s.id === input.serviceId);
   if (!supportsUnlock(c, input.serviceId) || !available(c, service) || service.status !== 'paid')
@@ -134,9 +135,12 @@ export async function quoteUnlock(env, userId, c, revision, input, now = Date.no
     fail('invalid_scope', 400);
   }
   const scope = await scopeForReading(input.serviceId, input.promptDescriptor, now);
+  // Grants only count within the same market: a VN purchase never subsidizes a US reading (MARKET-02).
   const rows = (
-    await env.DB.prepare('SELECT * FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=?')
-      .bind(userId, scope.module, scope.scopeKey)
+    await env.DB.prepare(
+      'SELECT * FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND market=?',
+    )
+      .bind(userId, scope.module, scope.scopeKey, market === 'US' ? 'US' : 'VN')
       .all()
   ).results;
   const version = `${rows.length}:${rows.reduce((sum, r) => sum + r.version, 0)}`;
@@ -173,6 +177,7 @@ export async function quoteUnlock(env, userId, c, revision, input, now = Date.no
     version,
     scopeKey: scope.scopeKey,
     serviceId: service.id,
+    market: market === 'US' ? 'US' : 'VN',
     offers,
     scopeLabel: scope.expiresAt === null ? 'Cho hồ sơ đang xem' : 'Cho kỳ hiện tại (giờ Việt Nam)',
   };
@@ -192,7 +197,7 @@ export async function replayUnlock(env, userId, input) {
   }
   fail(op.status === 'refunded' ? 'operation_refunded' : 'operation_in_progress');
 }
-export async function reserveUnlock(env, userId, c, revision, input) {
+export async function reserveUnlock(env, userId, c, revision, input, market = 'VN') {
   const replay = await replayUnlock(env, userId, input);
   if (replay) return replay;
   const q = await quoteUnlock(env, userId, c, revision, input),
@@ -212,14 +217,63 @@ export async function reserveUnlock(env, userId, c, revision, input) {
     .bind(userId, module, q.scopeKey)
     .first();
   if (pending) fail('purchase_in_progress');
+  const us = market === 'US';
+  if (us) {
+    // US purchases reserve Credits first; the unlock row commits only when funds hold.
+    await ensureCreditAccount(env, userId);
+    const held = await reserveCredits(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
+    if (!held) fail('insufficient_credits', 402);
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO service_unlock_operations(id,user_id,operation_id,request_hash,config_revision,module,service_id,offer_id,scope_key,members_json,credits_json,points,status,expires_at,created_at,updated_at,market)
+     SELECT ?,?,?,?,?,?,?,?,?,?,?,?,'running',?,?,?,'US'
+     AND NOT EXISTS(SELECT 1 FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND status='running')
+     AND (SELECT COUNT(*) || ':' || COALESCE(SUM(version),0) FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND market='US')=?
+     ON CONFLICT(user_id,operation_id) DO NOTHING`,
+      ).bind(
+        id,
+        userId,
+        input.operationId,
+        input.requestHash,
+        revision,
+        module,
+        input.serviceId,
+        offer.id,
+        q.scopeKey,
+        JSON.stringify(offer.owned ? [] : offer.members),
+        JSON.stringify(offer.creditIds),
+        offer.points,
+        offer.expiresAt,
+        now,
+        now,
+        userId,
+        module,
+        q.scopeKey,
+        userId,
+        module,
+        q.scopeKey,
+        q.version,
+      ),
+    ]);
+    const opUs = await existingOperation(env, userId, input.operationId);
+    if (!opUs) {
+      await releaseReserved(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
+      fail('quote_changed');
+    }
+    if (opUs.id !== id) {
+      await releaseReserved(env, { userId, amount: offer.points, operationKey: `unlock:${id}` });
+      return replayUnlock(env, userId, input);
+    }
+    return { ok: true, chargeId: id, points: offer.points, market: 'US' };
+  }
   await env.DB.batch([
     env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(
       userId,
       iso,
     ),
     env.DB.prepare(
-      `INSERT INTO service_unlock_operations(id,user_id,operation_id,request_hash,config_revision,module,service_id,offer_id,scope_key,members_json,credits_json,points,status,expires_at,created_at,updated_at)
-   SELECT ?,?,?,?,?,?,?,?,?,?,?,?,'running',?,?,? WHERE EXISTS(SELECT 1 FROM zalo_point_accounts WHERE user_id=? AND balance>=?)
+      `INSERT INTO service_unlock_operations(id,user_id,operation_id,request_hash,config_revision,module,service_id,offer_id,scope_key,members_json,credits_json,points,status,expires_at,created_at,updated_at,market)
+   SELECT ?,?,?,?,?,?,?,?,?,?,?,?,'running',?,?,?,'VN' WHERE EXISTS(SELECT 1 FROM zalo_point_accounts WHERE user_id=? AND balance>=?)
    AND NOT EXISTS(SELECT 1 FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=? AND status='running')
    AND (SELECT COUNT(*) || ':' || COALESCE(SUM(version),0) FROM service_unlock_operations WHERE user_id=? AND module=? AND scope_key=?)=?
    ON CONFLICT(user_id,operation_id) DO NOTHING`,
@@ -268,8 +322,30 @@ export async function reserveUnlock(env, userId, c, revision, input) {
   return { ok: true, chargeId: id, points: offer.points };
 }
 export async function completeUnlock(env, userId, id, response) {
+  const opRow = await env.DB.prepare('SELECT market,points FROM service_unlock_operations WHERE id=? AND user_id=?')
+    .bind(id, userId)
+    .first();
   const encoded = await encrypt(await key(env), id, JSON.stringify(response)),
     now = Date.now();
+  if (opRow?.market === 'US') {
+    // Commit the reserved credits exactly once, then flip status in the same batch.
+    await commitReserved(env, {
+      userId,
+      amount: opRow.points,
+      operationKey: `unlock:${id}`,
+      meta: 'service_unlock',
+    }).catch(() => {});
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE service_unlock_operations SET status='succeeded',response_json=?,updated_at=?,version=version+1 WHERE id=? AND user_id=? AND status='running' AND created_at>?",
+      ).bind(encoded, now, id, userId, now - LEASE_MS),
+    ]);
+    const done = await env.DB.prepare('SELECT status FROM service_unlock_operations WHERE id=? AND user_id=?')
+      .bind(id, userId)
+      .first();
+    if (done?.status !== 'succeeded') fail('operation_not_running');
+    return { ok: true };
+  }
   await env.DB.batch([
     env.DB.prepare(
       "UPDATE service_unlock_operations SET status='succeeded',response_json=?,updated_at=?,version=version+1 WHERE id=? AND user_id=? AND status='running' AND created_at>?",
@@ -285,11 +361,20 @@ export async function completeUnlock(env, userId, id, response) {
   return { ok: true };
 }
 export async function refundUnlock(env, userId, id, cutoff = Date.now()) {
-  const op = await env.DB.prepare('SELECT status FROM service_unlock_operations WHERE id=? AND user_id=?')
+  const op = await env.DB.prepare('SELECT status,market,points FROM service_unlock_operations WHERE id=? AND user_id=?')
     .bind(id, userId)
     .first();
   if (!op) fail('charge_not_found', 404);
   if (op.status === 'succeeded') fail('operation_completed');
+  if (op.market === 'US') {
+    await releaseReserved(env, { userId, amount: op.points, operationKey: `unlock:${id}` }).catch(() => {});
+    await env.DB.prepare(
+      "UPDATE service_unlock_operations SET status='refunded',updated_at=?,version=version+1 WHERE id=? AND user_id=? AND status='running' AND created_at<=?",
+    )
+      .bind(Date.now(), id, userId, cutoff)
+      .run();
+    return { ok: true };
+  }
   const iso = new Date().toISOString();
   await env.DB.batch([
     env.DB.prepare(

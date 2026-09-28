@@ -21,6 +21,7 @@ async function fixture() {
     'services/backend/test/legacy-schema.sql',
     'migrations/backend.sql',
     'migrations/service-unlocks.sql',
+    'migrations/market-ai-operations.sql',
   ])
     for (const q of readFileSync(new URL('../../' + file, import.meta.url), 'utf8')
       .split(';')

@@ -65,6 +65,7 @@ export const en: Record<string, string> = {
   'login.title': 'Hello there.',
   'login.description': 'Sign in to save your journey.',
   'login.continueZalo': 'Continue with Zalo',
+  'login.continueGoogle': 'Continue with Google',
   'login.googleSoon': 'Coming soon',
   'login.consentError': 'Please accept the terms to continue.',
   'login.consentAgree': 'I agree to the',

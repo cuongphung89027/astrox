@@ -91,11 +91,14 @@ export async function publicFetch(request, env) {
     if (path === '/api/me' && method === 'GET') {
       const session = await readSession(env, request);
       if (!session) return json(env, request, { user: null });
-      const [user, wallet] = await Promise.all([
+      const [user, wallet, identity] = await Promise.all([
         env.DB.prepare('SELECT id,display_name,email,avatar_url FROM app_users WHERE id=?').bind(session.sub).first(),
         env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(session.sub).first(),
+        env.DB.prepare('SELECT provider FROM zalo_identities WHERE user_id=? ORDER BY created_at LIMIT 1')
+          .bind(session.sub)
+          .first(),
       ]);
-      return json(env, request, { user, points: wallet?.balance || 0 });
+      return json(env, request, { user: user ? { ...user, provider: identity?.provider || 'zalo' } : null, points: wallet?.balance || 0 });
     }
     if (path === '/api/module-access' && method === 'GET') return await moduleAccess(env, request);
     if (path === '/api/topup/packages' && method === 'GET') {

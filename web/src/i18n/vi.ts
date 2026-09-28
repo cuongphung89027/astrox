@@ -65,6 +65,7 @@ export const vi: Record<string, string> = {
   'login.title': 'Chào bạn.',
   'login.description': 'Đăng nhập để lưu hành trình của bạn.',
   'login.continueZalo': 'Tiếp tục với Zalo',
+  'login.continueGoogle': 'Tiếp tục với Google',
   'login.googleSoon': 'Đang phát triển',
   'login.consentError': 'Bạn cần đồng ý điều khoản để tiếp tục.',
   'login.consentAgree': 'Tôi đồng ý với',

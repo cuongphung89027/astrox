@@ -23,7 +23,7 @@ import styles from './LoginPrompt.module.css';
 export function LoginPrompt() {
   const t = useLocale();
   const pathname = usePathname();
-  const { ready, loggedIn, zaloLogin } = useAuth();
+  const { ready, loggedIn, zaloLogin, googleLogin } = useAuth();
   const open = useLoginDialogOpen();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const checkboxRef = useRef<HTMLInputElement>(null);
@@ -75,14 +75,16 @@ export function LoginPrompt() {
     closeLoginDialog();
   }
 
-  function proceedZalo() {
+  const us = t.locale === 'en';
+  function proceed() {
     if (!consent) {
       setError(t.t('login.consentError'));
       checkboxRef.current?.focus();
       return;
     }
     saveTermsConsent();
-    zaloLogin();
+    if (us) googleLogin();
+    else zaloLogin();
   }
 
   return (
@@ -124,18 +126,30 @@ export function LoginPrompt() {
         <span className={styles.orbit} aria-hidden="true" />
       </header>
       <div className={styles.body}>
-        <button type="button" className={styles.zalo} onClick={proceedZalo} aria-disabled={!consent}>
-          <ZaloWordmark size={20} />
-          <span>{t.t('login.continueZalo')}</span>
-          <span className={styles.arrow} aria-hidden="true">
-            ↗
-          </span>
-        </button>
-        <button type="button" className={styles.google} disabled>
-          <GoogleG size={20} />
-          <span>Google</span>
-          <small>{t.t('login.googleSoon')}</small>
-        </button>
+        {us ? (
+          <button type="button" className={styles.google} onClick={proceed} aria-disabled={!consent}>
+            <GoogleG size={20} />
+            <span>{t.t('login.continueGoogle')}</span>
+            <span className={styles.arrow} aria-hidden="true">
+              ↗
+            </span>
+          </button>
+        ) : (
+          <>
+            <button type="button" className={styles.zalo} onClick={proceed} aria-disabled={!consent}>
+              <ZaloWordmark size={20} />
+              <span>{t.t('login.continueZalo')}</span>
+              <span className={styles.arrow} aria-hidden="true">
+                ↗
+              </span>
+            </button>
+            <button type="button" className={styles.google} disabled>
+              <GoogleG size={20} />
+              <span>Google</span>
+              <small>{t.t('login.googleSoon')}</small>
+            </button>
+          </>
+        )}
         <p className={styles.consentError} role={error ? 'alert' : undefined}>
           {error}
         </p>

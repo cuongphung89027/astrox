@@ -76,6 +76,8 @@ export interface AppState {
 }
 
 export interface AstroxUser {
+  /** Identity provider of this account ('zalo' | 'google'); legacy VN users default to 'zalo'. */
+  provider?: string;
   id?: string | number;
   display_name?: string;
   [key: string]: unknown;

@@ -1,18 +1,24 @@
-"use client";
-import {captureReferral,storedReferral} from "./referral";
+'use client';
+import { captureReferral, storedReferral } from './referral';
 
 /**
  * Auth + module access qua AstroX Worker (Zalo, cookie astrox_session) tại
  * api.theastrox.space. Mặc định mọi module được phép; chỉ khoá khi backend
  * trả access[module]=false.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
-import { fetchMeWithPoints, fetchModuleAccessAstrox } from "./api";
-import { AUTH_API_BASE } from "./config";
-import {startCloudSync} from "./cloud-sync";
-import {refreshPoints,seedPointsBalance,setPointsAccount} from "./points";
-import { getState, activateAccount } from "./state";
-import type { AstroxUser } from "./types";
+import { createContext, useCallback, useContext, useEffect, useMemo, useLayoutEffect, useRef, useState } from 'react';
+import { fetchMeWithPoints, fetchModuleAccessAstrox } from './api';
+import { AUTH_API_BASE } from './config';
+import { startCloudSync } from './cloud-sync';
+import { refreshPoints, seedPointsBalance, setPointsAccount } from './points';
+import { getState, activateAccount } from './state';
+
+/** Storage namespace: provider-prefixed internal id — legacy Zalo keys stay byte-identical. */
+export function accountOwner(user: { id?: string | number; provider?: string } | null | undefined): string | null {
+  if (!user?.id) return null;
+  return `${user.provider === 'google' ? 'google' : 'zalo'}:${user.id}`;
+}
+import type { AstroxUser } from './types';
 
 /* ----------------------------- context ----------------------------- */
 
@@ -26,6 +32,7 @@ interface AuthContextValue {
   refresh: () => void;
   logout: () => Promise<void>;
   zaloLogin: () => void;
+  googleLogin: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -35,9 +42,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 // — một số lần load ở dev kẹt ở server snapshot false, làm localhost rơi vào
 // RealAuthProvider và gọi API production.)
 const localPreview = () =>
-  typeof window !== "undefined" &&
-  process.env.NODE_ENV === "development" &&
-  ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+  typeof window !== 'undefined' &&
+  process.env.NODE_ENV === 'development' &&
+  ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Hydration theo server (false) cho khớp HTML tĩnh; sau mount đổi sang
@@ -53,24 +60,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const preview = mounted && localPreview();
   useEffect(captureReferral, []);
 
-  return preview ? <LocalPreviewProvider>{children}</LocalPreviewProvider> : <RealAuthProvider>{children}</RealAuthProvider>;
+  return preview ? (
+    <LocalPreviewProvider>{children}</LocalPreviewProvider>
+  ) : (
+    <RealAuthProvider>{children}</RealAuthProvider>
+  );
 }
 
 function LocalPreviewProvider({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState(true);
-  const name = getState().profile?.name || "Tài khoản xem thử";
+  const name = getState().profile?.name || 'Tài khoản xem thử';
   const value: AuthContextValue = {
-    astroxUser: active ? { id: "localhost-preview", display_name: name } : null,
-    loggedIn: active, ready: true, displayName: name, moduleAccess: {},
-    isModuleAllowed: () => true, refresh: () => {},
-    logout: async () => { setActive(false); },
-    zaloLogin: () => { setActive(true); },
+    astroxUser: active ? { id: 'localhost-preview', display_name: name } : null,
+    loggedIn: active,
+    ready: true,
+    displayName: name,
+    moduleAccess: {},
+    isModuleAllowed: () => true,
+    refresh: () => {},
+    logout: async () => {
+      setActive(false);
+    },
+    zaloLogin: () => {
+      setActive(true);
+    },
+    googleLogin: () => {
+      setActive(true);
+    },
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 function RealAuthProvider({ children }: { children: React.ReactNode }) {
-  const syncStop=useRef<(()=>void)|null>(null);
+  const syncStop = useRef<(() => void) | null>(null);
   const [astroxUser, setAstroxUser] = useState<AstroxUser | null>(null);
   const [moduleAccess, setModuleAccess] = useState<Record<string, boolean>>({});
   const [ready, setReady] = useState(false);
@@ -105,7 +127,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
   // Poll module access mỗi 20s khi tab hiển thị (admin bật/khoá realtime).
   useEffect(() => {
     const id = setInterval(() => {
-      if (document.visibilityState === "visible") refreshModuleAccess();
+      if (document.visibilityState === 'visible') refreshModuleAccess();
     }, 20000);
     return () => clearInterval(id);
   }, [astroxUser, refreshModuleAccess]);
@@ -113,27 +135,32 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!ready || !astroxUser) return;
     const refreshVisible = () => {
-      if (document.visibilityState === "visible") void refreshPoints(true);
+      if (document.visibilityState === 'visible') void refreshPoints(true);
     };
     const timer = window.setInterval(refreshVisible, 15000);
-    document.addEventListener("visibilitychange", refreshVisible);
+    document.addEventListener('visibilitychange', refreshVisible);
     return () => {
       window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", refreshVisible);
+      document.removeEventListener('visibilitychange', refreshVisible);
     };
   }, [ready, astroxUser]);
 
-  useLayoutEffect(()=>{
-    if(!ready)return;
-    syncStop.current?.();syncStop.current=null;
-    const owner=astroxUser?`zalo:${astroxUser.id}`:null;
-    activateAccount(owner);setPointsAccount(astroxUser?String(astroxUser.id):null);
-    if(owner)syncStop.current=startCloudSync(`${AUTH_API_BASE}/api/user-data`,async()=>({}));
-    return()=>{syncStop.current?.();syncStop.current=null;};
-  },[ready,astroxUser]);
+  useLayoutEffect(() => {
+    if (!ready) return;
+    syncStop.current?.();
+    syncStop.current = null;
+    const owner = astroxUser ? accountOwner(astroxUser) : null;
+    activateAccount(owner);
+    setPointsAccount(astroxUser ? String(astroxUser.id) : null);
+    if (owner) syncStop.current = startCloudSync(`${AUTH_API_BASE}/api/user-data`, async () => ({}));
+    return () => {
+      syncStop.current?.();
+      syncStop.current = null;
+    };
+  }, [ready, astroxUser]);
 
   const loggedIn = !!astroxUser;
-  const displayName = astroxUser?.display_name || "tài khoản";
+  const displayName = astroxUser?.display_name || 'tài khoản';
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -147,9 +174,12 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
         refreshModuleAccess();
       },
       logout: async () => {
-        syncStop.current?.();syncStop.current=null;activateAccount(null);setPointsAccount(null);
+        syncStop.current?.();
+        syncStop.current = null;
+        activateAccount(null);
+        setPointsAccount(null);
         try {
-          if (AUTH_API_BASE) await fetch(`${AUTH_API_BASE}/auth/logout`, { method: "POST", credentials: "include" });
+          if (AUTH_API_BASE) await fetch(`${AUTH_API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
         } catch {
           /* bỏ qua */
         }
@@ -159,19 +189,28 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
       zaloLogin: () => {
         if (AUTH_API_BASE) {
           const ref = storedReferral();
-          window.location.href = `${AUTH_API_BASE}/auth/zalo/login${ref ? `?ref=${ref}` : ""}`;
+          window.location.href = `${AUTH_API_BASE}/auth/zalo/login${ref ? `?ref=${ref}` : ''}`;
         }
+      },
+      googleLogin: () => {
+        if (AUTH_API_BASE) window.location.href = `${AUTH_API_BASE}/auth/google/login`;
       },
     }),
     [astroxUser, loggedIn, ready, displayName, moduleAccess, refreshModuleAccess],
   );
 
-  return <AuthContext.Provider value={value}><AccountContent key={astroxUser?.id||"guest"}>{children}</AccountContent></AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <AccountContent key={astroxUser?.id || 'guest'}>{children}</AccountContent>
+    </AuthContext.Provider>
+  );
 }
-function AccountContent({children}:{children:React.ReactNode}){return children;}
+function AccountContent({ children }: { children: React.ReactNode }) {
+  return children;
+}
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth phải nằm trong <AuthProvider>");
+  if (!ctx) throw new Error('useAuth phải nằm trong <AuthProvider>');
   return ctx;
 }

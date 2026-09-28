@@ -12,6 +12,7 @@ Trạng thái: phạm vi sản phẩm đã thống nhất; chi tiết kiến tr�
 - Đầy đủ tính năng như AstroX Việt Nam, ngoại trừ đặt lịch chuyên gia. Không rút gọn còn ba bộ môn.
 - Giữ trải nghiệm và hành vi tương đương; nội dung tiếng Anh và thanh toán phù hợp thị trường US.
 - Mua Credits bằng USD; dùng Credits cho nhiều tính năng. Lemon Squeezy là nhà cung cấp ưu tiên, phụ thuộc duyệt sản phẩm.
+- Bản US đăng nhập bằng Google; không triển khai đăng nhập email/mật khẩu, magic link hoặc Apple trong phạm vi này. Bản Việt giữ đăng nhập hiện tại.
 - Cùng tên miền, bản Anh tại `/en/...`; giữ các URL tiếng Việt hiện có.
 - Tự chọn phiên bản khi lần đầu vào trang chủ dựa trên quốc gia; ghi nhớ lựa chọn thủ công; không ép chuyển link có ngôn ngữ rõ.
 
@@ -43,7 +44,11 @@ Giữ ID dịch vụ ổn định. Cache AI phải phân biệt locale, phiên b
 
 ## 5. Danh tính, ví và thanh toán
 
-Đề xuất đăng nhập Google và email cho bản Anh, giữ Zalo cho Việt; một user ID nội bộ, không tạo tài khoản trùng hoặc tự gộp chỉ vì email giống nhau mà chưa xác minh quyền sở hữu.
+Đã chốt đăng nhập Google cho bản Anh, giữ Zalo cho Việt. Giao diện US có nút “Continue with Google”; không hiển thị Zalo hoặc phương án đăng nhập email/Apple. Email từ Google dùng cho hồ sơ và liên hệ, không phải một phương thức đăng nhập riêng.
+
+Một user ID nội bộ; danh tính Google được ánh xạ bằng định danh nhà cung cấp đã xác thực ở server. Đăng nhập lại không tạo tài khoản trùng. Không tự gộp với tài khoản Zalo chỉ vì email giống nhau; liên kết tài khoản, nếu bổ sung, phải chứng minh quyền sở hữu cả hai. Đổi ngôn ngữ không làm mất phiên đăng nhập hiện có.
+
+Luồng Google cần kiểm tra callback hợp lệ, chống giả mạo đăng nhập, xử lý hủy/từ chối/lỗi bằng tiếng Anh và quay về đúng trang trước đăng nhập. Không tin thông tin danh tính do client tự gửi. Cấu hình OAuth tách môi trường và giữ secret ở server.
 
 Đề xuất hai sổ ví tách theo market: Point/VN và Credits/US. Không tự chuyển đổi số dư hay gói mua khi đổi ngôn ngữ. Thị trường được trình bày và xác nhận trước lần mua đầu; không đổi theo IP sau đó. Quyền truy cập báo cáo đã mua phải gắn đúng chủ sở hữu, không mất chỉ vì đổi UI. Đây là chi tiết kiến trúc cần người dùng duyệt, chưa phải yêu cầu đã xác nhận.
 
@@ -84,7 +89,7 @@ Nguồn đã kiểm tra trong cuộc trao đổi:
 1. Inventory parity và hợp đồng locale/market/identity/wallet; chốt cơ chế ví trước migration.
 2. Routing và bản địa hóa đầy đủ UI, nội dung, metadata; giữ regression bản Việt.
 3. AI tiếng Anh và dữ liệu quốc tế; kiểm tra độc lập chất lượng luận giải cùng engine parity.
-4. Auth quốc tế, Credits, Lemon test mode và công cụ Admin.
+4. Đăng nhập Google cho US, Credits, Lemon test mode và công cụ Admin.
 5. QC đầy đủ, duyệt thương mại rồi release có kiểm soát.
 
 Nghiệm thu: ma trận parity không thiếu tính năng trong phạm vi; không sót tiếng Việt ngoài thuật ngữ/tên riêng; kiểm tra responsive, bàn phím, reduced motion; chuyển ngôn ngữ không mất trạng thái đã lưu; URL trực tiếp, cookie, VPN/quốc gia không rõ không gây loop; crawler truy cập được cả hai bản.
@@ -95,4 +100,4 @@ Release owner triển khai từ một SHA đã xác minh, migration cộng thêm
 
 ## 9. Tình trạng tự rà soát
 
-Tài liệu giữ toàn bộ phạm vi người dùng đã chốt, không thêm subscription hoặc chuyên gia. Các đề xuất ví, auth, hạn Credits và hoàn tiền được ghi rõ, không giả định đã được duyệt. Giá và provider approval là điều kiện thương mại trước live, không phải lý do trì hoãn inventory/bản địa hóa. Chưa có thay đổi sản phẩm hoặc bằng chứng triển khai trong lượt này.
+Tài liệu giữ toàn bộ phạm vi người dùng đã chốt, không thêm subscription hoặc chuyên gia. Google cho US là quyết định đã được người dùng xác nhận. Các đề xuất ví, hạn Credits và hoàn tiền được ghi rõ, không giả định đã được duyệt. Giá và provider approval là điều kiện thương mại trước live, không phải lý do trì hoãn inventory/bản địa hóa. Chưa có thay đổi sản phẩm hoặc bằng chứng triển khai trong lượt này.

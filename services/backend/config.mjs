@@ -4,11 +4,12 @@ export const secretBindings = {
   'payos:apiKey': 'PAYOS_API_KEY',
   'payos:checksumKey': 'PAYOS_CHECKSUM_KEY',
   'zalo:appSecret': 'ZALO_APP_SECRET',
+  'google:clientSecret': 'GOOGLE_CLIENT_SECRET',
 };
 export function capabilities(env) {
   return {
     configVersioned: true,
-    features: { payos: true, zalo: true, packages: true, services: true, paidAi: true, rewards: true },
+    features: { payos: true, zalo: true, google: true, packages: true, services: true, paidAi: true, rewards: true },
     inheritedSecrets: Object.entries(secretBindings)
       .filter(([, name]) => Boolean(env[name]))
       .map(([ref]) => ref),
@@ -49,6 +50,12 @@ export async function legacySnapshot(env) {
         callbackUrl: env.ZALO_REDIRECT_URI || 'https://api.theastrox.space/auth/zalo/callback',
         returnUrl: env.APP_ORIGIN || 'https://theastrox.space/',
       },
+      google: {
+        enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+        clientId: env.GOOGLE_CLIENT_ID || '',
+        callbackUrl: env.GOOGLE_REDIRECT_URI || 'https://api.theastrox.space/auth/google/callback',
+        returnUrl: '/en/profile',
+      },
       wallet: { enabled: true, label: 'AstroX Wallet' },
     },
   };
@@ -64,6 +71,7 @@ export async function runtimeSettings(env) {
       packages: legacy.packages.filter(p => p.active),
       payos: legacy.integrations.payos,
       zalo: legacy.integrations.zalo,
+      google: legacy.integrations.google,
     };
   }
   const config = published.config,
@@ -83,6 +91,7 @@ export async function runtimeSettings(env) {
     config,
     payos: config.integrations.payos,
     zalo: config.integrations.zalo,
+    google: config.integrations.google || { enabled: false, clientId: '', callbackUrl: '', returnUrl: '/en/profile' },
     packages:
       config.billing.enabled && config.integrations.payos.enabled && !config.operations.maintenance
         ? config.billing.packages

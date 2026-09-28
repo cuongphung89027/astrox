@@ -5,6 +5,7 @@ import { chargeAi, refundAi, completeAi, quoteAi } from './ai-operations.mjs';
 import { readPublished } from '../admin/store.mjs';
 import { runtimeSettings, capabilities, legacySnapshot } from './config.mjs';
 import { readSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } from './auth.mjs';
+import { googleLogin, googleCallback } from './google-auth.mjs';
 import { handlePayosWebhook, handleTopupCreate, handlePromoCheck, handlePromoRedeem } from './payments.mjs';
 import { handlePointsHistory } from './points.mjs';
 import { handleRewardsSummary, handleRewardsCheckin } from './rewards.mjs';
@@ -66,6 +67,14 @@ export async function publicFetch(request, env) {
         { error: 'restart_login', message: 'Vui lòng đăng nhập lại để xác minh danh tính.' },
         410,
       );
+    if (path === '/auth/google/login' && method === 'GET') {
+      const s = await runtimeSettings(env);
+      return await googleLogin(s.env, request, s);
+    }
+    if (path === '/auth/google/callback' && method === 'GET') {
+      const s = await runtimeSettings(env);
+      return await googleCallback(s.env, request, s);
+    }
     if (path === '/auth/logout' && method === 'POST') return logout(env, request);
     if (path === '/api/ai/session' && method === 'POST') return await aiSession(env, request);
     if (path === '/api/user-data') {
@@ -77,7 +86,8 @@ export async function publicFetch(request, env) {
       for (const [k, v] of Object.entries(corsHeaders(env, request))) headers.set(k, v);
       return new Response(r.body, { status: r.status, headers });
     }
-    if (['/api/experts', '/api/bookings', '/api/bookings/cancel'].includes(path)) return await publicBookings(env, request);
+    if (['/api/experts', '/api/bookings', '/api/bookings/cancel'].includes(path))
+      return await publicBookings(env, request);
     if (path === '/api/me' && method === 'GET') {
       const session = await readSession(env, request);
       if (!session) return json(env, request, { user: null });

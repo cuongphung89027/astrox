@@ -94,6 +94,7 @@ export type AdminConfig = {
   integrations: {
     payos: { enabled: boolean; clientId: string; returnUrl: string; cancelUrl: string; expiryMinutes: number };
     zalo: { enabled: boolean; appId: string; callbackUrl: string; returnUrl: string };
+    google: { enabled: boolean; clientId: string; callbackUrl: string; returnUrl: string };
     wallet: { enabled: boolean; label: string };
   };
   rewards: {
@@ -205,6 +206,7 @@ export function defaultConfig(): AdminConfig {
         expiryMinutes: 10,
       },
       zalo: { enabled: false, appId: '', callbackUrl: '', returnUrl: 'https://theastrox.space/' },
+      google: { enabled: false, clientId: '', callbackUrl: '', returnUrl: '/en/profile' },
       wallet: { enabled: false, label: 'AstroX Wallet' },
     },
     rewards: {

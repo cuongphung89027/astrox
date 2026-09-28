@@ -27,5 +27,12 @@ Branch `codex/english-us`, worktree `../astrox-english-us`. Base `db614b2` (= or
 - Cache: EN readings use `en::` key prefix via state.localeCacheKey; callers (Tasks 08–10) must use it + pass locale to callAiText.
 - Birth: profile.placeTz (IANA) + profile.birthDst('first'|'second'); resolveProfileZone default Asia/Ho_Chi_Minh keeps legacy charts byte-identical.
 
+| 08 Astrology engines EN | 7f47075 | DONE — astrology-en.ts labels; iztro en-US charts; batu Han-keyed EN tables + civil path; zodiac EN signs/planets/aspects + US_STATE_COORDS + degraded no-coords natal; components threaded (tuvi tabs/topics/period, batu, zodiac). NOTE: plan wanted 3 per-module commits; combined commit (recorded deviation). |
+| 09 Divination EN | 7d37437 | DONE — divination-en.ts (spreads/decks/8 trigrams/64 hexagrams/numerology/compat); KdResultPanel EN hexagram names; parity tests. |
+| 10 Calendar/palm EN | 5d3cf75 | DONE — almanac dateLabel/holidays/tradition locale params (gods/terms glosses); palm prompt EN lives in english-prompts.ts (Task 07). |
+
+## G2 status note (honest)
+Engine/label/locale plumbing for all 9 modules DONE (458/458 tests). REMAINING before G2 can pass: per-component EN pass over decorative panel copy (LunarCalendar 946 lines, PalmReader, TopicsPanel hints, compat/numerology/kinhdich client strings) — EN pages render EN charts/prompts/tabs but some panel strings remain VI. Task 21 certification must FAIL those rows; finish copy pass before RC.
+
 ## Next up
-Tasks 08–10 (module translations: labels EN + EN chart facts + wire localeCacheKey/callAiText locale in module clients) → then 11–14 commerce.
+Tasks 11–14 commerce (Google identity, credits ledger, market billing) → 15–18 Lemon → 19–24.

@@ -6,6 +6,7 @@ import { readPublished } from '../admin/store.mjs';
 import { runtimeSettings, capabilities, legacySnapshot } from './config.mjs';
 import { readSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } from './auth.mjs';
 import { googleLogin, googleCallback } from './google-auth.mjs';
+import { creditsBalance, creditsHistory, setMarket, marketOf } from './credits.mjs';
 import { handlePayosWebhook, handleTopupCreate, handlePromoCheck, handlePromoRedeem } from './payments.mjs';
 import { handlePointsHistory } from './points.mjs';
 import { handleRewardsSummary, handleRewardsCheckin } from './rewards.mjs';
@@ -76,6 +77,39 @@ export async function publicFetch(request, env) {
       return await googleCallback(s.env, request, s);
     }
     if (path === '/auth/logout' && method === 'POST') return logout(env, request);
+    if (path === '/api/credits/balance' && method === 'GET') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      return json(env, request, { wallet: 'credits', ...(await creditsBalance(env, session.sub)) });
+    }
+    if (path === '/api/credits/history' && method === 'GET') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      const url = new URL(request.url);
+      const limit = Math.min(Number(url.searchParams.get('limit')) || 50, 100);
+      return json(
+        env,
+        request,
+        await creditsHistory(env, session.sub, { limit, before: url.searchParams.get('before') }),
+      );
+    }
+    if (path === '/api/market' && method === 'GET') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      return json(env, request, { market: await marketOf(env, session.sub) });
+    }
+    if (path === '/api/market' && method === 'POST') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      if (!trustedOrigin(env, request)) return json(env, request, { error: 'invalid_origin' }, 403);
+      const body = await request.json().catch(() => null);
+      try {
+        return json(env, request, await setMarket(env, session.sub, body?.market));
+      } catch (e) {
+        return json(env, request, { error: String(e?.message || 'invalid_market') }, 400);
+      }
+    }
+    if (path === '/auth/logout' && method === 'POST') return logout(env, request);
     if (path === '/api/ai/session' && method === 'POST') return await aiSession(env, request);
     if (path === '/api/user-data') {
       const session = await readSession(env, request);
@@ -98,7 +132,10 @@ export async function publicFetch(request, env) {
           .bind(session.sub)
           .first(),
       ]);
-      return json(env, request, { user: user ? { ...user, provider: identity?.provider || 'zalo' } : null, points: wallet?.balance || 0 });
+      return json(env, request, {
+        user: user ? { ...user, provider: identity?.provider || 'zalo' } : null,
+        points: wallet?.balance || 0,
+      });
     }
     if (path === '/api/module-access' && method === 'GET') return await moduleAccess(env, request);
     if (path === '/api/topup/packages' && method === 'GET') {

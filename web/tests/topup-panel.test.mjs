@@ -5,7 +5,7 @@ import {load,hookRuntime,nodes} from './support/load.mjs';
 const tick = () => new Promise(resolve => setImmediate(resolve));
 async function fixture({user={id:'alice'},create,promoCheck,redeemPromo}={}) {
   const runtime=hookRuntime(); const calls=[]; const redirects=[]; let refreshes=0;
-  const api={createLemonTopup:async()=>({ok:false}),currentMarket:async()=>null,loadTopupPackages:async()=>[{amount_vnd:10000,points:100},{amount_vnd:20000,points:230}],loadTopupHistory:async()=>[],promoCheck:promoCheck??(async()=>({ok:true,bonus:25})),redeemPromo:redeemPromo??(async()=>({ok:true,points:25})),createTopup:async(...args)=>{calls.push(args);return create?create(...args):{error:'payos'};}};
+  const api={createLemonTopup:async()=>({ok:false}),currentMarket:async()=>'VN',chooseMarket:async()=>false,resetMarketCache:()=>{},loadTopupPackages:async()=>[{amount_vnd:10000,points:100},{amount_vnd:20000,points:230}],loadTopupHistory:async()=>[],promoCheck:promoCheck??(async()=>({ok:true,bonus:25})),redeemPromo:redeemPromo??(async()=>({ok:true,points:25})),createTopup:async(...args)=>{calls.push(args);return create?create(...args):{error:'payos'};}};
   const refresh=()=>{refreshes++;return Promise.resolve();};
   const {TopupPanel}=await load('components/topup/TopupPanel.tsx',{mocks:{react:runtime.react,'@/lib/auth':{useAuth:()=>({astroxUser:user})},'@/lib/points':{usePointsBalance:()=>({points:500,refresh})},'@/lib/api':api,'@/components/points/PointCoin':{PointCoin:()=>null}},globals:{document:{activeElement:null,body:{style:{overflow:''}}},window:{location:{assign:url=>redirects.push(url)}},HTMLElement:class {}}});
   const root=TopupPanel({open:true,onClose(){}});let tree;

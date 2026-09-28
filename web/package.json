@@ -21,7 +21,8 @@
     "knip": "knip --include files,exports,types,dependencies",
     "deploy:worker": "node ../scripts/deploy-worker.mjs",
     "format": "prettier --ignore-path ../.prettierignore --write ../services ../functions",
-    "format:check": "prettier --ignore-path ../.prettierignore --check ../services ../functions"
+    "format:check": "prettier --ignore-path ../.prettierignore --check ../services ../functions",
+    "qa:english-export": "node scripts/english-export-qa.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "0.10.35",

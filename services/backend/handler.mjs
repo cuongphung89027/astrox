@@ -8,6 +8,7 @@ import { readSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } f
 import { googleLogin, googleCallback } from './google-auth.mjs';
 import { creditsBalance, creditsHistory, setMarket, marketOf } from './credits.mjs';
 import { createLemonCheckout, lemonOrderStatus } from './lemon.mjs';
+import { usCheckin, usWalletSummary } from './us-rewards.mjs';
 import { handleLemonWebhook } from './lemon-webhook.mjs';
 import { handlePayosWebhook, handleTopupCreate, handlePromoCheck, handlePromoRedeem } from './payments.mjs';
 import { handlePointsHistory } from './points.mjs';
@@ -123,6 +124,18 @@ export async function publicFetch(request, env) {
           : { error: r.error },
         r.ok ? 200 : r.status || 502,
       );
+    }
+    if (path === '/api/credits/checkin' && method === 'POST') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      if (!trustedOrigin(env, request)) return json(env, request, { error: 'invalid_origin' }, 403);
+      const r = await usCheckin(env, session.sub, new Date().toISOString().slice(0, 10));
+      return json(env, request, r, r.granted ? 200 : 409);
+    }
+    if (path === '/api/credits/summary' && method === 'GET') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      return json(env, request, await usWalletSummary(env, session.sub));
     }
     if (path === '/api/lemon/order' && method === 'GET') {
       const session = await readSession(env, request);

@@ -97,9 +97,11 @@ test('signed paid order credits the wallet exactly once (PAY-01: 20 replays, one
   for (let i = 0; i < 20; i++) last = await handleLemonWebhook(env, signedRequest(payload));
   assert.equal(last.status, 200);
   const wallet = await creditsBalance(env, 'u1');
-  assert.equal(wallet.balance, 5);
+  assert.equal(wallet.balance, 10); // 5 purchased + 5 first-topup bonus (Task 18), still exactly once
   const ledger = (await env.DB.prepare("SELECT COUNT(*) AS n FROM credits_ledger WHERE kind='purchase'").first()).n;
   assert.equal(ledger, 1);
+  const bonus = (await env.DB.prepare("SELECT COUNT(*) AS n FROM credits_ledger WHERE kind='bonus'").first()).n;
+  assert.equal(bonus, 1);
   const order = await env.DB.prepare('SELECT status FROM lemon_orders').first();
   assert.equal(order.status, 'fulfilled');
 });

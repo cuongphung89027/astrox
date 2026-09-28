@@ -10,6 +10,7 @@
  */
 import { equal } from '../admin/crypto.mjs';
 import { creditPurchase } from './credits.mjs';
+import { usFirstTopup } from './us-rewards.mjs';
 import { verifyCheckoutSnapshot } from './lemon.mjs';
 
 const hex = buffer => Array.from(new Uint8Array(buffer), b => b.toString(16).padStart(2, '0')).join('');
@@ -112,5 +113,6 @@ export async function handleLemonWebhook(env, request) {
   )
     .bind(lemonOrderId, new Date().toISOString(), localOrderId)
     .run();
+  if (credited.meta?.changes === 1) await usFirstTopup(env, order.user_id, localOrderId).catch(() => {});
   return reply(200, { ok: true, credited: credited.meta?.changes === 1, replayed: credited.meta?.changes !== 1 });
 }

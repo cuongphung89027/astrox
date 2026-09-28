@@ -81,3 +81,18 @@ Then: Tasks 15–18 Lemon (checkout server-owned, webhook HMAC đúng một lầ
 Repro reviewer (/tmp/astrox-review-repro.mjs): FULFILL/REFUND/COMMIT đều sạch sau fix. Dòng UNLOCK_MARKET_SQL in '0' vì script hardcode chuỗi SQL CŨ — source đã có WHERE (chứng minh bằng service-unlocks tests + market-billing tests).
 G2/G3/G4 đã đóng lại sau vòng sửa P1 (4394411): 523/523 tests, typecheck 0, lint 0 lỗi, export-QA 51/51 (thêm language scan), repro script (/tmp/astrox-review-repro.mjs) sạch cả 4 ca.
 Lưu ý: dòng UNLOCK_MARKET_SQL trong repro in '0' vì script hardcode chuỗi SQL cũ — source đã có WHERE (test riêng xác nhận).
+
+
+## REVIEW ROUND 3 (28/09 late) — 6 P1 + 1 P2 from Sơn's second review; ALL FIXED at ebaab77
+| P1 | Fix | Evidence |
+|---|---|---|
+| a. completeUnlock/completeAi nuốt lỗi commit | completeUnlock: commit fail → fail(503), op stays running for retry. completeAi: same → reply 503. | UNLOCK_COMMIT_FAILURE repro: throws 503 (was ok:true with balance 1000/reserved 90) |
+| b. FIFO lot race | Removed remaining>=take guard → CHECK fires on conflict → batch rolls back → retry loop (3 attempts) with fresh lots | CONCURRENT_COMMIT repro: both succeed, lots [0,2] match balance 2 |
+| c. US unlock 0-price (owned) → invalid_amount | reserveUnlock/completeUnlock/refundUnlock skip wallet when offer.points === 0 | US_UNLOCK_OWNED: success (was invalid_amount) |
+| d. Refund trước paid bị bỏ vĩnh viễn | reconcileLemon: receipt processed=1 CHỈ khi result.applied hoặc order_not_found; order_not_fulfilled giữ pending | REFUND_BEFORE_PAID: first pass deferred, second pass applied deltaCredits=5 |
+| e. Admin US ServicesPanel read-only thay vì market config | Added billing.usServices overlay (sparse Record<serviceId,{points,status}>); publicConfig merges; chargeAi + quoteUnlock use overlay for US; ServicesPanel US edits overlay (shared VN config byte-identical — tested) | admin-market-isolation test: edit US price → billing.services snapshot unchanged |
+| f. Palm + I Ching còn VI interactive | PalmReader: camera/choose/guide/zoom/dominant-hand/hand-in-photo EN; KinhDich: method/cast/coins/lines/manual EN. Export-QA thêm INTERACT-* browser checks (4) + 6 markers mới | export-qa: 55 PASS 0 FAIL (51 + 4 INTERACT) |
+| P2-g marketCache không reset khi đổi account | Cache keyed theo account id (string|number|null); PointsHome/TopupPanel/api.ts pass account. auth.tsx resetMarketCache vẫn gọi | market-onboarding test 3/3 |
+
+**Final state at ebaab77: 523/523 tests, typecheck 0, export-QA 55/55, repro scripts sạch.**
+Worktree sạch. G2/G3/G4 đóng lại. G5 chờ operator.

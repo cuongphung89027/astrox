@@ -117,7 +117,7 @@ test('release returns credits after failure and is idempotent; lots consumed FIF
   // FIFO: spend the first lot entirely, then part of the second.
   assert.equal(await reserveCredits(env, { userId: u, amount: 6, operationKey: 'y' }), true);
   await commitReserved(env, { userId: u, amount: 6, operationKey: 'y' });
-  const lots = (await env.DB.prepare('SELECT remaining FROM credit_lots ORDER BY created_at').all()).results;
+  const lots = (await env.DB.prepare('SELECT remaining FROM credit_lots ORDER BY created_at, rowid').all()).results;
   assert.deepEqual(
     lots.map(l => l.remaining),
     [0, 4],

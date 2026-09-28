@@ -86,7 +86,9 @@ export async function commitReserved(env, { userId, amount, operationKey, meta =
   if (!account) throw new Error('reserve_not_held');
   // FIFO lot consumption inside the same call; the account UPDATE above already won.
   const lots = (
-    await env.DB.prepare('SELECT id,remaining FROM credit_lots WHERE user_id=? AND remaining>0 ORDER BY created_at, id')
+    await env.DB.prepare(
+      'SELECT id,remaining FROM credit_lots WHERE user_id=? AND remaining>0 ORDER BY created_at, rowid',
+    )
       .bind(userId)
       .all()
   ).results;

@@ -54,6 +54,15 @@ Publish `admin_versions` id **8** (API revision 7→8, `admin_state.revision` 11
 - Kiểm chứng sau publish: config public VN **byte-identical** revision 7 (chưa publish gói VN nào thay đổi), `usPackages` vẫn `[]` (lemon đang tắt), draft trùng publish. Rate đối chiếu: VN `vndPerPoint`=1000đ → 1 USD ≈ 25,5 point; US 10 credits/USD thấp hơn đúng yêu cầu.
 - Lúc Lemon duyệt: Admin → US → Billing điền Store ID + Variant ID từng gói, bật gói, set `environment: live`, publish — packages hiện ngay trên `/en` topup.
 
+## Sự cố AI trả tiếng Việt trên /en (29/09) — đã sửa + xác thực live
+
+Hiện tượng: luận giải trên `/en` trả về tiếng Việt (lượt `tuvi--tim-hieu-ban-than--tinh-cach` 00:51 GMT+7, `language: clean`). Hai lỗi chồng nhau, sửa qua 2 commit:
+
+1. **`2e9b230`** — inspector EN chỉ bắt chữ Hán ≥4 ký tự, văn xuôi tiếng Việt (Latin + dấu) luôn "clean"; repair EN đòi JSON span trong khi code dùng nguyên response. Sửa: phát hiện văn xuôi Việt theo mật độ dấu (≥6 từ có dấu Việt và ≥15% của ≥24 từ), tên riêng có dấu lẻ không bị cờ đỏ; repair đổi thành **viết lại toàn bộ bằng tiếng Anh**. Policy thêm câu "nhãn dữ liệu tiếng Việt không đổi ngôn ngữ đầu ra". Version `en-reading-2`.
+2. **`44a0b0d` (gốc rễ)** — `handleConfiguredAi` gọi `executeProviderChain` chỉ truyền `{messages, serviceId}`, **mất `locale`** → runtime luôn vào nhánh Việt: chèn system prompt VN + `VIETNAMESE_READING_POLICY` ("Viết toàn bộ bằng tiếng Việt") + inspector Việt. EN pipeline tồn tại nhưng không bao giờ chạy. Sửa: truyền `locale` ở cả 2 call site + test tích hợp khóa hợp đồng (policy EN tới provider, không gửi policy Việt, reply Việt bị repair).
+
+Kiểm chứng: 570/570 test; **repro live trên prod** — request EN giống hệt client trước fix trả tiếng Việt, sau fix (Worker `ef5ef183` / Pages `68987fd1`) trả tiếng Anh, `languagePolicyVersion: en-reading-2`, thuật ngữ cung/sao giữ nguyên kèm gloss (7/169 từ — đúng policy). Vùng dễ tái phát: mọi đường gọi provider mới phải truyền `locale`.
+
 ## Còn lại (go-live G5, cần operator)
 
 Secrets `LEMON_API_KEY`/`LEMON_WEBHOOK_SECRET` chưa stage; Google production OAuth client + Lemon duyệt store/catalog; 1 giao dịch thật + hoàn tiền; 1 đăng nhập Google thật; nghiệm thu camera iPhone (palm). Thứ tự bật theo runbook §4.

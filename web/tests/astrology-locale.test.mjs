@@ -60,7 +60,14 @@ test('english label tables cover every Vietnamese key they claim to mirror', asy
 
 test('natal chart for English carries English planet names and sign names', async () => {
   const { zodiac } = await mods();
-  const profile = { name: 'An', gender: 'Nam', dob: '1990-05-05', hourChi: 'Ngọ (11:00–12:59)', birthTime: '11:30', place: 'Hà Nội' };
+  const profile = {
+    name: 'An',
+    gender: 'Nam',
+    dob: '1990-05-05',
+    hourChi: 'Ngọ (11:00–12:59)',
+    birthTime: '11:30',
+    place: 'Hà Nội',
+  };
   const vi = zodiac.buildNatalChart(profile, 'vi');
   const en = zodiac.buildNatalChart(profile, 'en');
   assert.equal(vi.big3.sun.sign.name, 'Kim Ngưu');
@@ -76,7 +83,15 @@ test('natal chart for English carries English planet names and sign names', asyn
 
 test('international birth without coordinates still yields planet positions (degraded, no houses)', async () => {
   const { zodiac } = await mods();
-  const us = { name: 'Sam', gender: 'Nam', dob: '1990-05-05', hourChi: 'Ngọ (11:00–12:59)', birthTime: '11:30', place: 'California', placeTz: 'America/Los_Angeles' };
+  const us = {
+    name: 'Sam',
+    gender: 'Nam',
+    dob: '1990-05-05',
+    hourChi: 'Ngọ (11:00–12:59)',
+    birthTime: '11:30',
+    place: 'California',
+    placeTz: 'America/Los_Angeles',
+  };
   const chart = zodiac.buildNatalChart(us, 'en');
   assert.ok(chart);
   assert.equal(chart.planets.length > 0, true);
@@ -93,4 +108,46 @@ test('hour chi labels display per locale without touching stored values', async 
   assert.equal(en.hourChiLabel('Tý (23:00–00:59)', 'vi'), 'Tý (23:00–00:59)');
   assert.equal(en.hourChiLabel('Tý (23:00–00:59)', 'en'), 'Zi (11pm–1am)');
   assert.equal(en.hourChiLabel('Ngọ (11:00–12:59)', 'en'), 'Wu (11am–1pm)');
+});
+
+test('Ba Zi English rendering retains every computed branch relationship', async () => {
+  const { buildBatuChart } = await load('lib/batu.ts');
+  for (const dob of ['1990-01-01', '1995-06-15', '2000-02-20']) {
+    const input = { name: 'Test', dob, gender: 'Nam', hourChi: 'Tý', place: 'Hà Nội' };
+    const vi = buildBatuChart(input, 'vi'),
+      en = buildBatuChart(input, 'en');
+    assert.deepEqual(
+      en.relations.map(x => x.type),
+      vi.relations.map(x => x.type),
+    );
+    assert.deepEqual(en.wuxing, vi.wuxing);
+  }
+});
+
+test('English Zi Wei branches retain the same board positions, zodiac assets and life palace', async () => {
+  const { buildZiweiChart, menhPalace } = await load('lib/tuvi.ts');
+  const { earthlyBranch, zodiacAsset } = await load('lib/earthly-branches.ts');
+  const p = { name: 'Alex', gender: 'Nam', dob: '1990-01-01', hourChi: 'Tý (23:00–01:00)', place: 'Hà Nội' };
+  const vi = buildZiweiChart(p, 'vi'),
+    en = buildZiweiChart(p, 'en');
+  assert.equal(menhPalace(en)?.index, menhPalace(vi)?.index);
+  for (let i = 0; i < 12; i++) {
+    assert.equal(earthlyBranch(en.palaces[i].earthlyBranch)?.name, earthlyBranch(vi.palaces[i].earthlyBranch)?.name);
+    assert.equal(zodiacAsset(en.palaces[i].earthlyBranch), zodiacAsset(vi.palaces[i].earthlyBranch));
+  }
+});
+
+test('Zi Wei English star labels preserve the same element colors', async () => {
+  const { tuvi } = await mods(),
+    input = { dob: '1990-05-05', gender: 'Nam', hourChi: 'Tý (23:00–00:59)', place: 'Hà Nội' };
+  const vi = tuvi.buildZiweiChart(input, 'vi'),
+    en = tuvi.buildZiweiChart(input, 'en');
+  for (let i = 0; i < vi.palaces.length; i++)
+    for (const field of ['majorStars', 'minorStars', 'adjectiveStars']) {
+      const a = vi.palaces[i][field] ?? [],
+        b = en.palaces[i][field] ?? [];
+      for (let j = 0; j < a.length; j++)
+        assert.equal(tuvi.starElement(b[j].name), tuvi.starElement(a[j].name), `${a[j].name} / ${b[j].name}`);
+    }
+  assert.equal(tuvi.starElement('emperor'), tuvi.starElement('Tử Vi'));
 });

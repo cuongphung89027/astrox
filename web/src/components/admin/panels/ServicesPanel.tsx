@@ -1,7 +1,7 @@
 'use client';
 import { useState, type ReactNode } from 'react';
 import { Fields, Card, Empty, Chain, optionLabels, fmt, uid, type Spec } from '../ui';
-import { MODULES, type ServicePrice } from '../../../../../services/admin/config';
+import { MODULES, configForMarket, type ServicePrice } from '../../../../../services/admin/config';
 import { SERVICE_CATALOG, addMissingServices } from '../../../../../services/admin/catalog';
 import { serviceTree, bundleDefinitions, type ServiceNode } from '../../../../../services/admin/service-tree';
 import { defaultUnlockSettings, upgradeQuote } from '../../../../../services/admin/service-pricing';
@@ -16,8 +16,29 @@ const searchText = (v: string) =>
     .toLowerCase();
 const statuses = ['draft', 'free', 'paid', 'maintenance', 'hidden'];
 const definitions = bundleDefinitions();
-export function ServicesPanel({ config, update, market }: AdminPanelProps) {
-  if (market === 'US') return <UsServicesCoverage config={config} update={update} />;
+export function ServicesPanel(props: AdminPanelProps) {
+  if (props.market !== 'US') return <ServicesEditor {...props} />;
+  return (
+    <ServicesEditor
+      {...props}
+      config={configForMarket(props.config, 'US')}
+      update={fn =>
+        props.update(d => {
+          const view = structuredClone(configForMarket(d, 'US'));
+          fn(view);
+          d.billing.usUnlocks = view.billing.unlocks;
+          for (const row of view.billing.services.filter(s => s.module !== 'experts')) {
+            const { id, module: moduleId, ...override } = row;
+            void moduleId;
+            d.billing.usServices[id] = override;
+          }
+        })
+      }
+    />
+  );
+}
+function ServicesEditor({ config, update, market }: AdminPanelProps) {
+  const unit = market === 'US' ? 'Credits' : 'Point';
   const [module, setModule] = useState(''),
     [query, setQuery] = useState(''),
     [status, setStatus] = useState('');
@@ -25,7 +46,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
     [previewPaid, setPreviewPaid] = useState(90);
   const settings = config.billing.unlocks ?? defaultUnlockSettings(),
     rows = config.billing.services,
-    tree = serviceTree(rows);
+    tree = serviceTree(rows).filter(n => market !== 'US' || n.id !== 'experts');
   const change = (id: string, key: string, value: unknown) =>
     update(d => {
       const row = d.billing.services.find(s => s.id === id);
@@ -37,7 +58,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
       ['name', 'Tên dịch vụ', 'text'],
       ['status', isRoot ? 'Trạng thái bộ môn' : 'Trạng thái', statuses],
     ];
-    if (!isRoot) specs.push(['points', 'Giá riêng (Point)', 'number']);
+    if (!isRoot) specs.push(['points', `Giá riêng (${unit})`, 'number']);
     if (!known && !isRoot)
       specs.push(
         ['module', 'Bộ môn', MODULES.map(m => m.id)],
@@ -67,7 +88,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
           {isRoot && (
             <Fields
               value={row}
-              specs={[['points', 'Giá gọi mã bộ môn cũ (Point)', 'number']]}
+              specs={[['points', `Giá gọi mã bộ môn cũ (${unit})`, 'number']]}
               onChange={(k, v) => change(row.id, k, v)}
             />
           )}
@@ -111,7 +132,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
           value={price}
           specs={[
             ['enabled', 'Bán gói này', 'boolean'],
-            ['points', 'Giá mở cả gói (Point)', 'number'],
+            ['points', `Giá mở cả gói (${unit})`, 'number'],
           ]}
           onChange={(k, v) =>
             update(d => {
@@ -170,7 +191,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
                 : variants
                   ? `${node.serviceIds.length} kiểu trải bài`
                   : row
-                    ? `${optionLabels[row.status]} · ${fmt(row.points)} Point`
+                    ? `${optionLabels[row.status]} · ${fmt(row.points)} ${unit}`
                     : ''}
           </span>
         </summary>
@@ -256,7 +277,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
     >
       <section className={t.rules} aria-label="Cơ chế mở khóa">
         <h3>Mở từng phần. Nâng cấp khi cần.</h3>
-        <p>Khấu trừ từ số Point thực trả cho phần đã mua trong cùng gói và cùng hồ sơ.</p>
+        <p>Khấu trừ từ số {unit} thực trả cho phần đã mua trong cùng gói và cùng hồ sơ.</p>
         <Fields
           value={settings}
           specs={[['enabled', 'Bật mở khóa theo hồ sơ và kỳ', 'boolean']]}
@@ -280,7 +301,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
             }
           />
           <p className={s.help}>
-            Mặc định 2/3. Làm tròn xuống phần khấu trừ; giá phải trả tối thiểu 0 Point. Khoản đã dùng nâng cấp không
+            Mặc định 2/3. Làm tròn xuống phần khấu trừ; giá phải trả tối thiểu 0 {unit}. Khoản đã dùng nâng cấp không
             được khấu trừ lại.
           </p>
         </div>
@@ -298,7 +319,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
               />
             </label>
             <label>
-              Point đã trả đủ điều kiện
+              {unit} đã trả đủ điều kiện
               <input
                 type="number"
                 min="0"
@@ -309,7 +330,7 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
             </label>
             <output>
               {preview
-                ? `${fmt(previewPrice)} − ${fmt(preview.credit)} = ${fmt(preview.points)} Point`
+                ? `${fmt(previewPrice)} − ${fmt(preview.credit)} = ${fmt(preview.points)} ${unit}`
                 : 'Nhập giá và tỷ lệ hợp lệ.'}
             </output>
           </div>
@@ -370,71 +391,5 @@ export function ServicesPanel({ config, update, market }: AdminPanelProps) {
         <Empty>Không có dịch vụ phù hợp. Thử đổi bộ môn, trạng thái hoặc từ khóa.</Empty>
       )}
     </Card>
-  );
-}
-
-/** US market view (P1-8): prices/status are shared VN-side config — editing them
- *  from the US context is disabled; this view audits English readiness only. */
-function UsServicesCoverage({ config, update }: Pick<AdminPanelProps, 'config' | 'update'>) {
-  const overlay = config.billing.usServices ?? {};
-  const rows = config.billing.services.filter(r => r.id !== r.module && r.id !== 'experts');
-  const setUs = (id: string, patch: { points?: number; status?: string }) =>
-    update(d => {
-      const current = d.billing.usServices[id] ?? { points: 0, status: 'draft' };
-      d.billing.usServices[id] = { ...current, ...patch };
-    });
-  return (
-    <section>
-      <h2>US services (market overlay)</h2>
-      <p className={s.notice}>
-        Price and status overrides for the US market (Credits). Services without an override use the shared price. Edits
-        here never touch the Vietnamese config.
-      </p>
-      <div className={s.packList}>
-        {rows.map(r => {
-          const us = overlay[r.id];
-          return (
-            <div key={r.id} className={s.packRow}>
-              <code>{r.id}</code>
-              <label>
-                <input
-                  type="number"
-                  value={us?.points ?? r.points}
-                  min={0}
-                  aria-label={'US Credits ' + r.id}
-                  onChange={e => setUs(r.id, { points: Math.max(0, Number(e.target.value) || 0) })}
-                />
-              </label>
-              <label>
-                <select
-                  value={us?.status ?? r.status}
-                  aria-label={'US status ' + r.id}
-                  onChange={e => setUs(r.id, { status: e.target.value })}
-                >
-                  {['draft', 'free', 'paid', 'maintenance', 'hidden'].map(st => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {us && (
-                <button
-                  className={s.danger}
-                  onClick={() =>
-                    update(d => {
-                      delete d.billing.usServices[r.id];
-                    })
-                  }
-                  aria-label="Remove override"
-                >
-                  ↺
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </section>
   );
 }

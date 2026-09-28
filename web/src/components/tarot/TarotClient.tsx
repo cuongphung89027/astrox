@@ -40,6 +40,8 @@ import { DeckPicker } from './DeckPicker';
 import { useTarotHistoryCount } from '@/lib/use-tarot-history';
 
 export function TarotClient() {
+  const en = useLocale().locale === 'en';
+  const copy = useCallback((vi: string, us: string) => (en ? us : vi), [en]);
   const t = useLocale();
   const spreadEn = (id: string) => TAROT_SPREADS_EN[id];
   const spreadLabel = (s: { id: string; name: string }) =>
@@ -68,7 +70,12 @@ export function TarotClient() {
 
   const deck = tarotDeckById(deckId) ?? TAROT_DECKS[0];
   const spread = tarotSpreadById(spreadId) ?? TAROT_SPREADS[1];
-  const positionLabels = tarotPositionsForFlow(spread, frameId);
+  const englishSpread = spreadEn(spread.id);
+  const positionLabels = en
+    ? (englishSpread?.frames?.[frameId]?.positions ??
+      englishSpread?.positions ??
+      tarotPositionsForFlow(spread, frameId))
+    : tarotPositionsForFlow(spread, frameId);
   const complete = pool.length > 0 && drawn.length >= pool.length && drawn.every(s => s.flipped && s.revealed);
 
   /* --------------------- Tải dữ liệu lá bài --------------------- */
@@ -78,9 +85,12 @@ export function TarotClient() {
       .then(data => setCardsData(data))
       .catch(() => {
         setCardsErr(true);
-        show('Không tải được dữ liệu lá bài — thử lại sau.', 'error');
+        show(
+          copy('Không tải được dữ liệu lá bài — thử lại sau.', 'Unable to load card data. Please try again.'),
+          'error',
+        );
       });
-  }, [show]);
+  }, [show, copy]);
 
   useEffect(() => {
     if (peekTarotCards()) return;
@@ -92,13 +102,16 @@ export function TarotClient() {
       .catch(() => {
         if (active) {
           setCardsErr(true);
-          show('Không tải được dữ liệu lá bài — thử lại sau.', 'error');
+          show(
+            copy('Không tải được dữ liệu lá bài — thử lại sau.', 'Unable to load card data. Please try again.'),
+            'error',
+          );
         }
       });
     return () => {
       active = false;
     };
-  }, [show]);
+  }, [show, copy]);
 
   // Dọn timer khi rời trang
   useEffect(() => {
@@ -165,26 +178,29 @@ export function TarotClient() {
       <h1 className="sr-only">Tarot</h1>
       {phase === 'setup' ? (
         inHistory ? (
-          <TarotHistory onClose={() => router.push('/tarot')} />
+          <TarotHistory onClose={() => router.push(en ? '/en/tarot' : '/tarot')} />
         ) : (
           <div className={styles.setup}>
             <DeckPicker value={deckId} onChange={setDeckId} />
             <div className={styles.controls}>
               <label className={styles.question} htmlFor="tarot-question">
-                Điều bạn đang nghĩ tới <span>Tuỳ chọn</span>
+                {copy('Điều bạn đang nghĩ tới', 'What’s on your mind')} <span>{copy('Tuỳ chọn', 'Optional')}</span>
               </label>
               <textarea
                 id="tarot-question"
                 rows={2}
                 value={question}
                 onChange={e => setQuestion(e.target.value)}
-                placeholder="Viết câu hỏi của bạn…"
+                placeholder={copy('Viết câu hỏi của bạn…', 'Write your question…')}
                 className={styles.textarea}
               />
               <div className={styles.sectionLabel}>
-                Kiểu trải bài <span>{spread.count} lá</span>
+                {copy('Kiểu trải bài', 'Spread')}{' '}
+                <span>
+                  {spread.count} {en ? 'cards' : 'lá'}
+                </span>
               </div>
-              <div className={styles.spreadChoices} role="group" aria-label="Kiểu trải bài">
+              <div className={styles.spreadChoices} role="group" aria-label={copy('Kiểu trải bài', 'Spread')}>
                 {TAROT_SPREADS.map(s => (
                   <button
                     type="button"
@@ -200,29 +216,31 @@ export function TarotClient() {
                       {
                         (
                           {
-                            one: 'Một lá',
-                            three: 'Ba lá',
-                            cross5: 'Thánh giá',
-                            relationship5: 'Tình yêu',
+                            one: copy('Một lá', 'One card'),
+                            three: copy('Ba lá', 'Three cards'),
+                            cross5: copy('Thánh giá', 'Simple cross'),
+                            relationship5: copy('Tình yêu', 'Relationships'),
                             celtic10: 'Celtic Cross',
                           } as Record<string, string>
                         )[s.id]
                       }
                     </span>
-                    <small>{s.count} lá</small>
+                    <small>
+                      {s.count} {en ? 'cards' : 'lá'}
+                    </small>
                   </button>
                 ))}
               </div>
               <p className={styles.spreadDescription} aria-live="polite">
-                {spread.desc}
+                {en ? englishSpread?.desc : spread.desc}
               </p>
               {spread.frames && (
                 <label className={styles.frame}>
-                  Góc nhìn
+                  {copy('Góc nhìn', 'Perspective')}
                   <select value={frameId} onChange={event => setFrameId(event.target.value)}>
                     {spread.frames.map(frame => (
                       <option key={frame.id} value={frame.id}>
-                        {frame.label}
+                        {en ? englishSpread?.frames?.[frame.id]?.label : frame.label}
                       </option>
                     ))}
                   </select>
@@ -230,21 +248,24 @@ export function TarotClient() {
               )}
               {cardsErr && (
                 <div role="alert" className={styles.error}>
-                  Không tải được bộ bài. <button onClick={fetchCards}>Thử lại</button>
+                  {copy('Không tải được bộ bài.', 'Unable to load the deck.')}{' '}
+                  <button onClick={fetchCards}>{copy('Thử lại', 'Try again')}</button>
                 </div>
               )}
               <button className={styles.start} onClick={startDraw} disabled={!cardsData || deck.status !== 'available'}>
                 {deck.status !== 'available'
-                  ? 'Bộ bài đang được chuẩn bị'
+                  ? copy('Bộ bài đang được chuẩn bị', 'This deck is being prepared')
                   : cardsData
-                    ? 'Bắt đầu trải bài'
-                    : 'Đang tải bộ bài…'}
+                    ? copy('Bắt đầu trải bài', 'Start your reading')
+                    : copy('Đang tải bộ bài…', 'Loading deck…')}
                 <span aria-hidden="true">↗</span>
               </button>
-              <Link href="/tarot?history=1" className={styles.historyLink}>
-                <span>Nhật ký trải bài</span>
+              <Link href={en ? '/en/tarot?history=1' : '/tarot?history=1'} className={styles.historyLink}>
+                <span>{copy('Nhật ký trải bài', 'Reading journal')}</span>
                 <span>
-                  {historyCount > 0 ? `${historyCount} lượt đã luận giải ` : 'Chưa có lượt nào '}
+                  {historyCount > 0
+                    ? `${historyCount} ${en ? 'readings' : 'lượt đã luận giải'} `
+                    : copy('Chưa có lượt nào ', 'No readings yet ')}
                   <i aria-hidden="true">↗</i>
                 </span>
               </Link>
@@ -266,7 +287,7 @@ export function TarotClient() {
         /* ============================ BÀN TRẢI ============================ */
         <div ref={boardRef} className={styles.ritual}>
           <div className={styles.ritualHeader}>
-            <button onClick={resetToSetup} aria-label="Trải bài khác">
+            <button onClick={resetToSetup} aria-label={copy('Trải bài khác', 'Start another reading')}>
               ←
             </button>
             <div>
@@ -281,8 +302,16 @@ export function TarotClient() {
           <ReadingQuestion>{question}</ReadingQuestion>
           <div className={styles.readingTable} data-tarot-table>
             <div className={styles.tableHeading}>
-              <span>{complete ? 'NHỮNG LÁ BÀI CỦA BẠN' : 'MỘT KHOẢNG LẶNG CHO BẠN'}</span>
-              <p>{complete ? 'Lắng nghe điều được hé mở' : 'Những lá bài đang được mở'}</p>
+              <span>
+                {complete
+                  ? copy('NHỮNG LÁ BÀI CỦA BẠN', 'YOUR CARDS')
+                  : copy('MỘT KHOẢNG LẶNG CHO BẠN', 'A MOMENT OF STILLNESS')}
+              </span>
+              <p>
+                {complete
+                  ? copy('Lắng nghe điều được hé mở', 'Listen to what unfolds')
+                  : copy('Những lá bài đang được mở', 'Your cards are being revealed')}
+              </p>
             </div>
             {/* Quạt bài minh hoạ cho quá trình tự rút. */}
             <TarotFan
@@ -295,8 +324,12 @@ export function TarotClient() {
             {/* Bàn trải — vị trí theo kiểu trải */}
             <p className="sr-only" role="status">
               {complete
-                ? `Đã rút đủ ${spread.count} lá. Cuộn xuống để xem luận giải.`
-                : `Đã rút ${drawn.length} trên ${spread.count} lá.`}
+                ? en
+                  ? `All ${spread.count} cards drawn. Scroll down for your reading.`
+                  : `Đã rút đủ ${spread.count} lá. Cuộn xuống để xem luận giải.`
+                : en
+                  ? `Drawn ${drawn.length} of ${spread.count} cards.`
+                  : `Đã rút ${drawn.length} trên ${spread.count} lá.`}
             </p>
 
             <div className={styles.placedCards}>
@@ -417,7 +450,8 @@ export function TarotClient() {
                               aria-live="polite"
                               className="mt-2 w-[var(--tarot-card-width,100px)] text-center text-[10.5px] font-semibold leading-snug text-muc-2 sm:w-[190px]"
                             >
-                              Lá cắt ngang — {positionLabels[1]}: {labelCross(drawn[1].entry)}
+                              {en ? 'Crossing card' : 'Lá cắt ngang'} — {positionLabels[1]}:{' '}
+                              {labelCross(drawn[1].entry, en)}
                             </p>
                           </>
                         ) : null}
@@ -485,7 +519,9 @@ export function TarotClient() {
                     profile={profile}
                   />
                 ) : (
-                  <p className="text-sm text-muc-2">Rút đủ {spread.count} lá để AstroX bắt đầu luận giải.</p>
+                  <p className="text-sm text-muc-2">
+                    Rút đủ {spread.count} {en ? 'cards' : 'lá'} để AstroX bắt đầu luận giải.
+                  </p>
                 )}
               </div>
             </GlassCard>
@@ -497,8 +533,8 @@ export function TarotClient() {
 }
 
 /** Nhãn gọn cho lá cắt ngang (Celtic Cross). */
-function labelCross(entry: DrawnCard): string {
-  return `${tarotCardById(entry.id)?.nameEn ?? entry.id} — ${entry.reversed ? 'ngược' : 'xuôi'}`;
+function labelCross(entry: DrawnCard, en = false): string {
+  return `${tarotCardById(entry.id)?.nameEn ?? entry.id} — ${en ? (entry.reversed ? 'reversed' : 'upright') : entry.reversed ? 'ngược' : 'xuôi'}`;
 }
 
 function SpreadDiagram({ id }: { id: string }) {

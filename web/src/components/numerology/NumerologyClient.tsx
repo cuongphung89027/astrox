@@ -12,7 +12,7 @@ import { TopicPanel } from './TopicPanel';
 import { BirthGrid, NumberCycles } from './NumberDiagrams';
 import styles from './Numerology.module.css';
 import { useLocale } from '@/i18n/LocaleProvider';
-import { NUMEROLOGY_TOPICS_EN, NUMEROLOGY_LABEL_EN } from '@/i18n/divination-en';
+import { NUMEROLOGY_TOPICS_EN, NUMEROLOGY_LABEL_EN, NUMEROLOGY_EXTRA_EN } from '@/i18n/divination-en';
 export function NumerologyClient() {
   const t = useLocale();
   const en = t.locale === 'en';
@@ -160,7 +160,7 @@ export function NumerologyClient() {
                 <div key={m.key}>
                   <span>{label(m.label).replace(en ? 'Number ' : 'Số ', '')}</span>
                   <strong>{m.value}</strong>
-                  <p>{en ? (NUMEROLOGY_TOPICS_EN['extra-' + m.key]?.desc ?? m.desc) : m.desc}</p>
+                  <p>{en ? (NUMEROLOGY_EXTRA_EN[m.key]?.desc ?? m.desc) : m.desc}</p>
                 </div>
               ))}
             </div>
@@ -191,7 +191,7 @@ export function NumerologyClient() {
               <summary>{en ? 'Karmic debt numbers' : 'Các chỉ số nợ nghiệp'}</summary>
               <p>
                 {chart.karmicDebts.length
-                  ? chart.karmicDebts.map(k => `${k.label} (${k.raw})`).join(' · ')
+                  ? chart.karmicDebts.map(k => `${label(k.label)} (${k.raw})`).join(' · ')
                   : en
                     ? 'No karmic debts under the current method.'
                     : 'Không có số nợ nghiệp theo cách tính hiện tại.'}
@@ -209,7 +209,7 @@ export function NumerologyClient() {
             <div className={styles.personal}>
               {personalMetrics(chart).map((m, i) => (
                 <article key={m.key}>
-                  <span>{m.label}</span>
+                  <span>{label(m.label)}</span>
                   <strong>{m.value}</strong>
                   {i === 0 && (
                     <button onClick={() => choose('personal-year')}>{en ? 'Open reading ↗' : 'Xem luận giải ↗'}</button>

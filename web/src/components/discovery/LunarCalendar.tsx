@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import {
   solarToLunar,
   lunarToSolar,
@@ -28,8 +28,8 @@ import {
 import s from './LunarCalendar.module.css';
 import { useLocale } from '@/i18n/LocaleProvider';
 const STORE = 'astrox-lunar-events-v1';
-const weekday = (date: string) =>
-  new Date(date + 'T12:00:00Z').toLocaleDateString('vi-VN', {
+const weekday = (date: string, en = false) =>
+  new Date(date + 'T12:00:00Z').toLocaleDateString(en ? 'en-US' : 'vi-VN', {
     weekday: 'long',
     timeZone: 'UTC',
   });
@@ -44,6 +44,7 @@ function download(text: string) {
 export function LunarCalendar() {
   const t = useLocale();
   const en = t.locale === 'en';
+  const copy = useCallback((vi: string, us: string) => (en ? us : vi), [en]);
   const [today, setToday] = useState(''),
     [selected, setSelected] = useState(''),
     [tab, setTab] = useState('calendar');
@@ -77,7 +78,7 @@ export function LunarCalendar() {
     try {
       setEvents(parseEvents(JSON.parse(localStorage.getItem(STORE) || '[]')));
     } catch {
-      setError('Không đọc được ngày đã lưu trên thiết bị.');
+      setError(copy('Không đọc được ngày đã lưu trên thiết bị.', 'Unable to read saved dates on this device.'));
     }
     const refresh = () => setToday(vietnamToday());
     const interval = setInterval(refresh, 60000);
@@ -94,17 +95,17 @@ export function LunarCalendar() {
       window.removeEventListener('focus', refresh);
       window.removeEventListener('storage', sync);
     };
-  }, []);
+  }, [copy]);
   const month = selected.slice(0, 7);
-  const facts = useMemo(() => (selected ? dayFacts(selected) : null), [selected]);
+  const facts = useMemo(() => (selected ? dayFacts(selected, t.locale) : null), [selected, t.locale]);
   const days = useMemo(() => {
     if (!month) return [];
     const [y, m] = month.split('-').map(Number);
     return Array.from({ length: new Date(Date.UTC(y, m, 0)).getUTCDate() }, (_, i) => {
       const date = `${month}-${String(i + 1).padStart(2, '0')}`;
-      return { date, ...tradition(date), holidays: holidays(date) };
+      return { date, ...tradition(date, t.locale), holidays: holidays(date, t.locale) };
     });
-  }, [month]);
+  }, [month, t.locale]);
   const upcoming = useMemo(
     () =>
       today
@@ -131,7 +132,7 @@ export function LunarCalendar() {
       setError('');
       return true;
     } catch {
-      setError('Không lưu được trên thiết bị này.');
+      setError(copy('Không lưu được trên thiết bị này.', 'Unable to save on this device.'));
       return false;
     }
   }
@@ -154,16 +155,16 @@ export function LunarCalendar() {
     <div className={s.monthControls}>
       <button
         type="button"
-        aria-label="Tháng trước"
+        aria-label={copy('Tháng trước', 'Previous month')}
         disabled={!selected || month === `${MIN_YEAR}-01`}
         onClick={() => choose(shiftMonth(selected, -1))}
       >
         ‹
       </button>
       <label>
-        <span className={s.sr}>Chọn tháng</span>
+        <span className={s.sr}>{copy('Chọn tháng', 'Choose month')}</span>
         <input
-          aria-label="Chọn tháng"
+          aria-label={copy('Chọn tháng', 'Choose month')}
           type="month"
           value={month}
           min={`${MIN_YEAR}-01`}
@@ -179,14 +180,14 @@ export function LunarCalendar() {
       </label>
       <button
         type="button"
-        aria-label="Tháng sau"
+        aria-label={copy('Tháng sau', 'Next month')}
         disabled={!selected || month === `${MAX_YEAR}-12`}
         onClick={() => choose(shiftMonth(selected, 1))}
       >
         ›
       </button>
       <button type="button" className={s.todayButton} onClick={() => choose(today)} disabled={!today}>
-        Hôm nay
+        {copy('Hôm nay', 'Today')}
       </button>
     </div>
   );
@@ -195,9 +196,9 @@ export function LunarCalendar() {
       <header className={s.header}>
         <h1>{en ? 'Lunar Calendar' : 'Lịch âm'}</h1>
         <label className={s.jump}>
-          <span>Đến ngày</span>
+          <span>{copy('Đến ngày', 'Go to date')}</span>
           <input
-            aria-label="Đến ngày"
+            aria-label={copy('Đến ngày', 'Go to date')}
             type="date"
             min={`${MIN_YEAR}-01-01`}
             max={`${MAX_YEAR}-12-31`}
@@ -211,12 +212,12 @@ export function LunarCalendar() {
           />
         </label>
       </header>
-      <nav className={s.tabs} aria-label="Chức năng lịch">
+      <nav className={s.tabs} aria-label={copy('Chức năng lịch', 'Calendar tools')}>
         {[
-          ['calendar', 'Lịch'],
-          ['good', 'Ngày tốt'],
-          ['convert', 'Đổi ngày'],
-          ['events', 'Sự kiện'],
+          ['calendar', copy('Lịch', 'Calendar')],
+          ['good', copy('Ngày tốt', 'Auspicious dates')],
+          ['convert', copy('Đổi ngày', 'Convert dates')],
+          ['events', copy('Sự kiện', 'Events')],
         ].map(([id, label]) => (
           <button
             key={id}
@@ -245,56 +246,56 @@ export function LunarCalendar() {
               onClick={() => {
                 if (events.length < 100 && !events.some(e => e.id === deleted.id) && persist([...events, deleted])) {
                   setDeleted(null);
-                  setNotice('Đã khôi phục sự kiện.');
+                  setNotice(copy('Đã khôi phục sự kiện.', 'Event restored.'));
                 }
               }}
             >
               {' '}
-              Hoàn tác
+              {copy('Hoàn tác', 'Undo')}
             </button>
           )}
         </p>
       )}
       {!facts ? (
         <div className={s.skeleton} role="status">
-          Đang mở lịch…
+          {copy('Đang mở lịch…', 'Loading calendar…')}
         </div>
       ) : (
         <>
           {tab === 'calendar' && (
             <>
-              <section className={s.dayHero} aria-label="Ngày đang chọn">
+              <section className={s.dayHero} aria-label={copy('Ngày đang chọn', 'Selected date')}>
                 <div>
-                  <span className={s.eyebrow}>{weekday(selected)}</span>
+                  <span className={s.eyebrow}>{weekday(selected, en)}</span>
                   <div className={s.heroDate}>
                     <strong>{Number(selected.slice(-2))}</strong>
                     <span>
-                      Tháng {Number(selected.slice(5, 7))}
+                      {copy('Tháng', 'Month')} {Number(selected.slice(5, 7))}
                       <br />
                       {selected.slice(0, 4)}
                     </span>
                   </div>
                 </div>
                 <div className={s.lunarHero}>
-                  <span>Âm lịch</span>
+                  <span>{copy('Âm lịch', 'Lunar calendar')}</span>
                   <strong>
                     {facts.lunar.day}
                     <i>/</i>
                     {facts.lunar.month}
-                    {facts.lunar.leap && <small>nhuận</small>}
+                    {facts.lunar.leap && <small>{copy('nhuận', 'leap')}</small>}
                   </strong>
                   <span>{facts.yearName}</span>
                 </div>
                 <div className={s.heroActions}>
                   <button
-                    aria-label="Ngày trước"
+                    aria-label={copy('Ngày trước', 'Previous day')}
                     disabled={selected === `${MIN_YEAR}-01-01`}
                     onClick={() => choose(shiftDay(selected, -1))}
                   >
                     ‹
                   </button>
                   <button
-                    aria-label="Ngày sau"
+                    aria-label={copy('Ngày sau', 'Next day')}
                     disabled={selected === `${MAX_YEAR}-12-31`}
                     onClick={() => choose(shiftDay(selected, 1))}
                   >
@@ -303,11 +304,14 @@ export function LunarCalendar() {
                 </div>
               </section>
               <div className={s.layout}>
-                <section className={s.card} aria-label="Lịch tháng">
+                <section className={s.card} aria-label={copy('Lịch tháng', 'Month calendar')}>
                   {monthControls}
                   <div className={s.monthGrid}>
                     <div className={s.weekdays}>
-                      {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(d => (
+                      {(en
+                        ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                        : ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+                      ).map(d => (
                         <span key={d}>{d}</span>
                       ))}
                     </div>
@@ -325,7 +329,7 @@ export function LunarCalendar() {
                           id={`date-${d.date}`}
                           key={d.date}
                           className={s.day}
-                          aria-label={`${dateLabel(d.date)}, âm ${lunarLabel(d.lunar)}${d.date === today ? ', hôm nay' : ''}${d.holidays.length ? ', ' + d.holidays.join(', ') : ''}`}
+                          aria-label={`${dateLabel(d.date)}, ${copy('âm', 'lunar')} ${d.lunar.day}/${d.lunar.month}${d.lunar.leap ? copy(' nhuận', ' leap') : ''}${d.date === today ? copy(', hôm nay', ', today') : ''}${d.holidays.length ? ', ' + d.holidays.join(', ') : ''}`}
                           aria-pressed={selected === d.date}
                           aria-current={d.date === today ? 'date' : undefined}
                           tabIndex={selected === d.date ? 0 : -1}
@@ -345,35 +349,37 @@ export function LunarCalendar() {
                   <div className={s.legend}>
                     <span>
                       <i />
-                      Ngày lễ
+                      {copy('Ngày lễ', 'Holidays')}
                     </span>
                     <span>
                       <i />
-                      Sự kiện
+                      {copy('Sự kiện', 'Events')}
                     </span>
-                    <span>Âm lịch ở dòng dưới</span>
+                    <span>{copy('Âm lịch ở dòng dưới', 'Lunar dates on the second line')}</span>
                   </div>
                 </section>
                 <aside className={s.details} aria-live="polite">
                   <section className={s.card}>
                     <div className={s.sectionTitle}>
                       <h2>{dateLabel(selected)}</h2>
-                      <span className={facts.good ? s.good : s.neutral}>{facts.good ? 'Hoàng đạo' : 'Hắc đạo'}</span>
+                      <span className={facts.good ? s.good : s.neutral}>
+                        {facts.good ? copy('Hoàng đạo', 'Auspicious') : copy('Hắc đạo', 'Inauspicious')}
+                      </span>
                     </div>
                     <dl className={s.canChi}>
                       <div>
-                        <dt>Ngày</dt>
+                        <dt>{copy('Ngày', 'Day')}</dt>
                         <dd>{facts.dayName}</dd>
                       </div>
                       <div>
-                        <dt>Tháng</dt>
+                        <dt>{copy('Tháng', 'Month')}</dt>
                         <dd>
                           {facts.monthName}
-                          {facts.lunar.leap ? ' · nhuận' : ''}
+                          {facts.lunar.leap ? copy(' · nhuận', ' · leap') : ''}
                         </dd>
                       </div>
                       <div>
-                        <dt>Năm</dt>
+                        <dt>{copy('Năm', 'Year')}</dt>
                         <dd>{facts.yearName}</dd>
                       </div>
                     </dl>
@@ -387,35 +393,46 @@ export function LunarCalendar() {
                     </div>
                     <div className={s.astronomy}>
                       <div>
-                        <span>Tiết khí</span>
+                        <span>{copy('Tiết khí', 'Solar term')}</span>
                         <strong>{facts.term}</strong>
                         {facts.termChange && (
                           <small>
-                            Chuyển {facts.termChange.name} lúc {facts.termChange.time}
+                            {copy('Chuyển', 'Changes to')} {facts.termChange.name} {copy('lúc', 'at')}{' '}
+                            {facts.termChange.time}
                           </small>
                         )}
                       </div>
                       <div>
-                        <span>Mặt trăng</span>
+                        <span>{copy('Mặt trăng', 'Moon')}</span>
                         <strong>{facts.phase}</strong>
-                        <small>Sáng {facts.illumination}% · lúc 12:00</small>
+                        <small>
+                          {copy('Sáng', 'Illuminated')} {facts.illumination}% · 12:00 (UTC+7)
+                        </small>
                       </div>
                     </div>
                     <button className={s.primary} onClick={addEvent}>
-                      ＋ Thêm sự kiện
+                      {copy('＋ Thêm sự kiện', '＋ Add event')}
                     </button>
                     <button
                       className={s.exportDay}
                       onClick={() =>
-                        download(eventIcs(facts.holidays[0] || `Ngày ${lunarLabel(facts.lunar)} âm lịch`, selected))
+                        download(
+                          eventIcs(
+                            facts.holidays[0] ||
+                              (en
+                                ? `Lunar date ${facts.lunar.day}/${facts.lunar.month}`
+                                : `Ngày ${lunarLabel(facts.lunar)} âm lịch`),
+                            selected,
+                          ),
+                        )
                       }
                     >
-                      Thêm ngày này vào lịch máy ↗
+                      {copy('Thêm ngày này vào lịch máy ↗', 'Add this date to your calendar ↗')}
                     </button>
                   </section>
                   <section className={s.card}>
                     <div className={s.sectionTitle}>
-                      <h2>Giờ hoàng đạo</h2>
+                      <h2>{copy('Giờ hoàng đạo', 'Auspicious hours')}</h2>
                       <small>UTC+7</small>
                     </div>
                     <div className={s.hours}>
@@ -429,12 +446,19 @@ export function LunarCalendar() {
                         ))}
                     </div>
                     <details className={s.disclosure}>
-                      <summary>Tra cứu ngày</summary>
+                      <summary>{copy('Tra cứu ngày', 'Day details')}</summary>
                       <p>
                         {facts.god} ·{' '}
-                        {facts.taboos.length ? facts.taboos.join(' · ') : 'Không trùng Tam nương, Nguyệt kỵ'}
+                        {facts.taboos.length
+                          ? facts.taboos.join(' · ')
+                          : copy('Không trùng Tam nương, Nguyệt kỵ', 'No traditional taboo date applies')}
                       </p>
-                      <p className={s.muted}>Theo lịch truyền thống, không phải bảo đảm kết quả công việc.</p>
+                      <p className={s.muted}>
+                        {copy(
+                          'Theo lịch truyền thống, không phải bảo đảm kết quả công việc.',
+                          'Based on traditional calendar beliefs; it does not guarantee outcomes.',
+                        )}
+                      </p>
                     </details>
                   </section>
                 </aside>
@@ -446,9 +470,9 @@ export function LunarCalendar() {
               {monthControls}
               <div className={s.filters}>
                 {[
-                  ['good', 'Hoàng đạo'],
-                  ['avoidTaboo', 'Tránh Tam nương, Nguyệt kỵ'],
-                  ['weekend', 'Cuối tuần'],
+                  ['good', copy('Hoàng đạo', 'Auspicious')],
+                  ['avoidTaboo', copy('Tránh Tam nương, Nguyệt kỵ', 'Avoid traditional taboo dates')],
+                  ['weekend', copy('Cuối tuần', 'Weekends')],
                 ].map(([key, label]) => (
                   <label key={key}>
                     <input
@@ -461,8 +485,12 @@ export function LunarCalendar() {
                 ))}
               </div>
               <div className={s.sectionTitle}>
-                <h2>{matching.length} ngày phù hợp</h2>
-                <small>Tháng {Number(month.slice(5))}</small>
+                <h2>
+                  {matching.length} {copy('ngày phù hợp', 'matching dates')}
+                </h2>
+                <small>
+                  {copy('Tháng', 'Month')} {Number(month.slice(5))}
+                </small>
               </div>
               <div className={s.results}>
                 {matching.map(d => (
@@ -475,27 +503,36 @@ export function LunarCalendar() {
                   >
                     <span className={s.resultDate}>
                       {Number(d.date.slice(-2))}
-                      <small>{weekday(d.date)}</small>
+                      <small>{weekday(d.date, en)}</small>
                     </span>
                     <span>
                       <strong>{d.dayName}</strong>
                       <small>
-                        Âm {d.lunar.day}/{d.lunar.month}
-                        {d.lunar.leap ? ' nhuận' : ''} · {d.god}
+                        {copy('Âm', 'Lunar')} {d.lunar.day}/{d.lunar.month}
+                        {d.lunar.leap ? copy(' nhuận', ' leap') : ''} · {d.god}
                       </small>
                     </span>
                     <span aria-hidden="true">↗</span>
                   </button>
                 ))}
               </div>
-              {!matching.length && <p className={s.empty}>Không có ngày khớp bộ lọc.</p>}
+              {!matching.length && (
+                <p className={s.empty}>{copy('Không có ngày khớp bộ lọc.', 'No dates match your filters.')}</p>
+              )}
               <details className={s.disclosure}>
-                <summary>Cách chọn ngày</summary>
+                <summary>{copy('Cách chọn ngày', 'How dates are selected')}</summary>
                 <p>
-                  Lọc theo ngày hoàng đạo của tháng âm; Tam nương: 3, 7, 13, 18, 22, 27; Nguyệt kỵ: 5, 14, 23 âm lịch.
-                  Tháng nhuận dùng quy tắc của tháng cùng số.
+                  {copy(
+                    'Lọc theo ngày hoàng đạo của tháng âm; Tam nương: 3, 7, 13, 18, 22, 27; Nguyệt kỵ: 5, 14, 23 âm lịch. Tháng nhuận dùng quy tắc của tháng cùng số.',
+                    'Filters use the lunar month’s traditional auspicious dates. Three Ladies taboo dates: 3, 7, 13, 18, 22, 27. Lunar taboo dates: 5, 14, 23. Leap months follow the rules of the same numbered month.',
+                  )}
                 </p>
-                <p>Chưa xét tuổi hoặc từng việc cụ thể. Các tiêu chí là quan niệm truyền thống.</p>
+                <p>
+                  {copy(
+                    'Chưa xét tuổi hoặc từng việc cụ thể. Các tiêu chí là quan niệm truyền thống.',
+                    'Age and specific activities are not considered. These criteria reflect traditional beliefs.',
+                  )}
+                </p>
               </details>
             </section>
           )}
@@ -503,8 +540,8 @@ export function LunarCalendar() {
             <section className={`${s.card} ${s.narrow}`}>
               <div className={s.switcher}>
                 {[
-                  ['solar', 'Dương → Âm'],
-                  ['lunar', 'Âm → Dương'],
+                  ['solar', copy('Dương → Âm', 'Solar → Lunar')],
+                  ['lunar', copy('Âm → Dương', 'Lunar → Solar')],
                 ].map(([id, label]) => (
                   <button
                     key={id}
@@ -543,14 +580,16 @@ export function LunarCalendar() {
                     setConversion(date);
                     setError('');
                   } catch (e) {
-                    setError((e as Error).message);
+                    setError(
+                      en ? 'Invalid date. Check the lunar day, month and leap-month setting.' : (e as Error).message,
+                    );
                     setConversion('');
                   }
                 }}
               >
                 {direction === 'solar' ? (
                   <label>
-                    Ngày dương
+                    {copy('Ngày dương', 'Solar date')}
                     <input
                       name="solar"
                       type="date"
@@ -564,9 +603,9 @@ export function LunarCalendar() {
                   <>
                     <div className={s.threeFields}>
                       {[
-                        ['day', 'Ngày', facts.lunar.day, 1, 30],
-                        ['month', 'Tháng', facts.lunar.month, 1, 12],
-                        ['year', 'Năm', facts.lunar.year, MIN_YEAR - 1, MAX_YEAR],
+                        ['day', copy('Ngày', 'Day'), facts.lunar.day, 1, 30],
+                        ['month', copy('Tháng', 'Month'), facts.lunar.month, 1, 12],
+                        ['year', copy('Năm', 'Year'), facts.lunar.year, MIN_YEAR - 1, MAX_YEAR],
                       ].map(([name, label, value, min, max]) => (
                         <label key={name}>
                           {label}
@@ -576,16 +615,18 @@ export function LunarCalendar() {
                     </div>
                     <label className={s.check}>
                       <input name="leap" type="checkbox" defaultChecked={facts.lunar.leap} />
-                      Tháng nhuận
+                      {copy('Tháng nhuận', 'Leap month')}
                     </label>
                   </>
                 )}
-                <button className={s.primary}>Đổi ngày</button>
+                <button className={s.primary}>{copy('Đổi ngày', 'Convert dates')}</button>
               </form>
               {conversion && (
                 <div className={s.conversion} role="status">
                   <strong>{dateLabel(conversion)}</strong>
-                  <span>Âm lịch {lunarLabel(solarToLunar(conversion))}</span>
+                  <span>
+                    {copy('Âm lịch', 'Lunar date')} {lunarLabel(solarToLunar(conversion), en ? 'en' : 'vi')}
+                  </span>
                   <button
                     className={s.secondary}
                     onClick={() => {
@@ -593,7 +634,7 @@ export function LunarCalendar() {
                       setTab('calendar');
                     }}
                   >
-                    Xem trên lịch ↗
+                    {copy('Xem trên lịch ↗', 'View on calendar ↗')}
                   </button>
                 </div>
               )}
@@ -603,13 +644,13 @@ export function LunarCalendar() {
             <div className={s.eventLayout}>
               <section className={s.card}>
                 <div className={s.sectionTitle}>
-                  <h2>Sắp tới</h2>
+                  <h2>{copy('Sắp tới', 'Upcoming')}</h2>
                   <button className={s.secondary} onClick={addEvent}>
-                    ＋ Thêm
+                    {copy('＋ Thêm', '＋ Add')}
                   </button>
                 </div>
-                <p className={s.muted}>Lưu trên thiết bị này</p>
-                {!upcoming.length && <p className={s.empty}>Chưa có sự kiện.</p>}
+                <p className={s.muted}>{copy('Lưu trên thiết bị này', 'Saved on this device')}</p>
+                {!upcoming.length && <p className={s.empty}>{copy('Chưa có sự kiện.', 'No events yet.')}</p>}
                 <div className={s.eventList}>
                   {upcoming.map(({ event: e, next }) => (
                     <article key={e.id}>
@@ -618,20 +659,26 @@ export function LunarCalendar() {
                         {next && (
                           <span className={s.good}>
                             {civilDay(next) === civilDay(today)
-                              ? 'Hôm nay'
-                              : `${civilDay(next) - civilDay(today)} ngày`}
+                              ? copy('Hôm nay', 'Today')
+                              : `${civilDay(next) - civilDay(today)} ${en ? 'days' : 'ngày'}`}
                           </span>
                         )}
                       </div>
                       <p>
-                        {e.day}/{e.month} {e.calendar === 'lunar' ? 'âm' : 'dương'}
+                        {e.day}/{e.month} {e.calendar === 'lunar' ? copy('âm', 'lunar') : copy('dương', 'solar')}
                         {e.calendar === 'lunar' && e.leapPolicy !== 'regular'
                           ? e.leapPolicy === 'leap'
-                            ? ' · tháng nhuận'
-                            : ' · cả tháng nhuận'
+                            ? copy(' · tháng nhuận', ' · leap month')
+                            : copy(' · cả tháng nhuận', ' · including leap months')
                           : ''}
                       </p>
-                      <small>{next ? dateLabel(next) : `Không còn ngày phù hợp đến ${MAX_YEAR}`}</small>
+                      <small>
+                        {next
+                          ? dateLabel(next)
+                          : en
+                            ? `No further dates through ${MAX_YEAR}`
+                            : `Không còn ngày phù hợp đến ${MAX_YEAR}`}
+                      </small>
                       <div className={s.eventActions}>
                         <button
                           onClick={() => {
@@ -640,7 +687,7 @@ export function LunarCalendar() {
                             setEditor(true);
                           }}
                         >
-                          Sửa
+                          {copy('Sửa', 'Edit')}
                         </button>
                         {next && (
                           <button
@@ -649,20 +696,24 @@ export function LunarCalendar() {
                               setTab('calendar');
                             }}
                           >
-                            Xem ngày
+                            {copy('Xem ngày', 'View date')}
                           </button>
                         )}
-                        {next && <button onClick={() => download(exportEvents([e], today))}>Xuất lịch</button>}
+                        {next && (
+                          <button onClick={() => download(exportEvents([e], today))}>
+                            {copy('Xuất lịch', 'Export calendar')}
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             if (persist(events.filter(x => x.id !== e.id))) {
                               setDeleted(e);
-                              setNotice('Đã xóa sự kiện.');
+                              setNotice(copy('Đã xóa sự kiện.', 'Event deleted.'));
                               if (editing?.id === e.id) setEditor(false);
                             }
                           }}
                         >
-                          Xóa
+                          {copy('Xóa', 'Delete')}
                         </button>
                       </div>
                     </article>
@@ -671,9 +722,14 @@ export function LunarCalendar() {
                 {events.length > 0 && (
                   <>
                     <button className={s.secondary} onClick={() => download(exportEvents(events, today))}>
-                      Xuất tất cả · 5 lần tới
+                      {copy('Xuất tất cả · 5 lần tới', 'Export all · next 5 occurrences')}
                     </button>
-                    <p className={s.muted}>Nhắc lịch do ứng dụng lịch trên máy xử lý.</p>
+                    <p className={s.muted}>
+                      {copy(
+                        'Nhắc lịch do ứng dụng lịch trên máy xử lý.',
+                        'Reminders are managed by your calendar app.',
+                      )}
+                    </p>
                   </>
                 )}
               </section>
@@ -695,11 +751,11 @@ export function LunarCalendar() {
                     };
                     const valid = parseEvents([item]);
                     if (!valid.length) {
-                      setError('Ngày hoặc tên sự kiện không hợp lệ.');
+                      setError(copy('Ngày hoặc tên sự kiện không hợp lệ.', 'Invalid event name or date.'));
                       return;
                     }
                     if (!editing && events.length >= 100) {
-                      setError('Bạn đã lưu tối đa 100 sự kiện.');
+                      setError(copy('Bạn đã lưu tối đa 100 sự kiện.', 'You have reached the limit of 100 events.'));
                       return;
                     }
                     if (
@@ -708,36 +764,36 @@ export function LunarCalendar() {
                       setEditor(false);
                       setEditing(null);
                       setDeleted(null);
-                      setNotice('Đã lưu sự kiện.');
+                      setNotice(copy('Đã lưu sự kiện.', 'Event saved.'));
                     }
                   }}
                 >
                   <div className={s.sectionTitle}>
-                    <h2>{editing ? 'Sửa sự kiện' : 'Thêm sự kiện'}</h2>
+                    <h2>{editing ? copy('Sửa sự kiện', 'Edit event') : copy('Thêm sự kiện', 'Add event')}</h2>
                     <button type="button" className={s.secondary} onClick={() => setEditor(false)}>
-                      Đóng
+                      {copy('Đóng', 'Close')}
                     </button>
                   </div>
                   <label>
-                    Tên sự kiện
+                    {copy('Tên sự kiện', 'Event name')}
                     <input
                       name="title"
                       required
                       maxLength={80}
                       defaultValue={editing?.title || ''}
-                      placeholder="Sinh nhật, ngày giỗ…"
+                      placeholder={copy('Sinh nhật, ngày giỗ…', 'Birthday, anniversary…')}
                     />
                   </label>
                   <label>
-                    Loại lịch
+                    {copy('Loại lịch', 'Calendar type')}
                     <select value={eventCalendar} onChange={e => setEventCalendar(e.target.value as 'lunar' | 'solar')}>
-                      <option value="lunar">Âm lịch</option>
-                      <option value="solar">Dương lịch</option>
+                      <option value="lunar">{copy('Âm lịch', 'Lunar calendar')}</option>
+                      <option value="solar">{copy('Dương lịch', 'Solar calendar')}</option>
                     </select>
                   </label>
                   <div className={s.twoFields} key={eventCalendar}>
                     <label>
-                      Ngày
+                      {copy('Ngày', 'Day')}
                       <input
                         name="day"
                         type="number"
@@ -754,7 +810,7 @@ export function LunarCalendar() {
                       />
                     </label>
                     <label>
-                      Tháng
+                      {copy('Tháng', 'Month')}
                       <input
                         name="month"
                         type="number"
@@ -773,38 +829,46 @@ export function LunarCalendar() {
                   </div>
                   {eventCalendar === 'lunar' && (
                     <label>
-                      Tháng nhuận
+                      {copy('Tháng nhuận', 'Leap month')}
                       <select name="leapPolicy" defaultValue={editing?.leapPolicy || 'regular'}>
-                        <option value="regular">Chỉ tháng thường</option>
-                        <option value="leap">Chỉ tháng nhuận</option>
-                        <option value="both">Cả hai</option>
+                        <option value="regular">{copy('Chỉ tháng thường', 'Regular months only')}</option>
+                        <option value="leap">{copy('Chỉ tháng nhuận', 'Leap months only')}</option>
+                        <option value="both">{copy('Cả hai', 'Both')}</option>
                       </select>
                     </label>
                   )}
                   <label>
-                    Nhắc khi xuất lịch
+                    {copy('Nhắc khi xuất lịch', 'Reminder for exported events')}
                     <select name="reminder" defaultValue={editing?.reminderDays || 0}>
-                      <option value="0">Không nhắc</option>
-                      <option value="1">Trước 1 ngày</option>
-                      <option value="3">Trước 3 ngày</option>
-                      <option value="7">Trước 7 ngày</option>
+                      <option value="0">{copy('Không nhắc', 'No reminder')}</option>
+                      <option value="1">{copy('Trước 1 ngày', '1 day before')}</option>
+                      <option value="3">{copy('Trước 3 ngày', '3 days before')}</option>
+                      <option value="7">{copy('Trước 7 ngày', '7 days before')}</option>
                     </select>
                   </label>
-                  <small className={s.muted}>Năm không có ngày đã chọn sẽ được bỏ qua.</small>
-                  <button className={s.primary}>Lưu sự kiện</button>
+                  <small className={s.muted}>
+                    {copy('Năm không có ngày đã chọn sẽ được bỏ qua.', 'Years without the selected date are skipped.')}
+                  </small>
+                  <button className={s.primary}>{copy('Lưu sự kiện', 'Save event')}</button>
                 </form>
               )}
             </div>
           )}
           <details className={s.sources}>
-            <summary>Nguồn & quy ước</summary>
+            <summary>{copy('Nguồn & quy ước', 'Sources & conventions')}</summary>
             <p>
-              Lịch Việt UTC+7 · {MIN_YEAR}–{MAX_YEAR}. Can Chi ngày đổi lúc 00:00; giờ Tý được tách tại nửa đêm. Tiết
-              khí và pha trăng hiển thị tại 12:00 của ngày chọn.
+              {en ? (
+                `Vietnamese calendar, UTC+7 · ${MIN_YEAR}–${MAX_YEAR}. The day’s stem and branch change at midnight; the Rat hour is split at midnight. Solar terms and moon phases are shown for noon on the selected date.`
+              ) : (
+                <>
+                  Lịch Việt UTC+7 · {MIN_YEAR}–{MAX_YEAR}. Can Chi ngày đổi lúc 00:00; giờ Tý được tách tại nửa đêm.
+                  Tiết khí và pha trăng hiển thị tại 12:00 của ngày chọn.
+                </>
+              )}
             </p>
             <p>
               <a href="https://www.xemamlich.uhm.vn/calrules.html" target="_blank" rel="noreferrer">
-                Quy tắc lịch Việt · Hồ Ngọc Đức
+                {copy('Quy tắc lịch Việt · Hồ Ngọc Đức', 'Vietnamese calendar rules · Ho Ngoc Duc')}
               </a>{' '}
               ·{' '}
               <a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noreferrer">

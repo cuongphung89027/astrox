@@ -171,3 +171,71 @@ test('audit: ledger inflow always equals the authoritative balance', async () =>
   assert.equal(audit.ok, true);
   assert.equal(audit.balance, 25);
 });
+
+test('simultaneous completion of the same operation consumes its lots only once', async () => {
+  const env = fixture();
+  const u = await user(env, 'same-operation-user');
+  await creditPurchase(env, { userId: u, amount: 10, orderId: 'purchase' });
+  await reserveCredits(env, { userId: u, amount: 3, operationKey: 'same' });
+  await Promise.all([1, 2].map(() => commitReserved(env, { userId: u, amount: 3, operationKey: 'same' })));
+  assert.equal((await creditsBalance(env, u)).balance, 7);
+  assert.equal((await env.DB.prepare('SELECT SUM(remaining) n FROM credit_lots WHERE user_id=?').bind(u).first()).n, 7);
+  assert.equal(
+    (await env.DB.prepare("SELECT COUNT(*) n FROM credits_ledger WHERE kind='spend' AND user_id=?").bind(u).first()).n,
+    1,
+  );
+});
+
+test('history cursor preserves rows sharing the same timestamp', async () => {
+  const env = fixture();
+  await user(env, 'u1');
+  await creditPurchase(env, { userId: 'u1', amount: 1, orderId: 'page-a' });
+  await creditPurchase(env, { userId: 'u1', amount: 1, orderId: 'page-b' });
+  await creditPurchase(env, { userId: 'u1', amount: 1, orderId: 'page-c' });
+  await env.DB.prepare("UPDATE credits_ledger SET created_at='2026-09-28T00:00:00Z'").run();
+  const ids = [];
+  let before = null;
+  do {
+    const page = await creditsHistory(env, 'u1', { limit: 1, before });
+    ids.push(...page.entries.map(x => x.id));
+    before = page.nextCursor;
+  } while (before);
+  assert.equal(ids.length, 3);
+  assert.equal(new Set(ids).size, 3);
+});
+
+test('restricted purchase never creates orphan ledger/lots; concurrent active purchase credits once', async () => {
+  const env = fixture(),
+    id = await user(env, 'restricted');
+  await ensureCreditAccount(env, id);
+  await env.DB.prepare("UPDATE credits_accounts SET status='restricted' WHERE user_id=?").bind(id).run();
+  await assert.rejects(
+    () => creditPurchase(env, { userId: id, amount: 5, orderId: 'restricted-purchase' }),
+    /restricted/,
+  );
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) n FROM credits_ledger').first()).n, 0);
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) n FROM credit_lots').first()).n, 0);
+  await env.DB.prepare("UPDATE credits_accounts SET status='active' WHERE user_id=?").bind(id).run();
+  const results = await Promise.all(
+    Array.from({ length: 5 }, () => creditPurchase(env, { userId: id, amount: 5, orderId: 'restricted-purchase' })),
+  );
+  assert.equal(results.filter(r => r.credited).length, 1);
+  assert.equal((await creditsBalance(env, id)).balance, 5);
+  assert.equal((await env.DB.prepare('SELECT SUM(remaining) n FROM credit_lots').first()).n, 5);
+});
+
+test('concurrent release receipts release only their reservation and cannot undo a commit', async () => {
+  const env = fixture(),
+    id = await user(env, 'releases');
+  await creditPurchase(env, { userId: id, amount: 20, orderId: 'release-funds' });
+  await reserveCredits(env, { userId: id, amount: 5, operationKey: 'one' });
+  await reserveCredits(env, { userId: id, amount: 5, operationKey: 'two' });
+  const releases = await Promise.all(
+    Array.from({ length: 3 }, () => releaseReserved(env, { userId: id, amount: 5, operationKey: 'one' })),
+  );
+  assert.equal(releases.filter(r => r.released).length, 1);
+  assert.equal((await creditsBalance(env, id)).reserved, 5);
+  await commitReserved(env, { userId: id, amount: 5, operationKey: 'two' });
+  await assert.rejects(() => releaseReserved(env, { userId: id, amount: 5, operationKey: 'two' }), /completed/);
+  assert.equal((await creditsBalance(env, id)).balance, 15);
+});

@@ -1,4 +1,5 @@
 'use client';
+import { useLocale } from '@/i18n/LocaleProvider';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   cameraControls,
@@ -27,7 +28,64 @@ export type PalmCapture = { dataUrl: string; w: number; h: number };
 type Props = { onCapture: (shot: PalmCapture) => void; onClose: () => void; onFatal: (message: string) => void };
 const stopStream = (stream: MediaStream | null) => stream?.getTracks().forEach(t => t.stop());
 
+const CAMERA_EN: Record<string, string> = {
+  'Đang mở camera…': 'Opening camera…',
+  'Đưa trọn bàn tay vào khung để nhận diện trước khi chụp.':
+    'Place your whole hand in the frame for detection before capturing.',
+  'Không xử lý được ảnh. Hãy thử lại.': 'Unable to process the photo. Please try again.',
+  'Ảnh quá lớn. Hãy chọn ảnh từ thư viện.': 'Photo too large. Please choose one from your library.',
+  'Nhận diện bị gián đoạn. Hãy thử lại để tiếp tục.': 'Detection was interrupted. Try again to continue.',
+  'Đặt trọn bàn tay vào khung, lòng tay hướng về máy.': 'Place your whole hand in the frame, palm facing the camera.',
+  'Không mở được camera. Kiểm tra quyền camera hoặc chọn ảnh từ thư viện.':
+    'Unable to open the camera. Check camera permissions or choose a photo.',
+  'Không mở được camera đã chọn. Đã quay về camera trước.':
+    'Unable to open the selected camera. Returned to the previous camera.',
+  'Camera đang bận. Đóng ứng dụng dùng camera rồi thử lại.': 'Camera busy. Close other apps using it and try again.',
+  'Camera không xác nhận thay đổi đèn. Hãy dùng nguồn sáng bên ngoài.':
+    'The camera did not confirm the light change. Use an external light source.',
+  'Đã gửi yêu cầu lấy nét. Kiểm tra ảnh rõ trước khi chụp.':
+    'Focus requested. Check that the image is sharp before capturing.',
+  'Camera không nhận yêu cầu lấy nét. Thử thay đổi khoảng cách.':
+    'Focus request unavailable. Try changing your distance.',
+  'Chụp bàn tay': 'Capture your palm',
+  'Đóng camera': 'Close camera',
+  'Camera chụp bàn tay': 'Palm camera',
+  'Vị trí bàn tay đang được nhận diện': 'Detected hand position',
+  'Đang đổi camera…': 'Switching camera…',
+  'Đang tải nhận diện': 'Loading detection',
+  'Nhận diện gián đoạn': 'Detection interrupted',
+  'Đã nhận diện bàn tay': 'Hand detected',
+  'Đang tìm bàn tay': 'Looking for your hand',
+  'Giữ máy yên trong khi chuẩn bị nhận diện…': 'Hold your device still while detection loads…',
+  'Kiểm tra kết nối rồi thử nhận diện lại.': 'Check your connection and retry detection.',
+  'Bàn tay': 'Hand',
+  'Trong khung': 'In frame',
+  'Giữ yên': 'Hold still',
+  'Ống kính': 'Lens',
+  'Đèn camera': 'Camera light',
+  'Trình duyệt không hỗ trợ đèn trên camera này': 'Your browser does not support this camera’s light',
+  'Đèn: Bật': 'Light: On',
+  'Đèn: Tắt': 'Light: Off',
+  'Chạm vào ảnh để lấy nét.': 'Tap the preview to focus.',
+  'Camera tự lấy nét. Thay đổi khoảng cách nếu ảnh chưa rõ.':
+    'Your camera focuses automatically. Adjust your distance if the image is blurry.',
+  'Đèn không khả dụng trên camera này.': 'Light unavailable on this camera.',
+  'Chưa thể nhận diện bàn tay. Không chụp khi bộ nhận diện chưa sẵn sàng.':
+    'Hand detection is unavailable. Capture is disabled until detection is ready.',
+  'Thử lại': 'Try again',
+  'Tự chụp': 'Auto capture',
+  'Chụp ảnh': 'Take photo',
+  'Sẵn sàng': 'Ready',
+  'Căn bàn tay': 'Align your hand',
+  'Đưa lòng bàn tay vào khung': 'Place your palm in the frame',
+  'Đưa tay sát hơn': 'Move your hand closer',
+  'Xoay lòng bàn tay về phía máy': 'Turn your palm towards the camera',
+  'Giữ yên…': 'Hold still…',
+};
+
 export function PalmCamera(props: Props) {
+  const en = useLocale().locale === 'en';
+  const copy = useCallback((value: string) => (en ? (CAMERA_EN[value] ?? value) : value), [en]);
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
   const tracker = useRef<HandLandmarker | null>(null);
@@ -55,7 +113,7 @@ export function PalmCamera(props: Props) {
   const [autoCapture, setAutoCapture] = useState(false),
     [count, setCount] = useState(0);
   const [tracking, setTracking] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [hint, setHint] = useState('Đang mở camera…'),
+  const [hint, setHint] = useState(copy('Đang mở camera…')),
     [warning, setWarning] = useState('');
   const observedAt = useRef(0),
     verdictRef = useRef<HandVerdict>('none');
@@ -90,7 +148,7 @@ export function PalmCamera(props: Props) {
     const v = video.current;
     if (!alive.current || switching.current || !v || v.readyState < 2 || !v.videoWidth) return;
     if (!canCaptureHand(verdictRef.current, observedAt.current, performance.now())) {
-      setWarning('Đưa trọn bàn tay vào khung để nhận diện trước khi chụp.');
+      setWarning(copy('Đưa trọn bàn tay vào khung để nhận diện trước khi chụp.'));
       return;
     }
     const scale = Math.min(1, 1200 / Math.max(v.videoWidth, v.videoHeight));
@@ -99,20 +157,20 @@ export function PalmCamera(props: Props) {
     canvas.height = Math.round(v.videoHeight * scale);
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-      setWarning('Không xử lý được ảnh. Hãy thử lại.');
+      setWarning(copy('Không xử lý được ảnh. Hãy thử lại.'));
       return;
     }
     ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
     let dataUrl = canvas.toDataURL('image/jpeg', 0.85);
     if (dataUrl.length > 1150000) dataUrl = canvas.toDataURL('image/jpeg', 0.6);
     if (dataUrl.length > 1150000) {
-      setWarning('Ảnh quá lớn. Hãy chọn ảnh từ thư viện.');
+      setWarning(copy('Ảnh quá lớn. Hãy chọn ảnh từ thư viện.'));
       return;
     }
     const shot = { dataUrl, w: canvas.width, h: canvas.height };
     cleanup();
     callbacks.current.onCapture(shot);
-  }, [cleanup]);
+  }, [cleanup, copy]);
 
   const runTracker = useCallback(() => {
     stopLoop.current();
@@ -138,7 +196,7 @@ export function PalmCamera(props: Props) {
         setVerdict(detected);
         stable.current = bumpStable(stable.current, frame);
         setStability(Math.min(100, Math.round((stable.current / 12) * 100)));
-        setHint(verdictMessage(detected));
+        setHint(copy(verdictMessage(detected)));
         if (!auto.current || !readyToCountdown(stable.current)) {
           deadline.current = 0;
           setCount(0);
@@ -153,10 +211,10 @@ export function PalmCamera(props: Props) {
         if (!alive.current) return;
         resetTracking();
         setTracking('error');
-        setHint('Nhận diện bị gián đoạn. Hãy thử lại để tiếp tục.');
+        setHint(copy('Nhận diện bị gián đoạn. Hãy thử lại để tiếp tục.'));
       },
     );
-  }, [capture, resetTracking]);
+  }, [capture, resetTracking, copy]);
 
   const initializeTracker = useCallback(async () => {
     loadAbort.current?.abort();
@@ -208,12 +266,12 @@ export function PalmCamera(props: Props) {
         if (!alive.current || operation.current !== token) return;
         setCameras(opened.backList);
         setDevice(opened.deviceId);
-        setHint('Đặt trọn bàn tay vào khung, lòng tay hướng về máy.');
+        setHint(copy('Đặt trọn bàn tay vào khung, lòng tay hướng về máy.'));
         void initializeTracker();
       } catch {
         if (alive.current && operation.current === token) {
           cleanup();
-          callbacks.current.onFatal('Không mở được camera. Kiểm tra quyền camera hoặc chọn ảnh từ thư viện.');
+          callbacks.current.onFatal(copy('Không mở được camera. Kiểm tra quyền camera hoặc chọn ảnh từ thư viện.'));
         }
       }
     })();
@@ -232,7 +290,7 @@ export function PalmCamera(props: Props) {
       document.removeEventListener('visibilitychange', hide);
       cleanup();
     };
-  }, [attach, cleanup, initializeTracker, resetTracking, runTracker]);
+  }, [attach, cleanup, initializeTracker, resetTracking, runTracker, copy]);
 
   async function changeLens(id: string) {
     if (switching.current || id === device) return;
@@ -255,7 +313,7 @@ export function PalmCamera(props: Props) {
         if (!alive.current || operation.current !== token) return;
         next = await switchToLens(oldId);
         selected = oldId;
-        if (alive.current) setWarning('Không mở được camera đã chọn. Đã quay về camera trước.');
+        if (alive.current) setWarning(copy('Không mở được camera đã chọn. Đã quay về camera trước.'));
       }
       if (!alive.current || operation.current !== token) {
         stopStream(next);
@@ -266,7 +324,7 @@ export function PalmCamera(props: Props) {
     } catch {
       if (alive.current) {
         cleanup();
-        callbacks.current.onFatal('Camera đang bận. Đóng ứng dụng dùng camera rồi thử lại.');
+        callbacks.current.onFatal(copy('Camera đang bận. Đóng ứng dụng dùng camera rồi thử lại.'));
       }
     } finally {
       switching.current = false;
@@ -286,7 +344,7 @@ export function PalmCamera(props: Props) {
       if (ok) {
         setTorch(next);
         setWarning('');
-      } else setWarning('Camera không xác nhận thay đổi đèn. Hãy dùng nguồn sáng bên ngoài.');
+      } else setWarning(copy('Camera không xác nhận thay đổi đèn. Hãy dùng nguồn sáng bên ngoài.'));
     }
     if (alive.current) setControlBusy(false);
   }
@@ -302,8 +360,8 @@ export function PalmCamera(props: Props) {
       if (stream.current?.getVideoTracks()[0] === track) {
         setWarning(
           ok
-            ? 'Đã gửi yêu cầu lấy nét. Kiểm tra ảnh rõ trước khi chụp.'
-            : 'Camera không nhận yêu cầu lấy nét. Thử thay đổi khoảng cách.',
+            ? copy('Đã gửi yêu cầu lấy nét. Kiểm tra ảnh rõ trước khi chụp.')
+            : copy('Camera không nhận yêu cầu lấy nét. Thử thay đổi khoảng cách.'),
         );
       }
       setControlBusy(false);
@@ -316,14 +374,14 @@ export function PalmCamera(props: Props) {
     setReady(v.readyState >= 2);
   }
   return (
-    <section className={s.camera} aria-label="Chụp bàn tay">
+    <section className={s.camera} aria-label={copy('Chụp bàn tay')}>
       <div className={s.cameraTop}>
         <span className={s.liveLabel}>
-          <i /> CAMERA TRỰC TIẾP
+          <i /> {en ? 'LIVE CAMERA' : 'CAMERA TRỰC TIẾP'}
         </span>
         <button
           className={s.closeCamera}
-          aria-label="Đóng camera"
+          aria-label={copy('Đóng camera')}
           onClick={() => {
             cleanup();
             callbacks.current.onClose();
@@ -347,13 +405,13 @@ export function PalmCamera(props: Props) {
             onLoadedData={syncVideo}
             onResize={syncVideo}
             onPointerDown={focusAt}
-            aria-label="Camera chụp bàn tay"
+            aria-label={copy('Camera chụp bàn tay')}
           />
           {landmarks && landmarks.length === 21 && (
             <svg
               className={s.liveOverlay}
               viewBox={`0 0 ${frameSize.width} ${frameSize.height}`}
-              aria-label="Vị trí bàn tay đang được nhận diện"
+              aria-label={copy('Vị trí bàn tay đang được nhận diện')}
             >
               {[
                 [0, 1, 2, 3, 4],
@@ -383,7 +441,7 @@ export function PalmCamera(props: Props) {
           {(!ready || changing) && (
             <div className={s.cameraPending} role="status">
               <span className={s.spinner} />
-              {changing ? 'Đang đổi camera…' : 'Đang mở camera…'}
+              {changing ? copy('Đang đổi camera…') : copy('Đang mở camera…')}
             </div>
           )}
           {count > 0 && (
@@ -401,12 +459,12 @@ export function PalmCamera(props: Props) {
         <div className={s.detectionBadge} data-detected={!!landmarks}>
           <i />
           {tracking === 'loading'
-            ? 'Đang tải nhận diện'
+            ? copy('Đang tải nhận diện')
             : tracking === 'error'
-              ? 'Nhận diện gián đoạn'
+              ? copy('Nhận diện gián đoạn')
               : landmarks
-                ? 'Đã nhận diện bàn tay'
-                : 'Đang tìm bàn tay'}
+                ? copy('Đã nhận diện bàn tay')
+                : copy('Đang tìm bàn tay')}
         </div>
       </div>
       <div className={s.cameraFeedback}>
@@ -415,19 +473,19 @@ export function PalmCamera(props: Props) {
             (tracking === 'ready'
               ? hint
               : tracking === 'loading'
-                ? 'Giữ máy yên trong khi chuẩn bị nhận diện…'
-                : 'Kiểm tra kết nối rồi thử nhận diện lại.')}
+                ? copy('Giữ máy yên trong khi chuẩn bị nhận diện…')
+                : copy('Kiểm tra kết nối rồi thử nhận diện lại.'))}
         </p>
         <div className={s.qualitySignals}>
-          <span data-ok={!!landmarks}>Bàn tay</span>
-          <span data-ok={verdict === 'ready'}>Trong khung</span>
-          <span data-ok={stability === 100}>Giữ yên</span>
+          <span data-ok={!!landmarks}>{copy('Bàn tay')}</span>
+          <span data-ok={verdict === 'ready'}>{copy('Trong khung')}</span>
+          <span data-ok={stability === 100}>{copy('Giữ yên')}</span>
         </div>
       </div>
       <div className={s.cameraTools}>
         {cameras.length > 1 && (
           <label>
-            Ống kính
+            {copy('Ống kính')}
             <select value={device} disabled={changing || controlBusy} onChange={e => void changeLens(e.target.value)}>
               {cameras.map((c, i) => (
                 <option key={c.deviceId} value={c.deviceId}>
@@ -441,21 +499,23 @@ export function PalmCamera(props: Props) {
           className={s.toolButton}
           disabled={!controls.torch || !ready || changing || controlBusy}
           aria-pressed={torch}
-          title={controls.torch ? 'Đèn camera' : 'Trình duyệt không hỗ trợ đèn trên camera này'}
+          title={controls.torch ? copy('Đèn camera') : copy('Trình duyệt không hỗ trợ đèn trên camera này')}
           onClick={() => void toggleTorch()}
         >
-          {torch ? 'Đèn: Bật' : 'Đèn: Tắt'}
+          {torch ? copy('Đèn: Bật') : copy('Đèn: Tắt')}
         </button>
       </div>
       <p className={s.cameraNote}>
-        {controls.focus ? 'Chạm vào ảnh để lấy nét.' : 'Camera tự lấy nét. Thay đổi khoảng cách nếu ảnh chưa rõ.'}{' '}
-        {!controls.torch && 'Đèn không khả dụng trên camera này.'}
+        {controls.focus
+          ? copy('Chạm vào ảnh để lấy nét.')
+          : copy('Camera tự lấy nét. Thay đổi khoảng cách nếu ảnh chưa rõ.')}{' '}
+        {!controls.torch && copy('Đèn không khả dụng trên camera này.')}
       </p>
       {tracking === 'error' && (
         <div className={s.trackerStatus} role="alert">
-          <span>Chưa thể nhận diện bàn tay. Không chụp khi bộ nhận diện chưa sẵn sàng.</span>
+          <span>{copy('Chưa thể nhận diện bàn tay. Không chụp khi bộ nhận diện chưa sẵn sàng.')}</span>
           <button className={s.retryButton} disabled={changing} onClick={() => void initializeTracker()}>
-            Thử lại
+            {copy('Thử lại')}
           </button>
         </div>
       )}
@@ -471,17 +531,17 @@ export function PalmCamera(props: Props) {
               resetTracking();
             }}
           />
-          <span>Tự chụp</span>
+          <span>{copy('Tự chụp')}</span>
         </label>
         <button
           className={s.shutter}
           disabled={!ready || changing || tracking !== 'ready' || verdict !== 'ready'}
           onClick={capture}
-          aria-label="Chụp ảnh"
+          aria-label={copy('Chụp ảnh')}
         >
           <span />
         </button>
-        <span className={s.captureCaption}>{verdict === 'ready' ? 'Sẵn sàng' : 'Căn bàn tay'}</span>
+        <span className={s.captureCaption}>{verdict === 'ready' ? copy('Sẵn sàng') : copy('Căn bàn tay')}</span>
       </div>
     </section>
   );

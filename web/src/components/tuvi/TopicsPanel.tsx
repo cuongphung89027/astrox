@@ -5,12 +5,13 @@
  * giữ nguyên id + label VN). Mỗi mục: đọc cache "tuviTopics" key "topic::sub";
  * chưa có → nút chạy runAiPrompt với prompt đính kèm JSON lá số.
  */
+import { useParityCopy } from '@/i18n/parity-copy';
 import { ReadingQuestion } from '@/components/kit/ReadingQuestion';
 import { useState, useEffect } from 'react';
 import { FeatureIcon } from '@/components/kit/FeatureIcon';
 import styles from './TopicsPanel.module.css';
 import { TUVI_TOPICS, tuviPromptBody, type ZiweiChart } from '@/lib/tuvi';
-import { TUVI_TOPICS_EN } from '@/i18n/astrology-en';
+import { TUVI_TOPIC_DESCRIPTIONS_EN, TUVI_TOPICS_EN } from '@/i18n/astrology-en';
 import { useLocale } from '@/i18n/LocaleProvider';
 import type { Profile } from '@/lib/types';
 import { AiPanel } from './AiPanel';
@@ -22,7 +23,12 @@ interface TopicsPanelProps {
 }
 
 export function TopicsPanel({ profile, chart }: TopicsPanelProps) {
+  const parityCopy = useParityCopy();
+
   const t = useLocale();
+  const en = t.locale === 'en';
+  const descOf = (topic: (typeof TUVI_TOPICS)[number]) =>
+    en ? TUVI_TOPIC_DESCRIPTIONS_EN[topic.id] || '' : topic.desc;
   const [reading, setReading] = useState(false);
   const [query, setQuery] = useState('');
   const [topicId, setTopicId] = useState(TUVI_TOPICS[0].id);
@@ -60,7 +66,7 @@ export function TopicsPanel({ profile, chart }: TopicsPanelProps) {
     .replace(/đ/g, 'd')
     .toLowerCase();
   const filtered = TUVI_TOPICS.filter(t =>
-    `${titleOf(t)} ${t.desc}`
+    `${titleOf(t)} ${descOf(t)}`
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/đ/g, 'd')
@@ -73,15 +79,20 @@ export function TopicsPanel({ profile, chart }: TopicsPanelProps) {
 
   if (!reading)
     return (
-      <section className={styles.library} aria-label="Chủ đề luận giải">
+      <section className={styles.library} aria-label={parityCopy('Chủ đề luận giải')}>
         <header className={styles.header}>
           <div>
-            <h2>Bạn muốn hiểu điều gì?</h2>
-            <p>Chọn một chủ đề để khám phá từ lá số của bạn.</p>
+            <h2>{parityCopy('Bạn muốn hiểu điều gì?')}</h2>
+            <p>{parityCopy('Chọn một chủ đề để khám phá từ lá số của bạn.')}</p>
           </div>
           <label className={styles.search}>
-            <span className="sr-only">Tìm chủ đề</span>
-            <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Tìm chủ đề…" />
+            <span className="sr-only">{parityCopy('Tìm chủ đề')}</span>
+            <input
+              type="search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder={parityCopy('Tìm chủ đề…')}
+            />
           </label>
         </header>
         <div className={styles.grid}>
@@ -125,45 +136,51 @@ export function TopicsPanel({ profile, chart }: TopicsPanelProps) {
                 </span>
               )}
               <h3>{titleOf(t)}</h3>
-              <p>{t.desc}</p>
-              <span className={styles.count}>{t.subs.length} góc nhìn</span>
+              <p>{descOf(t)}</p>
+              <span className={styles.count}>
+                {t.subs.length} {en ? 'perspectives' : 'góc nhìn'}
+              </span>
             </button>
           ))}
         </div>
         {!filtered.length && (
-          <p className={styles.noResults}>Chưa tìm thấy chủ đề phù hợp. Thử một từ khoá khác nhé.</p>
+          <p className={styles.noResults}>{parityCopy('Chưa tìm thấy chủ đề phù hợp. Thử một từ khoá khác nhé.')}</p>
         )}
       </section>
     );
 
   return (
-    <section className={styles.reader} aria-label={`Luận giải ${titleOf(topic)}`}>
+    <section className={styles.reader} aria-label={`${en ? 'Reading' : 'Luận giải'} ${titleOf(topic)}`}>
       <button className={styles.back} onClick={() => setReading(false)}>
-        ← Tất cả chủ đề
+        {parityCopy('← Tất cả chủ đề')}
       </button>
       <header className={styles.readerHeader}>
-        <span className={styles.eyebrow}>LUẬN GIẢI CỦA {profile.name.toUpperCase()}</span>
+        <span className={styles.eyebrow}>
+          {en ? 'READING FOR' : 'LUẬN GIẢI CỦA'} {profile.name.toUpperCase()}
+        </span>
         <h2>{titleOf(topic)}</h2>
-        <p>{topic.desc}</p>
+        <p>{descOf(topic)}</p>
       </header>
       <div className={styles.readingLayout}>
-        <nav className={styles.questions} aria-label="Chọn góc nhìn">
-          <p>GÓC NHÌN</p>
+        <nav className={styles.questions} aria-label={parityCopy('Chọn góc nhìn')}>
+          <p>{parityCopy('GÓC NHÌN')}</p>
           {topic.subs.map((s, i) => (
             <button key={s.id} aria-pressed={s.id === sub.id} onClick={() => setSubId(s.id)}>
               <span>{String(i + 1).padStart(2, '0')}</span>
-              {s.label}
+              {subLabelOf(s)}
             </button>
           ))}
         </nav>
         <article className={styles.answer} aria-label={subLabelOf(sub)}>
-          <ReadingQuestion label="GÓC NHÌN BẠN CHỌN">{subLabelOf(sub)}</ReadingQuestion>
+          <ReadingQuestion label={parityCopy('GÓC NHÌN BẠN CHỌN')}>{subLabelOf(sub)}</ReadingQuestion>
           <AiPanel
             cached={ai.text}
             loading={ai.loading}
             error={ai.error}
-            runLabel="Khám phá luận giải"
-            emptyText="Một góc nhìn dành riêng cho bạn, dựa trên thông tin và các cung trong lá số đã lưu."
+            runLabel={parityCopy('Khám phá luận giải')}
+            emptyText={parityCopy(
+              'Một góc nhìn dành riêng cho bạn, dựa trên thông tin và các cung trong lá số đã lưu.',
+            )}
             onRun={ai.run}
             serviceId={`tuvi--${topic.id}--${sub.id}`}
             prompt={prompt}

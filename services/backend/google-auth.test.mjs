@@ -1,4 +1,6 @@
 import test from 'node:test';
+import { defaultConfig } from '../admin/config.ts';
+import { state, saveDraft, publish } from '../admin/store.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
@@ -19,6 +21,9 @@ async function fixture() {
     '../../migrations/service-unlocks.sql',
     '../backend/test/legacy-schema.sql',
     '../../migrations/google-identities.sql',
+    '../../migrations/rewards.sql',
+    '../../migrations/reward-events.sql',
+    '../../migrations/us-credits.sql',
   ]) {
     native.exec(readFileSync(new URL(file, import.meta.url), 'utf8'));
   }
@@ -271,4 +276,39 @@ test('tokeninfo failures surface as verification errors, never as logins', async
   );
   assert.equal(res.status, 401);
   assert.equal(nonce.length > 8, true);
+});
+
+test('new verified Google identity earns configured US referral Credits exactly once', async () => {
+  const env = await fixture();
+  await state(env);
+  const c = defaultConfig();
+  c.rewardsUs.enabled = true;
+  c.rewardsUs.registrationEnabled = true;
+  c.rewardsUs.registrationUser = 3;
+  c.rewardsUs.registrationInviter = 4;
+  await saveDraft(env, 'test', c, 0);
+  await publish(env, 'test', c, 1, 'US rewards');
+  await env.DB.prepare(
+    "INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES('inviter','Invite','active','now','now')",
+  ).run();
+  await env.DB.prepare("INSERT INTO market_preferences VALUES('inviter','US','now')").run();
+  await env.DB.prepare("INSERT INTO referral_codes VALUES('inviter','REFER1','now')").run();
+  const me = { sub: 'new-google', name: 'Alex', email: 'alex@example.com', picture: '' };
+  for (let i = 0; i < 2; i++)
+    assert.equal((await completeGoogleLogin(env, req('/auth/google/callback'), settings, me, 'REFER1')).status, 302);
+  const user = (await env.DB.prepare("SELECT user_id FROM zalo_identities WHERE provider_subject='new-google'").first())
+    .user_id;
+  assert.equal(
+    (await env.DB.prepare('SELECT balance FROM credits_accounts WHERE user_id=?').bind(user).first()).balance,
+    3,
+  );
+  assert.equal(
+    (await env.DB.prepare("SELECT balance FROM credits_accounts WHERE user_id='inviter'").first()).balance,
+    4,
+  );
+  assert.equal(
+    (await env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(user).first()).balance,
+    0,
+  );
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) n FROM credits_ledger').first()).n, 2);
 });

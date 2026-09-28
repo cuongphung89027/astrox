@@ -1,3 +1,4 @@
+import { reportingMarket } from './reporting-market.mjs';
 import { blockedStatuses } from './metrics.ts';
 import { auditStatement } from './store.mjs';
 const DAY = 86400000;
@@ -10,6 +11,7 @@ const fail = (message, status = 422) => {
 const stmt = (env, query, ...args) => env.DB.prepare(query).bind(...args);
 const rows = async (env, query, ...args) => (await stmt(env, query, ...args).all()).results;
 async function tables(env) {
+  if (env.reportingTables) return env.reportingTables;
   return new Set((await rows(env, "SELECT name FROM sqlite_master WHERE type='table'")).map(r => r.name));
 }
 export function requireInsightPermission(user, kind, exporting = false) {
@@ -45,6 +47,8 @@ const rewardReason =
   "(reason IN ('attendance','referral','milestone','first_topup','ad_reward','ads','new_user') OR reason GLOB 'attendance:*' OR reason GLOB 'referral:*' OR reason GLOB 'milestone:*')";
 export async function readInsights(env, params, user) {
   requireInsightPermission(user, 'insights', params.has('export'));
+  const market = params.get('market') || 'VN';
+  env = await reportingMarket(env, market);
   const p = insightPeriod(params),
     t = await tables(env),
     module = params.get('module') || '';
@@ -268,6 +272,10 @@ export async function readInsights(env, params, user) {
       ).first()
     : null;
   return {
+    market,
+    currency: market === 'US' ? 'USD' : 'VND',
+    walletUnit: market === 'US' ? 'Credits' : 'Point',
+    telemetryScope: 'global',
     from: p.from,
     to: p.to,
     timezone: 'Asia/Ho_Chi_Minh',
@@ -319,6 +327,8 @@ export async function readInsights(env, params, user) {
 const userColumns = 'id,display_name,email,status,created_at,updated_at';
 export async function readSupport(env, params, user) {
   requireInsightPermission(user, 'support', params.has('export'));
+  const market = params.get('market') || 'VN';
+  env = await reportingMarket(env, market);
   const t = await tables(env),
     page = Number(params.get('page') || 1),
     timelinePage = Number(params.get('timelinePage') || 1),
@@ -342,6 +352,9 @@ export async function readSupport(env, params, user) {
     ),
   );
   const result = {
+    market,
+    currency: market === 'US' ? 'USD' : 'VND',
+    walletUnit: market === 'US' ? 'Credits' : 'Point',
     available: t.has('app_users'),
     page,
     pageSize,

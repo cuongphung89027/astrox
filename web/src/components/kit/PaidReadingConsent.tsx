@@ -11,6 +11,7 @@ export function PaidReadingConsent() {
     finish = useRef<((decision: { accepted: boolean; selection?: ReadingSelection }) => void) | null>(null);
   const [quote, setQuote] = useState<ReadingQuote | null>(null),
     [selected, setSelected] = useState('');
+  const unit = quote?.market ? (quote.market === 'US' ? 'Credits' : 'Point') : en ? 'Credits' : 'Point';
   const offer = quote?.offers?.find(o => o.id === selected),
     points = offer?.points ?? quote?.points ?? 0;
   const decide = (accepted: boolean) => {
@@ -109,7 +110,7 @@ export function PaidReadingConsent() {
                 </span>
               </span>
               <strong className="whitespace-nowrap text-sm">
-                {o.points.toLocaleString(en ? 'en-US' : 'vi-VN')} {en ? 'Credits' : 'Point'}
+                {o.points.toLocaleString(en ? 'en-US' : 'vi-VN')} {unit}
               </strong>
             </label>
           ))}
@@ -121,7 +122,7 @@ export function PaidReadingConsent() {
             <div className="flex justify-between gap-4">
               <dt>{en ? 'List price' : 'Giá niêm yết'}</dt>
               <dd>
-                {offer.basePoints.toLocaleString(en ? 'en-US' : 'vi-VN')} {en ? 'Credits' : 'Point'}
+                {offer.basePoints.toLocaleString(en ? 'en-US' : 'vi-VN')} {unit}
               </dd>
             </div>
             <div className="flex justify-between gap-4">
@@ -135,8 +136,7 @@ export function PaidReadingConsent() {
                     : 'Khấu trừ phần đã mua'}
               </dt>
               <dd>
-                −{(offer.owned ? offer.basePoints : offer.credit).toLocaleString(en ? 'en-US' : 'vi-VN')}{' '}
-                {en ? 'Credits' : 'Point'}
+                −{(offer.owned ? offer.basePoints : offer.credit).toLocaleString(en ? 'en-US' : 'vi-VN')} {unit}
               </dd>
             </div>
           </dl>
@@ -151,7 +151,7 @@ export function PaidReadingConsent() {
         </>
       )}
       <p className="my-5 text-3xl font-semibold" aria-live="polite">
-        {points.toLocaleString(en ? 'en-US' : 'vi-VN')} {en ? 'Credits' : 'Point'}
+        {points.toLocaleString(en ? 'en-US' : 'vi-VN')} {unit}
       </p>
       <p className="text-sm leading-6">
         {offer?.owned
@@ -179,8 +179,8 @@ export function PaidReadingConsent() {
               ? 'Read'
               : 'Đọc luận giải'
             : en
-              ? `Agree · ${points} Credits`
-              : `Đồng ý · ${points} Point`}
+              ? `Agree · ${points} ${unit}`
+              : `Đồng ý · ${points} ${unit}`}
         </button>
       </div>
     </dialog>

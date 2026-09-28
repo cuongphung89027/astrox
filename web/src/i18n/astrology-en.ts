@@ -272,3 +272,19 @@ export const ZODIAC_PERIOD_LABELS_EN: Record<string, string> = {
   week: 'this week',
   month: 'this month',
 };
+
+export const TUVI_TOPIC_DESCRIPTIONS_EN: Record<string, string> = {
+  'tim-hieu-ban-than': 'Understand your character, strengths and personal growth.',
+  'su-nghiep-tai-loc': 'Explore your work, career direction and relationship with money.',
+  'van-trinh-su-nghiep': 'Look at the course of your career through your chart.',
+  'hieu-ban-doi': 'Explore partnership, connection and outside influences.',
+  'tinh-duyen-hon-nhan': 'Reflect on love, marriage and family relationships.',
+  'vi-sao-toi-la-toi': 'Explore the influences that shape your identity and purpose.',
+  'hoc-hanh-thi-cu': 'Study and examination themes for 2026.',
+  'doi-cong-viec-2026': 'Consider career changes and opportunities in 2026.',
+  'tieu-van-2026': 'Your annual overview: career, money, relationships and watch-outs.',
+  'cau-hoi-xuat-ngoai': 'Explore opportunities to travel, relocate or live abroad.',
+  'cau-hoi-tien-tai': 'Reflect on earning, ownership, inheritance and property.',
+  'cau-hoi-su-nghiep': 'Find environments and learning paths that suit your career.',
+  'xu-huong-dai-van': 'Explore long-term patterns and the next stages of life.',
+};

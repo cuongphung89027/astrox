@@ -8,6 +8,7 @@
  * Dùng mô hình tiny store + subscribe để React đọc qua useSyncExternalStore
  * (xem src/lib/use-store.ts), không cần dependency ngoài.
  */
+import { currentUiLocale } from './ui-locale';
 import { DEFAULT_MODEL, PROMPT_VERSION, STORAGE_KEY } from './config';
 import type { AiCache, AiProfileCache, AppState, Profile } from './types';
 
@@ -277,6 +278,7 @@ export function localeCacheKey(locale: 'vi' | 'en', key: string): string {
 }
 
 export function readAiCache(group: CacheGroup, key: string, force = false): string {
+  key = localeCacheKey(currentUiLocale(), key);
   const cache = getActiveAiCache();
   const entry = resolveBucket(cache, group)?.[key];
   // A config outage or publication must never hide an already purchased reading.
@@ -292,6 +294,7 @@ export function writeAiCache(
   text: string,
   meta: { module?: string; topic?: string; period?: string } = {},
 ) {
+  key = localeCacheKey(currentUiLocale(), key);
   const now = Date.now();
   const cache = getActiveAiCache();
   const bucket = resolveBucket(cache, group);

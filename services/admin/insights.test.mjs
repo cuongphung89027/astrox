@@ -348,3 +348,39 @@ test('module ranking deduplicates sessions across services and distinguishes res
   assert.equal(three.savedResults, 1);
   assert.equal(three.cache, 1);
 });
+
+test('US reports and support use Credits and USD receipts while VN totals stay unchanged', async () => {
+  const env = await setup();
+  const statements = [
+    'CREATE TABLE app_users(id TEXT PRIMARY KEY,display_name TEXT,email TEXT,status TEXT,created_at TEXT,updated_at TEXT)',
+    "INSERT INTO app_users VALUES('u','Alex','alex@test','active','2026-01-01','2026-01-01')",
+    'CREATE TABLE topup_orders_zalo(id TEXT,user_id TEXT,status TEXT,amount_vnd INTEGER,points INTEGER,created_at TEXT,paid_at TEXT)',
+    "INSERT INTO topup_orders_zalo VALUES('vn-order','u','paid',50000,50,'2026-09-24T01:00:00.000Z','2026-09-24T01:00:00.000Z')",
+    'CREATE TABLE zalo_point_ledger(id TEXT,user_id TEXT,delta INTEGER,reason TEXT,created_at TEXT)',
+    "INSERT INTO zalo_point_ledger VALUES('vn-spend','u',-20,'ai','2026-09-24T01:00:00.000Z')",
+    'CREATE TABLE lemon_orders(id TEXT,user_id TEXT,status TEXT,amount_usd_cents INTEGER,credits INTEGER,created_at TEXT,updated_at TEXT)',
+    "INSERT INTO lemon_orders VALUES('us-order','u','fulfilled',499,5,'2026-09-23T01:00:00.000Z','2026-09-25T01:00:00.000Z')",
+    'CREATE TABLE credits_ledger(id TEXT,user_id TEXT,delta INTEGER,kind TEXT,operation_key TEXT,source_order TEXT,created_at TEXT)',
+    "INSERT INTO credits_ledger VALUES('us-buy','u',5,'purchase','credit:lemon:us-order','lemon:us-order','2026-09-24T01:00:00.000Z')",
+    "INSERT INTO credits_ledger VALUES('us-spend','u',-2,'spend','spend:1',NULL,'2026-09-24T02:00:00.000Z')",
+    "INSERT INTO credits_ledger VALUES('us-reward','u',3,'bonus','reward:attendance:1','reward:attendance:1','2026-09-24T03:00:00.000Z')",
+  ];
+  for (const sql of statements) await env.DB.prepare(sql).run();
+  const us = await readInsights(env, new URLSearchParams(`${params}&market=US`), user);
+  assert.equal(us.currency, 'USD');
+  assert.equal(us.walletUnit, 'Credits');
+  assert.equal(us.finance.paidVnd, 499); // generic legacy field; currency metadata gives cents
+  assert.equal(us.finance.spentPoints, 2);
+  assert.equal(us.finance.rewardPoints, 3);
+  const vn = await readInsights(env, params, user);
+  assert.equal(vn.finance.paidVnd, 50000);
+  assert.equal(vn.finance.spentPoints, 20);
+  const support = await readSupport(env, new URLSearchParams('userId=u&market=US'), user);
+  assert.ok(support.timeline.some(row => row.id === 'us-spend' && row.points === -2));
+  assert.ok(!support.timeline.some(row => row.id.startsWith('vn-')));
+  const privateView = await readSupport(env, new URLSearchParams('userId=u&market=US'), {
+    ...user,
+    capabilities: ['users.read'],
+  });
+  assert.equal(privateView.timeline.length, 0);
+});

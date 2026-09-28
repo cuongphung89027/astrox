@@ -12,7 +12,7 @@ import { readAiSession } from './auth.mjs';
 import { readPublished } from '../admin/store.mjs';
 import { encrypt, decrypt, b64 } from '../admin/crypto.mjs';
 import { bodyJson } from './http.mjs';
-import { reserveCredits, commitReserved, releaseReserved, marketOf } from './credits.mjs';
+import { ensureCreditAccount, commitReserved, releaseReserved, marketOf } from './credits.mjs';
 const reply = (body, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
 const LEASE_MS = 180000; // Provider runtime is capped at 120s; leave time for persistence.
 async function resultKey(env) {
@@ -125,25 +125,20 @@ export async function resolveMarket(env, userId, requested) {
 async function chargeAiUsCredits(env, userId, b, serviceId, price, requestHash) {
   const chargeId = crypto.randomUUID(),
     now = Date.now();
-  const held = await reserveCredits(env, { userId, amount: price, operationKey: `ai:${b.operationId}` });
-  if (!held) return reply({ error: 'insufficient_credits', needed: price }, 402);
-  await env.DB.prepare(
-    "INSERT INTO backend_ai_operations(user_id,operation_id,charge_id,service_id,request_hash,config_revision,points,status,created_at,updated_at,market) SELECT ?,?,?,?,?,?,?,'running',?,?,'US' ON CONFLICT(user_id,operation_id) DO NOTHING",
-  )
-    .bind(userId, b.operationId, chargeId, serviceId, requestHash, b.revision, price, now, now)
-    .run();
+  await ensureCreditAccount(env, userId);
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO backend_ai_operations(user_id,operation_id,charge_id,service_id,request_hash,config_revision,points,status,created_at,updated_at,market) SELECT ?,?,?,?,?,?,?,'running',?,?,'US' WHERE EXISTS(SELECT 1 FROM credits_accounts WHERE user_id=? AND status='active' AND balance-reserved>=?) ON CONFLICT(user_id,operation_id) DO NOTHING",
+    ).bind(userId, b.operationId, chargeId, serviceId, requestHash, b.revision, price, now, now, userId, price),
+    env.DB.prepare(
+      'UPDATE credits_accounts SET reserved=reserved+?,updated_at=? WHERE user_id=? AND EXISTS(SELECT 1 FROM backend_ai_operations WHERE charge_id=?)',
+    ).bind(price, new Date(now).toISOString(), userId, chargeId),
+  ]);
   const op = await env.DB.prepare('SELECT * FROM backend_ai_operations WHERE user_id=? AND operation_id=?')
     .bind(userId, b.operationId)
     .first();
-  if (!op) {
-    await releaseReserved(env, { userId, amount: price, operationKey: `ai:${b.operationId}` });
-    return reply({ error: 'operation_conflict' }, 409);
-  }
-  if (op.charge_id !== chargeId) {
-    // Another concurrent request won the operation row: roll our reservation back and replay.
-    await releaseReserved(env, { userId, amount: price, operationKey: `ai:${b.operationId}` });
-    return replay(env, op, b);
-  }
+  if (!op) return reply({ error: 'insufficient_credits', needed: price }, 402);
+  if (op.charge_id !== chargeId) return replay(env, op, b);
   return reply({ ok: true, chargeId, points: price, market: 'US' });
 }
 
@@ -295,7 +290,7 @@ export async function reconcileAi(env, now = Date.now()) {
           userId: op.user_id,
           amount: op.points,
           operationKey: `ai:${op.operation_id}`,
-        }).catch(() => {});
+        });
         await env.DB.prepare(
           "UPDATE backend_ai_operations SET status='refunded',updated_at=? WHERE charge_id=? AND status='running'",
         )

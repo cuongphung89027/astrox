@@ -1,6 +1,9 @@
 // @ts-check
 // Adapted from the deployed astrox-api Worker (ba4846ba, 2026-09-17).
 // Legacy tables and PayOS signature format are preserved; money writes are atomic.
+import { marketOf } from './credits.mjs';
+import { configForMarket } from '../admin/config.ts';
+import { rewardCreditStatements } from './reward-credit.mjs';
 import { equal } from '../admin/crypto.mjs';
 import { runtimeSettings } from './config.mjs';
 import { readSession } from './auth.mjs';
@@ -36,8 +39,10 @@ export async function payosSignature(key, data) {
 }
 const configured = env => Boolean(env.PAYOS_CLIENT_ID && env.PAYOS_API_KEY && env.PAYOS_CHECKSUM_KEY);
 const minimumError = amount => Object.assign(new Error('promo_min_amount'), { minAmountVnd: amount });
-async function getPromo(env, settings, code, amount, userId, expectedKind = null) {
+export async function getPromo(env, settings, code, amount, userId, expectedKind = null, market = null) {
   if (!code) return null;
+  const us = (market ?? (await marketOf(env, userId))) === 'US';
+  if (settings.config) settings = { ...settings, config: configForMarket(settings.config, us ? 'US' : 'VN') };
   if (settings.config) {
     const p = settings.config.billing.promos.find(p => p.code === code);
     if (!p) throw new Error('invalid_promo');
@@ -48,15 +53,20 @@ async function getPromo(env, settings, code, amount, userId, expectedKind = null
     if (kind === 'topup_bonus' && amount < (p.minAmountVnd ?? 0)) {
       throw minimumError(p.minAmountVnd);
     }
+    const promoId = us ? `US:${p.id}` : p.id;
     const source =
       kind === 'direct_points'
         ? 'backend_promo_redemptions r'
-        : 'backend_order_snapshots r JOIN topup_orders_zalo o ON o.order_code=r.order_code';
+        : us
+          ? 'lemon_order_promos r JOIN lemon_orders o ON o.id=r.order_id'
+          : 'backend_order_snapshots r JOIN topup_orders_zalo o ON o.order_code=r.order_code';
     const where =
       kind === 'direct_points'
         ? 'r.promo_id=?'
-        : "r.promo_id=? AND (o.status='paid' OR (o.status='pending' AND r.expires_at>?))";
-    const args = kind === 'direct_points' ? [p.id] : [p.id, new Date().toISOString()];
+        : us
+          ? "r.promo_id=? AND o.status IN ('pending','paid','fulfilled','refunded')"
+          : "r.promo_id=? AND (o.status='paid' OR (o.status='pending' AND r.expires_at>?))";
+    const args = kind === 'direct_points' || us ? [promoId] : [promoId, new Date().toISOString()];
     const total = await env.DB.prepare(`SELECT COUNT(*) AS n FROM ${source} WHERE ${where}`)
       .bind(...args)
       .first();
@@ -65,7 +75,15 @@ async function getPromo(env, settings, code, amount, userId, expectedKind = null
       .bind(...args, userId)
       .first();
     if ((used?.n ?? 0) >= p.perUser) throw new Error('promo_user_exhausted');
-    return { id: p.id, code: p.code, kind, bonus: p.bonus, limit: p.limit, perUser: p.perUser };
+    return {
+      market: us ? 'US' : 'VN',
+      id: promoId,
+      code: p.code,
+      kind,
+      bonus: p.bonus,
+      limit: p.limit,
+      perUser: p.perUser,
+    };
   }
   const p = await env.DB.prepare('SELECT * FROM promotion_codes WHERE code=? AND active=1').bind(code).first();
   if (!p) throw new Error('invalid_promo');
@@ -93,7 +111,7 @@ export async function handlePromoCheck(env, request) {
   if (!code) return json(env, request, { error: 'bad_request' }, 400);
   const settings = await runtimeSettings(env);
   try {
-    const p = await getPromo(env, settings, code, Number(b?.amount_vnd) || 0, user.sub);
+    const p = await getPromo(env, settings, code, Number(b?.amount_usd_cents ?? b?.amount_vnd) || 0, user.sub);
     return json(env, request, {
       ok: true,
       kind: p.kind ?? 'topup_bonus',
@@ -122,9 +140,11 @@ export async function handlePromoRedeem(env, request) {
   )
     .bind(user.sub, requestKey)
     .first();
-  const existingCode = settings.config.billing.promos.find(p => p.code === code);
+  const us = (await marketOf(env, user.sub)) === 'US';
+  const existingCode = configForMarket(settings.config, us ? 'US' : 'VN').billing.promos.find(p => p.code === code);
+  const existingPromoId = existingCode ? (us ? `US:${existingCode.id}` : existingCode.id) : null;
   if (existing)
-    return existingCode?.id === existing.promo_id
+    return existingPromoId === existing.promo_id
       ? json(env, request, { ok: true, points: existing.points, replayed: true })
       : json(env, request, { error: 'invalid_promo' }, 400);
   if (!settings.config.billing.enabled || settings.config.operations.maintenance)
@@ -138,10 +158,6 @@ export async function handlePromoRedeem(env, request) {
   const id = crypto.randomUUID(),
     now = new Date().toISOString();
   const inserted = await env.DB.batch([
-    env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(
-      user.sub,
-      now,
-    ),
     env.DB.prepare(
       `INSERT INTO backend_promo_redemptions(id,promo_id,user_id,request_key,points,created_at)
       SELECT ?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM backend_promo_redemptions WHERE promo_id=?)<?
@@ -162,14 +178,14 @@ export async function handlePromoRedeem(env, request) {
       user.sub,
       requestKey,
     ),
-    env.DB.prepare(
-      "INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,?,?, 'promo_direct',?,? WHERE changes()=1",
-    ).bind(crypto.randomUUID(), user.sub, promo.bonus, id, now),
-    env.DB.prepare(
-      'UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1',
-    ).bind(promo.bonus, now, user.sub),
+    ...(await rewardCreditStatements(
+      env,
+      { userId: user.sub, points: promo.bonus, reason: 'promo_direct', referenceId: id, market: promo.market },
+      now,
+      { sql: 'EXISTS(SELECT 1 FROM backend_promo_redemptions WHERE id=?)', args: [id] },
+    )),
   ]);
-  if (!inserted[1].meta.changes) {
+  if (!inserted[0].meta.changes) {
     const replay = await env.DB.prepare(
       'SELECT promo_id,points FROM backend_promo_redemptions WHERE user_id=? AND request_key=?',
     )

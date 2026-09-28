@@ -334,7 +334,9 @@ export function AccountPage() {
               </section>
             </>
           )}
-          {(section === 'points' || section === 'earn') && <PointsHome view={section === 'earn' ? 'earn' : 'wallet'} />}
+          {(section === 'points' || section === 'earn') && (
+            <PointsHome key={astroxUser?.id ?? 'guest'} view={section === 'earn' ? 'earn' : 'wallet'} />
+          )}
           {section === 'preferences' && (
             <>
               <section className={styles.section}>

@@ -1,3 +1,5 @@
+import { useLocale } from '@/i18n/LocaleProvider';
+import { BATU_WX_EN } from '@/i18n/astrology-en';
 import type { CSSProperties } from 'react';
 import { BATU_WX_LABEL, type WxKey } from '@/lib/batu';
 import styles from './Batu.module.css';
@@ -18,6 +20,8 @@ export function WuxingBar({
   active?: WxKey | null;
   onSelect?: (key: WxKey | null) => void;
 }) {
+  const en = useLocale().locale === 'en',
+    elementLabel = (key: WxKey) => (en ? BATU_WX_EN[BATU_WX_LABEL[key]] : BATU_WX_LABEL[key]);
   const total = Object.values(wuxing).reduce((a, b) => a + b, 0) || 1;
   return (
     <div className={styles.elementRows}>
@@ -26,13 +30,13 @@ export function WuxingBar({
           key={key}
           onClick={() => onSelect?.(active === key ? null : key)}
           aria-pressed={active === key}
-          aria-label={`${BATU_WX_LABEL[key]}: ${wuxing[key]} trên ${total} chữ, ${Number(((wuxing[key] / total) * 100).toFixed(1))}%`}
+          aria-label={`${elementLabel(key)}: ${wuxing[key]} ${en ? 'of' : 'trên'} ${total} ${en ? 'characters' : 'chữ'}, ${Number(((wuxing[key] / total) * 100).toFixed(1))}%`}
           data-dim={Boolean(active && active !== key)}
           style={{ '--element': ELEMENT_COLORS[key] } as CSSProperties}
         >
           <span className={styles.elementName}>
             <i />
-            {BATU_WX_LABEL[key]}
+            {elementLabel(key)}
           </span>
           <span className={styles.horizontalTrack}>
             <i style={{ width: `${(wuxing[key] / total) * 100}%` }} />

@@ -60,5 +60,19 @@ test('numerology: same name and birth date compute identical numbers; topics hav
 
 test('tarot spread ids and numerology name math are untouched by localization', async () => {
   const { tarot } = await mods();
-  assert.deepEqual(tarot.TAROT_SPREADS.map(s => s.id), ['one', 'three', 'cross5', 'relationship5', 'celtic10']);
+  assert.deepEqual(
+    tarot.TAROT_SPREADS.map(s => s.id),
+    ['one', 'three', 'cross5', 'relationship5', 'celtic10'],
+  );
+});
+
+test('US I Ching accepts NANP phone formats and keeps Vietnamese normalization unchanged', async () => {
+  const kd = await load('lib/kinhdich.ts');
+  assert.equal(kd.normalizeDigits('phone', '+1 (415) 555-1234', 'en'), '4155551234');
+  assert.equal(kd.normalizeDigits('phone', '4155551234', 'en'), '4155551234');
+  assert.equal(kd.normalizeDigits('phone', '+84 912 345 678'), '0912345678');
+  assert.throws(() => kd.normalizeDigits('phone', '+44 20 7123 4567', 'en'));
+  const us = kd.castDigits('phone', '+1 415 555 1234', 'en');
+  assert.ok(!JSON.stringify(us).includes('4155551234'));
+  assert.deepEqual(kd.replayKdHistory(kd.createKdHistory(us, 'Question')), us);
 });

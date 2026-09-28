@@ -6,7 +6,9 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth';
 import { openLoginDialog } from '@/lib/login-dialog';
 import { useAppState } from '@/lib/use-store';
-import { cacheFingerprint } from '@/lib/state';
+import { hourChiLabel, TUVI_TOPICS_EN } from '@/i18n/astrology-en';
+import { dashboardEntries } from '@/lib/dashboard-cache';
+import { cacheFingerprint, localeCacheKey } from '@/lib/state';
 
 import { formatDob } from '@/lib/utils';
 import { PROMPT_VERSION } from '@/lib/config';
@@ -47,14 +49,15 @@ export function Dashboard() {
     return () => clearInterval(timer);
   }, []);
   const cache = profile ? state.aiCache.profiles[cacheFingerprint()] : undefined;
-  const today = now && engine ? cache?.tuviPeriod.today[engine.periodCacheKey('today')] : undefined;
+  const today =
+    now && engine ? cache?.tuviPeriod.today[localeCacheKey(t.locale, engine.periodCacheKey('today'))] : undefined;
   const usableToday =
     today &&
     (!today.promptVersion || today.promptVersion === PROMPT_VERSION) &&
     (!today.expiresAt || today.expiresAt > (now?.getTime() || 0))
       ? today
       : undefined;
-  const recent = Object.entries(cache?.tuviTopics || {})
+  const recent = dashboardEntries(cache?.tuviTopics, t.locale)
     .filter(
       ([, entry]) =>
         entry.text &&
@@ -66,11 +69,11 @@ export function Dashboard() {
   const chart = useMemo(() => {
     if (!engine || !profile?.dob || !profile.hourChi || !profile.gender) return null;
     try {
-      return engine.buildZiweiChart(profile);
+      return engine.buildZiweiChart(profile, t.locale);
     } catch {
       return null;
     }
-  }, [profile, engine]);
+  }, [profile, engine, t.locale]);
   const menh = chart && engine ? engine.menhPalace(chart) : null;
   const tarotCount = useTarotHistoryCount();
   // Tên gọi người dùng tự đặt ưu tiên trước tên từ kênh đăng nhập (Zalo).
@@ -148,7 +151,10 @@ export function Dashboard() {
             </div>
             <FeatureIcon name="tuvi" size={120} className={styles.sun} />
           </section>
-          <section className={styles.identity} aria-label="Thông tin lá số cá nhân">
+          <section
+            className={styles.identity}
+            aria-label={t.locale === 'en' ? 'Personal birth chart details' : 'Thông tin lá số cá nhân'}
+          >
             <div className={styles.sectionHeading}>
               <h2>{t.t('dash.yourChart', { name: profile.name })}</h2>
               <Link href={moduleRoute('tuvi', t.locale)} aria-label={t.t('dash.openChart')}>
@@ -156,7 +162,7 @@ export function Dashboard() {
               </Link>
             </div>
             <p className={styles.birth}>
-              {formatDob(profile.dob)} · {profile.hourChi}
+              {formatDob(profile.dob)} · {hourChiLabel(profile.hourChi, t.locale)}
             </p>
             {chart ? (
               <dl className={styles.facts}>
@@ -230,7 +236,13 @@ export function Dashboard() {
                   href={`${moduleRoute('tuvi', t.locale)}?view=topics&topic=${encodeURIComponent(topicId)}&sub=${encodeURIComponent(subId || '')}`}
                 >
                   <div>
-                    <h3>{topic?.subs.find(s => s.id === subId)?.label || topic?.title || t.t('dash.tuviReading')}</h3>
+                    <h3>
+                      {t.locale === 'en'
+                        ? TUVI_TOPICS_EN[topicId]?.subs[subId] ||
+                          TUVI_TOPICS_EN[topicId]?.title ||
+                          t.t('dash.tuviReading')
+                        : topic?.subs.find(s => s.id === subId)?.label || topic?.title || t.t('dash.tuviReading')}
+                    </h3>
                     <p>{excerpt(entry.text)}</p>
                   </div>
                   <span aria-hidden="true">↗</span>

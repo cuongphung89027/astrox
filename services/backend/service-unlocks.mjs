@@ -1,3 +1,5 @@
+import { englishServiceName } from '../admin/service-names-en.ts';
+import { configForMarket } from '../admin/config.ts';
 import { SERVICE_CATALOG } from '../admin/catalog.ts';
 import { bundleDefinitions } from '../admin/service-tree.ts';
 import { upgradeQuote } from '../admin/service-pricing.ts';
@@ -126,10 +128,8 @@ function available(c, service) {
 }
 export async function quoteUnlock(env, userId, c, revision, input, now = Date.now(), market = 'VN') {
   if (!input || typeof input.serviceId !== 'string' || input.serviceId.length > 80) fail('invalid_scope', 400);
-  const sharedService = c.billing.services.find(s => s.id === input.serviceId);
-  // US market: sparse overlay overrides price/status (P1-e).
-  const usOverlay = market === 'US' ? c.billing.usServices?.[input.serviceId] : null;
-  const service = usOverlay ? { ...sharedService, points: usOverlay.points, status: usOverlay.status } : sharedService;
+  c = configForMarket(c, market);
+  const service = c.billing.services.find(s => s.id === input.serviceId);
   if (!supportsUnlock(c, input.serviceId) || !available(c, service) || service.status !== 'paid')
     fail('service_unavailable', 403);
   try {
@@ -169,7 +169,12 @@ export async function quoteUnlock(env, userId, c, revision, input, now = Date.no
           return available(c, s) && s.policy === 'profile';
         })
       )
-        options.push({ ...def, points: price.points, expiresAt: null });
+        options.push({
+          ...def,
+          name: market === 'US' ? englishServiceName(def.id) : def.name,
+          points: price.points,
+          expiresAt: null,
+        });
     }
   const offers = options.map(o => ({
     ...o,
@@ -182,7 +187,14 @@ export async function quoteUnlock(env, userId, c, revision, input, now = Date.no
     serviceId: service.id,
     market: market === 'US' ? 'US' : 'VN',
     offers,
-    scopeLabel: scope.expiresAt === null ? 'Cho hồ sơ đang xem' : 'Cho kỳ hiện tại (giờ Việt Nam)',
+    scopeLabel:
+      market === 'US'
+        ? scope.expiresAt === null
+          ? 'For this profile'
+          : 'For the current period (UTC+7)'
+        : scope.expiresAt === null
+          ? 'Cho hồ sơ đang xem'
+          : 'Cho kỳ hiện tại (giờ Việt Nam)',
   };
 }
 async function existingOperation(env, userId, operationId) {
@@ -384,8 +396,7 @@ export async function refundUnlock(env, userId, id, cutoff = Date.now()) {
   if (!op) fail('charge_not_found', 404);
   if (op.status === 'succeeded') fail('operation_completed');
   if (op.market === 'US') {
-    if (op.points > 0)
-      await releaseReserved(env, { userId, amount: op.points, operationKey: `unlock:${id}` }).catch(() => {});
+    if (op.points > 0) await releaseReserved(env, { userId, amount: op.points, operationKey: `unlock:${id}` });
     await env.DB.prepare(
       "UPDATE service_unlock_operations SET status='refunded',updated_at=?,version=version+1 WHERE id=? AND user_id=? AND status='running' AND created_at<=?",
     )

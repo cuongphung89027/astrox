@@ -121,78 +121,7 @@ export function BillingPanel({ config, update, renderFields, market }: AdminPane
           </details>
         ))}
       </Card>
-      <Card
-        title="Mã khuyến mãi"
-        action={
-          <button
-            className={s.secondary}
-            onClick={() =>
-              update(d => {
-                d.billing.promos.push({
-                  id: uid('promo'),
-                  code: '',
-                  kind: 'topup_bonus',
-                  minAmountVnd: 0,
-                  bonus: 0,
-                  limit: 100,
-                  perUser: 1,
-                  enabled: false,
-                  expiresAt: '',
-                });
-              })
-            }
-          >
-            ＋ Thêm mã
-          </button>
-        }
-      >
-        {!config.billing.promos.length && <Empty>Chưa có chương trình khuyến mãi.</Empty>}
-        {config.billing.promos.map((p, i) => (
-          <details open className={s.record} key={p.id}>
-            <summary>{p.code || 'Mã khuyến mãi mới'}</summary>
-            <Fields
-              value={{ ...p, kind: p.kind ?? 'topup_bonus', minAmountVnd: p.minAmountVnd ?? 0 }}
-              specs={[
-                ['code', 'Mã (chữ hoa, số, gạch ngang)', 'text'],
-                ['kind', 'Loại mã', ['topup_bonus', 'direct_points']],
-                ['bonus', 'Point thưởng', 'number'],
-                ...(p.kind === 'direct_points' ? [] : [['minAmountVnd', 'Nạp tối thiểu (VND)', 'number'] as Spec]),
-                ['limit', 'Tổng lượt dùng tối đa', 'number'],
-                ['perUser', 'Lượt mỗi người', 'number'],
-                ['enabled', 'Kích hoạt mã', 'boolean'],
-              ]}
-              onChange={(key, value) =>
-                update(d => {
-                  Object.assign(d.billing.promos[i], { [key]: value });
-                  if (key === 'kind' && value === 'direct_points') d.billing.promos[i].minAmountVnd = 0;
-                })
-              }
-            />
-            <label className={s.promoExpiry}>
-              <span>Hết hạn (giờ Việt Nam, để trống nếu không hạn)</span>
-              <input
-                type="datetime-local"
-                value={promoExpiryLocal(p.expiresAt)}
-                onChange={event =>
-                  update(d => {
-                    d.billing.promos[i].expiresAt = promoExpiryIso(event.target.value);
-                  })
-                }
-              />
-            </label>
-            <button
-              className={s.danger}
-              onClick={() =>
-                update(d => {
-                  d.billing.promos.splice(i, 1);
-                })
-              }
-            >
-              Xóa mã
-            </button>
-          </details>
-        ))}
-      </Card>
+      <PromoEditor config={config} update={update} />
     </>
   );
 }
@@ -309,6 +238,17 @@ function UsBilling({ config, update }: Pick<AdminPanelProps, 'config' | 'update'
           ))}
         </div>
       </Card>
+      <PromoEditor
+        us
+        config={{ ...config, billing: { ...config.billing, promos: config.billing.usPromos } }}
+        update={fn =>
+          update(d => {
+            const view = { ...d, billing: { ...d.billing, promos: d.billing.usPromos } };
+            fn(view);
+            d.billing.usPromos = view.billing.promos;
+          })
+        }
+      />
     </>
   );
 }
@@ -349,5 +289,84 @@ function renderLemonFields(lemon: AdminConfig['integrations']['lemon'], update: 
         />
       </label>
     </div>
+  );
+}
+
+function PromoEditor({ config, update, us = false }: Pick<AdminPanelProps, 'config' | 'update'> & { us?: boolean }) {
+  return (
+    <Card
+      title="Mã khuyến mãi"
+      action={
+        <button
+          className={s.secondary}
+          onClick={() =>
+            update(d => {
+              d.billing.promos.push({
+                id: uid('promo'),
+                code: '',
+                kind: 'topup_bonus',
+                minAmountVnd: 0,
+                bonus: 0,
+                limit: 100,
+                perUser: 1,
+                enabled: false,
+                expiresAt: '',
+              });
+            })
+          }
+        >
+          ＋ Thêm mã
+        </button>
+      }
+    >
+      {!config.billing.promos.length && <Empty>Chưa có chương trình khuyến mãi.</Empty>}
+      {config.billing.promos.map((p, i) => (
+        <details open className={s.record} key={p.id}>
+          <summary>{p.code || 'Mã khuyến mãi mới'}</summary>
+          <Fields
+            value={{ ...p, kind: p.kind ?? 'topup_bonus', minAmountVnd: p.minAmountVnd ?? 0 }}
+            specs={[
+              ['code', 'Mã (chữ hoa, số, gạch ngang)', 'text'],
+              ['kind', 'Loại mã', ['topup_bonus', 'direct_points']],
+              ['bonus', us ? 'Credits thưởng' : 'Point thưởng', 'number'],
+              ...(p.kind === 'direct_points'
+                ? []
+                : [['minAmountVnd', us ? 'Nạp tối thiểu (USD cents)' : 'Nạp tối thiểu (VND)', 'number'] as Spec]),
+              ['limit', 'Tổng lượt dùng tối đa', 'number'],
+              ['perUser', 'Lượt mỗi người', 'number'],
+              ['enabled', 'Kích hoạt mã', 'boolean'],
+            ]}
+            onChange={(key, value) =>
+              update(d => {
+                Object.assign(d.billing.promos[i], { [key]: value });
+                if (key === 'kind' && value === 'direct_points') d.billing.promos[i].minAmountVnd = 0;
+              })
+            }
+          />
+          <label className={s.promoExpiry}>
+            <span>Hết hạn (giờ Việt Nam, để trống nếu không hạn)</span>
+            <input
+              type="datetime-local"
+              value={promoExpiryLocal(p.expiresAt)}
+              onChange={event =>
+                update(d => {
+                  d.billing.promos[i].expiresAt = promoExpiryIso(event.target.value);
+                })
+              }
+            />
+          </label>
+          <button
+            className={s.danger}
+            onClick={() =>
+              update(d => {
+                d.billing.promos.splice(i, 1);
+              })
+            }
+          >
+            Xóa mã
+          </button>
+        </details>
+      ))}
+    </Card>
   );
 }

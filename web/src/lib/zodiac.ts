@@ -476,7 +476,17 @@ export function periodCacheKey(period: ZodiacPeriod): string {
   return `${now.getFullYear()}-${now.getMonth() + 1}`;
 }
 
-export function periodLabel(period: ZodiacPeriod, key: string): string {
+export function periodLabel(period: ZodiacPeriod, key: string, locale: 'vi' | 'en' = 'vi'): string {
+  if (locale === 'en') {
+    if (period === 'week') return `Week ${key.split('-W')[1]}`;
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d || 1)).toLocaleDateString('en-US', {
+      timeZone: 'UTC',
+      month: 'long',
+      ...(period === 'today' ? { day: 'numeric' as const } : {}),
+      year: 'numeric',
+    });
+  }
   if (period === 'today') {
     const p = key.split('-');
     return `${p[2]}/${p[1]}/${p[0]}`;
@@ -859,6 +869,35 @@ const ASPECT_BY_ANGLE: Record<number, string> = {
   180: 'Đối đỉnh',
 };
 
+const PAIR_NOTES_EN: Record<string, string> = {
+  'Hoả|Hoả': 'Two Fire signs share energy and readily understand each other’s enthusiasm.',
+  'Thổ|Thổ': 'Two Earth signs share a practical rhythm and build trust through action.',
+  'Khí|Khí': 'Two Air signs connect through conversation and an endless exchange of ideas.',
+  'Thuỷ|Thuỷ': 'Two Water signs often understand each other without words.',
+  'Hoả|Khí': 'Air supports Fire: these elements can encourage and inspire each other.',
+  'Thổ|Thuỷ': 'Water and Earth bring emotions and practicality together, creating a grounded connection.',
+  'Hoả|Thổ': 'Fire and Earth move at different speeds. Respect the need for both momentum and stability.',
+  'Khí|Thuỷ': 'Air and Water speak different languages: reason and emotion need room to understand each other.',
+  'Hoả|Thuỷ': 'Fire and Water can create strong attraction, but need care and restraint to avoid friction.',
+  'Thổ|Khí': 'Earth values steadiness while Air seeks freedom. Boundaries need to be negotiated together.',
+};
+const RELATIONS_EN: Record<string, string> = {
+  'Hài hoà': 'Harmony',
+  'Bổ trợ': 'Complementary',
+  'Cần điều chỉnh': 'Adjustment needed',
+  'Căng thẳng': 'Tension',
+  'Trung tính': 'Neutral',
+};
+const ASPECTS_EN: Record<number, string> = {
+  0: 'Conjunction',
+  30: 'Semi-sextile',
+  60: 'Sextile',
+  90: 'Square',
+  120: 'Trine',
+  150: 'Quincunx',
+  180: 'Opposition',
+};
+
 const PERCENT_BY_ANGLE: Record<number, number> = {
   0: 92,
   30: 64,
@@ -870,7 +909,7 @@ const PERCENT_BY_ANGLE: Record<number, number> = {
 };
 
 /** Điểm tương hợp tĩnh — quy tắc nguyên tố + khoảng góc giữa hai cung. */
-export function compatAnalysis(a: ZodiacSign, b: ZodiacSign): CompatAnalysis {
+export function compatAnalysis(a: ZodiacSign, b: ZodiacSign, locale: 'vi' | 'en' = 'vi'): CompatAnalysis {
   const ai = ZODIAC_SIGNS.findIndex(s => s.id === a.id);
   const bi = ZODIAC_SIGNS.findIndex(s => s.id === b.id);
   const step = Math.abs(ai - bi);
@@ -889,10 +928,10 @@ export function compatAnalysis(a: ZodiacSign, b: ZodiacSign): CompatAnalysis {
 
   return {
     percent,
-    relation: pair.relation,
-    elementNote: pair.note,
+    relation: locale === 'en' ? RELATIONS_EN[pair.relation] : pair.relation,
+    elementNote: locale === 'en' ? PAIR_NOTES_EN[pairKey] || 'A neutral elemental relationship.' : pair.note,
     angle,
-    aspectLabel: ASPECT_BY_ANGLE[angle] || '—',
+    aspectLabel: (locale === 'en' ? ASPECTS_EN : ASPECT_BY_ANGLE)[angle] || '—',
   };
 }
 

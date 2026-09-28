@@ -1,10 +1,13 @@
 'use client';
 
+import { useParityCopy } from '@/i18n/parity-copy';
+import { useLocale } from '@/i18n/LocaleProvider';
+import { hourChiLabel } from '@/i18n/astrology-en';
 import { useState, useRef, useEffect, type CSSProperties } from 'react';
 import { menhPalace, starElement, yearStemBranch, type ZiweiChart, type ZiweiStar } from '@/lib/tuvi';
 import type { Profile } from '@/lib/types';
 import { formatDob } from '@/lib/utils';
-import { zodiacAsset } from '@/lib/earthly-branches';
+import { zodiacAsset, branchName } from '@/lib/earthly-branches';
 import styles from './ChartBoard.module.css';
 
 // Fixed earthly-branch positions around the central 2 × 2 space.
@@ -25,7 +28,7 @@ const POSITIONS: Record<string, [number, number]> = {
   Hợi: [4, 4],
 };
 const BRANCHES = ['Tý', 'Sửu', 'Dần', 'Mão', 'Thìn', 'Tỵ', 'Ngọ', 'Mùi', 'Thân', 'Dậu', 'Tuất', 'Hợi'];
-const branchIndex = (branch: string) => BRANCHES.indexOf(branch === 'Tí' ? 'Tý' : branch === 'Tị' ? 'Tỵ' : branch);
+const branchIndex = (branch: string) => BRANCHES.indexOf(branchName(branch));
 const TONES: Record<string, string> = {
   Kim: '#8b681f',
   Mộc: '#266647',
@@ -45,6 +48,10 @@ function Star({ star }: { star: ZiweiStar }) {
 }
 
 export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Profile }) {
+  const parityCopy = useParityCopy();
+  const locale = useLocale().locale,
+    en = locale === 'en';
+
   const menh = menhPalace(chart);
   const boardRef = useRef<HTMLDivElement>(null);
   const [anchors, setAnchors] = useState<Record<string, [number, number]>>({});
@@ -57,7 +64,7 @@ export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Pro
       const next: Record<string, [number, number]> = {};
       board.querySelectorAll<HTMLElement>('[data-branch]').forEach(cell => {
         const branch = cell.dataset.branch!;
-        const [row, col] = POSITIONS[branch] || [1, 1];
+        const [row, col] = POSITIONS[branchName(branch)] || [1, 1];
         const rect = cell.getBoundingClientRect();
         const x = col === 1 ? rect.right : col === 4 ? rect.left : rect.left + rect.width / 2;
         const y = row === 1 ? rect.bottom : row === 4 ? rect.top : rect.top + rect.height / 2;
@@ -88,7 +95,7 @@ export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Pro
   };
   return (
     <div>
-      <div className={styles.scroll} role="region" aria-label="Lá số đầy đủ 12 cung">
+      <div className={styles.scroll} role="region" aria-label={parityCopy('Lá số đầy đủ 12 cung')}>
         <div
           ref={boardRef}
           className={styles.board}
@@ -120,19 +127,19 @@ export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Pro
             </svg>
           )}
           {chart.palaces.map(p => {
-            const [row, column] = POSITIONS[p.earthlyBranch] || [1, 1];
+            const [row, column] = POSITIONS[branchName(p.earthlyBranch)] || [1, 1];
             return (
               <section
                 key={p.index}
                 data-branch={p.earthlyBranch}
-                aria-label={`Cung ${p.name} tại ${p.earthlyBranch}`}
+                aria-label={`${en ? 'Palace' : 'Cung'} ${p.name} ${en ? 'at' : 'tại'} ${p.earthlyBranch}`}
                 className={styles.palace}
                 data-related={related.some(item => item.index === p.index)}
                 data-selected={active === p.earthlyBranch}
                 onPointerEnter={e => {
                   if (e.pointerType === 'mouse') setHovered(p.earthlyBranch);
                 }}
-                data-menh={p.name === 'Mệnh'}
+                data-menh={p.index === menh?.index}
                 style={{ gridRow: row, gridColumn: column } as CSSProperties}
               >
                 <img
@@ -153,21 +160,21 @@ export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Pro
                   <button
                     type="button"
                     className={styles.palaceButton}
-                    aria-label={`Chọn cung ${p.name} tại ${p.earthlyBranch}`}
+                    aria-label={`${en ? 'Select palace' : 'Chọn cung'} ${p.name} ${en ? 'at' : 'tại'} ${p.earthlyBranch}`}
                     aria-pressed={selected === p.earthlyBranch}
                     onClick={() => toggle(p.earthlyBranch)}
                     onFocus={() => setHovered(p.earthlyBranch)}
                     onBlur={() => setHovered(null)}
                   >
                     {p.name}
-                    {p.isBodyPalace && <small> · THÂN</small>}
+                    {p.isBodyPalace && <small> · {en ? 'BODY' : 'THÂN'}</small>}
                   </button>
                 </h3>
                 <div className={styles.major}>
                   {p.majorStars.length ? (
                     p.majorStars.map((s, i) => <Star key={i} star={s} />)
                   ) : (
-                    <span className={styles.noMajor}>Vô chính diệu</span>
+                    <span className={styles.noMajor}>{parityCopy('Vô chính diệu')}</span>
                   )}
                 </div>
                 <div className={styles.minor}>
@@ -177,49 +184,49 @@ export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Pro
                 </div>
                 <footer>
                   <span>{p.changSheng}</span>
-                  {p.isOriginalPalace && <span>Lai Nhân</span>}
+                  {p.isOriginalPalace && <span>{parityCopy('Lai Nhân')}</span>}
                 </footer>
               </section>
             );
           })}
-          <section className={styles.center} aria-label="Thông tin trung tâm lá số">
-            <p className={styles.brand}>ASTROX · TỬ VI ĐẨU SỐ</p>
-            <h2>{profile.name || 'Lá số Tử Vi'}</h2>
+          <section className={styles.center} aria-label={parityCopy('Thông tin trung tâm lá số')}>
+            <p className={styles.brand}>{parityCopy('ASTROX · TỬ VI ĐẨU SỐ')}</p>
+            <h2>{profile.name || parityCopy('Lá số Tử Vi')}</h2>
             <dl>
               <div>
-                <dt>Ngày sinh</dt>
+                <dt>{parityCopy('Ngày sinh')}</dt>
                 <dd>{formatDob(profile.dob)}</dd>
               </div>
               <div>
-                <dt>Năm sinh</dt>
+                <dt>{parityCopy('Năm sinh')}</dt>
                 <dd>{yearStemBranch(chart)}</dd>
               </div>
               <div>
-                <dt>Giờ sinh</dt>
-                <dd>{profile.hourChi}</dd>
+                <dt>{parityCopy('Giờ sinh')}</dt>
+                <dd>{hourChiLabel(profile.hourChi, locale)}</dd>
               </div>
               <div>
-                <dt>Giới tính</dt>
-                <dd>{profile.gender}</dd>
+                <dt>{parityCopy('Giới tính')}</dt>
+                <dd>{en ? (profile.gender === 'Nam' ? 'Male' : 'Female') : profile.gender}</dd>
               </div>
               <div>
-                <dt>Cục</dt>
+                <dt>{parityCopy('Cục')}</dt>
                 <dd>{chart.meta.fiveElementsClass || '—'}</dd>
               </div>
               <div>
-                <dt>Mệnh chủ</dt>
+                <dt>{parityCopy('Mệnh chủ')}</dt>
                 <dd>{chart.meta.soul || '—'}</dd>
               </div>
               <div>
-                <dt>Thân chủ</dt>
+                <dt>{parityCopy('Thân chủ')}</dt>
                 <dd>{chart.meta.body || '—'}</dd>
               </div>
               <div>
-                <dt>Mệnh tại</dt>
+                <dt>{parityCopy('Mệnh tại')}</dt>
                 <dd>{menh?.earthlyBranch || '—'}</dd>
               </div>
             </dl>
-            <p className={styles.centerNote}>Thông tin lấy từ hồ sơ của bạn</p>
+            <p className={styles.centerNote}>{parityCopy('Thông tin lấy từ hồ sơ của bạn')}</p>
           </section>
         </div>
       </div>
@@ -230,12 +237,15 @@ export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Pro
               <strong>{related[0].name}</strong>
               <span>
                 {' '}
-                · Tam hợp: {related[1].name}, {related[2].name}
+                · {en ? 'Trine' : 'Tam hợp'}: {related[1].name}, {related[2].name}
               </span>
-              <span> · Xung chiếu: {related[3].name}</span>
+              <span>
+                {' '}
+                · {en ? 'Opposition' : 'Xung chiếu'}: {related[3].name}
+              </span>
             </>
           ) : (
-            'Chạm một cung để xem tam hợp và xung chiếu.'
+            parityCopy('Chạm một cung để xem tam hợp và xung chiếu.')
           )}
         </p>
         {selected && (
@@ -246,11 +256,13 @@ export function ChartBoard({ chart, profile }: { chart: ZiweiChart; profile: Pro
               setHovered(null);
             }}
           >
-            Bỏ chọn ×
+            {parityCopy('Bỏ chọn ×')}
           </button>
         )}
       </div>
-      <p className={styles.legend}>Đường xanh: tam hợp · Đường vàng: xung chiếu. Màu chữ sao thể hiện ngũ hành.</p>
+      <p className={styles.legend}>
+        {parityCopy('Đường xanh: tam hợp · Đường vàng: xung chiếu. Màu chữ sao thể hiện ngũ hành.')}
+      </p>
     </div>
   );
 }

@@ -262,3 +262,25 @@ test('VN users without a US preference keep the exact legacy Point path (no cred
   const wallet = await creditsBalance(env, 'u1');
   assert.equal(wallet.balance, 0); // VN charges never touch the Credits wallet
 });
+
+test('concurrent US retries reserve one operation without poisoning its commit', async () => {
+  const { env } = await fixture();
+  await setMarket(env, 'u1', 'US');
+  await creditPurchase(env, { userId: 'u1', amount: 50, orderId: 'retry-purchase' });
+  const cookie = await cookieOf(env),
+    input = {
+      operationId: 'repeat-operation-001',
+      requestHash: 'b'.repeat(64),
+      serviceId: 'tarot',
+      expectedPoints: 7,
+      market: 'US',
+      revision: 1,
+    };
+  const responses = await Promise.all([charge(env, cookie, input), charge(env, cookie, input)]);
+  assert.ok(responses.some(r => r.status === 200));
+  assert.equal((await creditsBalance(env, 'u1')).reserved, 7);
+  const { commitReserved } = await import('./credits.mjs');
+  await commitReserved(env, { userId: 'u1', amount: 7, operationKey: `ai:${input.operationId}` });
+  assert.equal((await creditsBalance(env, 'u1')).balance, 43);
+  assert.equal((await creditsBalance(env, 'u1')).reserved, 0);
+});

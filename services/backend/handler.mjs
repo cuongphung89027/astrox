@@ -1,14 +1,16 @@
+import { adjustCredits } from './credits.mjs';
+import { configForMarket } from '../admin/config.ts';
 import { publicBookings, adminBookings } from './bookings.mjs';
 import { handleRewardedAds } from './rewarded-ads.mjs';
 import { accountData } from './user-data.mjs';
 import { chargeAi, refundAi, completeAi, quoteAi } from './ai-operations.mjs';
 import { readPublished } from '../admin/store.mjs';
 import { runtimeSettings, capabilities, legacySnapshot } from './config.mjs';
-import { readSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } from './auth.mjs';
+import { readSession, readAiSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } from './auth.mjs';
 import { googleLogin, googleCallback } from './google-auth.mjs';
 import { creditsBalance, creditsHistory, setMarket, marketOf } from './credits.mjs';
 import { createLemonCheckout, lemonOrderStatus } from './lemon.mjs';
-import { usCheckin, usWalletSummary } from './us-rewards.mjs';
+import { usWalletSummary } from './us-rewards.mjs';
 import { handleLemonWebhook } from './lemon-webhook.mjs';
 import { handlePayosWebhook, handleTopupCreate, handlePromoCheck, handlePromoRedeem } from './payments.mjs';
 import { handlePointsHistory } from './points.mjs';
@@ -16,17 +18,23 @@ import { handleRewardsSummary, handleRewardsCheckin } from './rewards.mjs';
 import { json, corsHeaders, trustedOrigin } from './http.mjs';
 
 export async function moduleAccess(env, request) {
+  const session = await readSession(env, request);
+  const market = session
+    ? ((await marketOf(env, session.sub)) ?? 'VN')
+    : new URL(request.url).searchParams.get('market') === 'US'
+      ? 'US'
+      : 'VN';
   const published = await readPublished(env),
     access = {};
   if (published) {
-    const c = published.config;
+    const c = configForMarket(published.config, market);
     for (const s of c.billing.services.filter(s => s.id === s.module))
       access[s.module] = !c.operations.maintenance && ['free', 'paid'].includes(s.status);
   } else {
     const rows = await env.DB.prepare('SELECT slug,access_mode,enabled FROM modules').all();
     for (const r of rows.results) access[r.slug] = Boolean(r.enabled && r.access_mode !== 'disabled');
   }
-  const session = await readSession(env, request);
+  if (market === 'US') access.experts = false;
   if (session) {
     const rows = await env.DB.prepare('SELECT module,enabled FROM user_module_access WHERE user_id=?')
       .bind(session.sub)
@@ -108,12 +116,13 @@ export async function publicFetch(request, env) {
       const user = await env.DB.prepare('SELECT email FROM app_users WHERE id=?').bind(session.sub).first();
       const r = await createLemonCheckout(
         s.env,
-        { integrations: { lemon: s.lemon } },
+        { ...s.config, integrations: { ...s.config?.integrations, lemon: s.lemon } },
         {
           userId: session.sub,
           packageId: String(body?.packageId || ''),
           requestKey: String(body?.requestKey || ''),
           email: user?.email || '',
+          promoCode: String(body?.promoCode || ''),
         },
       );
       return json(
@@ -125,17 +134,23 @@ export async function publicFetch(request, env) {
         r.ok ? 200 : r.status || 502,
       );
     }
-    if (path === '/api/credits/checkin' && method === 'POST') {
-      const session = await readSession(env, request);
-      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
-      if (!trustedOrigin(env, request)) return json(env, request, { error: 'invalid_origin' }, 403);
-      const r = await usCheckin(env, session.sub, new Date().toISOString().slice(0, 10));
-      return json(env, request, r, r.granted ? 200 : 409);
-    }
+    if (path === '/api/credits/checkin' && method === 'POST') return await handleRewardsCheckin(env, request);
     if (path === '/api/credits/summary' && method === 'GET') {
       const session = await readSession(env, request);
       if (!session) return json(env, request, { error: 'unauthorized' }, 401);
       return json(env, request, await usWalletSummary(env, session.sub));
+    }
+    if (path === '/api/lemon/history' && method === 'GET') {
+      const session = await readSession(env, request);
+      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
+      const orders = (
+        await env.DB.prepare(
+          'SELECT id AS order_code,credits AS points,amount_usd_cents,status,created_at FROM lemon_orders WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT 100',
+        )
+          .bind(session.sub)
+          .all()
+      ).results;
+      return json(env, request, { orders });
     }
     if (path === '/api/lemon/order' && method === 'GET') {
       const session = await readSession(env, request);
@@ -238,6 +253,11 @@ export async function internalFetch(request, env) {
   // Chỉ service binding (ASTROX_BACKEND) mới vào được handler này; publicFetch
   // chặn mọi /internal/* ở trên. Các POST là thao tác ghi có xác thực riêng.
   if (path === '/internal/admin/bookings') return await adminBookings(env, request);
+  if (path === '/internal/ai/market' && request.method === 'GET') {
+    const session = await readAiSession(env, request);
+    if (!session) return Response.json({ error: 'unauthorized' }, { status: 401 });
+    return Response.json({ market: (await marketOf(env, session.sub)) ?? 'VN' });
+  }
   if (path === '/internal/ai/quote' && request.method === 'POST') return await quoteAi(env, request);
   if (path === '/internal/ai/charge' && request.method === 'POST') return await chargeAi(env, request);
   if (path === '/internal/ai/complete' && request.method === 'POST') return await completeAi(env, request);
@@ -269,6 +289,16 @@ export async function internalFetch(request, env) {
     rewards:
       'SELECT id,user_id,delta,reason,reference_id,created_at FROM zalo_point_ledger ORDER BY created_at DESC LIMIT 200',
   };
+  const market = new URL(request.url).searchParams.get('market') || 'VN';
+  if (!['VN', 'US'].includes(market)) return Response.json({ error: 'invalid_market' }, { status: 400 });
+  if (market === 'US') {
+    queries.wallet =
+      'SELECT a.user_id,u.display_name,a.balance,a.reserved,a.status,a.updated_at FROM credits_accounts a JOIN app_users u ON u.id=a.user_id ORDER BY a.updated_at DESC LIMIT 200';
+    queries.reports =
+      'SELECT id,user_id,lemon_order_id,amount_usd_cents,credits,status,created_at,updated_at FROM lemon_orders ORDER BY created_at DESC LIMIT 200';
+    queries.rewards =
+      'SELECT id,user_id,delta,kind,operation_key,created_at FROM credits_ledger ORDER BY created_at DESC LIMIT 200';
+  }
   const kind = path.replace('/internal/admin/', '');
   if (queries[kind])
     return Response.json({
@@ -300,6 +330,14 @@ async function internalWalletAdjust(env, request) {
     reason = String(b?.reason || '').slice(0, 200);
   if (!userId || !Number.isSafeInteger(delta) || delta === 0 || Math.abs(delta) > 100000)
     return Response.json({ error: 'bad_request' }, { status: 400 });
+  if (b.market && !['VN', 'US'].includes(b.market)) return Response.json({ error: 'invalid_market' }, { status: 400 });
+  if (b.market === 'US') {
+    try {
+      return Response.json(await adjustCredits(env, { userId, delta, requestKey: b.requestKey, note: reason }));
+    } catch (error) {
+      return Response.json({ error: error.message }, { status: error.status || 503 });
+    }
+  }
   if (delta < 0) {
     const wallet = await env.DB.prepare('SELECT balance FROM zalo_point_accounts WHERE user_id=?').bind(userId).first();
     if (!wallet || wallet.balance + delta < 0) return Response.json({ error: 'insufficient_points' }, { status: 409 });

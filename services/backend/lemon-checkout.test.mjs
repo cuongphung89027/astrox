@@ -9,6 +9,8 @@ function fixture() {
   native.exec("CREATE TABLE app_users(id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'active')");
   native.exec(readFileSync(new URL('../../migrations/lemon-orders.sql', import.meta.url), 'utf8'));
   native.exec(readFileSync(new URL('../../migrations/us-credits.sql', import.meta.url), 'utf8'));
+  native.exec(readFileSync(new URL('../../migrations/lemon-checkout-identity.sql', import.meta.url), 'utf8'));
+  native.exec(readFileSync(new URL('../../migrations/lemon-webhook.sql', import.meta.url), 'utf8'));
   const prepare = (query, args = []) => ({
     bind(...v) {
       return prepare(query, v);
@@ -83,7 +85,7 @@ test('checkout creates one server-owned order per (user, requestKey) — retry r
   // The provider payload carries only the opaque local order id as custom data.
   assert.equal(calls[0].body.data.attributes.checkout_data.custom.orderId, a.order.id);
   assert.equal(JSON.stringify(calls[0].body).includes('sam@example.com'), true);
-  assert.equal(JSON.stringify(calls[0].body.data.attributes).includes('custom_price'), false);
+  assert.equal(calls[0].body.data.attributes.custom_price, 499);
 });
 
 test('the order snapshot pins package revision, credits, cents, variant and environment', async () => {
@@ -246,4 +248,126 @@ test('checkout verification blocks tax-free mismatches but accepts tax-added tot
     }).ok,
     false,
   );
+});
+
+test('US checkout promo snapshots bonus and atomically caps concurrent reservations', async () => {
+  const env = fixture();
+  for (const q of readFileSync(new URL('../../migrations/lemon-promos.sql', import.meta.url), 'utf8')
+    .split(';')
+    .filter(x => x.trim()))
+    await env.DB.prepare(q).run();
+  await env.DB.prepare("INSERT INTO market_preferences VALUES('u1','US','now'),('u2','US','now')").run();
+  const { defaultConfig } = await import('../admin/config.ts');
+  const c = defaultConfig();
+  c.integrations.lemon = config().integrations.lemon;
+  c.billing.usPromos = [
+    {
+      id: 'one',
+      code: 'ONLYONE',
+      kind: 'topup_bonus',
+      bonus: 2,
+      minAmountVnd: 499,
+      limit: 1,
+      perUser: 1,
+      enabled: true,
+      expiresAt: '',
+    },
+  ];
+  const upstream = async () =>
+    Response.json({ data: { id: 'checkout', attributes: { url: 'https://checkout.example.test/x' } } });
+  const results = await Promise.all(
+    ['u1', 'u2'].map(userId =>
+      createLemonCheckout(
+        env,
+        c,
+        { userId, packageId: 'us-5', requestKey: 'promo-' + userId + '-request', promoCode: 'ONLYONE' },
+        upstream,
+      ),
+    ),
+  );
+  assert.equal(results.filter(r => r.ok).length, 1);
+  assert.equal(results.find(r => r.ok).order.credits, 7);
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) n FROM lemon_orders').first()).n, 1);
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) n FROM lemon_order_promos').first()).n, 1);
+});
+
+test('checkout UUID stays separate from paid order id and realistic webhook fulfills once', async () => {
+  const env = fixture();
+  env.LEMON_WEBHOOK_SECRET = 'fixture-secret';
+  let sent;
+  const r = await createLemonCheckout(
+    env,
+    config(),
+    { userId: 'u1', packageId: 'us-5', requestKey: 'real-checkout-contract' },
+    async (_, init) => {
+      sent = JSON.parse(init.body).data.attributes;
+      return Response.json({
+        data: {
+          type: 'checkouts',
+          id: '5e8b546c-c561-4a2c-a586-40c18bb2a195',
+          attributes: { url: 'https://test.lemonsqueezy.com/checkout/fixture' },
+        },
+      });
+    },
+  );
+  assert.equal(r.order.lemon_order_id, null);
+  assert.equal(r.order.lemon_checkout_id, '5e8b546c-c561-4a2c-a586-40c18bb2a195');
+  assert.equal(sent.test_mode, true);
+  assert.equal(sent.custom_price, 499);
+  assert.equal(sent.checkout_options.locale, 'en');
+  const { createHmac } = await import('node:crypto'),
+    { handleLemonWebhook } = await import('./lemon-webhook.mjs');
+  const raw = JSON.stringify({
+    meta: { event_name: 'order_created', test_mode: true, custom_data: { orderId: r.order.id } },
+    data: {
+      type: 'orders',
+      id: '123456',
+      attributes: {
+        status: 'paid',
+        test_mode: true,
+        store_id: 'store-1',
+        currency: 'USD',
+        subtotal: 499,
+        total: 499,
+        tax: 0,
+        first_order_item: { variant_id: 'var-5' },
+      },
+    },
+  });
+  for (let i = 0; i < 2; i++) {
+    const reply = await handleLemonWebhook(
+      env,
+      new Request('https://api.example.com/api/lemon/webhook', {
+        method: 'POST',
+        headers: { 'x-signature': createHmac('sha256', env.LEMON_WEBHOOK_SECRET).update(raw).digest('hex') },
+        body: raw,
+      }),
+    );
+    assert.equal(reply.status, 200, await reply.text());
+  }
+  assert.equal((await env.DB.prepare("SELECT balance FROM credits_accounts WHERE user_id='u1'").first()).balance, 5);
+  assert.equal(
+    (await env.DB.prepare('SELECT status FROM lemon_orders WHERE id=?').bind(r.order.id).first()).status,
+    'fulfilled',
+  );
+});
+test('provider 5xx preserves the unknown checkout intent rather than failing and creating another charge', async () => {
+  const env = fixture();
+  let calls = 0;
+  const send = () =>
+    createLemonCheckout(
+      env,
+      config(),
+      { userId: 'u1', packageId: 'us-5', requestKey: 'ambiguous-provider' },
+      async () => {
+        calls++;
+        return new Response(null, { status: 503 });
+      },
+    );
+  const first = await send();
+  assert.equal(first.unknown, true);
+  assert.equal(first.order.status, 'pending');
+  const second = await send();
+  assert.equal(calls, 1);
+  assert.equal(second.order.id, first.order.id);
 });

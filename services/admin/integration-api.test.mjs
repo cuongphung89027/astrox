@@ -448,3 +448,40 @@ test('paid reading language repair completes one charge; failed repair refunds w
     }
   }
 });
+
+test('US overlay price reaches charge after server market validation; spoofed market is refused', async () => {
+  const env = testEnv();
+  await state(env);
+  const c = defaultConfig();
+  c.ai.enabled = c.billing.enabled = true;
+  c.billing.services[0].status = 'paid';
+  c.billing.services[0].points = 90;
+  c.billing.usServices[c.billing.services[0].id] = { status: 'paid', points: 7 };
+  await publish(env, 'owner', c, 0, 'US fixture');
+  let market = 'US';
+  const calls = [];
+  env.ASTROX_BACKEND = {
+    fetch: async req => {
+      if (req.url.endsWith('/market')) return Response.json({ market });
+      calls.push(req.url);
+      return Response.json({ error: 'insufficient_credits' }, { status: 402 });
+    },
+  };
+  const req = () =>
+    new Request('https://theastrox.space/api/ai', {
+      method: 'POST',
+      headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        serviceId: c.billing.services[0].id,
+        market: 'US',
+        expectedPoints: 7,
+        operationId: 'overlay-price-test',
+        messages: [{ role: 'user', content: 'test' }],
+      }),
+    });
+  assert.equal((await handleConfiguredAi(req(), env)).status, 402);
+  assert.equal(calls.length, 1);
+  market = 'VN';
+  assert.equal((await handleConfiguredAi(req(), env)).status, 409);
+  assert.equal(calls.length, 1);
+});

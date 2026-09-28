@@ -28,6 +28,8 @@ import {
 import { CompatWheel } from './CompatWheel';
 import styles from './Compat.module.css';
 import { useLocale } from '@/i18n/LocaleProvider';
+const elementLabel = (value: string, en: boolean) =>
+  en ? ({ Hoả: 'Fire', Thổ: 'Earth', Khí: 'Air', Thuỷ: 'Water' } as Record<string, string>)[value] || value : value;
 const signById = (id: string) => ZODIAC_SIGNS.find(s => s.id === id);
 function SignPicker({
   value,
@@ -38,6 +40,8 @@ function SignPicker({
   onSelect: (id: string) => void;
   onClose: () => void;
 }) {
+  const en = useLocale().locale === 'en',
+    copy = (vi: string, us: string) => (en ? us : vi);
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const old = document.activeElement,
@@ -53,15 +57,15 @@ function SignPicker({
     <dialog
       ref={dialog}
       className={styles.picker}
-      aria-label="Chọn cung hoàng đạo"
+      aria-label={copy('Chọn cung hoàng đạo', 'Select a zodiac sign')}
       onCancel={e => {
         e.preventDefault();
         onClose();
       }}
     >
       <header>
-        <h2>Chọn cung hoàng đạo</h2>
-        <button onClick={onClose} aria-label="Đóng chọn cung">
+        <h2>{copy('Chọn cung hoàng đạo', 'Select a zodiac sign')}</h2>
+        <button onClick={onClose} aria-label={copy('Đóng chọn cung', 'Close sign picker')}>
           <FeatureIcon name="close" size={20} />
         </button>
       </header>
@@ -72,8 +76,8 @@ function SignPicker({
               {s.symbol}
               {'\uFE0E'}
             </span>
-            <strong>{s.name}</strong>
-            <small>{s.element}</small>
+            <strong>{en ? s.en : s.name}</strong>
+            <small>{elementLabel(s.element, en)}</small>
           </button>
         ))}
       </div>
@@ -81,6 +85,8 @@ function SignPicker({
   );
 }
 function Reading({ raw }: { raw: string }) {
+  const en = useLocale().locale === 'en',
+    copy = (vi: string, us: string) => (en ? us : vi);
   let parsed: CompatAiResult | null = null;
   try {
     const p = extractJson<CompatAiResult>(raw);
@@ -97,8 +103,8 @@ function Reading({ raw }: { raw: string }) {
   return (
     <div className={styles.readingParts}>
       <section>
-        <span className={styles.eyebrow}>ĐIỂM GẶP NHAU</span>
-        <h3>Điều kết nối hai bạn</h3>
+        <span className={styles.eyebrow}>{copy('ĐIỂM GẶP NHAU', 'COMMON GROUND')}</span>
+        <h3>{copy('Điều kết nối hai bạn', 'What connects you')}</h3>
         <ul>
           {parsed.strengths.map((s, i) => (
             <li key={i}>
@@ -109,8 +115,8 @@ function Reading({ raw }: { raw: string }) {
         </ul>
       </section>
       <section>
-        <span className={styles.eyebrow}>DÀNH CHỖ CHO KHÁC BIỆT</span>
-        <h3>Điều cần dung hòa</h3>
+        <span className={styles.eyebrow}>{copy('DÀNH CHỖ CHO KHÁC BIỆT', 'ROOM FOR DIFFERENCES')}</span>
+        <h3>{copy('Điều cần dung hòa', 'Where to find balance')}</h3>
         <ul>
           {parsed.watchouts.map((s, i) => (
             <li key={i}>
@@ -123,7 +129,7 @@ function Reading({ raw }: { raw: string }) {
       <section className={styles.advice}>
         <header>
           <FeatureIcon name="compat" size={23} />
-          <h3>Gợi ý cho hai bạn</h3>
+          <h3>{copy('Gợi ý cho hai bạn', 'Advice for you both')}</h3>
         </header>
         <AiText text={parsed.advice} />
       </section>
@@ -133,6 +139,7 @@ function Reading({ raw }: { raw: string }) {
 function WesternCompatClient() {
   const t = useLocale();
   const en = t.locale === 'en';
+  const copy = (vi: string, us: string) => (en ? us : vi);
   const profile = useProfile();
   const { open } = useProfileModal();
   const [aOverride, setA] = useState<string | null>(null),
@@ -150,7 +157,7 @@ function WesternCompatClient() {
     b = signById(bId),
     ca = checked ? signById(checked.a) : undefined,
     cb = checked ? signById(checked.b) : undefined;
-  const analysis = useMemo(() => (ca && cb ? compatAnalysis(ca, cb) : null), [ca, cb]);
+  const analysis = useMemo(() => (ca && cb ? compatAnalysis(ca, cb, t.locale) : null), [ca, cb, t.locale]);
   const price = usePaidPrice(
     'compat--pair',
     ca && cb && analysis && profile ? compatPrompt(ca, cb, analysis, profile) : undefined,
@@ -221,7 +228,10 @@ function WesternCompatClient() {
       markFresh(text);
       setRaw(text);
     } catch (e) {
-      if (id === req.current) setError(e instanceof Error ? e.message : 'Không lấy được luận giải.');
+      if (id === req.current)
+        setError(
+          e instanceof Error ? e.message : copy('Không lấy được luận giải.', 'The reading could not be loaded.'),
+        );
     } finally {
       if (id === req.current) setLoading(false);
     }
@@ -230,9 +240,9 @@ function WesternCompatClient() {
     <button
       className={styles.person}
       onClick={() => setPicker(side)}
-      aria-label={`Chọn cung ${side === 'a' ? 'người thứ nhất' : 'người thứ hai'}${sign ? `: ${sign.name}` : ''}`}
+      aria-label={`${en ? 'Select sign for person' : 'Chọn cung người thứ'} ${side === 'a' ? '1' : '2'}${sign ? `: ${en ? sign.en : sign.name}` : ''}`}
     >
-      <span>{side === 'a' ? 'BẠN' : 'NGƯỜI ẤY'}</span>
+      <span>{side === 'a' ? copy('BẠN', 'YOU') : copy('NGƯỜI ẤY', 'YOUR PARTNER')}</span>
       <div className={styles.signSeal}>
         {sign ? (
           <b>
@@ -243,9 +253,11 @@ function WesternCompatClient() {
           <FeatureIcon name="profile" size={35} />
         )}
       </div>
-      <h3>{sign?.name ?? 'Chọn cung'}</h3>
+      <h3>{(sign ? (en ? sign.en : sign.name) : undefined) ?? copy('Chọn cung', 'Select sign')}</h3>
       <small>
-        {sign ? `${sign.element} · Thay đổi` : 'Chạm để chọn'}
+        {sign
+          ? `${elementLabel(sign.element, en)} · ${copy('Thay đổi', 'Change')}`
+          : copy('Chạm để chọn', 'Tap to choose')}
         <i aria-hidden="true">⌄</i>
       </small>
     </button>
@@ -281,16 +293,16 @@ function WesternCompatClient() {
       ) : ca && cb && analysis ? (
         <>
           <header className={styles.resultNav}>
-            <button onClick={reset} aria-label="Chọn lại hai cung">
+            <button onClick={reset} aria-label={copy('Chọn lại hai cung', 'Choose two signs again')}>
               ←
             </button>
-            <span>{phase === 'joining' ? 'ĐANG KẾT NỐI' : 'HAI BẠN'}</span>
+            <span>{phase === 'joining' ? copy('ĐANG KẾT NỐI', 'CONNECTING') : copy('HAI BẠN', 'YOU BOTH')}</span>
           </header>
           <div className={styles.resultHero} data-joining={phase === 'joining'}>
             <div className={styles.pairNames}>
-              <h2>{ca.name}</h2>
+              <h2>{en ? ca.en : ca.name}</h2>
               <span>&</span>
-              <h2>{cb.name}</h2>
+              <h2>{en ? cb.en : cb.name}</h2>
             </div>
             <CompatWheel a={ca} b={cb} pairKey={`${ca.id}:${cb.id}`} />
             {phase === 'joining' ? (
@@ -304,33 +316,47 @@ function WesternCompatClient() {
                   <small>/100</small>
                 </strong>
                 <h3>{analysis.relation}</h3>
-                <span>Chỉ số tham khảo theo cung Mặt Trời</span>
+                <span>{copy('Chỉ số tham khảo theo cung Mặt Trời', 'An indicative Sun-sign score')}</span>
               </div>
             )}
           </div>
           {phase === 'result' && (
             <div className={styles.resultBody}>
               <div className={styles.elementPair}>
-                <span>{ca.element}</span>
+                <span>{elementLabel(ca.element, en)}</span>
                 <i>↔</i>
-                <span>{cb.element}</span>
+                <span>{elementLabel(cb.element, en)}</span>
               </div>
               <p className={styles.elementNote}>{analysis.elementNote}</p>
               <details className={styles.details}>
-                <summary>Cách đối chiếu</summary>
+                <summary>{copy('Cách đối chiếu', 'How this comparison works')}</summary>
                 <p>
-                  Khoảng cách giữa hai cung: {analysis.angle}° · {analysis.aspectLabel}. Chỉ số được tính theo quy tắc
-                  cung và nguyên tố, không phải xác suất thành công của mối quan hệ.
+                  {en ? (
+                    <>
+                      Angular distance: {analysis.angle}° · {analysis.aspectLabel}. This score follows sign and element
+                      rules; it is not a probability of relationship success.
+                    </>
+                  ) : (
+                    <>
+                      Khoảng cách giữa hai cung: {analysis.angle}° · {analysis.aspectLabel}. Chỉ số được tính theo quy
+                      tắc cung và nguyên tố, không phải xác suất thành công của mối quan hệ.
+                    </>
+                  )}
                 </p>
               </details>
               <section className={styles.reading} aria-busy={loading}>
                 {!profile ? (
                   <div className={styles.profileInvite}>
                     <FeatureIcon name="compat" size={28} />
-                    <h3>Hiểu nhau sâu hơn</h3>
-                    <p>Bổ sung hồ sơ để mở phần luận giải cho hai bạn.</p>
+                    <h3>{copy('Hiểu nhau sâu hơn', 'Understand each other better')}</h3>
+                    <p>
+                      {copy(
+                        'Bổ sung hồ sơ để mở phần luận giải cho hai bạn.',
+                        'Add your profile to unlock a reading for you both.',
+                      )}
+                    </p>
                     <button className={styles.primary} onClick={() => open()}>
-                      Bổ sung hồ sơ ↗
+                      {copy('Bổ sung hồ sơ ↗', 'Add your profile ↗')}
                     </button>
                   </div>
                 ) : loading ? (
@@ -338,18 +364,20 @@ function WesternCompatClient() {
                 ) : raw ? (
                   <>
                     <Reading raw={raw} />
-                    <span className={styles.saved}>✓ Đã lưu luận giải</span>
+                    <span className={styles.saved}>{copy('✓ Đã lưu luận giải', '✓ Reading saved')}</span>
                   </>
                 ) : (
                   <>
-                    <h3 className={styles.readingTitle}>Hiểu nhau sâu hơn</h3>
+                    <h3 className={styles.readingTitle}>{copy('Hiểu nhau sâu hơn', 'Understand each other better')}</h3>
                     {error && (
                       <p role="alert" className={styles.error}>
                         {error}
                       </p>
                     )}
                     <button className={styles.primary} disabled={price.pending} onClick={run}>
-                      {error ? 'Thử lại' : 'Đọc luận giải hai bạn'}
+                      {error
+                        ? copy('Thử lại', 'Try again')
+                        : copy('Đọc luận giải hai bạn', 'Read your couple interpretation')}
                       <PaidPriceBadge price={price} />
                       <span aria-hidden="true">↗</span>
                     </button>
@@ -383,6 +411,8 @@ export function CompatClient() {
   );
 }
 function CompatModes() {
+  const en = useLocale().locale === 'en',
+    copy = (vi: string, us: string) => (en ? us : vi);
   const profile = useProfile(),
     params = useSearchParams();
   const scope = profile ? cacheFingerprint() : 'guest';
@@ -391,12 +421,12 @@ function CompatModes() {
   const mode = selected ?? (requested === 'batu' || requested === 'western' ? requested : 'tuvi');
   return (
     <>
-      <nav className={styles.modeNav} aria-label="Phương pháp tương hợp">
+      <nav className={styles.modeNav} aria-label={copy('Phương pháp tương hợp', 'Compatibility method')}>
         {(
           [
-            ['tuvi', 'Tử Vi'],
-            ['batu', 'Bát Tự'],
-            ['western', 'Cung hoàng đạo'],
+            ['tuvi', copy('Tử Vi', 'Zi Wei')],
+            ['batu', copy('Bát Tự', 'Ba Zi')],
+            ['western', copy('Cung hoàng đạo', 'Zodiac signs')],
           ] as const
         ).map(([id, label]) => (
           <button key={id} type="button" onClick={() => setMode(id)} aria-pressed={mode === id}>

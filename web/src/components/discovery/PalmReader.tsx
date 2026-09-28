@@ -16,6 +16,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 export function PalmReader() {
   const t = useLocale();
   const en = t.locale === 'en';
+  const text = (vi: string, us: string) => (en ? us : vi);
   const [photo, setPhoto] = useState('');
   const [camera, setCamera] = useState(false),
     [zoom, setZoom] = useState(false);
@@ -94,7 +95,12 @@ export function PalmReader() {
     const img = new Image();
     img.onload = () => {
       if (token === generation.current && !isWellLit(img, w, h))
-        setWarning('Ảnh hơi tối hoặc chói. Bạn có thể chụp lại ở nơi sáng dịu để thấy rõ nếp tay hơn.');
+        setWarning(
+          text(
+            'Ảnh hơi tối hoặc chói. Bạn có thể chụp lại ở nơi sáng dịu để thấy rõ nếp tay hơn.',
+            'The photo is dark or overexposed. Try softer lighting to make your palm lines clearer.',
+          ),
+        );
     };
     img.src = data;
   }
@@ -117,7 +123,11 @@ export function PalmReader() {
     } catch (e) {
       // Hủy để chọn ảnh mới không phải lỗi cần báo cho người dùng.
       if (token === generation.current && (e as Error)?.name !== 'AbortError') {
-        setError((e as Error).message || 'Không đọc được ảnh.');
+        setError(
+          en
+            ? 'Unable to read this photo. Try a clear JPEG, PNG or WebP image.'
+            : (e as Error).message || 'Không đọc được ảnh.',
+        );
       }
     } finally {
       if (token === generation.current) setLoadingPhoto(false);
@@ -148,7 +158,11 @@ export function PalmReader() {
       }
     } catch (e) {
       if (!controller.signal.aborted && token === generation.current)
-        setError((e as Error).message || 'Chưa phân tích được ảnh. Hãy thử lại.');
+        setError(
+          en
+            ? 'Unable to analyze this photo. Please try again.'
+            : (e as Error).message || 'Chưa phân tích được ảnh. Hãy thử lại.',
+        );
     } finally {
       if (abort.current === controller) setBusy(false);
     }
@@ -159,7 +173,7 @@ export function PalmReader() {
     <section className={`${s.page} ${entry ? s.entryPage : ''}`}>
       <header className={s.heading}>
         <div>
-          <span className={s.moduleLabel}>ASTROX / KHÁM PHÁ</span>
+          <span className={s.moduleLabel}>{text('ASTROX / KHÁM PHÁ', 'ASTROX / EXPLORE')}</span>
           <h1>{en ? 'Palm Reading' : 'Chỉ tay'}</h1>
         </div>
         <span className={s.privateBadge}>{en ? 'Processed on your device' : 'Xử lý camera trên thiết bị'}</span>
@@ -171,7 +185,7 @@ export function PalmReader() {
       )}
       {loadingPhoto && (
         <p className={s.notice} role="status">
-          Đang chuẩn bị ảnh…
+          {text('Đang chuẩn bị ảnh…', 'Preparing your photo…')}
         </p>
       )}
       {entry && (
@@ -179,9 +193,9 @@ export function PalmReader() {
           <div className={s.scannerCard}>
             <div className={s.scannerTop}>
               <span>
-                <i /> NHẬN DIỆN BÀN TAY
+                <i /> {text('NHẬN DIỆN BÀN TAY', 'HAND DETECTION')}
               </span>
-              <span>CAMERA CHƯA BẬT</span>
+              <span>{text('CAMERA CHƯA BẬT', 'CAMERA OFF')}</span>
             </div>
             <div className={s.scannerPreview}>
               <div className={s.scanGrid} />
@@ -195,14 +209,16 @@ export function PalmReader() {
                 <i />
                 <i />
               </div>
-              <span className={s.previewCaption}>Đặt lòng bàn tay trong khung</span>
+              <span className={s.previewCaption}>
+                {text('Đặt lòng bàn tay trong khung', 'Place your palm inside the frame')}
+              </span>
             </div>
             <div className={s.scannerBottom}>
               <span className={s.cameraIcon} aria-hidden="true">
                 ◎
               </span>
               <div>
-                <strong>Nhận diện theo thời gian thực</strong>
+                <strong>{text('Nhận diện theo thời gian thực', 'Real-time detection')}</strong>
                 <span>{en ? 'Align hand · Hold still · Capture' : 'Căn tay · Giữ yên · Chụp ảnh'}</span>
               </div>
             </div>
@@ -216,16 +232,21 @@ export function PalmReader() {
             </div>
           </div>
           <aside className={s.entryAside}>
-            <span className={s.moduleLabel}>TRƯỚC KHI CHỤP</span>
+            <span className={s.moduleLabel}>{text('TRƯỚC KHI CHỤP', 'BEFORE YOU CAPTURE')}</span>
             <h2>
-              Một ảnh rõ.
+              {text('Một ảnh rõ.', 'One clear photo.')}
               <br />
-              Từng nét riêng.
+              {text('Từng nét riêng.', 'Every line is yours.')}
             </h2>
             <PalmGuide />
             <div className={s.localNote}>
               <span aria-hidden="true">◈</span>
-              <p>Camera nhận diện ngay trên thiết bị. Ảnh chỉ được gửi tới AI khi bạn đồng ý phân tích.</p>
+              <p>
+                {text(
+                  'Camera nhận diện ngay trên thiết bị. Ảnh chỉ được gửi tới AI khi bạn đồng ý phân tích.',
+                  'Hand detection runs on your device. Your photo is sent to AI only after you consent to analysis.',
+                )}
+              </p>
             </div>
           </aside>
         </div>
@@ -252,9 +273,9 @@ export function PalmReader() {
           />
           <aside className={s.captureAside}>
             <div className={s.sessionSteps}>
-              <span className={s.currentStep}>01 · Nhận diện</span>
-              <span>02 · Kiểm tra ảnh</span>
-              <span>03 · Luận giải</span>
+              <span className={s.currentStep}>{text('01 · Nhận diện', '01 · Detect')}</span>
+              <span>{text('02 · Kiểm tra ảnh', '02 · Review photo')}</span>
+              <span>{text('03 · Luận giải', '03 · Reading')}</span>
             </div>
             <details className={s.guideDetails}>
               <summary>{en ? 'Photo guide' : 'Hướng dẫn chụp'}</summary>
@@ -276,9 +297,9 @@ export function PalmReader() {
         <div className={s.resultLayout}>
           <GlassCard className={s.photoCard}>
             <div className={s.photoTop}>
-              <span>{side}</span>
+              <span>{en ? (side === 'Tay trái' ? 'Left hand' : 'Right hand') : side}</span>
               <button ref={zoomTrigger} className={s.textButton} onClick={() => setZoom(true)}>
-                Phóng to ↗
+                {text('Phóng to ↗', 'Zoom ↗')}
               </button>
             </div>
             <button
@@ -294,13 +315,13 @@ export function PalmReader() {
             </button>
             <div className={s.photoActions}>
               <button className={s.textButton} disabled={busy || loadingPhoto} onClick={beginCapture}>
-                Chụp lại
+                {text('Chụp lại', 'Retake photo')}
               </button>
               <button className={s.textButton} disabled={busy || loadingPhoto} onClick={() => upload.current?.click()}>
-                Thay ảnh
+                {text('Thay ảnh', 'Change photo')}
               </button>
               <button className={s.textButton} onClick={reset}>
-                Xóa ảnh
+                {text('Xóa ảnh', 'Remove photo')}
               </button>
             </div>
             {warning && <p className={s.notice}>{warning}</p>}
@@ -309,7 +330,7 @@ export function PalmReader() {
             {result?.quality === 'retake' ? (
               <GlassCard className={s.panel}>
                 <p>{result.message}</p>
-                <Btn onClick={beginCapture}>Chụp lại</Btn>
+                <Btn onClick={beginCapture}>{text('Chụp lại', 'Retake photo')}</Btn>
               </GlassCard>
             ) : result ? (
               <>
@@ -332,7 +353,7 @@ export function PalmReader() {
                         <div className={s.lineReading} aria-live="polite">
                           <p>{line.reading}</p>
                           <details key={active} className={s.observation}>
-                            <summary>Quan sát từ ảnh</summary>
+                            <summary>{text('Quan sát từ ảnh', 'Photo observations')}</summary>
                             <p>{line.observation}</p>
                           </details>
                         </div>
@@ -340,10 +361,17 @@ export function PalmReader() {
                     </>
                   )}
                 </GlassCard>
-                <p className={s.privacy}>Ảnh chưa xác minh đường tay; luận giải chỉ để chiêm nghiệm.</p>
-                <Btn variant="ghost" href="/chuyengia" arrow>
-                  Trao đổi với chuyên gia
-                </Btn>
+                <p className={s.privacy}>
+                  {text(
+                    'Ảnh chưa xác minh đường tay; luận giải chỉ để chiêm nghiệm.',
+                    'Palm lines are not independently verified. This reading is for reflection.',
+                  )}
+                </p>
+                {!en && (
+                  <Btn variant="ghost" href="/chuyengia" arrow>
+                    Trao đổi với chuyên gia
+                  </Btn>
+                )}
               </>
             ) : (
               <GlassCard className={s.panel}>
@@ -358,23 +386,23 @@ export function PalmReader() {
                     <label>
                       {en ? 'Hand in photo' : 'Bàn tay trong ảnh'}
                       <select value={side} disabled={busy} onChange={e => setSide(e.target.value)}>
-                        <option>Tay trái</option>
-                        <option>Tay phải</option>
+                        <option value="Tay trái">{text('Tay trái', 'Left hand')}</option>
+                        <option value="Tay phải">{text('Tay phải', 'Right hand')}</option>
                       </select>
                     </label>
                     <label>
                       {en ? 'Dominant hand' : 'Tay thuận'}
                       <select value={dominant} disabled={busy} onChange={e => setDominant(e.target.value)}>
-                        <option>Tay phải</option>
-                        <option>Tay trái</option>
-                        <option>Cả hai tay</option>
+                        <option value="Tay phải">{text('Tay phải', 'Right hand')}</option>
+                        <option value="Tay trái">{text('Tay trái', 'Left hand')}</option>
+                        <option value="Cả hai tay">{text('Cả hai tay', 'Both hands')}</option>
                       </select>
                     </label>
                   </div>
                   <details className={s.question}>
-                    <summary>Thêm câu hỏi</summary>
+                    <summary>{text('Thêm câu hỏi', 'Add a question')}</summary>
                     <label>
-                      Câu hỏi
+                      {text('Câu hỏi', 'Question')}
                       <textarea
                         maxLength={600}
                         disabled={busy}
@@ -390,14 +418,17 @@ export function PalmReader() {
                       disabled={busy}
                       onChange={e => setConsent(e.target.checked)}
                     />
-                    Tôi đồng ý gửi ảnh tới dịch vụ AI để phân tích. Ảnh không được lưu vào hồ sơ AstroX.
+                    {text(
+                      'Tôi đồng ý gửi ảnh tới dịch vụ AI để phân tích. Ảnh không được lưu vào hồ sơ AstroX.',
+                      'I agree to send this photo to the AI service for analysis. The photo will not be saved to my AstroX profile.',
+                    )}
                   </label>
                   <Btn type="submit" disabled={!consent || busy || loadingPhoto || price.pending} arrow>
                     {busy ? (
-                      'Đang quan sát ảnh…'
+                      text('Đang quan sát ảnh…', 'Analyzing your photo…')
                     ) : (
                       <>
-                        Khám phá chỉ tay <PaidPriceBadge price={price} />
+                        {text('Khám phá chỉ tay', 'Explore your palm')} <PaidPriceBadge price={price} />
                       </>
                     )}
                   </Btn>
@@ -411,7 +442,7 @@ export function PalmReader() {
                           setBusy(false);
                         }}
                       >
-                        Dừng phân tích
+                        {text('Dừng phân tích', 'Stop analysis')}
                       </button>
                     </div>
                   )}
@@ -445,7 +476,7 @@ export function PalmReader() {
       <dialog
         ref={dialog}
         className={s.zoomDialog}
-        aria-label="Ảnh bàn tay phóng to"
+        aria-label={text('Ảnh bàn tay phóng to', 'Enlarged palm photo')}
         onCancel={() => setZoom(false)}
         onClose={() => setZoom(false)}
         onClick={e => {
@@ -453,12 +484,14 @@ export function PalmReader() {
         }}
       >
         <div className={s.zoomHeader}>
-          <span>Ảnh gốc · Cuộn để xem chi tiết</span>
+          <span>{text('Ảnh gốc · Cuộn để xem chi tiết', 'Original photo · Scroll to explore')}</span>
           <button autoFocus className={s.toolButton} onClick={() => setZoom(false)}>
-            Đóng
+            {text('Đóng', 'Close')}
           </button>
         </div>
-        <div className={s.zoomScroll}>{photo && <img src={photo} alt="Ảnh bàn tay phóng to" />}</div>
+        <div className={s.zoomScroll}>
+          {photo && <img src={photo} alt={text('Ảnh bàn tay phóng to', 'Enlarged palm photo')} />}
+        </div>
       </dialog>
     </section>
   );

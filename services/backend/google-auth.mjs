@@ -1,3 +1,4 @@
+import { registrationEventStatements, settleRegistration } from './rewards.mjs';
 /**
  * Google OIDC login for the English/US edition (plan Task 11).
  *
@@ -44,7 +45,17 @@ export async function googleLogin(env, request, settings) {
   const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const nonce = base64url(crypto.getRandomValues(new Uint8Array(16)));
   const challenge = base64url(await crypto.subtle.digest('SHA-256', enc.encode(verifier)));
+  const ref = new URL(request.url).searchParams.get('ref');
   await env.DB.batch([
+    ...(ref && /^[A-Z0-9]{4,10}$/.test(ref)
+      ? [
+          env.DB.prepare('INSERT INTO oauth_referrals(id,ref,created_at) VALUES(?,?,?)').bind(
+            state,
+            ref,
+            new Date().toISOString(),
+          ),
+        ]
+      : []),
     env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,nonce,created_at) VALUES(?,?,?,?)').bind(
       state,
       verifier,
@@ -153,17 +164,30 @@ export async function googleCallback(env, request, settings, fetchImpl = fetch) 
     await diag(env, 'google_server_verify_failed', { reason: String(e?.message || '').slice(0, 250) });
     return json(env, request, { error: 'google_identity_unverified' }, 401);
   }
-  return await completeGoogleLogin(env, request, settings, {
-    sub: String(claims.sub),
-    email: String(claims.email || ''),
-    name: String(claims.name || ''),
-    picture: String(claims.picture || ''),
-  });
+  const refRow = await env.DB.prepare('DELETE FROM oauth_referrals WHERE id=? RETURNING ref').bind(state).first();
+  return await completeGoogleLogin(
+    env,
+    request,
+    settings,
+    {
+      sub: String(claims.sub),
+      email: String(claims.email || ''),
+      name: String(claims.name || ''),
+      picture: String(claims.picture || ''),
+    },
+    refRow?.ref || null,
+  );
 }
 
-export async function completeGoogleLogin(env, request, settings, me) {
+export async function completeGoogleLogin(env, request, settings, me, ref = null) {
   const now = new Date().toISOString();
   const candidate = crypto.randomUUID();
+  const existing = await env.DB.prepare(
+    "SELECT user_id FROM zalo_identities WHERE provider='google' AND provider_subject=?",
+  )
+    .bind(me.sub)
+    .first();
+  const referralWork = !existing ? await registrationEventStatements(env, candidate, ref, 'US') : [];
   await env.DB.batch([
     env.DB.prepare(
       "INSERT INTO app_users(id,display_name,email,avatar_url,status,created_at,updated_at) SELECT ?,?,?,?,'active',?,? WHERE NOT EXISTS(SELECT 1 FROM zalo_identities WHERE provider='google' AND provider_subject=?)",
@@ -182,6 +206,10 @@ export async function completeGoogleLogin(env, request, settings, me) {
     env.DB.prepare(
       "INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) SELECT user_id,0,? FROM zalo_identities WHERE provider='google' AND provider_subject=?",
     ).bind(now, me.sub),
+    env.DB.prepare(
+      "INSERT OR IGNORE INTO market_preferences(user_id,market,updated_at) SELECT id,'US',? FROM app_users WHERE id=?",
+    ).bind(now, candidate),
+    ...referralWork,
   ]);
   const identity = await env.DB.prepare(
     "SELECT user_id FROM zalo_identities WHERE provider='google' AND provider_subject=?",
@@ -193,6 +221,12 @@ export async function completeGoogleLogin(env, request, settings, me) {
     .bind(identity.user_id)
     .first();
   if (!user) return json(env, request, { error: 'account_disabled' }, 403);
+  if (ref)
+    try {
+      await settleRegistration(env, user.id);
+    } catch {
+      await diag(env, 'referral_reward_pending', {});
+    }
   const cookies = [
     ['set-cookie', await sessionCookie(env, user.id)],
     ['set-cookie', 'astrox_google_oauth=; HttpOnly; Secure; SameSite=Lax; Path=/auth/google; Max-Age=0'],

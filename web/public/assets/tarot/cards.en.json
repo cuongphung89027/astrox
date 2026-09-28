@@ -1,0 +1,1250 @@
+[
+  {
+    "id": "major_00_fool",
+    "arcana": "major",
+    "suit": null,
+    "number": 0,
+    "nameEn": "The Fool",
+    "nameVi": "Người Ngốc",
+    "up": {
+      "kw": ["new beginnings", "freedom", "innocent risk-taking"],
+      "text": "A completely new beginning: step into the unknown with fresh faith and openness."
+    },
+    "rev": {
+      "kw": ["impulsiveness", "lack of preparation", "unnecessary risk"],
+      "text": "Acting without thinking, overlooking warnings, or being too afraid to begin."
+    }
+  },
+  {
+    "id": "major_01_magician",
+    "arcana": "major",
+    "suit": null,
+    "number": 1,
+    "nameEn": "The Magician",
+    "nameVi": "Pháp Sư",
+    "up": {
+      "kw": ["willpower", "action", "bringing resources together"],
+      "text": "You have the tools and ability to bring an idea to life. The next step is to act."
+    },
+    "rev": {
+      "kw": ["manipulation", "untapped potential", "deception"],
+      "text": "Misusing your abilities or leaving available resources and potential untapped."
+    }
+  },
+  {
+    "id": "major_02_high_priestess",
+    "arcana": "major",
+    "suit": null,
+    "number": 2,
+    "nameEn": "The High Priestess",
+    "nameVi": "Nữ Tư Tế",
+    "up": {
+      "kw": ["intuition", "mystery", "inner knowledge"],
+      "text": "Listen to intuition and the subconscious. Some things are not yet clear or ready to be spoken."
+    },
+    "rev": {
+      "kw": ["hidden secrets", "disconnected intuition", "misinformation"],
+      "text": "Ignoring your inner voice, or encountering hidden information and secrets."
+    }
+  },
+  {
+    "id": "major_03_empress",
+    "arcana": "major",
+    "suit": null,
+    "number": 3,
+    "nameEn": "The Empress",
+    "nameVi": "Nữ Hoàng",
+    "up": {
+      "kw": ["abundance", "nurturing", "creativity"],
+      "text": "Growth, care and abundance in material and emotional life, with a connection to nature."
+    },
+    "rev": {
+      "kw": ["creative blocks", "overdependence", "imbalance"],
+      "text": "Creative stagnation or caring for others so much that you neglect yourself."
+    }
+  },
+  {
+    "id": "major_04_emperor",
+    "arcana": "major",
+    "suit": null,
+    "number": 4,
+    "nameEn": "The Emperor",
+    "nameVi": "Hoàng Đế",
+    "up": {
+      "kw": ["discipline", "structure", "stable authority"],
+      "text": "Order, clear rules and a steady capacity for leadership and responsibility."
+    },
+    "rev": {
+      "kw": ["authoritarianism", "rigidity", "loss of control"],
+      "text": "Excessive control, rigidity, or a loss of authority and direction."
+    }
+  },
+  {
+    "id": "major_05_hierophant",
+    "arcana": "major",
+    "suit": null,
+    "number": 5,
+    "nameEn": "The Hierophant",
+    "nameVi": "Giáo Chủ",
+    "up": {
+      "kw": ["tradition", "conventions", "spiritual guidance"],
+      "text": "Learn within an established system or organization and seek guidance from experience."
+    },
+    "rev": {
+      "kw": ["challenging convention", "independent thinking", "dogma"],
+      "text": "Breaking away from old conventions, or becoming too constrained by rigid dogma."
+    }
+  },
+  {
+    "id": "major_06_lovers",
+    "arcana": "major",
+    "suit": null,
+    "number": 6,
+    "nameEn": "The Lovers",
+    "nameVi": "Cặp Tình Nhân",
+    "up": {
+      "kw": ["choice", "deep connection", "aligned values"],
+      "text": "An important choice grounded in your values, and a sincere connection with another person."
+    },
+    "rev": {
+      "kw": ["relationship imbalance", "poor choices", "conflicting values"],
+      "text": "Conflicting values, poorly considered choices, or a strain in a relationship."
+    }
+  },
+  {
+    "id": "major_07_chariot",
+    "arcana": "major",
+    "suit": null,
+    "number": 7,
+    "nameEn": "The Chariot",
+    "nameVi": "Cỗ Xe Chiến",
+    "up": {
+      "kw": ["determination", "command of the situation", "forward movement"],
+      "text": "Resolve competing impulses and move forward with determination and focus."
+    },
+    "rev": {
+      "kw": ["loss of direction", "excessive aggression", "delay"],
+      "text": "Losing control, rushing ahead, or stopping because your direction is unclear."
+    }
+  },
+  {
+    "id": "major_08_strength",
+    "arcana": "major",
+    "suit": null,
+    "number": 8,
+    "nameEn": "Strength",
+    "nameVi": "Sức Mạnh",
+    "up": {
+      "kw": ["gentle patience", "inner courage", "self-mastery"],
+      "text": "Meet difficulties with patience, compassion and quiet inner strength rather than force."
+    },
+    "rev": {
+      "kw": ["self-doubt", "loss of self-control", "vulnerability"],
+      "text": "Self-doubt, allowing impulses to take over, or emotional exhaustion."
+    }
+  },
+  {
+    "id": "major_09_hermit",
+    "arcana": "major",
+    "suit": null,
+    "number": 9,
+    "nameEn": "The Hermit",
+    "nameVi": "Ẩn Sĩ",
+    "up": {
+      "kw": ["introspection", "seeking truth", "necessary solitude"],
+      "text": "Step back for reflection and seek answers within rather than relying only on outside input."
+    },
+    "rev": {
+      "kw": ["excessive isolation", "avoidance", "feeling lost"],
+      "text": "Withdrawing into excessive isolation or refusing guidance that could help."
+    }
+  },
+  {
+    "id": "major_10_wheel_of_fortune",
+    "arcana": "major",
+    "suit": null,
+    "number": 10,
+    "nameEn": "Wheel of Fortune",
+    "nameVi": "Bánh Xe Số Mệnh",
+    "up": {
+      "kw": ["turning point", "changing cycles", "good fortune"],
+      "text": "A turning point: an old cycle closes and a new stage begins."
+    },
+    "rev": {
+      "kw": ["temporary setbacks", "resistance to change", "repeating harmful cycles"],
+      "text": "Resisting change, feeling stuck, or facing obstacles beyond your control."
+    }
+  },
+  {
+    "id": "major_11_justice",
+    "arcana": "major",
+    "suit": null,
+    "number": 11,
+    "nameEn": "Justice",
+    "nameVi": "Công Lý",
+    "up": {
+      "kw": ["fairness", "truth", "consequences"],
+      "text": "Truth comes into view, supporting fair decisions and recognition of consequences."
+    },
+    "rev": {
+      "kw": ["injustice", "avoiding responsibility", "bias"],
+      "text": "Unfair decisions or avoiding responsibility for the consequences of your actions."
+    }
+  },
+  {
+    "id": "major_12_hanged_man",
+    "arcana": "major",
+    "suit": null,
+    "number": 12,
+    "nameEn": "The Hanged Man",
+    "nameVi": "Người Treo Ngược",
+    "up": {
+      "kw": ["pause", "new perspective", "deliberate sacrifice"],
+      "text": "Pause deliberately, consider another perspective and accept a short-term sacrifice to gain understanding."
+    },
+    "rev": {
+      "kw": ["pointless delay", "meaningless sacrifice", "stagnation"],
+      "text": "Feeling stuck because you fear a new perspective, or sacrificing without gaining anything meaningful."
+    }
+  },
+  {
+    "id": "major_13_death",
+    "arcana": "major",
+    "suit": null,
+    "number": 13,
+    "nameEn": "Death",
+    "nameVi": "Tử Thần",
+    "up": {
+      "kw": ["necessary endings", "transformation", "letting go"],
+      "text": "An old phase, habit or relationship ends, making room for needed transformation."
+    },
+    "rev": {
+      "kw": ["resisting an ending", "prolonged stagnation", "fear of change"],
+      "text": "Holding on to something that has served its purpose or delaying an unavoidable ending."
+    }
+  },
+  {
+    "id": "major_14_temperance",
+    "arcana": "major",
+    "suit": null,
+    "number": 14,
+    "nameEn": "Temperance",
+    "nameVi": "Tiết Chế",
+    "up": {
+      "kw": ["balance", "blending", "patient adjustment"],
+      "text": "Bring extremes into balance through patient, gradual adjustments."
+    },
+    "rev": {
+      "kw": ["imbalance", "excess", "impatience"],
+      "text": "Swinging between extremes and missing the moderation the situation needs."
+    }
+  },
+  {
+    "id": "major_15_devil",
+    "arcana": "major",
+    "suit": null,
+    "number": 15,
+    "nameEn": "The Devil",
+    "nameVi": "Ác Quỷ",
+    "up": {
+      "kw": ["attachment", "temptation", "dependence"],
+      "text": "Habits, fears or harmful relationships may feel binding, but these ties can be loosened."
+    },
+    "rev": {
+      "kw": ["release", "recognizing attachments", "breaking harmful cycles"],
+      "text": "Beginning to recognize and break a harmful attachment, or still gathering the courage to leave it."
+    }
+  },
+  {
+    "id": "major_16_tower",
+    "arcana": "major",
+    "suit": null,
+    "number": 16,
+    "nameEn": "The Tower",
+    "nameVi": "Tòa Tháp",
+    "up": {
+      "kw": ["sudden upheaval", "necessary disruption", "truth revealed"],
+      "text": "An unexpected shock disrupts a fragile foundation and calls for rebuilding on firmer ground."
+    },
+    "rev": {
+      "kw": ["prolonged turmoil", "avoiding disruption", "inner crisis"],
+      "text": "Trying to avoid a necessary collapse, or continuing to feel the effects of a crisis."
+    }
+  },
+  {
+    "id": "major_17_star",
+    "arcana": "major",
+    "suit": null,
+    "number": 17,
+    "nameEn": "The Star",
+    "nameVi": "Ngôi Sao",
+    "up": {
+      "kw": ["hope", "healing", "faith in the future"],
+      "text": "After difficulty comes gentle healing, renewed hope and restored faith."
+    },
+    "rev": {
+      "kw": ["hopelessness", "emotional exhaustion", "disappointment"],
+      "text": "A temporary loss of hope, exhaustion or doubt about the future."
+    }
+  },
+  {
+    "id": "major_18_moon",
+    "arcana": "major",
+    "suit": null,
+    "number": 18,
+    "nameEn": "The Moon",
+    "nameVi": "Mặt Trăng",
+    "up": {
+      "kw": ["uncertainty", "subconscious anxiety", "illusion"],
+      "text": "An uncertain space between reality and imagination, with emotions whose causes are not yet clear."
+    },
+    "rev": {
+      "kw": ["emerging truth", "overcoming fear", "lingering confusion"],
+      "text": "Confusion begins to clear, or unfounded fears and uncertainty continue."
+    }
+  },
+  {
+    "id": "major_19_sun",
+    "arcana": "major",
+    "suit": null,
+    "number": 19,
+    "nameEn": "The Sun",
+    "nameVi": "Mặt Trời",
+    "up": {
+      "kw": ["joy", "clear success", "vitality"],
+      "text": "Joy, clarity and success arrive with a sense of natural vitality."
+    },
+    "rev": {
+      "kw": ["delayed joy", "excessive optimism", "temporary self-doubt"],
+      "text": "Delayed success or optimism that has moved beyond what is realistic."
+    }
+  },
+  {
+    "id": "major_20_judgement",
+    "arcana": "major",
+    "suit": null,
+    "number": 20,
+    "nameEn": "Judgement",
+    "nameVi": "Phán Xét",
+    "up": {
+      "kw": ["awakening", "reassessment", "call for change"],
+      "text": "An invitation to review your journey and enter a new phase with greater awareness."
+    },
+    "rev": {
+      "kw": ["resisting awakening", "harsh self-judgment", "missed opportunities"],
+      "text": "Hesitating to face personal truths or judging yourself too harshly."
+    }
+  },
+  {
+    "id": "major_21_world",
+    "arcana": "major",
+    "suit": null,
+    "number": 21,
+    "nameEn": "The World",
+    "nameVi": "Thế Giới",
+    "up": {
+      "kw": ["completion", "fulfillment", "closure"],
+      "text": "A cycle reaches fulfillment, leaving you ready for a new journey."
+    },
+    "rev": {
+      "kw": ["incompletion", "delayed closure", "one final step"],
+      "text": "You are close to your goal but still need the final step that brings completion."
+    }
+  },
+  {
+    "id": "wands_ace",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "ace",
+    "nameEn": "Ace of Wands",
+    "nameVi": "Á Gậy",
+    "up": {
+      "kw": ["fresh energy", "new opportunity"],
+      "text": "Fresh energy and a new opportunity in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["missed opportunity", "delayed beginning"],
+      "text": "A missed opportunity in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_02",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "02",
+    "nameEn": "Two of Wands",
+    "nameVi": "Hai Gậy",
+    "up": {
+      "kw": ["weighing choices", "early collaboration"],
+      "text": "Weighing choices and beginning a collaboration in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["prolonged hesitation", "imbalance between partners"],
+      "text": "Prolonged hesitation in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_03",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "03",
+    "nameEn": "Three of Wands",
+    "nameVi": "Ba Gậy",
+    "up": {
+      "kw": ["expansion", "early results"],
+      "text": "Expansion and early results in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["slow progress", "strained collaboration"],
+      "text": "Progress is delayed in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_04",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "04",
+    "nameEn": "Four of Wands",
+    "nameVi": "Bốn Gậy",
+    "up": {
+      "kw": ["temporary stability", "firm foundation"],
+      "text": "Temporary stability and a firm foundation in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["stagnation", "false security"],
+      "text": "Stagnation in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_05",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "05",
+    "nameEn": "Five of Wands",
+    "nameVi": "Năm Gậy",
+    "up": {
+      "kw": ["conflict", "competition and small losses"],
+      "text": "Conflict, competition or small losses in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["easing conflict", "learning from loss"],
+      "text": "Conflict begins to ease in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_06",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "06",
+    "nameEn": "Six of Wands",
+    "nameVi": "Sáu Gậy",
+    "up": {
+      "kw": ["renewed harmony", "support"],
+      "text": "Harmony returns and support becomes available in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["nostalgia", "imbalance in giving and receiving"],
+      "text": "Longing for the past in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_07",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "07",
+    "nameEn": "Seven of Wands",
+    "nameVi": "Bảy Gậy",
+    "up": {
+      "kw": ["perseverance", "choosing a direction"],
+      "text": "A test of perseverance and the need to choose a direction in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["overwhelming choices", "giving up midway"],
+      "text": "Feeling overwhelmed by choices in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_08",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "08",
+    "nameEn": "Eight of Wands",
+    "nameVi": "Tám Gậy",
+    "up": {
+      "kw": ["rapid progress", "strong focus"],
+      "text": "Rapid progress and strong focus in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["delay and distraction"],
+      "text": "Delay or scattered attention in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_09",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "09",
+    "nameEn": "Nine of Wands",
+    "nameVi": "Chín Gậy",
+    "up": {
+      "kw": ["near completion", "steady accumulation"],
+      "text": "Approaching a goal with solid progress behind you in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["exhaustion and excessive vigilance"],
+      "text": "Exhaustion or excessive vigilance in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_10",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "10",
+    "nameEn": "Ten of Wands",
+    "nameVi": "Mười Gậy",
+    "up": {
+      "kw": ["peak responsibility", "finishing a stage"],
+      "text": "Responsibilities reach a peak as one stage comes to an end in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["releasing burdens", "needing rest"],
+      "text": "Releasing a burden in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_page",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "page",
+    "nameEn": "Page of Wands",
+    "nameVi": "Thị Đồng Gậy",
+    "up": {
+      "kw": ["new learning", "news"],
+      "text": "The beginning of learning and the arrival of news in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["inexperience", "uncertain news"],
+      "text": "Inexperience in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_knight",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "knight",
+    "nameEn": "Knight of Wands",
+    "nameVi": "Hiệp Sĩ Gậy",
+    "up": {
+      "kw": ["decisive action", "pursuing a goal"],
+      "text": "Decisive action and pursuit of a goal in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["haste and impatience"],
+      "text": "Haste or impatience in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_queen",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "queen",
+    "nameEn": "Queen of Wands",
+    "nameVi": "Nữ Hoàng Gậy",
+    "up": {
+      "kw": ["inner mastery", "nurturing maturity"],
+      "text": "Inner mastery and the nurturing of maturity in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["emotional or inner imbalance"],
+      "text": "An imbalance in emotions or inner resources in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "wands_king",
+    "arcana": "minor",
+    "suit": "wands",
+    "number": "king",
+    "nameEn": "King of Wands",
+    "nameVi": "Vua Gậy",
+    "up": {
+      "kw": ["mastery", "mature authority"],
+      "text": "Full command and mature authority in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    },
+    "rev": {
+      "kw": ["misuse of authority or indecision"],
+      "text": "Misuse of authority or indecision in the context of action, passion, creativity and willpower, associated with the element of Fire."
+    }
+  },
+  {
+    "id": "cups_ace",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "ace",
+    "nameEn": "Ace of Cups",
+    "nameVi": "Á Cốc",
+    "up": {
+      "kw": ["fresh energy", "new opportunity"],
+      "text": "Fresh energy and a new opportunity in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["missed opportunity", "delayed beginning"],
+      "text": "A missed opportunity in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_02",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "02",
+    "nameEn": "Two of Cups",
+    "nameVi": "Hai Cốc",
+    "up": {
+      "kw": ["weighing choices", "early collaboration"],
+      "text": "Weighing choices and beginning a collaboration in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["prolonged hesitation", "imbalance between partners"],
+      "text": "Prolonged hesitation in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_03",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "03",
+    "nameEn": "Three of Cups",
+    "nameVi": "Ba Cốc",
+    "up": {
+      "kw": ["expansion", "early results"],
+      "text": "Expansion and early results in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["slow progress", "strained collaboration"],
+      "text": "Progress is delayed in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_04",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "04",
+    "nameEn": "Four of Cups",
+    "nameVi": "Bốn Cốc",
+    "up": {
+      "kw": ["temporary stability", "firm foundation"],
+      "text": "Temporary stability and a firm foundation in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["stagnation", "false security"],
+      "text": "Stagnation in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_05",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "05",
+    "nameEn": "Five of Cups",
+    "nameVi": "Năm Cốc",
+    "up": {
+      "kw": ["conflict", "competition and small losses"],
+      "text": "Conflict, competition or small losses in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["easing conflict", "learning from loss"],
+      "text": "Conflict begins to ease in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_06",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "06",
+    "nameEn": "Six of Cups",
+    "nameVi": "Sáu Cốc",
+    "up": {
+      "kw": ["renewed harmony", "support"],
+      "text": "Harmony returns and support becomes available in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["nostalgia", "imbalance in giving and receiving"],
+      "text": "Longing for the past in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_07",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "07",
+    "nameEn": "Seven of Cups",
+    "nameVi": "Bảy Cốc",
+    "up": {
+      "kw": ["perseverance", "choosing a direction"],
+      "text": "A test of perseverance and the need to choose a direction in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["overwhelming choices", "giving up midway"],
+      "text": "Feeling overwhelmed by choices in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_08",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "08",
+    "nameEn": "Eight of Cups",
+    "nameVi": "Tám Cốc",
+    "up": {
+      "kw": ["rapid progress", "strong focus"],
+      "text": "Rapid progress and strong focus in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["delay and distraction"],
+      "text": "Delay or scattered attention in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_09",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "09",
+    "nameEn": "Nine of Cups",
+    "nameVi": "Chín Cốc",
+    "up": {
+      "kw": ["near completion", "steady accumulation"],
+      "text": "Approaching a goal with solid progress behind you in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["exhaustion and excessive vigilance"],
+      "text": "Exhaustion or excessive vigilance in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_10",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "10",
+    "nameEn": "Ten of Cups",
+    "nameVi": "Mười Cốc",
+    "up": {
+      "kw": ["peak responsibility", "finishing a stage"],
+      "text": "Responsibilities reach a peak as one stage comes to an end in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["releasing burdens", "needing rest"],
+      "text": "Releasing a burden in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_page",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "page",
+    "nameEn": "Page of Cups",
+    "nameVi": "Thị Đồng Cốc",
+    "up": {
+      "kw": ["new learning", "news"],
+      "text": "The beginning of learning and the arrival of news in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["inexperience", "uncertain news"],
+      "text": "Inexperience in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_knight",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "knight",
+    "nameEn": "Knight of Cups",
+    "nameVi": "Hiệp Sĩ Cốc",
+    "up": {
+      "kw": ["decisive action", "pursuing a goal"],
+      "text": "Decisive action and pursuit of a goal in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["haste and impatience"],
+      "text": "Haste or impatience in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_queen",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "queen",
+    "nameEn": "Queen of Cups",
+    "nameVi": "Nữ Hoàng Cốc",
+    "up": {
+      "kw": ["inner mastery", "nurturing maturity"],
+      "text": "Inner mastery and the nurturing of maturity in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["emotional or inner imbalance"],
+      "text": "An imbalance in emotions or inner resources in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "cups_king",
+    "arcana": "minor",
+    "suit": "cups",
+    "number": "king",
+    "nameEn": "King of Cups",
+    "nameVi": "Vua Cốc",
+    "up": {
+      "kw": ["mastery", "mature authority"],
+      "text": "Full command and mature authority in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    },
+    "rev": {
+      "kw": ["misuse of authority or indecision"],
+      "text": "Misuse of authority or indecision in the context of emotions, affection, relationships and intuition, associated with the element of Water."
+    }
+  },
+  {
+    "id": "swords_ace",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "ace",
+    "nameEn": "Ace of Swords",
+    "nameVi": "Á Kiếm",
+    "up": {
+      "kw": ["fresh energy", "new opportunity"],
+      "text": "Fresh energy and a new opportunity in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["missed opportunity", "delayed beginning"],
+      "text": "A missed opportunity in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_02",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "02",
+    "nameEn": "Two of Swords",
+    "nameVi": "Hai Kiếm",
+    "up": {
+      "kw": ["weighing choices", "early collaboration"],
+      "text": "Weighing choices and beginning a collaboration in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["prolonged hesitation", "imbalance between partners"],
+      "text": "Prolonged hesitation in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_03",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "03",
+    "nameEn": "Three of Swords",
+    "nameVi": "Ba Kiếm",
+    "up": {
+      "kw": ["expansion", "early results"],
+      "text": "Expansion and early results in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["slow progress", "strained collaboration"],
+      "text": "Progress is delayed in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_04",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "04",
+    "nameEn": "Four of Swords",
+    "nameVi": "Bốn Kiếm",
+    "up": {
+      "kw": ["temporary stability", "firm foundation"],
+      "text": "Temporary stability and a firm foundation in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["stagnation", "false security"],
+      "text": "Stagnation in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_05",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "05",
+    "nameEn": "Five of Swords",
+    "nameVi": "Năm Kiếm",
+    "up": {
+      "kw": ["conflict", "competition and small losses"],
+      "text": "Conflict, competition or small losses in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["easing conflict", "learning from loss"],
+      "text": "Conflict begins to ease in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_06",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "06",
+    "nameEn": "Six of Swords",
+    "nameVi": "Sáu Kiếm",
+    "up": {
+      "kw": ["renewed harmony", "support"],
+      "text": "Harmony returns and support becomes available in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["nostalgia", "imbalance in giving and receiving"],
+      "text": "Longing for the past in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_07",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "07",
+    "nameEn": "Seven of Swords",
+    "nameVi": "Bảy Kiếm",
+    "up": {
+      "kw": ["perseverance", "choosing a direction"],
+      "text": "A test of perseverance and the need to choose a direction in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["overwhelming choices", "giving up midway"],
+      "text": "Feeling overwhelmed by choices in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_08",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "08",
+    "nameEn": "Eight of Swords",
+    "nameVi": "Tám Kiếm",
+    "up": {
+      "kw": ["rapid progress", "strong focus"],
+      "text": "Rapid progress and strong focus in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["delay and distraction"],
+      "text": "Delay or scattered attention in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_09",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "09",
+    "nameEn": "Nine of Swords",
+    "nameVi": "Chín Kiếm",
+    "up": {
+      "kw": ["near completion", "steady accumulation"],
+      "text": "Approaching a goal with solid progress behind you in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["exhaustion and excessive vigilance"],
+      "text": "Exhaustion or excessive vigilance in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_10",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "10",
+    "nameEn": "Ten of Swords",
+    "nameVi": "Mười Kiếm",
+    "up": {
+      "kw": ["peak responsibility", "finishing a stage"],
+      "text": "Responsibilities reach a peak as one stage comes to an end in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["releasing burdens", "needing rest"],
+      "text": "Releasing a burden in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_page",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "page",
+    "nameEn": "Page of Swords",
+    "nameVi": "Thị Đồng Kiếm",
+    "up": {
+      "kw": ["new learning", "news"],
+      "text": "The beginning of learning and the arrival of news in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["inexperience", "uncertain news"],
+      "text": "Inexperience in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_knight",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "knight",
+    "nameEn": "Knight of Swords",
+    "nameVi": "Hiệp Sĩ Kiếm",
+    "up": {
+      "kw": ["decisive action", "pursuing a goal"],
+      "text": "Decisive action and pursuit of a goal in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["haste and impatience"],
+      "text": "Haste or impatience in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_queen",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "queen",
+    "nameEn": "Queen of Swords",
+    "nameVi": "Nữ Hoàng Kiếm",
+    "up": {
+      "kw": ["inner mastery", "nurturing maturity"],
+      "text": "Inner mastery and the nurturing of maturity in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["emotional or inner imbalance"],
+      "text": "An imbalance in emotions or inner resources in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "swords_king",
+    "arcana": "minor",
+    "suit": "swords",
+    "number": "king",
+    "nameEn": "King of Swords",
+    "nameVi": "Vua Kiếm",
+    "up": {
+      "kw": ["mastery", "mature authority"],
+      "text": "Full command and mature authority in the context of thought, conflict, truth and communication, associated with the element of Air."
+    },
+    "rev": {
+      "kw": ["misuse of authority or indecision"],
+      "text": "Misuse of authority or indecision in the context of thought, conflict, truth and communication, associated with the element of Air."
+    }
+  },
+  {
+    "id": "pentacles_ace",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "ace",
+    "nameEn": "Ace of Pentacles",
+    "nameVi": "Á Tiền",
+    "up": {
+      "kw": ["fresh energy", "new opportunity"],
+      "text": "Fresh energy and a new opportunity in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["missed opportunity", "delayed beginning"],
+      "text": "A missed opportunity in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_02",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "02",
+    "nameEn": "Two of Pentacles",
+    "nameVi": "Hai Tiền",
+    "up": {
+      "kw": ["weighing choices", "early collaboration"],
+      "text": "Weighing choices and beginning a collaboration in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["prolonged hesitation", "imbalance between partners"],
+      "text": "Prolonged hesitation in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_03",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "03",
+    "nameEn": "Three of Pentacles",
+    "nameVi": "Ba Tiền",
+    "up": {
+      "kw": ["expansion", "early results"],
+      "text": "Expansion and early results in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["slow progress", "strained collaboration"],
+      "text": "Progress is delayed in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_04",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "04",
+    "nameEn": "Four of Pentacles",
+    "nameVi": "Bốn Tiền",
+    "up": {
+      "kw": ["temporary stability", "firm foundation"],
+      "text": "Temporary stability and a firm foundation in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["stagnation", "false security"],
+      "text": "Stagnation in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_05",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "05",
+    "nameEn": "Five of Pentacles",
+    "nameVi": "Năm Tiền",
+    "up": {
+      "kw": ["conflict", "competition and small losses"],
+      "text": "Conflict, competition or small losses in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["easing conflict", "learning from loss"],
+      "text": "Conflict begins to ease in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_06",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "06",
+    "nameEn": "Six of Pentacles",
+    "nameVi": "Sáu Tiền",
+    "up": {
+      "kw": ["renewed harmony", "support"],
+      "text": "Harmony returns and support becomes available in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["nostalgia", "imbalance in giving and receiving"],
+      "text": "Longing for the past in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_07",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "07",
+    "nameEn": "Seven of Pentacles",
+    "nameVi": "Bảy Tiền",
+    "up": {
+      "kw": ["perseverance", "choosing a direction"],
+      "text": "A test of perseverance and the need to choose a direction in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["overwhelming choices", "giving up midway"],
+      "text": "Feeling overwhelmed by choices in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_08",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "08",
+    "nameEn": "Eight of Pentacles",
+    "nameVi": "Tám Tiền",
+    "up": {
+      "kw": ["rapid progress", "strong focus"],
+      "text": "Rapid progress and strong focus in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["delay and distraction"],
+      "text": "Delay or scattered attention in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_09",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "09",
+    "nameEn": "Nine of Pentacles",
+    "nameVi": "Chín Tiền",
+    "up": {
+      "kw": ["near completion", "steady accumulation"],
+      "text": "Approaching a goal with solid progress behind you in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["exhaustion and excessive vigilance"],
+      "text": "Exhaustion or excessive vigilance in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_10",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "10",
+    "nameEn": "Ten of Pentacles",
+    "nameVi": "Mười Tiền",
+    "up": {
+      "kw": ["peak responsibility", "finishing a stage"],
+      "text": "Responsibilities reach a peak as one stage comes to an end in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["releasing burdens", "needing rest"],
+      "text": "Releasing a burden in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_page",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "page",
+    "nameEn": "Page of Pentacles",
+    "nameVi": "Thị Đồng Tiền",
+    "up": {
+      "kw": ["new learning", "news"],
+      "text": "The beginning of learning and the arrival of news in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["inexperience", "uncertain news"],
+      "text": "Inexperience in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_knight",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "knight",
+    "nameEn": "Knight of Pentacles",
+    "nameVi": "Hiệp Sĩ Tiền",
+    "up": {
+      "kw": ["decisive action", "pursuing a goal"],
+      "text": "Decisive action and pursuit of a goal in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["haste and impatience"],
+      "text": "Haste or impatience in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_queen",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "queen",
+    "nameEn": "Queen of Pentacles",
+    "nameVi": "Nữ Hoàng Tiền",
+    "up": {
+      "kw": ["inner mastery", "nurturing maturity"],
+      "text": "Inner mastery and the nurturing of maturity in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["emotional or inner imbalance"],
+      "text": "An imbalance in emotions or inner resources in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  },
+  {
+    "id": "pentacles_king",
+    "arcana": "minor",
+    "suit": "pentacles",
+    "number": "king",
+    "nameEn": "King of Pentacles",
+    "nameVi": "Vua Tiền",
+    "up": {
+      "kw": ["mastery", "mature authority"],
+      "text": "Full command and mature authority in the context of material life, work, health and finances, associated with the element of Earth."
+    },
+    "rev": {
+      "kw": ["misuse of authority or indecision"],
+      "text": "Misuse of authority or indecision in the context of material life, work, health and finances, associated with the element of Earth."
+    }
+  }
+]

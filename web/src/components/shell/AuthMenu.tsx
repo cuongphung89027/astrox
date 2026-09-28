@@ -30,7 +30,8 @@ export function AuthMenu() {
   const [open, setOpen] = useState(false);
   const [present, setPresent] = useState(false);
   const [topupOpen, setTopupOpen] = useState(false);
-  const { points, status } = usePointsBalance(!preview);
+  const { points, status, market } = usePointsBalance(!preview);
+  const unit = market ? (market === 'US' ? 'Credits' : 'Point') : t.locale === 'en' ? 'Credits' : 'Point';
   const wrap = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
@@ -157,7 +158,7 @@ export function AuthMenu() {
                 <div>
                   <span>
                     <FeatureIcon name="wallet" size={17} />
-                    AstroX Point
+                    AstroX {unit}
                   </span>
                   <p>
                     {preview
@@ -167,7 +168,7 @@ export function AuthMenu() {
                         : points === null
                           ? '…'
                           : t.formatNumber(points)}
-                    <small>{preview ? t.t('auth.demo') : !preview && points !== null ? t.t('auth.unit') : ''}</small>
+                    <small>{preview ? t.t('auth.demo') : !preview && points !== null ? unit : ''}</small>
                   </p>
                 </div>
               </button>
@@ -207,11 +208,11 @@ export function AuthMenu() {
             className={styles.logout}
             onClick={() => {
               close();
-              if (confirm('Đăng xuất khỏi AstroX?')) void logout();
+              if (confirm(t.locale === 'en' ? 'Sign out of AstroX?' : 'Đăng xuất khỏi AstroX?')) void logout();
             }}
           >
             <FeatureIcon name="logout" size={19} />
-            Đăng xuất
+            {t.locale === 'en' ? 'Sign out' : 'Đăng xuất'}
           </button>
         </div>
       )}

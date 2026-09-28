@@ -1,3 +1,5 @@
+import { rewardCreditStatements as creditStatements } from './reward-credit.mjs';
+import { marketOf } from './credits.mjs';
 // Rewards — nối engine thuần tuý services/rewards/rules.ts vào D1 theo cấu hình
 // admin đã publish. Mọi khoản thưởng ghi một dòng zalo_point_ledger (idempotent
 // nhờ UNIQUE(reason,reference_id,user_id)) và cộng balance bằng mẫu changes()=1
@@ -24,9 +26,9 @@ function rewardConfig(rewards) {
   };
 }
 
-async function publishedRewards(env) {
+async function publishedRewards(env, market = 'VN') {
   const published = await readPublished(env);
-  const rewards = published?.config?.rewards;
+  const rewards = market === 'US' ? published?.config?.rewardsUs : published?.config?.rewards;
   if (!rewards?.enabled || published.config.operations.maintenance) return null;
   const config = rewardConfig(rewards);
   try {
@@ -38,7 +40,7 @@ async function publishedRewards(env) {
 }
 
 /** An optional configured referral cap is evaluated inside the wallet transaction. */
-function inviterBudget(rewards, userId, now = Date.now()) {
+async function inviterBudget(env, rewards, userId, now = Date.now(), market = 'VN') {
   if (rewards.referralMode !== 'limited') return { sql: '1', args: [] };
   const since =
     rewards.referralWindow === 'day'
@@ -46,44 +48,26 @@ function inviterBudget(rewards, userId, now = Date.now()) {
       : rewards.referralWindow === 'month'
         ? new Date(now - 30 * 86400000).toISOString()
         : null;
+  const us = market === 'US';
   return {
-    sql: `(SELECT COUNT(*) FROM zalo_point_ledger WHERE user_id=? AND reason='referral'${since ? ' AND created_at>=?' : ''})<?`,
+    sql: us
+      ? `(SELECT COUNT(*) FROM credits_ledger WHERE user_id=? AND kind='bonus' AND operation_key LIKE 'reward:referral:%'${since ? ' AND created_at>=?' : ''})<?`
+      : `(SELECT COUNT(*) FROM zalo_point_ledger WHERE user_id=? AND reason='referral'${since ? ' AND created_at>=?' : ''})<?`,
     args: [userId, ...(since ? [since] : []), Number(rewards.referralLimit) || 0],
   };
 }
-function creditStatements(
-  env,
-  { userId, points, reason, referenceId },
-  now = nowIso(),
-  guard = { sql: '1', args: [] },
-) {
-  if (!Number.isSafeInteger(points) || points <= 0) return [];
-  return [
-    env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(
-      userId,
-      now,
-    ),
-    env.DB.prepare(
-      `INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,?,?,?,?,? WHERE ${guard.sql} ON CONFLICT(reason,reference_id,user_id) DO NOTHING`,
-    ).bind(crypto.randomUUID(), userId, points, reason, referenceId, now, ...guard.args),
-    env.DB.prepare(
-      'UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1',
-    ).bind(points, now, userId),
-  ];
-}
-
 /** Included in the verified new-identity creation batch. A crash after login
  * cannot lose the referral event; its reward rules are frozen at registration. */
-export async function registrationEventStatements(env, userId, refCode) {
+export async function registrationEventStatements(env, userId, refCode, market = 'VN') {
   if (typeof refCode !== 'string' || !/^[A-Z0-9]{4,10}$/.test(refCode)) return [];
-  const rewards = await publishedRewards(env);
+  const rewards = await publishedRewards(env, market);
   if (!rewards?.registrationEnabled) return [];
   const inviter = await env.DB.prepare(
     "SELECT r.user_id FROM referral_codes r JOIN app_users u ON u.id=r.user_id WHERE r.code=? AND u.status='active'",
   )
     .bind(refCode)
     .first();
-  if (!inviter || inviter.user_id === userId) return [];
+  if (!inviter || inviter.user_id === userId || ((await marketOf(env, inviter.user_id)) ?? 'VN') !== market) return [];
   return [
     env.DB.prepare(
       "INSERT OR IGNORE INTO reward_events(id,user_id,kind,status,claim_token,config_revision,payload,created_at) SELECT ?,?,'registration','pending',?,?,?,? WHERE EXISTS(SELECT 1 FROM app_users WHERE id=?)",
@@ -92,7 +76,7 @@ export async function registrationEventStatements(env, userId, refCode) {
       userId,
       crypto.randomUUID(),
       rewards.__revision,
-      JSON.stringify({ inviterId: inviter.user_id, rewards }),
+      JSON.stringify({ inviterId: inviter.user_id, rewards, market }),
       nowIso(),
       userId,
     ),
@@ -102,11 +86,11 @@ export async function settleRegistration(env, userId) {
   const id = `registration:${userId}`,
     event = await env.DB.prepare("SELECT payload FROM reward_events WHERE id=? AND status='pending'").bind(id).first();
   if (!event) return;
-  const { inviterId, rewards } = JSON.parse(event.payload);
+  const { inviterId, rewards, market = 'VN' } = JSON.parse(event.payload);
   validateConfig(rewards.__engine);
   const token = crypto.randomUUID(),
     now = nowIso(),
-    budget = inviterBudget(rewards, inviterId);
+    budget = await inviterBudget(env, rewards, inviterId, Date.now(), market);
   const guard = {
     sql: "EXISTS(SELECT 1 FROM reward_events WHERE id=? AND status='processing' AND claim_token=?)",
     args: [id, token],
@@ -119,14 +103,24 @@ export async function settleRegistration(env, userId) {
     env.DB.prepare(
       `UPDATE reward_events SET status='processing',claim_token=? WHERE id=? AND status='pending' AND EXISTS(SELECT 1 FROM user_referrals WHERE user_id=? AND inviter_id=?) AND ${budget.sql}`,
     ).bind(token, id, userId, inviterId, ...budget.args),
-    ...entries.flatMap(r =>
-      creditStatements(
-        env,
-        { userId: r.userId, points: r.points, reason: 'referral', referenceId: r.key.replace(/^referral:/, '') },
-        now,
-        guard,
-      ),
-    ),
+    ...(
+      await Promise.all(
+        entries.map(r =>
+          creditStatements(
+            env,
+            {
+              userId: r.userId,
+              points: r.points,
+              reason: 'referral',
+              referenceId: r.key.replace(/^referral:/, ''),
+              market,
+            },
+            now,
+            guard,
+          ),
+        ),
+      )
+    ).flat(),
     env.DB.prepare(
       "UPDATE reward_events SET status=CASE WHEN claim_token=? AND status='processing' THEN 'completed' ELSE 'skipped' END,completed_at=? WHERE id=? AND status IN ('pending','processing')",
     ).bind(token, now, id),
@@ -134,7 +128,7 @@ export async function settleRegistration(env, userId) {
 }
 /** Internal compatibility helper; public routes never accept caller-supplied referrals. */
 export async function creditRegistration(env, userId, refCode) {
-  const statements = await registrationEventStatements(env, userId, refCode);
+  const statements = await registrationEventStatements(env, userId, refCode, (await marketOf(env, userId)) ?? 'VN');
   if (statements.length) await env.DB.batch(statements);
   await settleRegistration(env, userId);
 }
@@ -170,7 +164,7 @@ export async function firstTopupStatements(env, settings, order) {
   if (!referral) return [];
   const config = rewardConfig(rewards);
   validateConfig(config);
-  const budget = inviterBudget(rewards, referral.inviter_id);
+  const budget = await inviterBudget(env, rewards, referral.inviter_id, Date.now(), 'VN');
   const guard = {
     sql: `EXISTS(SELECT 1 FROM zalo_point_ledger WHERE user_id=? AND reason='topup_payos' AND reference_id=?) AND NOT EXISTS(SELECT 1 FROM zalo_point_ledger WHERE user_id=? AND reason='topup_payos' AND reference_id!=?) AND EXISTS(SELECT 1 FROM app_users WHERE id=? AND status='active') AND ${budget.sql}`,
     args: [
@@ -196,7 +190,7 @@ export async function firstTopupStatements(env, settings, order) {
       referenceId: `${order.user_id}:first-paid-topup`,
     },
   ];
-  return entries.flatMap(r => creditStatements(env, r, nowIso(), guard));
+  return (await Promise.all(entries.map(r => creditStatements(env, { ...r, market: 'VN' }, nowIso(), guard)))).flat();
 }
 
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -221,7 +215,8 @@ export async function handleRewardsSummary(env, request) {
   const session = await readSession(env, request);
   if (!session) return json(env, request, { error: 'unauthorized' }, 401);
   const published = await readPublished(env);
-  const rewards = published?.config?.rewards;
+  const market = await marketOf(env, session.sub);
+  const rewards = market === 'US' ? published?.config?.rewardsUs : published?.config?.rewards;
   const day = vietnamDay(new Date());
   const code = await ensureReferralCode(env, session.sub);
   const att = await env.DB.prepare('SELECT last_day,streak,claimed_milestones FROM user_attendance WHERE user_id=?')
@@ -230,8 +225,11 @@ export async function handleRewardsSummary(env, request) {
   const invited = await env.DB.prepare('SELECT COUNT(*) n FROM user_referrals WHERE inviter_id=?')
     .bind(session.sub)
     .first();
+  const us = (await marketOf(env, session.sub)) === 'US';
   const earned = await env.DB.prepare(
-    "SELECT COALESCE(SUM(delta),0) s FROM zalo_point_ledger WHERE user_id=? AND reason='referral'",
+    us
+      ? "SELECT COALESCE(SUM(delta),0) s FROM credits_ledger WHERE user_id=? AND kind='bonus' AND operation_key LIKE 'reward:referral:%'"
+      : "SELECT COALESCE(SUM(delta),0) s FROM zalo_point_ledger WHERE user_id=? AND reason='referral'",
   )
     .bind(session.sub)
     .first();
@@ -288,7 +286,8 @@ export async function handleRewardsCheckin(env, request) {
   const session = await readSession(env, request);
   if (!session) return json(env, request, { error: 'unauthorized' }, 401);
   if (!trustedOrigin(env, request)) return json(env, request, { error: 'forbidden_origin' }, 403);
-  const rewards = await publishedRewards(env);
+  const market = (await marketOf(env, session.sub)) ?? 'VN';
+  const rewards = await publishedRewards(env, market);
   if (!rewards || !rewards.attendanceEnabled) return json(env, request, { error: 'attendance_disabled' }, 403);
   const att = await env.DB.prepare('SELECT last_day,streak,claimed_milestones FROM user_attendance WHERE user_id=?')
     .bind(session.sub)
@@ -325,7 +324,7 @@ export async function handleRewardsCheckin(env, request) {
       session.sub,
       token,
       rewards.__revision,
-      JSON.stringify(result),
+      JSON.stringify({ ...result, market }),
       now,
       now,
       session.sub,
@@ -341,12 +340,12 @@ export async function handleRewardsCheckin(env, request) {
       now,
       ...guard.args,
     ),
-    ...creditStatements(
+    ...(await creditStatements(
       env,
-      { userId: session.sub, points: result.points, reason: 'attendance', referenceId: result.day },
+      { userId: session.sub, points: result.points, reason: 'attendance', referenceId: result.day, market },
       now,
       guard,
-    ),
+    )),
   ];
   let inviterPoints = 0,
     inviterId = null;
@@ -354,14 +353,15 @@ export async function handleRewardsCheckin(env, request) {
     const referral = await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?')
       .bind(session.sub)
       .first();
-    if (referral) {
-      const budget = inviterBudget(rewards, referral.inviter_id);
+    if (referral && ((await marketOf(env, referral.inviter_id)) ?? 'VN') === market) {
+      const budget = await inviterBudget(env, rewards, referral.inviter_id, Date.now(), market);
       statements.push(
-        ...creditStatements(
+        ...(await creditStatements(
           env,
           {
             userId: referral.inviter_id,
             points: result.inviterPoints,
+            market,
             reason: 'referral',
             referenceId: `${session.sub}:milestone:${result.day}`,
           },
@@ -370,7 +370,7 @@ export async function handleRewardsCheckin(env, request) {
             sql: `${guard.sql} AND ${budget.sql} AND EXISTS(SELECT 1 FROM app_users WHERE id=? AND status='active')`,
             args: [...guard.args, ...budget.args, referral.inviter_id],
           },
-        ),
+        )),
       );
       inviterId = referral.inviter_id;
     }
@@ -381,9 +381,16 @@ export async function handleRewardsCheckin(env, request) {
     inviterPoints =
       (
         await env.DB.prepare(
-          "SELECT delta FROM zalo_point_ledger WHERE user_id=? AND reason='referral' AND reference_id=?",
+          market === 'US'
+            ? "SELECT delta FROM credits_ledger WHERE user_id=? AND kind='bonus' AND operation_key=?"
+            : "SELECT delta FROM zalo_point_ledger WHERE user_id=? AND reason='referral' AND reference_id=?",
         )
-          .bind(inviterId, `${session.sub}:milestone:${result.day}`)
+          .bind(
+            inviterId,
+            market === 'US'
+              ? `reward:referral:${session.sub}:milestone:${result.day}`
+              : `${session.sub}:milestone:${result.day}`,
+          )
           .first()
       )?.delta || 0;
   return json(env, request, {
@@ -394,4 +401,56 @@ export async function handleRewardsCheckin(env, request) {
     milestones: result.milestones,
     inviterPoints,
   });
+}
+
+/** Lemon's first paid purchase uses the same configurable referral rewards.
+ * Ledger insertion order, rather than webhook arrival order, determines first. */
+export async function lemonFirstTopupStatements(env, order) {
+  const published = await readPublished(env),
+    rewards = published?.config?.rewardsUs;
+  if (
+    !rewards?.enabled ||
+    !rewards.firstTopupEnabled ||
+    published.config.operations.maintenance ||
+    order.amount_usd_cents < (rewards.firstTopupMinVnd || 0)
+  )
+    return [];
+  const referral = await env.DB.prepare('SELECT inviter_id FROM user_referrals WHERE user_id=?')
+    .bind(order.user_id)
+    .first();
+  if (!referral || (await marketOf(env, referral.inviter_id)) !== 'US') return [];
+  const budget = await inviterBudget(env, rewards, referral.inviter_id, Date.now(), 'US');
+  const guard = {
+    sql: `(SELECT operation_key FROM credits_ledger WHERE user_id=? AND kind='purchase' ORDER BY created_at,rowid LIMIT 1)=? AND EXISTS(SELECT 1 FROM app_users WHERE id=? AND status='active') AND ${budget.sql}`,
+    args: [order.user_id, `credit:lemon:${order.id}`, referral.inviter_id, ...budget.args],
+  };
+  const at = nowIso();
+  return (
+    await Promise.all([
+      creditStatements(
+        env,
+        {
+          userId: order.user_id,
+          points: rewards.firstTopupUser,
+          market: 'US',
+          reason: 'referral',
+          referenceId: `${order.user_id}:first-paid-topup:user`,
+        },
+        at,
+        guard,
+      ),
+      creditStatements(
+        env,
+        {
+          userId: referral.inviter_id,
+          points: rewards.firstTopupInviter,
+          market: 'US',
+          reason: 'referral',
+          referenceId: `${order.user_id}:first-paid-topup`,
+        },
+        at,
+        guard,
+      ),
+    ])
+  ).flat();
 }

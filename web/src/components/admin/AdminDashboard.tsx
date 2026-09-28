@@ -416,14 +416,22 @@ export function AdminDashboard() {
           )}
           {view === 'aiMetrics' && <AiMetrics config={config} />}
           {insightViews.includes(view) && (
-            <AdminInsights view={view as InsightView} session={session} config={config} onNavigate={go} />
+            <AdminInsights
+              key={adminMarket}
+              market={adminMarket}
+              view={view as InsightView}
+              session={session}
+              config={config}
+              onNavigate={go}
+            />
           )}
           <fieldset disabled={busy || (!canWrite && view !== 'setup' && view !== 'access')} className={s.editor}>
             {Panel && <Panel {...panelProps} />}
           </fieldset>
           {DATA_VIEWS.includes(view) && (
             <DataPanel
-              key={view}
+              key={`${view}:${adminMarket}`}
+              market={adminMarket}
               view={view}
               title={title || ''}
               session={session}

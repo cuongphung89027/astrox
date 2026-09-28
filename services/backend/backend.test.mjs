@@ -45,6 +45,10 @@ async function fixture() {
     .split(';')
     .filter(s => s.trim()))
     await env.DB.prepare(q).run();
+  for (const q of readFileSync(new URL('../../migrations/reward-market.sql', import.meta.url), 'utf8')
+    .split(';')
+    .filter(s => s.trim()))
+    await env.DB.prepare(q).run();
   Object.assign(env, {
     SESSION_SECRET: 'test-session-secret',
     PAYOS_CLIENT_ID: 'client',
@@ -1228,4 +1232,203 @@ test('already expired provider links are reconciled using signed readback', asyn
     (await env.DB.prepare("SELECT status FROM topup_orders_zalo WHERE id='o1'").first()).status,
     'cancelled',
   );
+});
+
+test('US check-in and ad parity uses Credits and independently published rewards', async () => {
+  const env = await fixture();
+  await env.DB.prepare("INSERT INTO market_preferences VALUES('u1','US','now')").run();
+  await published(env, c => {
+    adsOn(c);
+    c.rewardsUs = structuredClone(c.rewards);
+    c.rewards.enabled = false;
+  });
+  const headers = await cookieOfUserId(env, 'u1');
+  const check = () =>
+    publicFetch(new Request('https://api.example.com/api/rewards/checkin', { method: 'POST', headers }), env);
+  assert.equal((await check()).status, 200);
+  assert.equal((await check()).status, 409);
+  const now = Date.now();
+  const start = await adRequest(env, 'start', {}, 'u1', undefined, now);
+  assert.equal(start.status, 200);
+  const { id } = await start.json();
+  await adRequest(env, 'ready', { id }, 'u1', undefined, now);
+  assert.equal((await adRequest(env, 'grant', { id }, 'u1', undefined, now + 6000)).status, 200);
+  assert.equal((await adRequest(env, 'grant', { id }, 'u1', undefined, now + 6000)).status, 200);
+  assert.equal(await balance(env, 'u1'), 10);
+  assert.equal((await env.DB.prepare("SELECT balance FROM credits_accounts WHERE user_id='u1'").first()).balance, 7);
+  assert.equal((await env.DB.prepare("SELECT SUM(remaining) n FROM credit_lots WHERE user_id='u1'").first()).n, 7);
+});
+
+test('US direct promo uses Credits and does not consume VN promo with the same code', async () => {
+  const env = await fixture();
+  await env.DB.prepare("INSERT INTO market_preferences VALUES('u1','US','now')").run();
+  await published(env, c => {
+    const p = {
+      id: 'welcome',
+      code: 'WELCOME',
+      kind: 'direct_points',
+      bonus: 8,
+      limit: 1,
+      perUser: 1,
+      enabled: true,
+      expiresAt: '',
+    };
+    c.billing.promos = [p];
+    c.billing.usPromos = [{ ...p, bonus: 3 }];
+  });
+  const headers = await cookieOfUserId(env, 'u1');
+  const send = () =>
+    handlePromoRedeem(
+      env,
+      new Request('https://api.example.com/api/promos/redeem', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ promo_code: 'WELCOME', request_key: 'us-promo-request-one' }),
+      }),
+    );
+  assert.equal((await send()).status, 200);
+  assert.equal((await send()).status, 200);
+  assert.equal(await balance(env, 'u1'), 10);
+  assert.equal((await env.DB.prepare("SELECT balance FROM credits_accounts WHERE user_id='u1'").first()).balance, 3);
+  assert.equal(
+    (await env.DB.prepare("SELECT promo_id FROM backend_promo_redemptions WHERE user_id='u1'").first()).promo_id,
+    'US:welcome',
+  );
+});
+
+test('US first-purchase referral rewards use published amounts and settle once after a fulfillment retry', async () => {
+  const env = await fixture();
+  for (const file of ['lemon-orders.sql', 'lemon-webhook.sql'])
+    for (const q of readFileSync(new URL('../../migrations/' + file, import.meta.url), 'utf8')
+      .replace(/--[^\n]*/g, '')
+      .split(';')
+      .filter(s => s.trim()))
+      await env.DB.prepare(q).run();
+  await addUser(env, 'inviter');
+  for (const id of ['u1', 'inviter'])
+    await env.DB.prepare("INSERT INTO market_preferences VALUES(?,'US','now')").bind(id).run();
+  await env.DB.prepare("INSERT INTO user_referrals(user_id,inviter_id,created_at) VALUES('u1','inviter','now')").run();
+  await published(env, c => {
+    c.rewardsUs.enabled = true;
+    c.rewardsUs.firstTopupEnabled = true;
+    c.rewardsUs.firstTopupMinVnd = 400;
+    c.rewardsUs.firstTopupUser = 3;
+    c.rewardsUs.firstTopupInviter = 4;
+  });
+  env.LEMON_WEBHOOK_SECRET = 'test-lemon';
+  const { handleLemonWebhook } = await import('./lemon-webhook.mjs');
+  const { createHmac } = await import('node:crypto');
+  const send = async (id, num) => {
+    const body = JSON.stringify({
+      meta: { event_name: 'order_created', custom_data: { orderId: id }, test_mode: true },
+      data: {
+        attributes: {
+          order_id: num,
+          status: 'paid',
+          store_id: 11111,
+          currency: 'USD',
+          subtotal: 499,
+          total: 499,
+          variant_id: 424242,
+        },
+      },
+    });
+    return handleLemonWebhook(
+      env,
+      new Request('https://api.example.com/api/lemon/webhook', {
+        method: 'POST',
+        headers: { 'x-signature': createHmac('sha256', env.LEMON_WEBHOOK_SECRET).update(body).digest('hex') },
+        body,
+      }),
+    );
+  };
+  for (const id of ['order-one', 'order-two'])
+    await env.DB.prepare(
+      "INSERT INTO lemon_orders(id,user_id,market,package_id,package_revision,credits,amount_usd_cents,variant_id,store_id,environment,status,request_key,created_at,updated_at) VALUES(?,'u1','US','pack',1,5,499,'424242','11111','test','pending',?,'now','now')",
+    )
+      .bind(id, 'request-' + id)
+      .run();
+  const batch = env.DB.batch.bind(env.DB);
+  let failed = false;
+  env.DB.batch = async statements => {
+    if (!failed && !!(await env.DB.prepare("SELECT id FROM credits_ledger WHERE kind='purchase'").first())) {
+      failed = true;
+      throw Error('transient fulfillment failure');
+    }
+    return batch(statements);
+  };
+  assert.equal((await send('order-one', 9001)).status, 503);
+  assert.equal((await send('order-one', 9001)).status, 200);
+  for (let i = 0; i < 10; i++) assert.equal((await send('order-one', 9001)).status, 200);
+  assert.equal((await send('order-two', 9002)).status, 200);
+  assert.equal((await env.DB.prepare("SELECT balance FROM credits_accounts WHERE user_id='u1'").first()).balance, 13);
+  assert.equal(
+    (await env.DB.prepare("SELECT balance FROM credits_accounts WHERE user_id='inviter'").first()).balance,
+    4,
+  );
+  assert.equal((await env.DB.prepare("SELECT COUNT(*) n FROM credits_ledger WHERE kind='bonus'").first()).n, 2);
+  assert.equal(await balance(env, 'u1'), 10);
+  assert.equal(await balance(env, 'inviter'), 0);
+});
+
+test('ad session cannot turn VN reward amounts into US Credits after switching market', async () => {
+  const env = await fixture();
+  await published(env, c => {
+    adsOn(c);
+    c.rewardsUs = structuredClone(c.rewards);
+    c.rewardsUs.ads.points = 1;
+  });
+  const now = Date.now(),
+    start = await adRequest(env, 'start', {}, 'u1', undefined, now),
+    { id } = await start.json();
+  await adRequest(env, 'ready', { id }, 'u1', undefined, now);
+  await env.DB.prepare("INSERT INTO market_preferences VALUES('u1','US','now')").run();
+  assert.equal((await adRequest(env, 'grant', { id }, 'u1', undefined, now + 6000)).status, 409);
+  assert.equal(await balance(env, 'u1'), 10);
+  assert.equal(await env.DB.prepare("SELECT * FROM credits_ledger WHERE user_id='u1'").first(), null);
+  await env.DB.prepare("UPDATE market_preferences SET market='VN' WHERE user_id='u1'").run();
+  assert.equal((await adRequest(env, 'grant', { id }, 'u1', undefined, now + 6000)).status, 200);
+});
+
+test('module access applies published US overlay without changing VN access', async () => {
+  const env = await fixture();
+  await published(env, c => {
+    c.billing.services.find(s => s.id === 'tarot').status = 'hidden';
+    c.billing.usServices.tarot = { status: 'free' };
+  });
+  const headers = await cookieOfUserId(env, 'u1');
+  const get = () =>
+    publicFetch(new Request('https://api.example.com/api/module-access', { headers }), env).then(r => r.json());
+  assert.equal((await get()).access.tarot, false);
+  await env.DB.prepare("INSERT INTO market_preferences VALUES('u1','US','now')").run();
+  assert.equal((await get()).access.tarot, true);
+  assert.notEqual((await get()).access.experts, true);
+});
+
+test('Admin US wallet adjustment is replay-safe, lot-backed and never changes Point', async () => {
+  const { internalFetch } = await import('./handler.mjs');
+  const { creditsBalance, reserveCredits } = await import('./credits.mjs');
+  const env = await fixture();
+  const adjust = (delta, requestKey) =>
+    internalFetch(
+      new Request('https://astrox-internal/internal/admin/wallet/adjust', {
+        method: 'POST',
+        body: JSON.stringify({ userId: 'u1', market: 'US', delta, requestKey, reason: 'Support correction' }),
+      }),
+      env,
+    );
+  const before = await balance(env, 'u1');
+  const plus = await Promise.all([adjust(10, 'admin-plus-0001'), adjust(10, 'admin-plus-0001')]);
+  assert.ok(plus.every(r => r.status === 200));
+  assert.equal((await creditsBalance(env, 'u1')).balance, 10);
+  assert.equal((await adjust(11, 'admin-plus-0001')).status, 409);
+  assert.equal(await reserveCredits(env, { userId: 'u1', amount: 3, operationKey: 'test-hold' }), true);
+  assert.equal((await adjust(-8, 'admin-minus-0001')).status, 409);
+  const minus = await Promise.all([adjust(-7, 'admin-minus-0002'), adjust(-7, 'admin-minus-0002')]);
+  assert.ok(minus.every(r => r.status === 200));
+  assert.equal((await creditsBalance(env, 'u1')).balance, 3);
+  assert.equal((await env.DB.prepare("SELECT SUM(remaining) n FROM credit_lots WHERE user_id='u1'").first()).n, 3);
+  assert.equal(await balance(env, 'u1'), before);
+  const list = await internalFetch(new Request('https://astrox-internal/internal/admin/wallet?market=US'), env);
+  assert.equal((await list.json()).rows[0].balance, 3);
 });

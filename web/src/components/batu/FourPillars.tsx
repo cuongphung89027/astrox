@@ -1,3 +1,6 @@
+import { useLocale } from '@/i18n/LocaleProvider';
+import { BATU_WX_EN } from '@/i18n/astrology-en';
+import { useParityCopy } from '@/i18n/parity-copy';
 import type { CSSProperties } from 'react';
 import { BATU_WX_LABEL, type BatuChart, type WxKey } from '@/lib/batu';
 import { ELEMENT_COLORS } from './WuxingBar';
@@ -13,20 +16,24 @@ export function FourPillars({
   active: WxKey | null;
   onSelect: (key: WxKey | null) => void;
 }) {
+  const parityCopy = useParityCopy();
+  const en = useLocale().locale === 'en',
+    elementLabel = (key: WxKey) => (en ? BATU_WX_EN[BATU_WX_LABEL[key]] : BATU_WX_LABEL[key]);
+
   return (
-    <section className={styles.chartBoard} aria-label="Sơ đồ tứ trụ Bát Tự">
+    <section className={styles.chartBoard} aria-label={parityCopy('Sơ đồ tứ trụ Bát Tự')}>
       <div className={styles.chartColumns}>
         {ORDER.map(key => (
           <div key={key} data-day={key === 'day'}>
             <span>{chart.pillars[key].label}</span>
-            {key === 'day' && <small>Nhật chủ</small>}
+            {key === 'day' && <small>{parityCopy('Nhật chủ')}</small>}
           </div>
         ))}
       </div>
       {(['Gan', 'Zhi'] as const).map((part, row) => (
         <div key={part} className={styles.chartRow}>
           <div className={styles.rowLabel}>
-            <span>{row === 0 ? 'THIÊN CAN' : 'ĐỊA CHI'}</span>
+            <span>{row === 0 ? parityCopy('THIÊN CAN') : parityCopy('ĐỊA CHI')}</span>
             <i />
           </div>
           <div className={styles.chartCells}>
@@ -36,7 +43,7 @@ export function FourPillars({
               return (
                 <button
                   key={key}
-                  aria-label={`${p.label}: ${p[`vi${part}`]}${element ? `, hành ${BATU_WX_LABEL[element]}` : ''}`}
+                  aria-label={`${p.label}: ${p[`vi${part}`]}${element ? `, ${en ? 'element' : 'hành'} ${elementLabel(element)}` : ''}`}
                   aria-pressed={Boolean(element && active === element)}
                   onClick={() => onSelect(element && element !== active ? element : null)}
                   data-dim={Boolean(active && active !== element)}
@@ -51,7 +58,7 @@ export function FourPillars({
                   {part === 'Zhi' && (
                     <img
                       className={styles.branchAnimal}
-                      src={zodiacAsset(p.viZhi)}
+                      src={zodiacAsset(p.hanZhi)}
                       alt=""
                       aria-hidden="true"
                       width={56}
@@ -60,7 +67,7 @@ export function FourPillars({
                   )}
                   <strong lang="zh-Hant">{p[`han${part}`]}</strong>
                   <span>{p[`vi${part}`]}</span>
-                  <small>{element && BATU_WX_LABEL[element]}</small>
+                  <small>{element && elementLabel(element)}</small>
                 </button>
               );
             })}
@@ -70,11 +77,13 @@ export function FourPillars({
       <div className={styles.chartHint}>
         {active ? (
           <>
-            <span>Đang xem hành {BATU_WX_LABEL[active]}</span>
-            <button onClick={() => onSelect(null)}>Xem tất cả</button>
+            <span>
+              {en ? 'Showing element' : 'Đang xem hành'} {elementLabel(active)}
+            </span>
+            <button onClick={() => onSelect(null)}>{parityCopy('Xem tất cả')}</button>
           </>
         ) : (
-          <span>Chạm vào can, chi để xem hành tương ứng.</span>
+          <span>{parityCopy('Chạm vào can, chi để xem hành tương ứng.')}</span>
         )}
       </div>
     </section>

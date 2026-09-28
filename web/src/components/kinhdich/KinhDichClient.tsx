@@ -26,6 +26,7 @@ import {
 } from '@/lib/kinhdich';
 import type { CastResult, KdHistoryEntry, KdMethod } from '@/lib/kinhdich';
 import styles from './KinhDich.module.css';
+import { KD_METHODS_EN } from '@/i18n/divination-en';
 import { useLocale } from '@/i18n/LocaleProvider';
 
 const METHOD_OPTIONS = {
@@ -177,12 +178,18 @@ export function KinhDichClient() {
       else if (method === 'numbers') {
         const n = numbers.map(Number);
         if (!n.every(x => Number.isSafeInteger(x) && x >= 1 && x <= 999))
-          throw new Error('Nhập ba số nguyên từ 1 đến 999.');
+          throw new Error(en ? 'Enter three whole numbers from 1 to 999.' : 'Nhập ba số nguyên từ 1 đến 999.');
         startTube([n[0], n[1], n[2]]);
       } else if (method === 'time') finish(castTime(new Date().toISOString()));
-      else finish(castDigits(method, digits));
+      else finish(castDigits(method, digits, t.locale));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Không lập được quẻ.');
+      setError(
+        en
+          ? 'Unable to cast. Check your inputs and try again.'
+          : e instanceof Error
+            ? e.message
+            : 'Không lập được quẻ.',
+      );
     }
   }
   function reset() {
@@ -213,7 +220,7 @@ export function KinhDichClient() {
             >
               {Object.entries(METHOD_OPTIONS).map(([id, label]) => (
                 <option key={id} value={id}>
-                  {label}
+                  {en ? KD_METHODS_EN[id] : label}
                 </option>
               ))}
             </select>
@@ -232,7 +239,7 @@ export function KinhDichClient() {
                   <i />
                   <i />
                 </div>
-                <div className={styles.threeCoins} aria-label="Ba đồng xu" data-phase={phase}>
+                <div className={styles.threeCoins} aria-label={en ? 'Three coins' : 'Ba đồng xu'} data-phase={phase}>
                   {[0, 1, 2].map(i => {
                     const face = !manual ? faces.at(-1)?.[i] : undefined;
                     return (
@@ -321,7 +328,7 @@ export function KinhDichClient() {
                 maxLength={200}
                 value={question}
                 onChange={e => setQuestion(e.target.value)}
-                placeholder="Viết điều bạn muốn hỏi…"
+                placeholder={en ? 'Write your question…' : 'Viết điều bạn muốn hỏi…'}
               />
               {method === 'coins' && (
                 <div className={styles.coinSetup}>
@@ -338,7 +345,8 @@ export function KinhDichClient() {
                     <div className={styles.coinGrid}>
                       {manualValues.map((v, i) => (
                         <label key={i}>
-                          Hào {i + 1} {i === 0 ? '(dưới)' : i === 5 ? '(trên)' : ''}
+                          {en ? 'Line' : 'Hào'} {i + 1}{' '}
+                          {i === 0 ? (en ? '(bottom)' : '(dưới)') : i === 5 ? (en ? '(top)' : '(trên)') : ''}
                           <select
                             aria-label={en ? `Line ${i + 1} value` : `Giá trị hào ${i + 1}`}
                             value={v}
@@ -421,7 +429,7 @@ export function KinhDichClient() {
                     <div className={styles.numberInputs}>
                       {numbers.map((v, i) => (
                         <label key={i}>
-                          Số {i + 1}
+                          {en ? 'Number' : 'Số'} {i + 1}
                           <input
                             aria-label={en ? `Number ${i + 1}` : `Số ${i + 1}`}
                             type="number"
@@ -438,7 +446,7 @@ export function KinhDichClient() {
               )}
               {['serial', 'phone', 'digits'].includes(method) && (
                 <div key={method} className={styles.digitInput}>
-                  <label htmlFor="kd-digits">{METHOD_OPTIONS[method]}</label>
+                  <label htmlFor="kd-digits">{en ? KD_METHODS_EN[method] : METHOD_OPTIONS[method]}</label>
                   <input
                     id="kd-digits"
                     value={digits}
@@ -446,7 +454,15 @@ export function KinhDichClient() {
                     autoComplete="off"
                     inputMode={method === 'serial' ? 'text' : 'tel'}
                     onChange={e => setDigits(e.target.value)}
-                    placeholder={method === 'serial' ? 'AB00123456' : method === 'phone' ? '0912 345 678' : '001234'}
+                    placeholder={
+                      method === 'serial'
+                        ? 'AB00123456'
+                        : method === 'phone'
+                          ? en
+                            ? '+1 415 555 1234'
+                            : '0912 345 678'
+                          : '001234'
+                    }
                   />
                 </div>
               )}
@@ -495,11 +511,11 @@ export function KinhDichClient() {
       ) : (
         <div className={styles.result}>
           <header className={styles.resultHeader}>
-            <button onClick={reset} aria-label="Lập quẻ khác">
+            <button onClick={reset} aria-label={en ? 'Cast another hexagram' : 'Lập quẻ khác'}>
               ←
             </button>
             <div>
-              <h2>Quẻ của bạn</h2>
+              <h2>{en ? 'Your hexagram' : 'Quẻ của bạn'}</h2>
             </div>
             <FeatureIcon name="kinhdich" size={28} />
           </header>
@@ -521,7 +537,7 @@ export function KinhDichClient() {
             setError('');
             window.scrollTo({ top: 0, behavior: 'instant' });
           } catch {
-            setError('Bản lưu này không hợp lệ.');
+            setError(en ? 'This saved reading is invalid.' : 'Bản lưu này không hợp lệ.');
           }
         }}
         onRemove={savedAt => setHistory(removeKdHistory(savedAt))}

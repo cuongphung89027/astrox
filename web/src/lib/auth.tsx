@@ -112,7 +112,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
         if (!alive) return;
         const axUser = result.user;
         setPointsAccount(axUser ? String(axUser.id) : null);
-        if (axUser) seedPointsBalance(String(axUser.id), result.points);
+        if (axUser) seedPointsBalance(String(axUser.id), result.points, 'market' in result ? result.market : null);
         setAstroxUser(axUser);
         setReady(true);
         void refreshModuleAccess();
@@ -193,7 +193,8 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
       googleLogin: () => {
-        if (AUTH_API_BASE) window.location.href = `${AUTH_API_BASE}/auth/google/login`;
+        if (AUTH_API_BASE)
+          window.location.href = `${AUTH_API_BASE}/auth/google/login${storedReferral() ? `?ref=${encodeURIComponent(storedReferral()!)}` : ''}`;
       },
     }),
     [astroxUser, loggedIn, ready, displayName, moduleAccess, refreshModuleAccess],

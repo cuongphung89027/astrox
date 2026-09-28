@@ -1,3 +1,4 @@
+import { getPromo } from './payments.mjs';
 /**
  * Lemon Squeezy checkout (plan Task 15). The server owns the order book: a
  * local row with the full commercial snapshot is written BEFORE the provider
@@ -12,7 +13,12 @@
 const LEMON_API = 'https://api.lemonsqueezy.com/v1/checkouts';
 const nowIso = () => new Date().toISOString();
 
-export async function createLemonCheckout(env, config, { userId, packageId, requestKey, email }, fetchImpl = fetch) {
+export async function createLemonCheckout(
+  env,
+  config,
+  { userId, packageId, requestKey, email, promoCode = '' },
+  fetchImpl = fetch,
+) {
   if (!userId) return { ok: false, error: 'unauthorized', status: 401 };
   const lemon = config?.integrations?.lemon;
   if (!lemon?.enabled || !env.LEMON_API_KEY) return { ok: false, error: 'lemon_not_configured', status: 503 };
@@ -35,27 +41,55 @@ export async function createLemonCheckout(env, config, { userId, packageId, requ
     return { ok: true, order: shape(existing) };
   }
 
+  let promo = null;
+  if (promoCode) {
+    try {
+      promo = await getPromo(
+        env,
+        { config },
+        String(promoCode).trim().toUpperCase(),
+        pack.amountUsdCents,
+        userId,
+        'topup_bonus',
+        'US',
+      );
+    } catch (e) {
+      return { ok: false, error: e.message, status: 400 };
+    }
+  }
   const id = crypto.randomUUID(),
     at = nowIso();
-  await env.DB.prepare(
+  const orderStatement = env.DB.prepare(
     `INSERT INTO lemon_orders(id,user_id,market,package_id,package_revision,credits,amount_usd_cents,variant_id,store_id,environment,status,request_key,created_at,updated_at)
      VALUES(?,?,'US',?,?,?,?,?,?,?,'pending',?,?,?)`,
-  )
-    .bind(
-      id,
-      userId,
-      packageId,
-      pack.revision ?? 1,
-      pack.credits,
-      pack.amountUsdCents,
-      pack.variantId,
-      storeId,
-      environment,
-      requestKey,
-      at,
-      at,
-    )
-    .run();
+  ).bind(
+    id,
+    userId,
+    packageId,
+    pack.revision ?? 1,
+    pack.credits + (promo?.bonus || 0),
+    pack.amountUsdCents,
+    pack.variantId,
+    storeId,
+    environment,
+    requestKey,
+    at,
+    at,
+  );
+  const statements = [orderStatement];
+  if (promo)
+    statements.push(
+      env.DB.prepare(
+        `INSERT INTO lemon_order_promos(order_id,user_id,promo_id,bonus,created_at)
+  VALUES(?,?,?,CASE WHEN (SELECT COUNT(*) FROM lemon_order_promos r JOIN lemon_orders o ON o.id=r.order_id WHERE r.promo_id=? AND o.status IN ('pending','paid','fulfilled','refunded'))<?
+  AND (SELECT COUNT(*) FROM lemon_order_promos r JOIN lemon_orders o ON o.id=r.order_id WHERE r.promo_id=? AND r.user_id=? AND o.status IN ('pending','paid','fulfilled','refunded'))<? THEN ? ELSE -1 END,?)`,
+      ).bind(id, userId, promo.id, promo.id, promo.limit, promo.id, userId, promo.perUser, promo.bonus, at),
+    );
+  try {
+    await env.DB.batch(statements);
+  } catch {
+    return { ok: false, error: 'checkout_conflict', status: 409 };
+  }
 
   try {
     const response = await fetchImpl(LEMON_API, {
@@ -69,6 +103,9 @@ export async function createLemonCheckout(env, config, { userId, packageId, requ
         data: {
           type: 'checkouts',
           attributes: {
+            custom_price: pack.amountUsdCents,
+            test_mode: environment === 'test',
+            checkout_options: { locale: 'en', discount: false },
             // Lemon contract: custom data rides in checkout_data.custom and is echoed
             // back on webhook events (meta.custom_data). Opaque local order id only.
             checkout_data: {
@@ -77,7 +114,7 @@ export async function createLemonCheckout(env, config, { userId, packageId, requ
             },
             product_options: {
               enabled_variants: [pack.variantId],
-              redirect_url: `https://theastrox.space/en/profile?topup=return`,
+              redirect_url: `https://theastrox.space/en/profile?section=points&topup=return`,
               receipt_button_text: 'Back to AstroX',
             },
           },
@@ -89,6 +126,7 @@ export async function createLemonCheckout(env, config, { userId, packageId, requ
       }),
       signal: AbortSignal.timeout(15000),
     });
+    if (response.status >= 500) throw new Error('provider_unavailable');
     if (!response.ok) {
       // Definitive provider rejection of OUR payload: surface safely, mark failed.
       await env.DB.prepare("UPDATE lemon_orders SET status='failed', updated_at=? WHERE id=? AND status='pending'")
@@ -98,15 +136,15 @@ export async function createLemonCheckout(env, config, { userId, packageId, requ
     }
     const body = await response.json().catch(() => null);
     const url = body?.data?.attributes?.url,
-      lemonOrderId = String(body?.data?.id || '');
+      checkoutId = String(body?.data?.id || '');
     if (typeof url !== 'string' || !url.startsWith('https://')) {
       await env.DB.prepare("UPDATE lemon_orders SET status='failed', updated_at=? WHERE id=? AND status='pending'")
         .bind(nowIso(), id)
         .run();
       return { ok: false, error: 'checkout_invalid_response', status: 502, order: { id, status: 'failed' } };
     }
-    await env.DB.prepare('UPDATE lemon_orders SET checkout_url=?, lemon_order_id=?, updated_at=? WHERE id=?')
-      .bind(url, lemonOrderId || null, nowIso(), id)
+    await env.DB.prepare('UPDATE lemon_orders SET checkout_url=?, lemon_checkout_id=?, updated_at=? WHERE id=?')
+      .bind(url, checkoutId || null, nowIso(), id)
       .run();
     const order = await env.DB.prepare('SELECT * FROM lemon_orders WHERE id=?').bind(id).first();
     return { ok: true, order: shape(order) };

@@ -1,4 +1,6 @@
 'use client';
+import { useParityCopy } from '@/i18n/parity-copy';
+import { useLocale } from '@/i18n/LocaleProvider';
 import { useState } from 'react';
 import type { NatalChart } from '@/lib/zodiac';
 import styles from './Zodiac.module.css';
@@ -10,13 +12,26 @@ const symbols: Record<string, string> = {
   'Đối đỉnh': '☍',
 };
 export function AspectMatrix({ chart }: { chart: NatalChart }) {
+  const parityCopy = useParityCopy();
+  const en = useLocale().locale === 'en';
+  const labels: Record<string, string> = {
+    'Trùng tụ': 'Conjunction',
+    'Lục hợp': 'Sextile',
+    'Tam hợp': 'Trine',
+    Vuông: 'Square',
+    'Đối đỉnh': 'Opposition',
+  };
+  const viewSymbols = en
+    ? Object.fromEntries(Object.entries(symbols).map(([key, value]) => [labels[key], value]))
+    : symbols;
+
   const [selected, setSelected] = useState<{ a: string; b: string; aspect: string; angle: number } | null>(null);
   return (
     <section className={styles.matrixSection}>
       <header>
-        <span>CÁC KẾT NỐI TRÊN BẦU TRỜI</span>
-        <h3>Ma trận góc chiếu</h3>
-        <p>Chạm vào một ô để xem hai hành tinh liên kết.</p>
+        <span>{parityCopy('CÁC KẾT NỐI TRÊN BẦU TRỜI')}</span>
+        <h3>{parityCopy('Ma trận góc chiếu')}</h3>
+        <p>{parityCopy('Chạm vào một ô để xem hai hành tinh liên kết.')}</p>
       </header>
       <div className={styles.matrix} style={{ gridTemplateColumns: `repeat(${chart.planets.length},minmax(0,1fr))` }}>
         {chart.planets.flatMap((planet, row) =>
@@ -39,15 +54,17 @@ export function AspectMatrix({ chart }: { chart: NatalChart }) {
               <button
                 key={`${row}-${col}`}
                 style={{ gridColumn: col + 1, gridRow: row + 1 }}
-                aria-label={`${planet.name} và ${other.name}: ${aspect ? `${aspect.aspect}, ${aspect.angle} độ` : 'không có góc chiếu chính trong phạm vi đang xét'}`}
+                aria-label={`${planet.name} ${en ? 'and' : 'và'} ${other.name}: ${aspect ? `${aspect.aspect}, ${aspect.angle} ${en ? 'degrees' : 'độ'}` : parityCopy('không có góc chiếu chính trong phạm vi đang xét')}`}
                 aria-pressed={active}
-                data-tone={aspect?.aspect === 'Vuông' || aspect?.aspect === 'Đối đỉnh' ? 'tension' : 'soft'}
+                data-tone={
+                  ['Vuông', 'Đối đỉnh', 'Square', 'Opposition'].includes(aspect?.aspect || '') ? 'tension' : 'soft'
+                }
                 onClick={() =>
                   setSelected(
                     aspect || {
                       a: planet.name,
                       b: other.name,
-                      aspect: 'Không có góc chiếu chính',
+                      aspect: parityCopy('Không có góc chiếu chính'),
                       angle:
                         Math.round(
                           Math.min(
@@ -59,7 +76,7 @@ export function AspectMatrix({ chart }: { chart: NatalChart }) {
                   )
                 }
               >
-                {aspect ? symbols[aspect.aspect] || '·' : <span className={styles.noAspect}>·</span>}
+                {aspect ? viewSymbols[aspect.aspect] || '·' : <span className={styles.noAspect}>·</span>}
               </button>
             );
           }),
@@ -77,13 +94,13 @@ export function AspectMatrix({ chart }: { chart: NatalChart }) {
           </>
         ) : (
           <>
-            <strong>Mỗi ô, một kết nối</strong>
-            <p>Đường chéo là các hành tinh. Dấu chấm là cặp không có góc chiếu chính.</p>
+            <strong>{parityCopy('Mỗi ô, một kết nối')}</strong>
+            <p>{parityCopy('Đường chéo là các hành tinh. Dấu chấm là cặp không có góc chiếu chính.')}</p>
           </>
         )}
       </div>
       <div className={styles.matrixLegend}>
-        {Object.entries(symbols).map(([name, symbol]) => (
+        {Object.entries(viewSymbols).map(([name, symbol]) => (
           <span key={name}>
             <b>{symbol}</b>
             {name}

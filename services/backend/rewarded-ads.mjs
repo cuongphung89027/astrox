@@ -1,3 +1,5 @@
+import { rewardCreditStatements } from './reward-credit.mjs';
+import { marketOf } from './credits.mjs';
 import { readSession } from './auth.mjs';
 import { readPublished } from '../admin/store.mjs';
 import { vietnamDay } from '../rewards/rules.ts';
@@ -17,8 +19,9 @@ export async function handleRewardedAds(env, request, action, now = Date.now()) 
   const session = await readSession(env, request);
   if (!session) return json(env, request, { error: 'unauthorized' }, 401);
   if (!trustedOrigin(env, request)) return json(env, request, { error: 'forbidden_origin' }, 403);
-  const published = await readPublished(env),
-    rewards = published?.config?.rewards;
+  const published = await readPublished(env);
+  const market = (await marketOf(env, session.sub)) ?? 'VN';
+  const rewards = market === 'US' ? published?.config?.rewardsUs : published?.config?.rewards;
   if (!adsConfigured(rewards) || published.config.operations.maintenance)
     return json(env, request, { error: 'ads_unavailable' }, 403);
   const ads = rewards.ads,
@@ -32,13 +35,14 @@ export async function handleRewardedAds(env, request, action, now = Date.now()) 
         "UPDATE reward_ad_sessions SET status='expired' WHERE user_id=? AND status IN ('started','ready') AND expires_at<=?",
       ).bind(userId, now),
       env.DB.prepare(
-        "INSERT INTO reward_ad_sessions(id,user_id,day,points,config_revision,status,created_at,expires_at) SELECT ?,?,?,?,?,'started',?,? WHERE NOT EXISTS(SELECT 1 FROM reward_ad_sessions WHERE user_id=? AND status IN ('started','ready')) AND (SELECT COUNT(*) FROM reward_ad_sessions WHERE user_id=? AND day=? AND status IN ('started','ready','granted'))<? AND COALESCE((SELECT MAX(created_at) FROM reward_ad_sessions WHERE user_id=?),0)<=? RETURNING id",
+        "INSERT INTO reward_ad_sessions(id,user_id,day,points,config_revision,market,status,created_at,expires_at) SELECT ?,?,?,?,?,?,'started',?,? WHERE NOT EXISTS(SELECT 1 FROM reward_ad_sessions WHERE user_id=? AND status IN ('started','ready')) AND (SELECT COUNT(*) FROM reward_ad_sessions WHERE user_id=? AND day=? AND status IN ('started','ready','granted'))<? AND COALESCE((SELECT MAX(created_at) FROM reward_ad_sessions WHERE user_id=?),0)<=? RETURNING id",
       ).bind(
         id,
         userId,
         day,
         ads.points,
         published.revision,
+        market,
         now,
         expires,
         userId,
@@ -55,7 +59,10 @@ export async function handleRewardedAds(env, request, action, now = Date.now()) 
         request,
         {
           error: 'ad_limit_or_cooldown',
-          message: 'Bạn đã đạt giới hạn hôm nay, đang có lượt xem hoặc cần chờ giữa hai lượt.',
+          message:
+            market === 'US'
+              ? 'You have reached today’s limit, have a session open, or need to wait between ads.'
+              : 'Bạn đã đạt giới hạn hôm nay, đang có lượt xem hoặc cần chờ giữa hai lượt.',
         },
         429,
       );
@@ -81,6 +88,7 @@ export async function handleRewardedAds(env, request, action, now = Date.now()) 
       .run();
     return json(env, request, { ok: true });
   }
+  if (row.market !== market) return json(env, request, { error: 'market_mismatch' }, 409);
   if (action === 'grant' && row.status === 'granted')
     return json(env, request, { ok: true, points: row.points, replayed: true });
   if (row.expires_at <= now || row.day !== day || !['started', 'ready'].includes(row.status))
@@ -100,19 +108,21 @@ export async function handleRewardedAds(env, request, action, now = Date.now()) 
     env.DB.prepare(
       "UPDATE reward_ad_sessions SET status='granted',granted_at=? WHERE id=? AND user_id=? AND status='ready' AND expires_at>? AND day=?",
     ).bind(now, row.id, userId, now, day),
-    env.DB.prepare('INSERT OR IGNORE INTO zalo_point_accounts(user_id,balance,updated_at) VALUES(?,0,?)').bind(
-      userId,
+    ...(await rewardCreditStatements(
+      env,
+      { userId, points: row.points, reason: 'ad_reward', referenceId: row.id, market: row.market },
       at,
-    ),
-    env.DB.prepare(
-      "INSERT INTO zalo_point_ledger(id,user_id,delta,reason,reference_id,created_at) SELECT ?,user_id,points,'ad_reward',id,? FROM reward_ad_sessions WHERE id=? AND user_id=? AND status='granted' ON CONFLICT(reason,reference_id,user_id) DO NOTHING",
-    ).bind(crypto.randomUUID(), at, row.id, userId),
-    env.DB.prepare(
-      'UPDATE zalo_point_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND changes()=1',
-    ).bind(row.points, at, userId),
+      {
+        sql: "EXISTS(SELECT 1 FROM reward_ad_sessions WHERE id=? AND user_id=? AND status='granted')",
+        args: [row.id, userId],
+      },
+    )),
   ]);
+  const us = row.market === 'US';
   const credited = await env.DB.prepare(
-    "SELECT delta FROM zalo_point_ledger WHERE reason='ad_reward' AND reference_id=? AND user_id=?",
+    us
+      ? "SELECT delta FROM credits_ledger WHERE kind='bonus' AND operation_key='reward:ad_reward:'||? AND user_id=?"
+      : "SELECT delta FROM zalo_point_ledger WHERE reason='ad_reward' AND reference_id=? AND user_id=?",
   )
     .bind(row.id, userId)
     .first();

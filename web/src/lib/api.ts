@@ -4,6 +4,7 @@
  * Lớp gọi API — port từ callAiText/runAiPrompt/aiHedgeRace + topup của
  * index.html. Toàn bộ chạy client-side (static export).
  */
+import { currentUiLocale, uiText } from './ui-locale';
 import { aiParts, type AiPart } from './ai-parts';
 import { trackFeature } from './feature-telemetry';
 import { confirmReading } from './reading-consent';
@@ -29,7 +30,8 @@ import { resolveRoute } from '../../../services/admin/markets.ts';
 const AI_REQUEST_TIMEOUT = 120000;
 const AI_PARTIAL_MIN_RATIO = 0.25;
 const displayedPrices = new Map<string, number>();
-const priceKey = (serviceId: string, descriptor: unknown) => `${serviceId}:${JSON.stringify(descriptor ?? null)}`;
+const priceKey = (serviceId: string, descriptor: unknown) =>
+  `${getAccountEpoch()}:${currentUiLocale()}:${serviceId}:${JSON.stringify(descriptor ?? null)}`;
 export function rememberDisplayedPrice(serviceId: string, descriptor: unknown, points: number) {
   displayedPrices.set(priceKey(serviceId, descriptor), points);
   if (displayedPrices.size > 128) displayedPrices.delete(displayedPrices.keys().next().value!);
@@ -40,7 +42,12 @@ function assertDisplayedPrice(serviceId: string, descriptor: unknown, points: nu
   if (shown !== undefined && shown !== points) {
     displayedPrices.delete(key);
     window.dispatchEvent(new Event('astrox:price-changed'));
-    throw new Error('Giá dịch vụ vừa thay đổi. Vui lòng xem lại số Point trên nút trước khi tiếp tục.');
+    throw new Error(
+      uiText(
+        'Giá dịch vụ vừa thay đổi. Vui lòng xem lại số Point trên nút trước khi tiếp tục.',
+        'The service price changed. Please review the Credits shown on the button before continuing.',
+      ),
+    );
   }
 }
 
@@ -54,19 +61,43 @@ QUY TẮC BẮT BUỘC:
 6. Trả lời đúng độ dài được yêu cầu, không lan man.
 7. Gọi dịch vụ là AstroX. Dùng thuật ngữ "tứ trụ" trong Bát Tự. Giữ nguyên tên tiếng Anh gốc của các lá Tarot.`;
 
+const SYSTEM_PROMPT_EN = `You are an experienced astrology and divination reader. Write natural, direct English.
+Use only the supplied information; never invent missing facts. State clearly when an image cannot be read.
+Begin with the analysis, without greetings or boilerplate closing disclaimers. Use short paragraphs, bold subheadings and simple bullets.
+Avoid definitive medical, legal or financial predictions. Respect the requested length. Call the service AstroX. Use Four Pillars for Ba Zi and the original English Tarot card names.`;
+
 async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): Promise<string> {
-  const ownerEpoch = getAccountEpoch();
+  const ownerEpoch = getAccountEpoch(),
+    ownerLocale = currentUiLocale();
   const assertOwner = () => {
-    if (getAccountEpoch() !== ownerEpoch) throw new Error('Tài khoản đã thay đổi. Vui lòng mở lại lượt luận giải.');
+    if (getAccountEpoch() !== ownerEpoch || currentUiLocale() !== ownerLocale)
+      throw new Error(
+        uiText(
+          'Tài khoản đã thay đổi. Vui lòng mở lại lượt luận giải.',
+          'Your account changed. Please reopen the reading.',
+        ),
+      );
   };
   const prices = await servicePrices(true),
     price = prices[String(body.serviceId || '')];
-  if (!price) throw new Error('Chưa xác nhận được giá dịch vụ. Vui lòng thử lại sau.');
+  if (!price)
+    throw new Error(
+      uiText(
+        'Chưa xác nhận được giá dịch vụ. Vui lòng thử lại sau.',
+        'The service price could not be confirmed. Please try again.',
+      ),
+    );
 
   assertOwner();
   // Fetch per operation; never persist the credential in localStorage.
   const auth = await fetch(`${AUTH_API_BASE}/api/ai/session`, { method: 'POST', credentials: 'include', signal });
-  if (!auth.ok && auth.status !== 401) throw new Error('Chưa xác minh được phiên đăng nhập. Vui lòng thử lại.');
+  if (!auth.ok && auth.status !== 401)
+    throw new Error(
+      uiText(
+        'Chưa xác minh được phiên đăng nhập. Vui lòng thử lại.',
+        'Your session could not be verified. Please try again.',
+      ),
+    );
   const ticket = auth.ok ? await auth.json() : null;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (typeof ticket?.token === 'string') headers.Authorization = `Bearer ${ticket.token}`;
@@ -84,28 +115,50 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
       });
       if (!qr.ok)
         throw new Error(
-          qr.status === 401 ? 'Vui lòng đăng nhập để mở khóa dịch vụ.' : 'Chưa lấy được giá mở khóa. Vui lòng thử lại.',
+          qr.status === 401
+            ? uiText('Vui lòng đăng nhập để mở khóa dịch vụ.', 'Please sign in to unlock this service.')
+            : uiText(
+                'Chưa lấy được giá mở khóa. Vui lòng thử lại.',
+                'The unlock price could not be loaded. Please try again.',
+              ),
         );
       const quote = await qr.json();
       assertOwner();
       const leaf = quote.offers?.find((offer: { id: string; points: number }) => offer.id === body.serviceId);
       if (!leaf || !Number.isSafeInteger(leaf.points))
-        throw new Error('Chưa xác nhận được giá dịch vụ. Vui lòng thử lại sau.');
+        throw new Error(
+          uiText(
+            'Chưa xác nhận được giá dịch vụ. Vui lòng thử lại sau.',
+            'The service price could not be confirmed. Please try again.',
+          ),
+        );
       assertDisplayedPrice(String(body.serviceId), body.promptDescriptor, leaf.points);
       const selection = await confirmReading(
-        { ...quote, name: price.name || 'Luận giải AstroX', points: price.points },
+        {
+          ...quote,
+          market: price.market,
+          name: price.name || uiText('Luận giải AstroX', 'AstroX reading'),
+          points: price.points,
+        },
         signal,
       );
       body = { ...body, selection, expectedPoints: selection?.points };
     } else {
       assertDisplayedPrice(String(body.serviceId), body.promptDescriptor, price.points);
-      await confirmReading({ name: price.name || 'Luận giải AstroX', points: price.points }, signal);
+      await confirmReading(
+        {
+          market: price.market,
+          name: price.name || uiText('Luận giải AstroX', 'AstroX reading'),
+          points: price.points,
+        },
+        signal,
+      );
       body = { ...body, expectedPoints: price.points };
     }
   } else body = { ...body, expectedPoints: 0 };
   assertOwner();
   const operation = await pendingAiOperation(ticket?.userId || 'guest', body);
-  body = { ...body, operationId: operation.id, market: (await currentMarket()) ?? undefined };
+  body = { ...body, operationId: operation.id, market: (await currentMarket(ticket?.userId ?? null)) ?? undefined };
   trackFeature('feature_start', String(body.serviceId || ''), 'ai', operation.id);
   let res: Response | undefined;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -122,7 +175,12 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
         await new Promise(r => setTimeout(r, 800));
         continue;
       }
-      throw new Error('Không kết nối được máy chủ AstroX. Kiểm tra kết nối mạng và thử lại.');
+      throw new Error(
+        uiText(
+          'Không kết nối được máy chủ AstroX. Kiểm tra kết nối mạng và thử lại.',
+          'Could not connect to AstroX. Check your connection and try again.',
+        ),
+      );
     }
     if (res && !res.ok) {
       const failure = await res
@@ -151,7 +209,7 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
     }
     break;
   }
-  if (!res) throw new Error('Không kết nối được máy chủ AstroX.');
+  if (!res) throw new Error(uiText('Không kết nối được máy chủ AstroX.', 'Could not connect to AstroX.'));
   if (!res.ok) {
     if (price.status === 'paid') void import('./points').then(m => m.refreshPoints(true));
     let msg = String(res.status);
@@ -159,15 +217,24 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
       const j = await res.json();
       if (['quote_changed', 'price_changed'].includes(j?.code || j?.error)) {
         window.dispatchEvent(new Event('astrox:price-changed'));
-        throw new Error('Giá dịch vụ vừa thay đổi. Vui lòng xem lại số Point trên nút trước khi tiếp tục.');
+        throw new Error(
+          uiText(
+            'Giá dịch vụ vừa thay đổi. Vui lòng xem lại số Point trên nút trước khi tiếp tục.',
+            'The service price changed. Please review the Credits shown on the button before continuing.',
+          ),
+        );
       }
       const detail = j.error || j.message;
       msg = typeof detail === 'string' ? detail : detail ? JSON.stringify(detail) : msg;
     } catch (error) {
-      if (error instanceof Error && error.message.startsWith('Giá dịch vụ vừa thay đổi')) throw error;
+      if (
+        error instanceof Error &&
+        (error.message.startsWith('Giá dịch vụ vừa thay đổi') || error.message.startsWith('The service price changed'))
+      )
+        throw error;
       /* giữ msg mặc định */
     }
-    throw new Error(`Lỗi dịch vụ AstroX ${res.status}: ${msg}`);
+    throw new Error(`${uiText('Lỗi dịch vụ AstroX', 'AstroX service error')} ${res.status}: ${msg}`);
   }
   const data = await res.json();
   assertOwner();
@@ -189,9 +256,13 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
       if (price.status === 'paid') void import('./points').then(m => m.refreshPoints(true));
       return content;
     }
-    throw new Error('AstroX dừng sớm (length).');
+    throw new Error(uiText('AstroX dừng sớm (length).', 'The AstroX response ended early (length).'));
   }
-  throw new Error(finish && finish !== 'stop' ? `AstroX dừng sớm (${finish}).` : 'AstroX không trả về nội dung.');
+  throw new Error(
+    finish && finish !== 'stop'
+      ? `${uiText('AstroX dừng sớm', 'AstroX ended early')} (${finish}).`
+      : uiText('AstroX không trả về nội dung.', 'AstroX returned no content.'),
+  );
 }
 
 /** Service id for the current path, including /en routes ("" when unknown). */
@@ -216,7 +287,7 @@ export async function callAiText(opts: {
   const AI_TOKEN_CEILING = compact ? 1500 : 16000;
   const maxTokens = opts.maxTokens ? Math.max(opts.maxTokens, AI_TOKEN_CEILING) : AI_TOKEN_CEILING;
   getState();
-  const locale = opts.locale === 'en' ? 'en' : 'vi';
+  const locale = opts.locale ?? currentUiLocale();
   const body = {
     operationId: crypto.randomUUID(),
     locale,
@@ -227,9 +298,11 @@ export async function callAiText(opts: {
       {
         role: 'system',
         content:
-          SYSTEM_PROMPT_BASE +
+          (locale === 'en' ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_BASE) +
           (compact
-            ? '\nViết NGẮN GỌN: tổng cộng tối thiểu 150 từ, tối đa 200 từ, đúng nội dung chính, không mở rộng.'
+            ? locale === 'en'
+              ? '\nWrite a concise response of 150–200 words.'
+              : '\nViết NGẮN GỌN: tổng cộng tối thiểu 150 từ, tối đa 200 từ, đúng nội dung chính, không mở rộng.'
             : ''),
       },
       { role: 'user', content: aiParts(opts.parts || [], opts.serviceId === 'palm') },
@@ -263,7 +336,13 @@ export async function runAiPrompt(
   } = {},
 ): Promise<string> {
   const state = getState();
-  if (!state.profile) throw new Error('Chưa có hồ sơ. Vui lòng lưu hồ sơ trước khi dùng AstroX.');
+  if (!state.profile)
+    throw new Error(
+      uiText(
+        'Chưa có hồ sơ. Vui lòng lưu hồ sơ trước khi dùng AstroX.',
+        'Please save your profile before using AstroX.',
+      ),
+    );
   const parts: AiPart[] = [{ text: userQuestion }];
   if (opts.withChartImage && state.chartImageBase64) {
     parts.push({ inline_data: { mime_type: state.chartImageMime || 'image/jpeg', data: state.chartImageBase64 } });
@@ -276,7 +355,13 @@ export async function runAiPrompt(
     serviceId: opts.serviceId,
   });
   // Captive: hồ sơ bị xoá giữa chừng (đăng xuất) thì huỷ kết quả.
-  if (!getState().profile) throw new Error('Hồ sơ đã bị xoá trong khi xử lý — đã huỷ kết quả.');
+  if (!getState().profile)
+    throw new Error(
+      uiText(
+        'Hồ sơ đã bị xoá trong khi xử lý — đã huỷ kết quả.',
+        'Your profile was removed during processing. The result was discarded.',
+      ),
+    );
   return result;
 }
 
@@ -298,7 +383,9 @@ export async function fetchAstroxUser(): Promise<AstroxUser | null> {
 
 export async function fetchModuleAccessAstrox(): Promise<Record<string, boolean>> {
   try {
-    const res = await fetch(`${AUTH_API_BASE}/api/module-access`, { credentials: 'include' });
+    const res = await fetch(`${AUTH_API_BASE}/api/module-access?market=${currentUiLocale() === 'en' ? 'US' : 'VN'}`, {
+      credentials: 'include',
+    });
     if (res.ok) {
       const data = await res.json();
       if (data?.access) return data.access;
@@ -309,12 +396,25 @@ export async function fetchModuleAccessAstrox(): Promise<Record<string, boolean>
   return {};
 }
 
-export async function fetchMeWithPoints(): Promise<{ user: AstroxUser | null; points: number }> {
+export async function fetchMeWithPoints(): Promise<{
+  user: AstroxUser | null;
+  points: number;
+  market?: 'VN' | 'US' | null;
+}> {
   const res = await fetch(`${AUTH_API_BASE}/api/me`, { credentials: 'include' });
   if (res.status === 401) return { user: null, points: 0 };
-  if (!res.ok) throw new Error('Không tải được tài khoản và số dư Point.');
+  if (!res.ok)
+    throw new Error(
+      uiText('Không tải được tài khoản và số dư Point.', 'Unable to load your account and Credits balance.'),
+    );
   const d = await res.json();
-  return { user: d?.user || null, points: Number.isSafeInteger(d?.points) ? d.points : 0 };
+  if (d?.user && (await currentMarket(d.user.id)) === 'US') {
+    const wallet = await fetch(`${AUTH_API_BASE}/api/credits/summary`, { credentials: 'include' });
+    if (!wallet.ok) throw new Error('wallet_failed');
+    const credits = await wallet.json();
+    return { user: d.user, points: credits.available, market: 'US' };
+  }
+  return { user: d?.user || null, points: Number.isSafeInteger(d?.points) ? d.points : 0, market: 'VN' };
 }
 
 export interface TopupPackage {
@@ -334,11 +434,17 @@ export interface TopupOrder {
   points: number;
   amount_vnd: number;
   status: string;
-  order_code?: number;
+  order_code?: number | string;
+  amount_usd_cents?: number;
   created_at?: string;
 }
 
 export async function loadTopupHistory(): Promise<TopupOrder[]> {
+  if ((await currentMarket()) === 'US') {
+    const res = await fetch(`${AUTH_API_BASE}/api/lemon/history`, { credentials: 'include' });
+    if (!res.ok) throw new Error('history_failed');
+    return (await res.json()).orders;
+  }
   const res = await fetch(`${AUTH_API_BASE}/api/topup/history`, { credentials: 'include' });
   if (!res.ok) throw new Error('history_failed');
   const d = await res.json();
@@ -357,6 +463,44 @@ export interface PointTxn {
 export async function loadPointsHistory(
   cursor?: string,
 ): Promise<{ transactions: PointTxn[]; nextCursor: string | null }> {
+  if ((await currentMarket()) === 'US') {
+    const res = await fetch(
+      `${AUTH_API_BASE}/api/credits/history${cursor ? `?before=${encodeURIComponent(cursor)}` : ''}`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) throw new Error('history_failed');
+    const d = await res.json();
+    return {
+      transactions: (d.entries || []).map(
+        (r: {
+          id: string;
+          delta: number;
+          kind: string;
+          operation_key: string;
+          source_order: string | null;
+          created_at: string;
+        }) => ({
+          id: r.id,
+          delta: r.delta,
+          reason:
+            r.kind === 'purchase'
+              ? 'topup_payos'
+              : r.kind === 'adjustment'
+                ? 'admin_adjust'
+                : r.kind === 'spend'
+                  ? 'ai_service'
+                  : r.kind === 'bonus'
+                    ? r.operation_key?.startsWith('reward:')
+                      ? r.operation_key.split(':')[1]
+                      : 'bonus'
+                    : r.kind,
+          reference_id: r.source_order?.replace(/^lemon:/, '') ?? null,
+          created_at: r.created_at,
+        }),
+      ),
+      nextCursor: d.nextCursor || null,
+    };
+  }
   const res = await fetch(
     `${AUTH_API_BASE}/api/points/history${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
     { credentials: 'include' },
@@ -487,13 +631,19 @@ export async function rewardedAdAction(
       data.message ||
         (
           {
-            ads_unavailable: 'Quảng cáo nhận Point chưa sẵn sàng.',
-            ad_not_ready: 'Chưa đủ điều kiện nhận thưởng.',
-            ad_session_expired_or_closed: 'Phiên quảng cáo đã đóng hoặc hết hạn.',
-            unauthorized: 'Vui lòng đăng nhập lại.',
+            ads_unavailable: uiText('Quảng cáo nhận Point chưa sẵn sàng.', 'Rewarded ads are not available yet.'),
+            ad_not_ready: uiText('Chưa đủ điều kiện nhận thưởng.', 'Reward requirements have not been met.'),
+            ad_session_expired_or_closed: uiText(
+              'Phiên quảng cáo đã đóng hoặc hết hạn.',
+              'The ad session has closed or expired.',
+            ),
+            unauthorized: uiText('Vui lòng đăng nhập lại.', 'Please sign in again.'),
           } as Record<string, string>
         )[data.error] ||
-        'Chưa xác nhận được lượt quảng cáo. Vui lòng kiểm tra lịch sử Point trước khi thử lại.',
+        uiText(
+          'Chưa xác nhận được lượt quảng cáo. Vui lòng kiểm tra lịch sử Point trước khi thử lại.',
+          'The reward could not be confirmed. Check your Credits history before retrying.',
+        ),
     );
   return data;
 }
@@ -502,12 +652,13 @@ export async function rewardedAdAction(
 export async function createLemonTopup(
   packageId: string,
   requestKey: string,
+  promoCode?: string,
 ): Promise<{ ok: boolean; orderId?: string; checkoutUrl?: string | null; status?: string; error?: string }> {
   const res = await fetch(`${AUTH_API_BASE}/api/lemon/checkout`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ packageId, requestKey }),
+    body: JSON.stringify({ packageId, requestKey, promoCode }),
   });
   return res.json().catch(() => ({ ok: false, error: 'network' }));
 }
@@ -526,7 +677,7 @@ let marketCacheAccount: string | null | undefined = undefined; // undefined = ne
 /** Market preference is account-scoped: the cache is keyed by the active account
  *  id so login/logout/account-switch automatically invalidates it. */
 export function currentMarket(account?: string | number | null): Promise<'US' | 'VN' | null> {
-  const key = account != null ? String(account) : null;
+  const key = `${getAccountEpoch()}:${account != null ? String(account) : 'session'}`;
   if (marketCache === null || marketCacheAccount !== key) {
     marketCacheAccount = key;
     marketCache = fetch(`${AUTH_API_BASE}/api/market`, { credentials: 'include' })
@@ -556,18 +707,34 @@ export async function chooseMarket(market: 'US' | 'VN'): Promise<boolean> {
 }
 
 /** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */
-type PriceInfo = { status: string; points: number; name?: string; policy?: string; unlocks?: boolean };
+type PriceInfo = {
+  market?: 'VN' | 'US';
+  status: string;
+  points: number;
+  name?: string;
+  policy?: string;
+  unlocks?: boolean;
+};
 let priceCache: Promise<Record<string, PriceInfo>> | null = null;
-export function servicePrices(force = false): Promise<Record<string, PriceInfo>> {
-  if (force) priceCache = null;
+let priceCacheKey = '';
+export async function servicePrices(force = false): Promise<Record<string, PriceInfo>> {
+  const market =
+    (await currentMarket()) ??
+    (typeof window !== 'undefined' && window.location?.pathname?.startsWith('/en') ? 'US' : 'VN');
+  const key = `${getAccountEpoch()}:${market}`;
+  if (force || key !== priceCacheKey) {
+    priceCache = null;
+    priceCacheKey = key;
+  }
   if (!priceCache) {
-    priceCache = fetch('/api/site-config')
+    priceCache = fetch(`/api/site-config?market=${market}`)
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         const map: Record<string, PriceInfo> = {};
         for (const s of d?.config?.billing?.services || []) {
           if (s && typeof s.id === 'string' && s.id)
             map[s.id] = {
+              market,
               status: String(s.status || ''),
               points: Number(s.points) || 0,
               name: String(s.name || ''),

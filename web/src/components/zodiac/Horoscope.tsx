@@ -1,4 +1,5 @@
 'use client';
+import { useParityCopy } from '@/i18n/parity-copy';
 import { useFeatureResult } from '@/lib/use-feature-result';
 import { refreshPromptRevision } from '@/lib/state';
 import { useLocale } from '@/i18n/LocaleProvider';
@@ -46,6 +47,11 @@ interface HoroscopeProps {
 }
 
 export function Horoscope({ sign, profile, natalChart, className }: HoroscopeProps) {
+  const parityCopy = useParityCopy();
+  const en = useLocale().locale === 'en';
+  const periodName = (p: ZodiacPeriod) =>
+    en ? { today: 'today', week: 'this week', month: 'this month' }[p] : PERIOD_LABELS[p];
+
   const t = useLocale();
   const [period, setPeriod] = useState<ZodiacPeriod>('today');
   const [text, setText] = useState('');
@@ -94,14 +100,14 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
         setText(result);
       } catch (e) {
         if (req !== reqRef.current) return;
-        const msg = e instanceof Error ? e.message : 'Không lấy được dự báo.';
+        const msg = e instanceof Error ? e.message : parityCopy('Không lấy được dự báo.');
         setError(msg);
-        toast(`Lỗi dự báo: ${msg}`, 'error');
+        toast(`${en ? 'Forecast error' : 'Lỗi dự báo'}: ${msg}`, 'error');
       } finally {
         if (req === reqRef.current) setLoading(false);
       }
     },
-    [markFresh, sign, period, profile, natalChart, toast],
+    [markFresh, sign, period, profile, natalChart, toast, en, parityCopy, t.locale],
   );
 
   const scope = sign.id + period + JSON.stringify(profile),
@@ -123,8 +129,17 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
     return (
       <div className={className}>
         <p className="text-sm leading-relaxed text-muc-2">
-          Thêm ngày sinh trong <strong className="text-muc">Hồ sơ</strong> để xem tử vi cho cung {sign.name} theo hôm
-          nay, tuần này và tháng này — tính theo vị trí thiên thể thật.
+          {en ? (
+            <>
+              Add your birth date to your <strong>profile</strong> to explore daily, weekly and monthly forecasts for{' '}
+              {sign.en}, calculated from celestial positions.
+            </>
+          ) : (
+            <>
+              Thêm ngày sinh trong <strong className="text-muc">Hồ sơ</strong> để xem tử vi cho cung {sign.name} theo
+              hôm nay, tuần này và tháng này — tính theo vị trí thiên thể thật.
+            </>
+          )}
         </p>
         <Btn
           variant="primary"
@@ -134,7 +149,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
             requireProfile();
           }}
         >
-          Điền ngày sinh
+          {parityCopy('Điền ngày sinh')}
         </Btn>
       </div>
     );
@@ -147,13 +162,13 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
       <div className={styles.periodBar}>
         <TopicTabs
           className={styles.periodTabs}
-          items={PERIOD_TABS}
+          items={PERIOD_TABS.map(item => ({ ...item, label: periodName(item.id as ZodiacPeriod) }))}
           value={period}
           onChange={id => setPeriod(id as ZodiacPeriod)}
-          ariaLabel="Chọn kỳ dự báo"
+          ariaLabel={parityCopy('Chọn kỳ dự báo')}
         />
         <span className={styles.periodBadge} suppressHydrationWarning>
-          {periodLabel(period, key)}
+          {periodLabel(period, key, t.locale)}
         </span>
       </div>
 
@@ -166,7 +181,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
               {error}
             </p>
             <Btn variant="ghost" size="sm" className="mt-3" disabled={price.pending} onClick={() => void load(true)}>
-              Thử lại
+              {parityCopy('Thử lại')}
               <PaidPriceBadge price={price} />
             </Btn>
           </div>
@@ -175,14 +190,14 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
             <SavedReading text={text} periodic />
             <div className="mt-4">
               <Btn variant="ghost" size="sm" disabled={price.pending} onClick={() => void load(true)}>
-                ↻ Tạo lại
+                {parityCopy('↻ Tạo lại')}
                 <PaidPriceBadge price={price} />
               </Btn>
             </div>
           </PanelReveal>
         ) : (
           <ReadingInvitation
-            label={`Xem dự báo ${PERIOD_LABELS[period].toLowerCase()}`}
+            label={`${en ? 'View forecast' : 'Xem dự báo'} ${periodName(period)}`}
             onRun={() => void load(false)}
             serviceId={`zodiac--period--${period}`}
             prompt={pricePrompt}
@@ -190,7 +205,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
         )}
       </div>
 
-      <p className="mt-4 sr-only">{`Kỳ dự báo: ${PERIOD_LABELS[period]} cho cung ${sign.name}`}</p>
+      <p className="mt-4 sr-only">{`${en ? 'Forecast period' : 'Kỳ dự báo'}: ${periodName(period)} · ${en ? sign.en : sign.name}`}</p>
     </div>
   );
 }

@@ -20,11 +20,13 @@ import { ChartBoard } from './ChartBoard';
 import { LockPanel } from './LockPanel';
 import { PeriodPanel } from './PeriodPanel';
 import { TopicsPanel } from './TopicsPanel';
+import { hourChiLabel } from '@/i18n/astrology-en';
 import styles from './TuVi.module.css';
 
 function NoProfileCta({ onOpen }: { onOpen: () => void }) {
   const t = useLocale();
   const en = t.locale === 'en';
+  const copy = (vi: string, us: string) => (en ? us : vi);
   return (
     <div className={styles.empty}>
       <FeatureIcon name="tuvi" size={52} className="text-ngoc-deep" />
@@ -36,7 +38,7 @@ function NoProfileCta({ onOpen }: { onOpen: () => void }) {
           ? 'Your profile is missing birth details. Add them once and AstroX will build your chart and reuse it.'
           : 'Hồ sơ của bạn chưa đủ thông tin sinh. Bổ sung một lần để AstroX tự lập lá số và sử dụng cho những lần sau.'}
       </p>
-      <Btn onClick={onOpen}>{en ? 'Complete your profile' : 'Hoàn tất hồ sơ'}</Btn>
+      <Btn onClick={onOpen}>{en ? 'Complete your profile' : copy('Hoàn tất hồ sơ', 'Complete profile')}</Btn>
     </div>
   );
 }
@@ -44,25 +46,32 @@ function NoProfileCta({ onOpen }: { onOpen: () => void }) {
 function StepHint({ period = false, onOpen }: { period?: boolean; onOpen: () => void }) {
   const t = useLocale();
   const en = t.locale === 'en';
+  const copy = (vi: string, us: string) => (en ? us : vi);
   return (
     <section className={styles.welcomePanel}>
       <div className={styles.welcomeMark} aria-hidden="true">
         <FeatureIcon name="tuvi" size={42} />
       </div>
-      <span className={styles.welcomeEyebrow}>{period ? 'VẬN TRÌNH CỦA BẠN' : 'LUẬN GIẢI RIÊNG BẠN'}</span>
-      <h2>{period ? 'Đón nhịp ngày mới' : 'Hiểu mình, từng khía cạnh'}</h2>
+      <span className={styles.welcomeEyebrow}>
+        {period ? copy('VẬN TRÌNH CỦA BẠN', 'YOUR FORECAST') : copy('LUẬN GIẢI RIÊNG BẠN', 'YOUR PERSONAL READING')}
+      </span>
+      <h2>
+        {period
+          ? copy('Đón nhịp ngày mới', 'Meet the day ahead')
+          : copy('Hiểu mình, từng khía cạnh', 'Understand every side of yourself')}
+      </h2>
       <p>{en ? 'Add your birth date and hour to begin.' : 'Bổ sung ngày và giờ sinh để bắt đầu.'}</p>
-      <div className={styles.welcomePreview} aria-label="Nội dung khám phá">
+      <div className={styles.welcomePreview} aria-label={copy('Nội dung khám phá', 'Explore readings')}>
         {(period
           ? [
-              ['01', 'Hôm nay'],
-              ['02', 'Tuần này'],
-              ['03', 'Tháng này'],
+              ['01', copy('Hôm nay', 'Today')],
+              ['02', copy('Tuần này', 'This week')],
+              ['03', copy('Tháng này', 'This month')],
             ]
           : [
-              ['01', 'Bản thân'],
-              ['02', 'Sự nghiệp'],
-              ['03', 'Tình duyên'],
+              ['01', copy('Bản thân', 'Self')],
+              ['02', copy('Sự nghiệp', 'Career')],
+              ['03', copy('Tình duyên', 'Relationships')],
             ]
         ).map(([n, label]) => (
           <div key={n}>
@@ -72,7 +81,7 @@ function StepHint({ period = false, onOpen }: { period?: boolean; onOpen: () => 
         ))}
       </div>
       <button onClick={onOpen}>
-        Hoàn tất hồ sơ <span aria-hidden="true">↗</span>
+        {copy('Hoàn tất hồ sơ', 'Complete profile')} <span aria-hidden="true">↗</span>
       </button>
     </section>
   );
@@ -81,6 +90,7 @@ function StepHint({ period = false, onOpen }: { period?: boolean; onOpen: () => 
 export function TuViClient() {
   const t = useLocale();
   const en = t.locale === 'en';
+  const copy = (vi: string, us: string) => (en ? us : vi);
   const [tab, setTab] = useState<'chart' | 'topics' | 'period'>('chart');
   useEffect(() => {
     const view = new URLSearchParams(window.location.search).get('view');
@@ -103,7 +113,7 @@ export function TuViClient() {
     } catch (e) {
       return { chart: null, chartError: e instanceof Error ? e.message : 'Không lập được lá số.' };
     }
-  }, [profile]);
+  }, [profile, t.locale]);
 
   // Lưu lá số vào store — nguồn dữ liệu duy nhất cho prompt + fingerprint cache.
   useEffect(() => {
@@ -118,9 +128,11 @@ export function TuViClient() {
       <ChartBoard chart={chart} profile={profile} />
     ) : chartError ? (
       <div role="alert">
-        <p className="text-sm text-son-deep">Không thể lập lá số: {chartError}</p>
+        <p className="text-sm text-son-deep">
+          {copy('Không thể lập lá số', 'Unable to build chart')}: {en ? 'Please check your birth details.' : chartError}
+        </p>
         <button className={styles.outlineButton} onClick={() => openProfile()}>
-          Kiểm tra hồ sơ
+          {copy('Kiểm tra hồ sơ', 'Review profile')}
         </button>
       </div>
     ) : (
@@ -128,35 +140,35 @@ export function TuViClient() {
     );
 
   return (
-    <main className={styles.page}>
-      <h1 className="sr-only">Tử Vi</h1>
+    <section className={styles.page}>
+      <h1 className="sr-only">{copy('Tử Vi', 'Zi Wei')}</h1>
       <div className={styles.workspace}>
         {profile && (
           <div className={styles.profileSummary}>
             <div>
-              <p className={styles.eyebrow}>HỒ SƠ CỦA BẠN</p>
-              <p className={styles.profileName}>{profile.name || 'Thông tin đã lưu'}</p>
+              <p className={styles.eyebrow}>{en ? 'YOUR PROFILE' : 'HỒ SƠ CỦA BẠN'}</p>
+              <p className={styles.profileName}>{profile.name || copy('Thông tin đã lưu', 'Saved birth details')}</p>
             </div>
             <p className={styles.profileDetails}>
               {[
-                profile.gender,
+                en ? (profile.gender === 'Nam' ? 'Male' : 'Female') : profile.gender,
                 profile.dob && formatDob(profile.dob),
-                profile.hourChi && `Giờ ${profile.hourChi}`,
+                profile.hourChi && `${en ? 'Hour' : 'Giờ'} ${hourChiLabel(profile.hourChi, t.locale)}`,
                 profile.place,
               ]
                 .filter(Boolean)
                 .join(' · ')}
             </p>
             <button className={styles.outlineButton} onClick={() => openProfile()}>
-              Sửa hồ sơ
+              {copy('Sửa hồ sơ', 'Edit profile')}
             </button>
           </div>
         )}
-        <div className={styles.tabs} role="tablist" aria-label="Khám phá lá số">
+        <div className={styles.tabs} role="tablist" aria-label={copy('Khám phá lá số', 'Explore your chart')}>
           {(
             [
-              ['chart', 'Lá số'],
-              ['topics', en ? 'Readings' : 'Luận giải'],
+              ['chart', copy('Lá số', 'Chart')],
+              ['topics', en ? 'Readings' : copy('Luận giải', 'Readings')],
               ['period', en ? 'Fortune' : 'Vận trình'],
             ] as const
           ).map(([id, label], index, items) => (
@@ -190,22 +202,24 @@ export function TuViClient() {
         >
           <div className={styles.chartHeader}>
             <div>
-              <p className={styles.eyebrow}>BẢN ĐỒ CỦA BẠN</p>
-              <h2 id="tuvi-khoi-laso">{chart ? 'Lá số của bạn' : 'Lá số Tử Vi'}</h2>
+              <p className={styles.eyebrow}>{copy('BẢN ĐỒ CỦA BẠN', 'YOUR CHART')}</p>
+              <h2 id="tuvi-khoi-laso">
+                {chart ? copy('Lá số của bạn', 'Your chart') : copy('Lá số Tử Vi', 'Zi Wei chart')}
+              </h2>
             </div>
             {chart && (
               <button className={styles.outlineButton} onClick={() => wideRef.current?.showModal()}>
-                Xem rộng ↗
+                {copy('Xem rộng ↗', 'Expand chart ↗')}
               </button>
             )}
           </div>
           {chartBlock}
           {!chart && (
             <div className={styles.emptyFoot}>
-              <span>Ngày sinh</span>
-              <i /> <span>Giờ sinh</span>
+              <span>{copy('Ngày sinh', 'Birth date')}</span>
+              <i /> <span>{copy('Giờ sinh', 'Birth hour')}</span>
               <i />
-              <span>Lá số riêng bạn</span>
+              <span>{copy('Lá số riêng bạn', 'Your personal chart')}</span>
             </div>
           )}
         </div>
@@ -227,21 +241,21 @@ export function TuViClient() {
       <dialog
         ref={wideRef}
         className={styles.wideDialog}
-        aria-label="Lá số Tử Vi mở rộng"
+        aria-label={copy('Lá số Tử Vi mở rộng', 'Expanded Zi Wei chart')}
         onClick={e => {
           if (e.target === e.currentTarget) wideRef.current?.close();
         }}
       >
         <div className={styles.wideContent}>
           <div className={styles.chartHeader}>
-            <h2>Lá số Tử Vi</h2>
+            <h2>{copy('Lá số Tử Vi', 'Zi Wei chart')}</h2>
             <button autoFocus className={styles.outlineButton} onClick={() => wideRef.current?.close()}>
-              Đóng ×
+              {copy('Đóng ×', 'Close ×')}
             </button>
           </div>
           {chart && profile && <ChartBoard chart={chart} profile={profile} />}
         </div>
       </dialog>
-    </main>
+    </section>
   );
 }

@@ -1,4 +1,7 @@
 'use client';
+import { useParityCopy } from '@/i18n/parity-copy';
+import { useLocale } from '@/i18n/LocaleProvider';
+import { ZODIAC_TOPICS_EN } from '@/i18n/astrology-en';
 import { useFeatureResult } from '@/lib/use-feature-result';
 import { refreshPromptRevision } from '@/lib/state';
 import styles from './Zodiac.module.css';
@@ -26,6 +29,11 @@ interface SignDetailPanelProps {
 }
 
 export function SignDetailPanel({ sign, profile, natalChart, className }: SignDetailPanelProps) {
+  const parityCopy = useParityCopy();
+
+  const en = useLocale().locale === 'en';
+  const topicLabel = (item: (typeof ZODIAC_DEEP_TOPICS)[number]) =>
+    en ? ZODIAC_TOPICS_EN[item.id]?.subs[item.subId] || ZODIAC_TOPICS_EN[item.id]?.title || item.label : item.label;
   const [topicId, setTopicId] = useState(`${ZODIAC_DEEP_TOPICS[0].id}::${ZODIAC_DEEP_TOPICS[0].subId}`);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,14 +93,14 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
         setText(result);
       } catch (e) {
         if (req !== reqRef.current) return;
-        const msg = e instanceof Error ? e.message : 'Không lấy được phân tích.';
+        const msg = e instanceof Error ? e.message : parityCopy('Không lấy được phân tích.');
         setError(msg);
-        toast(`Lỗi phân tích: ${msg}`, 'error');
+        toast(`${en ? 'Analysis error' : 'Lỗi phân tích'}: ${msg}`, 'error');
       } finally {
         if (req === reqRef.current) setLoading(false);
       }
     },
-    [markFresh, profile, natalChart, topic, sign, toast],
+    [markFresh, profile, natalChart, topic, sign, toast, parityCopy, en],
   );
 
   const scope = topic.id + topic.subId + sign.id + JSON.stringify(profile),
@@ -120,7 +128,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
             onClick={() => setTopicId(`${item.id}::${item.subId}`)}
           >
             <span>0{i + 1}</span>
-            <strong>{item.label}</strong>
+            <strong>{topicLabel(item)}</strong>
             <i aria-hidden="true">↗</i>
           </button>
         ))}
@@ -134,7 +142,9 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
           <>
             {error && <p role="alert">{error}</p>}
             <ReadingInvitation
-              label={error ? 'Thử lại' : `Khám phá ${topic.label.toLowerCase()}`}
+              label={
+                error ? parityCopy('Thử lại') : `${en ? 'Explore' : 'Khám phá'} ${topicLabel(topic).toLowerCase()}`
+              }
               onRun={() => {
                 if (requireProfile()) void load(false);
               }}

@@ -10,8 +10,8 @@ test('lunar conversions are locale-independent; only labels localize', async () 
   assert.equal(vi.branch, en.branch);
   assert.equal(vi.stem, en.stem);
   assert.equal(vi.lunar.day, en.lunar.day);
-  assert.match(en.dayName, /^[A-Z][a-z]+–[A-Z][a-z]+ \(/);
-  assert.match(en.god, /^[A-Z][a-z]+( [A-Z][a-z]+)* \(/);
+  assert.match(en.dayName, /^[A-Z][a-z]+–[A-Z][a-z]+$/);
+  assert.match(en.god, /^[A-Z][a-z]+( [A-Z][a-z]+)*$/);
   assert.notEqual(vi.dayName, en.dayName);
 });
 

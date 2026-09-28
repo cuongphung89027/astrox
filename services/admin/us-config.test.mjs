@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultConfig, validateConfig, publicConfig } from './config.ts';
+import { defaultConfig, validateConfig, publicConfig, hydrateConfig } from './config.ts';
 import { defaultEnglishPromptSettings, ENGLISH_TEMPLATES, ENGLISH_TASKS } from './english-prompts.ts';
 import templates from './prompt-templates.ts';
 import { originalTasks } from './prompt-engine.ts';
@@ -64,4 +64,39 @@ test('public projection never contains English prompt bodies (admin-only surface
   const p = publicConfig(defaultConfig());
   assert.equal(JSON.stringify(p).includes('CHART ANALYSIS RULES'), false);
   assert.equal(JSON.stringify(p).includes('promptsEn'), false);
+});
+
+test('US price overrides validate and never alter the VN public projection', () => {
+  const c = defaultConfig();
+  const row = c.billing.services.find(s => s.id === 'tuvi');
+  row.status = 'paid';
+  row.points = 90;
+  c.billing.usServices.tuvi = { status: 'paid', points: 7 };
+  assert.deepEqual(validateConfig(c), []);
+  assert.equal(publicConfig(c).billing.services.find(s => s.id === 'tuvi').points, 90);
+  assert.equal(publicConfig(c, 'US').billing.services.find(s => s.id === 'tuvi').points, 7);
+});
+
+test('actual persisted legacy config hydrates new market settings without changing VN data', () => {
+  const c = defaultConfig(),
+    vn = structuredClone(c.billing.services);
+  delete c.rewardsUs;
+  delete c.billing.usPromos;
+  delete c.billing.usUnlocks;
+  c.billing.unlocks.enabled = true;
+  const next = hydrateConfig(c);
+  assert.deepEqual(validateConfig(next), []);
+  assert.deepEqual(next.billing.services, vn);
+  assert.equal(next.billing.usUnlocks.enabled, true);
+  next.billing.usUnlocks.credit.numerator = 1;
+  assert.equal(c.billing.unlocks.credit.numerator, 2);
+  assert.deepEqual(next.billing.usPromos, []);
+});
+
+test('US announcements and notices use the US public projection with VN content intact', () => {
+  const c = defaultConfig();
+  c.content.announcement = 'Vietnamese notice';
+  c.contentUs.announcement = 'English notice';
+  assert.equal(publicConfig(c, 'US').content.announcement, 'English notice');
+  assert.equal(publicConfig(c, 'VN').content.announcement, 'Vietnamese notice');
 });

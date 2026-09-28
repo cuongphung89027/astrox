@@ -10,7 +10,7 @@
  */
 import { equal } from '../admin/crypto.mjs';
 import { creditPurchase } from './credits.mjs';
-import { usFirstTopup } from './us-rewards.mjs';
+import { lemonFirstTopupStatements } from './rewards.mjs';
 import { verifyCheckoutSnapshot } from './lemon.mjs';
 
 const hex = buffer => Array.from(new Uint8Array(buffer), b => b.toString(16).padStart(2, '0')).join('');
@@ -24,8 +24,6 @@ export async function verifyLemonSignature(rawBody, signatureHex, secret) {
   // Constant-time compare over the two hex strings (equal() requires same length).
   return equal(computed, signatureHex.toLowerCase());
 }
-
-const PROVIDER_STORE_IDS = new Map(); // local store_id ↔ provider numeric id is per-config; matched via order snapshot
 
 export async function handleLemonWebhook(env, request) {
   const reply = (status, body) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
@@ -45,7 +43,8 @@ export async function handleLemonWebhook(env, request) {
   const eventName = String(payload?.meta?.event_name || 'unknown');
   const localOrderId = payload?.meta?.custom_data?.orderId;
   const a = payload?.data?.attributes || {};
-  const lemonOrderId = a.order_id !== undefined ? String(a.order_id) : null;
+  const providerId = payload?.data?.type === 'orders' ? payload.data.id : a.order_id;
+  const lemonOrderId = /^\d+$/.test(String(providerId ?? '')) ? String(providerId) : null;
   const storeId = a.store_id !== undefined ? String(a.store_id) : '';
   const environment = payload?.meta?.test_mode === true || a.test_mode === true ? 'test' : 'live';
 
@@ -77,7 +76,7 @@ export async function handleLemonWebhook(env, request) {
 
   const order = await env.DB.prepare('SELECT * FROM lemon_orders WHERE id=?').bind(localOrderId).first();
   if (!order) return reply(200, { ok: true, ignored: 'unknown_order' });
-  if (order.status === 'fulfilled' || order.status === 'paid')
+  if (order.status === 'fulfilled' || order.status === 'refunded')
     return reply(200, { ok: true, credited: false, replayed: true });
 
   if (eventName === 'order_refunded') {
@@ -96,19 +95,28 @@ export async function handleLemonWebhook(env, request) {
   });
   const payable = a.status === 'paid' && a.currency === 'USD' && snapshot.ok;
   if (!payable) {
-    await env.DB.prepare('UPDATE lemon_orders SET lemon_order_id=COALESCE(lemon_order_id,?), updated_at=? WHERE id=?')
-      .bind(lemonOrderId, new Date().toISOString(), localOrderId)
-      .run()
-      .catch(() => {});
     return reply(200, { ok: true, credited: false, problems: snapshot.problems || ['status_or_currency'] });
   }
 
   // Exactly-once credit: the order is only marked fulfilled AFTER the credits
   // ledger row exists. Any failure returns 5xx so Lemon retries the event —
   // a replay then re-enters here because the order is still pending.
-  let grant;
+  if (!lemonOrderId) return reply(400, { error: 'missing_order_id' });
+  // Claim the provider identity before any wallet mutation. One provider order
+  // cannot fund two local checkout intents, including concurrent deliveries.
   try {
-    grant = await creditPurchase(env, {
+    const bound = await env.DB.prepare(
+      'UPDATE lemon_orders SET lemon_order_id=?, updated_at=? WHERE id=? AND (lemon_order_id IS NULL OR lemon_order_id=?) RETURNING id',
+    )
+      .bind(lemonOrderId, new Date().toISOString(), order.id, lemonOrderId)
+      .first();
+    if (!bound) return reply(409, { error: 'provider_order_conflict' });
+  } catch (error) {
+    if (/unique/i.test(String(error))) return reply(409, { error: 'provider_order_conflict' });
+    return reply(503, { error: 'order_binding_pending_retry' });
+  }
+  try {
+    await creditPurchase(env, {
       userId: order.user_id,
       amount: order.credits,
       kind: order.package_id?.startsWith('bonus') ? 'bonus' : 'purchase',
@@ -123,11 +131,16 @@ export async function handleLemonWebhook(env, request) {
     .bind(order.user_id, `credit:lemon:${order.id}`)
     .first();
   if (!ledgerRow) return reply(503, { error: 'credit_pending_retry' });
-  const credited = await env.DB.prepare(
-    "UPDATE lemon_orders SET status='fulfilled', lemon_order_id=?, updated_at=? WHERE id=? AND status IN ('pending','paid')",
-  )
-    .bind(lemonOrderId, new Date().toISOString(), localOrderId)
-    .run();
-  if (credited.meta?.changes === 1) await usFirstTopup(env, order.user_id, localOrderId).catch(() => {});
-  return reply(200, { ok: true, credited: credited.meta?.changes === 1, replayed: credited.meta?.changes !== 1 });
+  try {
+    const rewardStatements = await lemonFirstTopupStatements(env, order);
+    const [credited] = await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE lemon_orders SET status='fulfilled', lemon_order_id=?, updated_at=? WHERE id=? AND status IN ('pending','paid')",
+      ).bind(lemonOrderId, new Date().toISOString(), localOrderId),
+      ...rewardStatements,
+    ]);
+    return reply(200, { ok: true, credited: credited.meta?.changes === 1, replayed: credited.meta?.changes !== 1 });
+  } catch {
+    return reply(503, { error: 'fulfillment_pending_retry' });
+  }
 }

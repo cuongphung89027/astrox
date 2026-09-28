@@ -82,3 +82,16 @@ WHERE created_at > (strftime('%s','now')-604800)*1000 GROUP BY market;
 - G4 certified at `ccf5d47`; G5 intentionally BLOCKED on: Lemon approval,
   Google production client, approved USD pricing, one authorized live
   purchase+refund test (see docs/ops/english-us-release.md §4).
+
+
+## Parity update: reward and refund evidence
+
+US rewards now use the same configured registration, check-in, milestone, referral, first-purchase, advertising and promotion rules as VN, with independent `rewardsUs`, `billing.usPromos`, `billing.usServices`, `billing.usUnlocks` and `contentUs`. Rewarded ads still use Google's browser completion callback, not server-side verification. Configure a real ad network before enabling.
+
+Lemon provider order identity is bound before credit. Refund receipts must match the original store, variant, environment, currency and paid subtotal. Tax-inclusive cumulative refunds use the original total. A refund whose purchase lot has been spent restricts the wallet for manual handling; it does not consume unrelated purchase lots. Pending refunds are retried after fulfillment.
+
+Provider payload contract checked against [Lemon's order object](https://docs.lemonsqueezy.com/api/orders/the-order-object): order id is `data.id`; `refunded_amount` is cumulative cents. Provider acceptance and one authorized live purchase/refund remain release gates.
+
+### VN / US parity completion (local candidate)
+
+Use `qa-report/english-us/feature-parity.md` instead of the older route-only completion claims. Shared wallet, rewards, promos, full service editors, content, pricing, terms navigation/print and Admin Credits operations are implemented. Historical anonymous telemetry/customer lists are explicitly shared; currency-specific reports use market-specific sources. Pending ambiguous Lemon checkouts require reconciliation before retrying a different intent. Restricted wallets cannot be unlocked through ordinary adjustment.

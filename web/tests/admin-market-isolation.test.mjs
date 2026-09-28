@@ -22,7 +22,10 @@ test('P1-8: PromptsPanel US branch edits promptsEn only; Vietnamese set untouche
   const branchEl = PromptsPanel({ config, update, market: 'US' });
   assert.equal(branchEl.type?.name, 'PromptsPanelEn', 'US branch selected');
   const tree = branchEl.type(branchEl.props);
-  assert.ok(nodes(tree).some(n => String(n.props?.children).includes('English prompts')), 'US branch renders');
+  assert.ok(
+    nodes(tree).some(n => String(n.props?.children).includes('English prompts')),
+    'US branch renders',
+  );
   const anyTemplate = nodes(tree).find(n => n.type === 'textarea');
   assert.ok(anyTemplate, 'English template editor present');
   anyTemplate.props.onChange({ target: { value: 'EN EDIT' } });
@@ -54,14 +57,57 @@ test('P1-8: ServicesPanel US branch edits the usServices overlay only — shared
     globals: {},
   });
   const branchEl = ServicesPanel({ config, update, market: 'US' });
-  assert.equal(branchEl.type?.name, 'UsServicesCoverage', 'US overlay branch selected');
+  assert.equal(branchEl.type?.name, 'ServicesEditor', 'same complete editor as VN');
   const tree = branchEl.type(branchEl.props);
-  assert.ok(nodes(tree).some(n => String(n.props?.children).includes('US services')), 'overlay editor renders');
+  assert.ok(
+    nodes(tree).some(n => n.props?.specs?.some(s => s[0] === 'enabled')),
+    'unlock settings present',
+  );
   // Edit a US price — the write goes to billing.usServices, never billing.services.
-  const input = nodes(tree).find(n => n.type === 'input' && n.props.type === 'number');
+  const input = nodes(tree).find(n => n.props?.value?.id && n.props?.specs?.some(s => s[0] === 'points'));
   assert.ok(input, 'price input present');
-  input.props.onChange({ target: { value: '42' } });
+  input.props.onChange('points', 42);
   assert.equal(touched.length, 1);
   assert.ok(touched[0].billing.usServices, 'overlay written');
   assert.deepEqual(touched[0].billing.services, sharedSnapshot, 'shared VN services byte-identical');
+  assert.equal(touched[0].billing.usServices[input.props.value.id].points, 42);
+  assert.deepEqual(touched[0].billing.unlocks, config.billing.unlocks);
+  const settings = nodes(tree).find(n => n.props?.value?.bundles && n.props?.specs?.some(s => s[0] === 'enabled'));
+  assert.ok(settings);
+  settings.props.onChange('enabled', true);
+  assert.equal(touched[1].billing.usUnlocks.enabled, true);
+  assert.equal(touched[1].billing.unlocks.enabled, false);
+});
+
+test('US content editor changes announcements and notices without overwriting Vietnamese content', async () => {
+  const config = defaultConfig(),
+    touched = [];
+  config.content.announcement = 'VI only';
+  const { ContentPanel } = await l('components/admin/panels/ContentPanel.tsx');
+  const branch = ContentPanel({
+    market: 'US',
+    config,
+    renderFields() {},
+    update: fn => {
+      const d = structuredClone(config);
+      fn(d);
+      touched.push(d);
+    },
+  });
+  branch.props.update(d => {
+    d.content.announcement = 'US announcement';
+    d.content.notices.push({
+      id: 'us',
+      title: 'Welcome',
+      body: 'English',
+      module: 'tarot',
+      enabled: true,
+      startsAt: '',
+      endsAt: '',
+    });
+  });
+  assert.equal(touched[0].content.announcement, 'VI only');
+  assert.equal(touched[0].content.notices.length, 0);
+  assert.equal(touched[0].contentUs.announcement, 'US announcement');
+  assert.equal(touched[0].contentUs.notices.length, 1);
 });

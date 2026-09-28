@@ -172,6 +172,9 @@ export const NUMEROLOGY_TOPICS_EN: Record<string, { title: string; desc: string 
 };
 
 export const NUMEROLOGY_EXTRA_EN: Record<string, { desc: string }> = {
+  birthday: { desc: 'The particular abilities associated with your day of birth.' },
+  attitude: { desc: 'How you approach life during your early years.' },
+  maturity: { desc: 'A theme of later life, combining your Life Path and Destiny numbers.' },
   'extra-personal-day': { desc: 'The number coloring today.' },
   'extra-personal-month': { desc: 'The theme of this month.' },
   'extra-personal-year': { desc: 'Where you are in the 9-year cycle.' },
@@ -187,6 +190,11 @@ export const NUMEROLOGY_LABEL_EN: Record<string, string> = {
   'Số Nhân Cách': 'Personality',
   'Số Ngày Sinh': 'Birth Day',
   'Năm Cá Nhân': 'Personal Year',
+  'Năm cá nhân': 'Personal year',
+  'Tháng cá nhân': 'Personal month',
+  'Ngày cá nhân': 'Personal day',
+  'Số Thái Độ': 'Attitude',
+  'Số Trưởng Thành': 'Maturity',
   'Chu Kỳ': 'Cycle',
   'Đỉnh Cao': 'Pinnacle',
   'Thử Thách': 'Challenge',
@@ -245,4 +253,14 @@ export const FESTIVALS_EN: Record<string, string> = {
   '15/7': 'Vu Lan Festival',
   '15/8': 'Mid-Autumn Festival',
   '23/12': 'Kitchen Gods Day',
+};
+
+export const KD_METHODS_EN: Record<string, string> = {
+  tube: 'Oracle sticks (automatic)',
+  coins: 'Three coins (automatic)',
+  numbers: 'Plum Blossom numbers (automatic)',
+  time: 'Plum Blossom time (automatic)',
+  serial: 'Banknote serial number',
+  phone: 'Phone number',
+  digits: 'Custom digits',
 };

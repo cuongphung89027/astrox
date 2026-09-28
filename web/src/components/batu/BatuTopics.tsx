@@ -1,4 +1,5 @@
 'use client';
+import { useParityCopy } from '@/i18n/parity-copy';
 import { useFeatureResult } from '@/lib/use-feature-result';
 import { refreshPromptRevision } from '@/lib/state';
 import { ReadingLoader } from '@/components/kit/ReadingLoader';
@@ -31,6 +32,8 @@ interface BatuTopicsProps {
 type AiState = 'idle' | 'loading' | 'done' | 'error';
 
 export function BatuTopics({ chart }: BatuTopicsProps) {
+  const parityCopy = useParityCopy();
+
   const t = useLocale();
   const [reading, setReading] = useState(false);
   const request = useRef(0);
@@ -82,10 +85,10 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
       setAiState('done');
     } catch (e) {
       if (id !== request.current) return;
-      setErrorMsg(e instanceof Error ? e.message : 'Không lấy được phân tích.');
+      setErrorMsg(e instanceof Error ? e.message : parityCopy('Không lấy được phân tích.'));
       setAiState('error');
     }
-  }, [markFresh, cacheKey, chart, profile, requireProfile, topic]);
+  }, [markFresh, cacheKey, chart, profile, requireProfile, topic, parityCopy]);
 
   const pickTopic = useCallback(
     (id: string) => {
@@ -107,8 +110,8 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
     return (
       <section className={styles.topics}>
         <header className={styles.periodHeading}>
-          <span className={styles.eyebrow}>ĐI SÂU HƠN</span>
-          <h2>Mệnh bàn kể điều gì?</h2>
+          <span className={styles.eyebrow}>{parityCopy('ĐI SÂU HƠN')}</span>
+          <h2>{parityCopy('Mệnh bàn kể điều gì?')}</h2>
         </header>
         <div className={styles.topicGrid}>
           {BATU_TOPICS.map((topic, i) => (
@@ -127,12 +130,14 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
   return (
     <section className={styles.topicReading}>
       <button className={styles.back} onClick={() => setReading(false)}>
-        ← Các chủ đề
+        {parityCopy('← Các chủ đề')}
       </button>
-      <ReadingQuestion label="GÓC NHÌN BẠN CHỌN">{topic.title}</ReadingQuestion>
+      <ReadingQuestion label={parityCopy('GÓC NHÌN BẠN CHỌN')}>
+        {t.locale === 'en' ? BATU_TOPICS_EN[topic.id]?.title : topic.title}
+      </ReadingQuestion>
       {aiState === 'idle' && (
         <ReadingInvitation
-          label="Đọc luận giải"
+          label={parityCopy('Đọc luận giải')}
           onRun={run}
           serviceId={`batu--${topic.id}`}
           prompt={buildBatuPromptBody(topic.prompt, chart, profile)}
@@ -143,7 +148,7 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
         <div>
           <p role="alert">{errorMsg}</p>
           <ReadingInvitation
-            label="Thử lại"
+            label={parityCopy('Thử lại')}
             onRun={run}
             serviceId={`batu--${topic.id}`}
             prompt={buildBatuPromptBody(topic.prompt, chart, profile)}
@@ -154,7 +159,9 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
         <PanelReveal open>
           <SavedReading text={text} />
           <div className={styles.like}>
-            <LikeButton label={`Thích bài ${topic.title}`} />
+            <LikeButton
+              label={`${t.locale === 'en' ? 'Like' : 'Thích bài'} ${t.locale === 'en' ? BATU_TOPICS_EN[topic.id]?.title : topic.title}`}
+            />
           </div>
         </PanelReveal>
       )}

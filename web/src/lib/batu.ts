@@ -137,7 +137,14 @@ function batuPairIn(list: string[][], a: string, b: string): boolean {
   return list.some(p => (p[0] === a && p[1] === b) || (p[0] === b && p[1] === a));
 }
 
-export function detectBatuRelations(items: { label: string; zhi: string }[]): BatuRelation[] {
+export function detectBatuRelations(
+  items: { label: string; zhi: string }[],
+  locale: 'vi' | 'en' = 'vi',
+): BatuRelation[] {
+  items = items.map(item => {
+    const han = Object.keys(BATU_BRANCH_EN).find(key => BATU_BRANCH_EN[key] === item.zhi);
+    return { ...item, zhi: han ? BATU_BRANCH_VI[han].vi : item.zhi };
+  });
   const out: BatuRelation[] = [];
   for (let i = 0; i < items.length; i++) {
     for (let j = i + 1; j < items.length; j++) {
@@ -161,7 +168,28 @@ export function detectBatuRelations(items: { label: string; zhi: string }[]): Ba
       out.push({ type: 'hop', text: `Tam Hợp: ${found.map(f => f.label).join('–')} (${trio.join('·')})` });
   });
   if (out.length === 0) out.push({ type: 'none', text: 'Không có quan hệ Xung/Hợp/Hình/Hại nổi bật giữa 4 Địa Chi.' });
-  return out;
+  return locale === 'en' ? out.map(r => ({ ...r, text: englishBatuRelation(r.text) })) : out;
+}
+
+export function englishBatuRelation(text: string) {
+  const phrases: Record<string, string> = {
+    'Không có quan hệ Xung/Hợp/Hình/Hại nổi bật giữa 4 Địa Chi.':
+      'No prominent clash, combination, punishment or harm among the four branches.',
+    'Lục Hợp': 'Six combinations',
+    'Lục Xung': 'Six clashes',
+    'Lục Hại': 'Six harms',
+    'Tương Hình': 'Punishment',
+    'Tự Hình': 'Self-punishment',
+    'Tam Hợp': 'Three harmonies',
+    Năm: 'Year',
+    Tháng: 'Month',
+    Ngày: 'Day',
+    Giờ: 'Hour',
+  };
+  for (const [han, value] of Object.entries(BATU_BRANCH_VI)) phrases[value.vi] = BATU_BRANCH_EN[han];
+  for (const [vi, en] of Object.entries(phrases).sort((a, b) => b[0].length - a[0].length))
+    text = text.split(vi).join(en);
+  return text;
 }
 
 /* ------------------------------------------------------------------ */
@@ -336,12 +364,15 @@ export function buildBatuChart(input: BatuInput, locale: 'vi' | 'en' = 'vi'): Ba
     if (p.wxKeyGan && wxCount[p.wxKeyGan] !== undefined) wxCount[p.wxKeyGan]++;
     if (p.wxKeyZhi && wxCount[p.wxKeyZhi] !== undefined) wxCount[p.wxKeyZhi]++;
   });
-  const relations = detectBatuRelations([
-    { label: PILLAR_LABELS.year, zhi: pillars.year.viZhi },
-    { label: PILLAR_LABELS.month, zhi: pillars.month.viZhi },
-    { label: PILLAR_LABELS.day, zhi: pillars.day.viZhi },
-    { label: PILLAR_LABELS.time, zhi: pillars.time.viZhi },
-  ]);
+  const relations = detectBatuRelations(
+    [
+      { label: PILLAR_LABELS.year, zhi: pillars.year.viZhi },
+      { label: PILLAR_LABELS.month, zhi: pillars.month.viZhi },
+      { label: PILLAR_LABELS.day, zhi: pillars.day.viZhi },
+      { label: PILLAR_LABELS.time, zhi: pillars.time.viZhi },
+    ],
+    locale,
+  );
   let dayun: BatuDayunItem[] = [];
   try {
     const yun = ec.getYun(batuGenderNum(input.gender));
@@ -360,7 +391,7 @@ export function buildBatuChart(input: BatuInput, locale: 'vi' | 'en' = 'vi'): Ba
           startYear: d.getStartYear(),
           endYear: d.getEndYear(),
           hanGanZhi: gz,
-          viGanZhi: `${g.vi} ${z.vi}`,
+          viGanZhi: locale === 'en' ? `${BATU_STEM_EN[gan] || gan} ${BATU_BRANCH_EN[zhi] || zhi}` : `${g.vi} ${z.vi}`,
         };
       });
   } catch {

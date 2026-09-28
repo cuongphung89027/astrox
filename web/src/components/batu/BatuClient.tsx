@@ -18,6 +18,7 @@ const TABS = ['Mệnh bàn', 'Luận giải', 'Đại vận'];
 export function BatuClient() {
   const t = useLocale();
   const en = t.locale === 'en';
+  const copy = (vi: string, us: string) => (en ? us : vi);
   const { isModuleAllowed } = useAuth();
   const profile = useProfile();
   const { open } = useProfileModal();
@@ -28,25 +29,32 @@ export function BatuClient() {
     try {
       return { chart: buildBatuChart(profile, t.locale), error: '' };
     } catch (e) {
-      return { chart: null, error: e instanceof Error ? e.message : 'Không lập được mệnh bàn.' };
+      return {
+        chart: null,
+        error: en
+          ? 'Unable to calculate your chart. Check your birth details and try again.'
+          : e instanceof Error
+            ? e.message
+            : 'Không lập được mệnh bàn.',
+      };
     }
-  }, [profile]);
+  }, [profile, t.locale, en]);
   const { chart, error } = calculated;
   if (!isModuleAllowed('batu'))
     return (
       <section className={styles.page}>
         <div className={styles.welcome}>
           <FeatureIcon name="battu" size={40} />
-          <h2>Mở Bát Tự của bạn</h2>
+          <h2>{copy('Mở Bát Tự của bạn', 'Explore your Ba Zi')}</h2>
           <button className={styles.primary} onClick={openLoginDialog}>
-            Đăng nhập ↗
+            {copy('Đăng nhập ↗', 'Sign in ↗')}
           </button>
         </div>
       </section>
     );
   return (
     <section className={styles.page}>
-      <h1 className="sr-only">Bát Tự</h1>
+      <h1 className="sr-only">{copy('Bát Tự', 'Ba Zi')}</h1>
       {!chart ? (
         <div className={styles.welcome}>
           <div className={styles.emptyPillars} aria-hidden="true">
@@ -56,13 +64,13 @@ export function BatuClient() {
               </span>
             ))}
           </div>
-          <span className={styles.eyebrow}>TỨ TRỤ MỆNH LÝ</span>
+          <span className={styles.eyebrow}>{copy('TỨ TRỤ MỆNH LÝ', 'FOUR PILLARS OF DESTINY')}</span>
           <h2>
-            Tứ trụ.
+            {copy('Tứ trụ.', 'Four pillars.')}
             <br />
-            Một dấu ấn riêng.
+            {copy('Một dấu ấn riêng.', 'Your unique imprint.')}
           </h2>
-          <p>Mở mệnh bàn từ ngày giờ sinh của bạn.</p>
+          <p>{copy('Mở mệnh bàn từ ngày giờ sinh của bạn.', 'Build your chart from your birth date and hour.')}</p>
           {error && <p role="alert">{error}</p>}
           <button className={styles.primary} onClick={() => open()}>
             {en ? (profile ? 'Edit profile' : 'Add your profile') : profile ? 'Chỉnh sửa hồ sơ' : 'Bổ sung hồ sơ'}
@@ -73,17 +81,17 @@ export function BatuClient() {
         <>
           <header className={styles.profile}>
             <div>
-              <span>MỆNH BÀN CỦA</span>
+              <span>{copy('MỆNH BÀN CỦA', 'BIRTH CHART FOR')}</span>
               <h2>{profile?.name}</h2>
             </div>
-            <button onClick={() => open()} aria-label="Chỉnh sửa hồ sơ Bát Tự">
+            <button onClick={() => open()} aria-label={copy('Chỉnh sửa hồ sơ Bát Tự', 'Edit Ba Zi birth details')}>
               <FeatureIcon name="settings" size={20} />
             </button>
           </header>
-          <div className={styles.tabs} role="tablist" aria-label="Bát Tự">
+          <div className={styles.tabs} role="tablist" aria-label={copy('Bát Tự', 'Ba Zi')}>
             {TABS.map((label, i) => (
               <button
-                key={label}
+                key={en ? ['Chart', 'Readings', 'Luck cycles'][i] : label}
                 role="tab"
                 id={`batu-tab-${i}`}
                 aria-controls={`batu-panel-${i}`}
@@ -99,7 +107,7 @@ export function BatuClient() {
                 }}
                 tabIndex={tab === i ? 0 : -1}
               >
-                {label}
+                {en ? ['Chart', 'Readings', 'Luck cycles'][i] : label}
               </button>
             ))}
           </div>
@@ -112,7 +120,7 @@ export function BatuClient() {
           >
             <div className={styles.masthead}>
               <div>
-                <span className={styles.eyebrow}>NHẬT CHỦ</span>
+                <span className={styles.eyebrow}>{copy('NHẬT CHỦ', 'DAY MASTER')}</span>
                 <h2>
                   {chart.pillars.day.viGan}{' '}
                   {chart.pillars.day.wxKeyGan &&
@@ -130,14 +138,14 @@ export function BatuClient() {
             <div className={styles.insights}>
               <section className={styles.elementCard}>
                 <header>
-                  <h3>Ngũ hành</h3>
-                  <span>8 chữ trong mệnh bàn</span>
+                  <h3>{copy('Ngũ hành', 'Five elements')}</h3>
+                  <span>{copy('8 chữ trong mệnh bàn', 'The eight characters in your chart')}</span>
                 </header>
                 <WuxingBar wuxing={chart.wuxing} active={activeElement} onSelect={setActiveElement} />
               </section>
               <section className={styles.relationCard}>
-                <span className={styles.eyebrow}>GIỮA CÁC TRỤ</span>
-                <h3>Những mối liên hệ</h3>
+                <span className={styles.eyebrow}>{copy('GIỮA CÁC TRỤ', 'BETWEEN THE PILLARS')}</span>
+                <h3>{copy('Những mối liên hệ', 'Connections in your chart')}</h3>
                 <ul>
                   {chart.relations.map((r, i) => (
                     <li key={i}>
@@ -149,7 +157,7 @@ export function BatuClient() {
               </section>
             </div>
             <details className={styles.details}>
-              <summary>Chi tiết mệnh bàn</summary>
+              <summary>{copy('Chi tiết mệnh bàn', 'Chart details')}</summary>
               <p>{chart.lunarText}</p>
               <div className={styles.tenGods}>
                 {ORDER.map(key => (
@@ -179,8 +187,8 @@ export function BatuClient() {
             className={styles.panel}
           >
             <header className={styles.periodHeading}>
-              <span className={styles.eyebrow}>NHỊP MƯỜI NĂM</span>
-              <h2>Đi qua những đại vận</h2>
+              <span className={styles.eyebrow}>{en ? 'TEN-YEAR RHYTHMS' : 'NHỊP MƯỜI NĂM'}</span>
+              <h2>{copy('Đi qua những đại vận', 'Explore your luck cycles')}</h2>
             </header>
             <DayunTimeline dayun={chart.dayun} />
           </div>

@@ -58,17 +58,29 @@ async function fulfilledOrder(env, { credits = 20, cents = 2000 } = {}) {
   await creditPurchase(env, { userId: 'u1', amount: credits, orderId: `lemon:${id}` });
   return id;
 }
-const refundReceipt = (env, orderId, refundedCents) =>
-  env.DB.prepare(
-    "INSERT INTO lemon_webhook_receipts(id,event_name,lemon_order_id,local_order_id,environment,store_id,payload_digest,payload_json,received_at) VALUES(?,?,9001,?, 'test','11111','digest',?, '2026')",
+async function refundReceipt(env, orderId, refundedCents, overrides = {}) {
+  const order = await env.DB.prepare('SELECT * FROM lemon_orders WHERE id=?').bind(orderId).first();
+  const attrs = {
+    refunded_amount: refundedCents,
+    subtotal: order.amount_usd_cents,
+    total: order.amount_usd_cents,
+    tax: 0,
+    store_id: order.store_id,
+    currency: 'USD',
+    first_order_item: { variant_id: order.variant_id },
+    ...overrides,
+  };
+  await env.DB.prepare(
+    "INSERT INTO lemon_webhook_receipts(id,event_name,lemon_order_id,local_order_id,environment,store_id,payload_digest,payload_json,received_at) VALUES(?,'order_refunded','9001',?,'test',?,'digest',?,'2026')",
   )
     .bind(
       crypto.randomUUID(),
-      'order_refunded',
       orderId,
-      JSON.stringify({ data: { attributes: { refunded_amount: refundedCents } } }),
+      order.store_id,
+      JSON.stringify({ data: { type: 'orders', id: order.lemon_order_id || '9001', attributes: attrs } }),
     )
     .run();
+}
 
 test('PAY-06: two partial refunds apply only the delta, never exceeding the original', async () => {
   const env = fixture();
@@ -89,7 +101,7 @@ test('PAY-06: two partial refunds apply only the delta, never exceeding the orig
   const order = await env.DB.prepare('SELECT refunded_cents,refunded_credits,status FROM lemon_orders WHERE id=?')
     .bind(id)
     .first();
-  assert.equal(order.refunded_cents, 500); // cumulative never goes backwards
+  assert.equal(order.refunded_cents, 1000); // cumulative never goes backwards
   assert.equal(order.status, 'fulfilled');
 });
 
@@ -125,7 +137,7 @@ test('PAY-07: refund after the credits were spent restricts the account and reco
   assert.equal(audit.ok, true);
 });
 
-test('refund for an unfulfilled order is ignored (refund before paid)', async () => {
+test('refund before paid remains pending and is applied after fulfillment', async () => {
   const env = fixture();
   const id = crypto.randomUUID();
   await env.DB.prepare(
@@ -138,6 +150,13 @@ test('refund for an unfulfilled order is ignored (refund before paid)', async ()
   const r = await reconcileLemon(env);
   assert.equal(r.refunds[0].applied, false);
   assert.equal((await creditsBalance(env, 'u1')).balance, 0);
+  assert.equal((await env.DB.prepare('SELECT processed FROM lemon_webhook_receipts').first()).processed, 0);
+  await creditPurchase(env, { userId: 'u1', amount: 20, orderId: `lemon:${id}` });
+  await env.DB.prepare("UPDATE lemon_orders SET status='fulfilled',lemon_order_id='9001' WHERE id=?").bind(id).run();
+  const second = await reconcileLemon(env);
+  assert.equal(second.refunds[0].deltaCredits, 20);
+  assert.equal((await creditsBalance(env, 'u1')).balance, 0);
+  assert.equal((await env.DB.prepare('SELECT processed FROM lemon_webhook_receipts').first()).processed, 1);
 });
 
 test('stale pending checkouts without a URL age out to failed', async () => {
@@ -159,4 +178,42 @@ test('cron lease prevents overlapping reconcile runs', async () => {
   assert.equal(await acquireReconcileLease(env, 1000), true);
   assert.equal(await acquireReconcileLease(env, 1000 + 1000), false); // lease held
   assert.equal(await acquireReconcileLease(env, 1000 + 130000), true); // expired
+});
+
+test('simultaneous lease contenders have exactly one winner', async () => {
+  const env = fixture();
+  const results = await Promise.all([acquireReconcileLease(env, 1000), acquireReconcileLease(env, 1000)]);
+  assert.equal(results.filter(Boolean).length, 1);
+});
+test('refund of a consumed lot does not consume an unrelated purchase lot', async () => {
+  const env = fixture();
+  const id = await fulfilledOrder(env);
+  await reserveCredits(env, { userId: 'u1', amount: 20, operationKey: 'spent-first' });
+  await commitReserved(env, { userId: 'u1', amount: 20, operationKey: 'spent-first' });
+  await creditPurchase(env, { userId: 'u1', amount: 30, orderId: 'unrelated' });
+  const result = await refundLemonOrder(env, id, 2000);
+  assert.equal(result.debtCredits, 20);
+  assert.equal((await creditsBalance(env, 'u1')).balance, 30);
+  assert.equal((await env.DB.prepare("SELECT SUM(remaining) n FROM credit_lots WHERE user_id='u1'").first()).n, 30);
+  assert.equal((await refundLemonOrder(env, id, 2000)).deltaCredits, 0);
+});
+test('concurrent duplicate refunds deduct exactly once and preserve account/lot totals', async () => {
+  const env = fixture(),
+    id = await fulfilledOrder(env);
+  await Promise.all([refundLemonOrder(env, id, 1000), refundLemonOrder(env, id, 1000)]);
+  assert.equal((await creditsBalance(env, 'u1')).balance, 10);
+  assert.equal((await env.DB.prepare("SELECT SUM(remaining) n FROM credit_lots WHERE user_id='u1'").first()).n, 10);
+});
+
+test('tax-inclusive refund proportions use the original paid total and reject a foreign store', async () => {
+  const env = fixture(),
+    id = await fulfilledOrder(env);
+  await refundReceipt(env, id, 1100, { tax: 200, total: 2200, store_id: 'foreign' });
+  let result = await reconcileLemon(env);
+  assert.equal(result.failed[0].error, 'refund_snapshot_mismatch');
+  assert.equal((await creditsBalance(env, 'u1')).balance, 20);
+  await refundReceipt(env, id, 1100, { tax: 200, total: 2200 });
+  result = await reconcileLemon(env);
+  assert.equal(result.refunds[0].deltaCredits, 10);
+  assert.equal((await creditsBalance(env, 'u1')).balance, 10);
 });

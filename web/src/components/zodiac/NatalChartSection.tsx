@@ -1,4 +1,5 @@
 'use client';
+import { useLocale } from '@/i18n/LocaleProvider';
 
 /**
  * NatalChartSection — bản đồ sao chi tiết (chế độ riêng truy cập từ hub):
@@ -7,6 +8,7 @@
  * đường góc chiếu nối giữa các hành tinh; kèm bảng hành tinh / 12 nhà /
  * góc chiếu. Vị trí giữ đúng phép chiếu cũ: natalPointAngle = 270 − kinh độ.
  */
+import { useParityCopy } from '@/i18n/parity-copy';
 import { GlassCard } from '@/components/kit';
 import styles from './Zodiac.module.css';
 import { AspectMatrix } from './AspectMatrix';
@@ -27,6 +29,11 @@ const R_PLANET = 94;
 const R_ASPECT = 78;
 
 const ASPECT_COLOR: Record<string, string> = {
+  Conjunction: 'var(--color-ngoc)',
+  Sextile: 'var(--color-ngoc)',
+  Trine: 'var(--color-ngoc)',
+  Square: '#819578',
+  Opposition: '#ad9670',
   'Trùng tụ': 'var(--color-ngoc)',
   'Lục hợp': 'var(--color-ngoc)',
   'Tam hợp': 'var(--color-ngoc)',
@@ -39,6 +46,9 @@ function aspectColor(name: string): string {
 }
 
 function NatalWheelSvg({ chart }: { chart: NatalChart }) {
+  const parityCopy = useParityCopy();
+  const en = useLocale().locale === 'en';
+
   const natalPointAngle = (deg: number) =>
     normDeg(180 + (chart.points?.ascendant.longitude ?? chart.houses[0]?.longitude ?? 0) - deg);
   const planetPos = new Map<string, [number, number]>();
@@ -50,7 +60,7 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
     <svg
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       role="img"
-      aria-label="Bản đồ sao: 10 hành tinh trong 12 cung, 12 nhà và các góc chiếu, tính trực tiếp"
+      aria-label={parityCopy('Bản đồ sao: 10 hành tinh trong 12 cung, 12 nhà và các góc chiếu, tính trực tiếp')}
       className="mx-auto h-auto w-full max-w-[460px]"
     >
       {/* Vòng ngoài cách điệu + vòng cung hoàng đạo */}
@@ -190,7 +200,7 @@ function NatalWheelSvg({ chart }: { chart: NatalChart }) {
             <text x={x} y={y + 6} textAnchor="middle" fontSize={17} fontWeight={700} fill="#335b45">
               {p.symbol}
             </text>
-            <title>{`${p.name} — ${p.sign.name} ${p.sign.degree.toFixed(1)}°, nhà ${p.house}`}</title>
+            <title>{`${p.name} — ${p.sign.name} ${p.sign.degree.toFixed(1)}°, ${en ? 'house' : 'nhà'} ${p.house}`}</title>
           </g>
         );
       })}
@@ -209,14 +219,19 @@ interface NatalChartSectionProps {
 }
 
 export function NatalChartSection({ chart, hasProfile, className, exactTime }: NatalChartSectionProps) {
+  const parityCopy = useParityCopy();
+  const en = useLocale().locale === 'en';
+
   if (!hasProfile || !chart) {
     return (
       <GlassCard className={className}>
         <div className="p-6 md:p-8">
           <p className="text-sm leading-relaxed text-muc-2">
             {hasProfile
-              ? 'Chưa xác định được tọa độ nơi sinh. Hãy kiểm tra nơi sinh trong hồ sơ; AstroX không tự thay bằng một địa điểm khác.'
-              : 'Bổ sung ngày, giờ và nơi sinh trong hồ sơ để lập bản đồ sao.'}
+              ? parityCopy(
+                  'Chưa xác định được tọa độ nơi sinh. Hãy kiểm tra nơi sinh trong hồ sơ; AstroX không tự thay bằng một địa điểm khác.',
+                )
+              : parityCopy('Bổ sung ngày, giờ và nơi sinh trong hồ sơ để lập bản đồ sao.')}
           </p>
         </div>
       </GlassCard>
@@ -231,13 +246,13 @@ export function NatalChartSection({ chart, hasProfile, className, exactTime }: N
     <div className={`${styles.chartLayout} ${className || ''}`}>
       <section className={styles.skyMap}>
         <header>
-          <span>{exactTime ? 'BẦU TRỜI LÚC BẠN SINH' : 'BẢN ĐỒ ƯỚC TÍNH THEO KHUNG GIỜ'}</span>
-          <h2>Dấu ấn thiên thể</h2>
+          <span>{exactTime ? parityCopy('BẦU TRỜI LÚC BẠN SINH') : parityCopy('BẢN ĐỒ ƯỚC TÍNH THEO KHUNG GIỜ')}</span>
+          <h2>{parityCopy('Dấu ấn thiên thể')}</h2>
         </header>
         <NatalWheelSvg chart={chart} />
         <div className={styles.mapLegend}>
-          <span>● Hài hòa</span>
-          <span>○ Thử thách</span>
+          <span>{parityCopy('● Hài hòa')}</span>
+          <span>{parityCopy('○ Thử thách')}</span>
         </div>
       </section>
       <AspectMatrix chart={chart} />
@@ -246,7 +261,7 @@ export function NatalChartSection({ chart, hasProfile, className, exactTime }: N
           <div className={styles.bigThree}>
             {big3.map((p, i) => (
               <div key={p.name}>
-                <span>{['Mặt Trời', 'Mặt Trăng', 'Cung Mọc'][i]}</span>
+                <span>{[parityCopy('Mặt Trời'), parityCopy('Mặt Trăng'), parityCopy('Cung Mọc')][i]}</span>
                 <strong>{p.sign.name}</strong>
                 <small>{p.sign.degree.toFixed(1)}°</small>
               </div>
@@ -254,18 +269,39 @@ export function NatalChartSection({ chart, hasProfile, className, exactTime }: N
           </div>
         )}
         <div className={styles.chartNote}>
-          <strong>Hoàng đạo nhiệt đới · Hệ nhà Placidus</strong>
+          <strong>
+            {chart.points
+              ? parityCopy('Hoàng đạo nhiệt đới · Hệ nhà Placidus')
+              : en
+                ? 'Tropical zodiac · Planet positions only'
+                : 'Hoàng đạo nhiệt đới · Chỉ vị trí hành tinh'}
+          </strong>
           <p>
-            {exactTime ? 'Dùng giờ sinh đến phút.' : 'Chưa có giờ chính xác: đang dùng giữa khung giờ sinh.'} Múi giờ
-            UTC+7.
+            {exactTime
+              ? parityCopy('Dùng giờ sinh đến phút.')
+              : parityCopy('Chưa có giờ chính xác: đang dùng giữa khung giờ sinh.')}{' '}
+            {en ? 'Time zone' : 'Múi giờ'} UTC+7.
           </p>
           <p>
-            Tọa độ: {chart.latitude.toFixed(4)}° Bắc, {chart.longitude.toFixed(4)}° Đông · {chart.place}
+            {chart.points ? (
+              <>
+                {en ? 'Coordinates' : 'Tọa độ'}: {Math.abs(chart.latitude).toFixed(4)}°{' '}
+                {chart.latitude >= 0 ? 'N' : 'S'}, {Math.abs(chart.longitude).toFixed(4)}°{' '}
+                {chart.longitude >= 0 ? 'E' : 'W'} · {chart.place}
+              </>
+            ) : (
+              <>
+                {en
+                  ? 'Birthplace coordinates are unavailable; houses and angles are not calculated.'
+                  : 'Chưa có tọa độ nơi sinh; không tính các nhà và góc.'}
+              </>
+            )}
           </p>
         </div>
         <details className={styles.chartDisclosure} open>
           <summary>
-            Hành tinh <span>{chart.planets.length}</span>
+            {parityCopy('Hành tinh')}
+            <span>{chart.planets.length}</span>
           </summary>
           <div className={styles.planetList}>
             {chart.planets.map(p => (
@@ -274,7 +310,12 @@ export function NatalChartSection({ chart, hasProfile, className, exactTime }: N
                 <strong>
                   {p.sign.name}
                   <small>
-                    {p.sign.degree.toFixed(1)}° · Nhà {p.house}
+                    {p.sign.degree.toFixed(1)}°{' '}
+                    {p.house > 0 ? (
+                      <>
+                        · {en ? 'House' : 'Nhà'} {p.house}
+                      </>
+                    ) : null}
                   </small>
                 </strong>
               </div>
@@ -283,7 +324,8 @@ export function NatalChartSection({ chart, hasProfile, className, exactTime }: N
         </details>
         <details className={styles.chartDisclosure}>
           <summary>
-            Mười hai nhà <span>12</span>
+            {parityCopy('Mười hai nhà')}
+            <span>12</span>
           </summary>
           <div className={styles.houseList}>
             {chart.houses.map(h => (
@@ -299,7 +341,8 @@ export function NatalChartSection({ chart, hasProfile, className, exactTime }: N
         </details>
         <details className={styles.chartDisclosure}>
           <summary>
-            Góc chiếu <span>{chart.aspects.length}</span>
+            {parityCopy('Góc chiếu')}
+            <span>{chart.aspects.length}</span>
           </summary>
           <div className={styles.aspectList}>
             {chart.aspects.map((a, i) => (
@@ -312,7 +355,7 @@ export function NatalChartSection({ chart, hasProfile, className, exactTime }: N
                 </small>
               </div>
             ))}
-            {!chart.aspects.length && <p>Chưa có góc chiếu trong phạm vi đang xét.</p>}
+            {!chart.aspects.length && <p>{parityCopy('Chưa có góc chiếu trong phạm vi đang xét.')}</p>}
           </div>
         </details>
       </div>

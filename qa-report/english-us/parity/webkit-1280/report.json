@@ -1,0 +1,593 @@
+{
+  "engine": "webkit",
+  "width": 1280,
+  "api": "Local fixtures; real UI and chart calculations. No live identity/payment/ad/hardware certification.",
+  "results": [
+    {
+      "route": "",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "zi-wei",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "zi-wei",
+      "label": "tab0",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "zi-wei",
+      "label": "tab1",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "zi-wei",
+      "label": "tab2",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "ba-zi",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "ba-zi",
+      "label": "tab0",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "ba-zi",
+      "label": "tab1",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "ba-zi",
+      "label": "tab2",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "astrology",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "astrology",
+      "label": "tab0",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "astrology",
+      "label": "tab1",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "astrology",
+      "label": "tab2",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "numerology",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "numerology",
+      "label": "tab0",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "numerology",
+      "label": "tab1",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "numerology",
+      "label": "tab2",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "numerology",
+      "label": "tab3",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "compatibility",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "tarot",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "lunar-calendar",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "profile?section=points",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "profile?section=earn",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "profile?section=personal",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "profile?section=account",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "profile?section=preferences",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "pricing",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "terms",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "palm-reading",
+      "label": "initial",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-tube",
+      "label": "input",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-tube",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-coins",
+      "label": "input",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-coins",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-numbers",
+      "label": "input",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-numbers",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-time",
+      "label": "input",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-time",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-serial",
+      "label": "input",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-serial",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-phone",
+      "label": "input",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-phone",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-digits",
+      "label": "input",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-digits",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "i-ching-AI",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "compat-tuvi",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "compat-batu",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "tarot-draw",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "tarot-journal",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "calendar-conversion",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "calendar-events",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "header-wallet-navigation",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "palm-zoom",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "palm-upload-consent-zoom",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "tarot-Three cards",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "tarot-Simple cross",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "tarot-Relationships",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "tarot-Celtic Cross",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "paid-consent",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "paid-reading-consent",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "terms-navigation-print",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    },
+    {
+      "route": "account-menu",
+      "label": "interaction",
+      "vi": [],
+      "aria": [],
+      "overflow": false,
+      "errors": [],
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "calls": [
+    {
+      "locale": "en",
+      "market": "US",
+      "serviceId": "kinhdich--interpretation"
+    },
+    {
+      "locale": "en",
+      "market": "US",
+      "serviceId": "compat--tuvi-pair"
+    },
+    {
+      "locale": "en",
+      "market": "US",
+      "serviceId": "compat--batu-pair"
+    },
+    {
+      "locale": "en",
+      "market": "US",
+      "serviceId": "tarot--one"
+    },
+    {
+      "locale": "en",
+      "market": "US",
+      "serviceId": "kinhdich--interpretation"
+    }
+  ]
+}

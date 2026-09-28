@@ -1,3 +1,5 @@
+> **Historical report — superseded for feature parity.** The 516-test snapshot below did not establish full VN/US parity. Use [the current feature-parity evidence](feature-parity.md). Production release remains pending.
+
 ## Task 22 — Release Candidate regression 2026-09-28
 
 SHA: 7bbf64d (final RC commit; regression first run at e4447f1)

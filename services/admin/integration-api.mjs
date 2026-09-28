@@ -5,7 +5,7 @@ import { renderServicePrompt } from './prompt-engine.ts';
 import { defaultEnglishPromptSettings } from './english-prompts.ts';
 import { backendStatus, connectionSecretAvailable } from './backend.mjs';
 import { state, readPublished, readSecret, recordAudit, sql } from './store.mjs';
-import { publicConfig } from './config.ts';
+import { publicConfig, configForMarket } from './config.ts';
 import { executeProviderChain, testProvider, validateIntegration, RuntimeError } from './runtime.mjs';
 import { providerHealth } from './health-store.mjs';
 const json = (data, status = 200) =>
@@ -159,8 +159,8 @@ export async function handleConfiguredAi(request, env) {
     return json({ error: 'Không đọc được cấu hình dịch vụ.' }, 503);
   }
   if (!published) return null;
-  const c = published.config,
-    started = Date.now();
+  let c = published.config;
+  const started = Date.now();
   let input;
   let attempts = [];
   let outcome = 'failed';
@@ -168,6 +168,32 @@ export async function handleConfiguredAi(request, env) {
     if (c.operations.maintenance) throw new RuntimeError('MAINTENANCE', 503);
     if (!c.ai.enabled) throw new RuntimeError('AI_DISABLED', 503);
     input = normalizedInput(await parse(request, 1500000));
+    // Public language never authorizes a different wallet. When markets diverge,
+    // resolve the signed-in market through the trusted backend service binding.
+    let market = input.market === 'US' ? 'US' : 'VN';
+    if (
+      (input.market === 'US' || Object.keys(c.billing.usServices || {}).length > 0) &&
+      (request.headers.has('authorization') || request.headers.has('cookie'))
+    ) {
+      if (!env.ASTROX_BACKEND) throw new RuntimeError('BACKEND_UNAVAILABLE', 503);
+      const headers = new Headers();
+      for (const name of ['cookie', 'authorization']) {
+        const value = request.headers.get(name);
+        if (value) headers.set(name, value);
+      }
+      const response = await env.ASTROX_BACKEND.fetch(
+        new Request('https://astrox-internal/internal/ai/market', { headers }),
+      );
+      if (!response.ok) return json({ error: 'Authentication required.', code: 'unauthorized' }, 401);
+      const context = await response.json();
+      if (!['VN', 'US'].includes(context.market)) throw new RuntimeError('BACKEND_UNAVAILABLE', 503);
+      if (input.market && input.market !== context.market)
+        return json({ error: 'Wallet market changed. Please retry.', code: 'market_mismatch' }, 409);
+      market = context.market;
+    }
+    input.market = market;
+    c = configForMarket(c, market);
+
     const service = c.billing.services.find(s => s.id === input.serviceId);
     if (!service || !['free', 'paid'].includes(service.status)) throw new RuntimeError('SERVICE_UNAVAILABLE', 403);
     const root = c.billing.services.find(s => s.id === service.module);
@@ -379,10 +405,12 @@ export async function handleConfiguredAi(request, env) {
 }
 
 /** The only public projection of the published config; served same-origin by Pages and the local dev server. */
-export async function siteConfig(env) {
+export async function siteConfig(env, market = 'VN') {
   try {
     const p = env.DB ? await readPublished(env) : null;
-    return json(p ? { config: publicConfig(p.config), revision: p.revision } : { config: null, revision: null });
+    return json(
+      p ? { config: publicConfig(p.config, market), revision: p.revision } : { config: null, revision: null },
+    );
   } catch {
     return json({ error: 'config_unavailable' }, 503);
   }
@@ -390,7 +418,8 @@ export async function siteConfig(env) {
 
 export async function handlePublic(request, env) {
   const path = new URL(request.url).pathname;
-  if (path === '/api/site-config' && request.method === 'GET') return siteConfig(env);
+  if (path === '/api/site-config' && request.method === 'GET')
+    return siteConfig(env, new URL(request.url).searchParams.get('market') === 'US' ? 'US' : 'VN');
   if (path === '/api/ai/quote' && request.method === 'POST') return handleAiQuote(request, env);
   if (path === '/api/ai' && request.method === 'POST')
     return (await handleConfiguredAi(request, env)) || json({ error: 'Chưa áp dụng cấu hình AI.' }, 503);

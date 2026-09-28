@@ -1,3 +1,4 @@
+import { englishServiceName } from './service-names-en.ts';
 import { defaultUnlockSettings, type UnlockSettings } from './service-pricing.ts';
 import { bundleDefinitions } from './service-tree.ts';
 import { defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES } from './prompt-engine.ts';
@@ -89,12 +90,14 @@ export type AdminConfig = {
   billing: {
     enabled: boolean;
     unlocks: UnlockSettings;
+    usUnlocks: UnlockSettings;
     vndPerPoint: number;
     packages: TopupPackage[];
     services: ServicePrice[];
     promos: Promo[];
+    usPromos: Promo[];
     /** Sparse US overlay: price/status overrides keyed by service id (plan Task 19). */
-    usServices: Record<string, { points: number; status: string }>;
+    usServices: Record<string, Partial<Omit<ServicePrice, 'id' | 'module'>>>;
   };
   integrations: {
     payos: { enabled: boolean; clientId: string; returnUrl: string; cancelUrl: string; expiryMinutes: number };
@@ -140,7 +143,9 @@ export type AdminConfig = {
       sessionTtlSeconds: number;
     };
   };
+  rewardsUs: AdminConfig['rewards'];
   content: { supportUrl: string; announcement: string; notices: Notice[] };
+  contentUs: AdminConfig['content'];
   operations: {
     maintenance: boolean;
     reconciliationMinutes: number;
@@ -199,6 +204,7 @@ export function defaultConfig(): AdminConfig {
     },
     billing: {
       unlocks: defaultUnlockSettings(),
+      usUnlocks: defaultUnlockSettings(),
       enabled: false,
       vndPerPoint: 0,
       usServices: {},
@@ -216,6 +222,7 @@ export function defaultConfig(): AdminConfig {
         })),
       ),
       promos: [],
+      usPromos: [],
     },
     integrations: {
       payos: {
@@ -259,7 +266,37 @@ export function defaultConfig(): AdminConfig {
         sessionTtlSeconds: 600,
       },
     },
+    rewardsUs: {
+      enabled: false,
+      registrationUser: 5,
+      registrationInviter: 5,
+      firstTopupInviter: 10,
+      firstTopupUser: 0,
+      firstTopupMinVnd: 0,
+      daily: 2,
+      registrationEnabled: true,
+      firstTopupEnabled: true,
+      attendanceEnabled: true,
+      referralMode: 'unlimited',
+      referralLimit: 0,
+      referralWindow: 'month',
+      milestones: [
+        { id: 'day-3', day: 3, user: 3, inviter: 2 },
+        { id: 'day-7', day: 7, user: 5, inviter: 3 },
+        { id: 'day-10', day: 10, user: 10, inviter: 5 },
+      ],
+      ads: {
+        enabled: false,
+        networkCode: '',
+        adUnit: '',
+        points: 5,
+        dailyLimit: 5,
+        cooldownSeconds: 90,
+        sessionTtlSeconds: 600,
+      },
+    },
     content: { supportUrl: '', announcement: '', notices: [] },
+    contentUs: { supportUrl: '', announcement: '', notices: [] },
     operations: {
       maintenance: false,
       reconciliationMinutes: 15,
@@ -303,7 +340,7 @@ export function isPublicHttps(value: string): boolean {
     return false;
   }
 }
-export function validateConfig(input: unknown): ConfigError[] {
+export function validateConfig(input: unknown, projected = false): ConfigError[] {
   const errors: ConfigError[] = [];
   const add = (path: string, message: string) => errors.push({ path, message });
   if (!input || typeof input !== 'object' || Array.isArray(input))
@@ -321,6 +358,7 @@ export function validateConfig(input: unknown): ConfigError[] {
         add(p, 'Thiếu nhóm cấu hình.');
         return;
       }
+      if (p === 'config.billing.usServices') return;
       for (const k of Object.keys(v)) if (!Object.hasOwn(d, k)) add(`${p}.${k}`, 'Trường không được hỗ trợ.');
       for (const [k, value] of Object.entries(d)) shape((v as Record<string, unknown>)[k], value, `${p}.${k}`);
       return;
@@ -332,6 +370,22 @@ export function validateConfig(input: unknown): ConfigError[] {
   const integer = (v: number, p: string, min = 0, max = 1e9) => {
     if (!Number.isSafeInteger(v) || v < min || v > max) add(p, `Nhập số nguyên từ ${min} đến ${max}.`);
   };
+  for (const [id, override] of Object.entries(c.billing.usServices)) {
+    const path = `billing.usServices.${id}`;
+    if (!c.billing.services.some(s => s.id === id && s.module !== 'experts')) add(path, 'Unknown US service.');
+    if (!override || typeof override !== 'object' || Array.isArray(override)) {
+      add(path, 'Invalid override.');
+      continue;
+    }
+    const template = { name: '', points: 0, status: '', policy: '', prompt: '', chain: [] };
+    for (const [key, value] of Object.entries(override)) {
+      if (!Object.hasOwn(template, key)) add(`${path}.${key}`, 'Unsupported override field.');
+      else shape(value, template[key as keyof typeof template], `${path}.${key}`);
+    }
+    if (override.points !== undefined) integer(override.points, `${path}.points`, override.status === 'paid' ? 1 : 0);
+    if (override.status !== undefined && !['draft', 'free', 'paid', 'maintenance', 'hidden'].includes(override.status))
+      add(`${path}.status`, 'Invalid status.');
+  }
   const str = (v: unknown, p: string, max = 200) => {
     if (typeof v !== 'string' || v.length > max) add(p, `Văn bản tối đa ${max} ký tự.`);
   };
@@ -437,7 +491,23 @@ export function validateConfig(input: unknown): ConfigError[] {
       expiresAt: '',
     },
   );
-  list(c.rewards.milestones, 'rewards.milestones', { id: '', day: 0, user: 0, inviter: 0 });
+  list(
+    c.billing.usPromos.map(p => ({ ...p, kind: p.kind ?? 'topup_bonus', minAmountVnd: p.minAmountVnd ?? 0 })),
+    'billing.usPromos',
+    {
+      id: '',
+      code: '',
+      kind: '',
+      minAmountVnd: 0,
+      bonus: 0,
+      limit: 0,
+      perUser: 0,
+      enabled: false,
+      expiresAt: '',
+    },
+  );
+  for (const group of ['rewards', 'rewardsUs'] as const)
+    list(c[group].milestones, `${group}.milestones`, { id: '', day: 0, user: 0, inviter: 0 });
   list(c.content.notices, 'content.notices', {
     id: '',
     title: '',
@@ -514,45 +584,48 @@ export function validateConfig(input: unknown): ConfigError[] {
     if (s.status === 'paid' && s.points < 1) add('billing.services.points', 'Dịch vụ thu phí cần giá lớn hơn 0.');
     chain(s.chain, `billing.services.${s.id}.chain`);
   }
-  const days = new Set();
-  for (const m of c.rewards.milestones) {
-    integer(m.day, 'rewards.milestones.day', 1, 365);
-    integer(m.user, 'rewards.milestones.user');
-    integer(m.inviter, 'rewards.milestones.inviter');
-    if (days.has(m.day)) add('rewards.milestones', 'Mốc ngày không được trùng.');
-    days.add(m.day);
+  for (const group of ['rewards', 'rewardsUs'] as const) {
+    const reward = c[group];
+    const days = new Set();
+    for (const m of reward.milestones) {
+      integer(m.day, `${group}.milestones.day`, 1, 365);
+      integer(m.user, `${group}.milestones.user`);
+      integer(m.inviter, `${group}.milestones.inviter`);
+      if (days.has(m.day)) add(`${group}.milestones`, 'Mốc ngày không được trùng.');
+      days.add(m.day);
+    }
+    for (const k of [
+      'registrationUser',
+      'registrationInviter',
+      'firstTopupInviter',
+      'firstTopupUser',
+      'firstTopupMinVnd',
+      'daily',
+      'referralLimit',
+    ] as const)
+      integer(reward[k], `${group}.${k}`);
+    if (
+      !['unlimited', 'limited'].includes(reward.referralMode) ||
+      !['day', 'month', 'lifetime'].includes(reward.referralWindow)
+    )
+      add(`${group}.referralMode`, 'Chính sách không hợp lệ.');
+    if (reward.referralMode === 'limited' && reward.referralLimit < 1)
+      add(`${group}.referralLimit`, 'Nhập hạn mức khi bật giới hạn.');
+    for (const k of ['points', 'dailyLimit', 'cooldownSeconds', 'sessionTtlSeconds'] as const)
+      integer(
+        reward.ads[k],
+        `${group}.ads.${k}`,
+        k === 'dailyLimit' || k === 'sessionTtlSeconds' ? 1 : 0,
+        k === 'sessionTtlSeconds' ? 3600 : 1e6,
+      );
+    if (
+      reward.ads.enabled &&
+      (!/^\d+$/.test(reward.ads.networkCode) ||
+        !/^\/[\w/.-]+$/.test(reward.ads.adUnit) ||
+        !reward.ads.adUnit.startsWith(`/${reward.ads.networkCode}/`))
+    )
+      add(`${group}.ads.adUnit`, 'Nhập network code và ad unit hợp lệ.');
   }
-  for (const k of [
-    'registrationUser',
-    'registrationInviter',
-    'firstTopupInviter',
-    'firstTopupUser',
-    'firstTopupMinVnd',
-    'daily',
-    'referralLimit',
-  ] as const)
-    integer(c.rewards[k], `rewards.${k}`);
-  if (
-    !['unlimited', 'limited'].includes(c.rewards.referralMode) ||
-    !['day', 'month', 'lifetime'].includes(c.rewards.referralWindow)
-  )
-    add('rewards.referralMode', 'Chính sách không hợp lệ.');
-  if (c.rewards.referralMode === 'limited' && c.rewards.referralLimit < 1)
-    add('rewards.referralLimit', 'Nhập hạn mức khi bật giới hạn.');
-  for (const k of ['points', 'dailyLimit', 'cooldownSeconds', 'sessionTtlSeconds'] as const)
-    integer(
-      c.rewards.ads[k],
-      `rewards.ads.${k}`,
-      k === 'dailyLimit' || k === 'sessionTtlSeconds' ? 1 : 0,
-      k === 'sessionTtlSeconds' ? 3600 : 1e6,
-    );
-  if (
-    c.rewards.ads.enabled &&
-    (!/^\d+$/.test(c.rewards.ads.networkCode) ||
-      !/^\/[\w/.-]+$/.test(c.rewards.ads.adUnit) ||
-      !c.rewards.ads.adUnit.startsWith(`/${c.rewards.ads.networkCode}/`))
-  )
-    add('rewards.ads.adUnit', 'Nhập network code và ad unit hợp lệ.');
   for (const [key, v] of Object.entries(c.operations))
     if (typeof v === 'number') integer(v, `operations.${key}`, key === 'auditRetentionDays' ? 90 : 1, 1e9);
   try {
@@ -633,6 +706,22 @@ export function validateConfig(input: unknown): ConfigError[] {
     integer(p.perUser, 'billing.promos.perUser', 1);
     if (p.expiresAt && !Number.isFinite(Date.parse(p.expiresAt))) add('billing.promos.expiresAt', 'Ngày không hợp lệ.');
   }
+  codes.clear();
+  for (const p of c.billing.usPromos) {
+    if (!/^[A-Z0-9_-]{2,40}$/.test(p.code) || codes.has(p.code))
+      add('billing.usPromos.code', 'Mã phải duy nhất, chữ hoa/số/gạch ngang.');
+    codes.add(p.code);
+    if (!['topup_bonus', 'direct_points'].includes(p.kind ?? 'topup_bonus'))
+      add('billing.usPromos.kind', 'Loại mã không hợp lệ.');
+    integer(p.bonus, 'billing.usPromos.bonus', 1);
+    integer(p.minAmountVnd ?? 0, 'billing.usPromos.minAmountVnd', 0);
+    if (p.kind === 'direct_points' && p.minAmountVnd)
+      add('billing.usPromos.minAmountVnd', 'Mã cộng Point trực tiếp không yêu cầu nạp tiền.');
+    integer(p.limit, 'billing.usPromos.limit', 1);
+    integer(p.perUser, 'billing.usPromos.perUser', 1);
+    if (p.expiresAt && !Number.isFinite(Date.parse(p.expiresAt)))
+      add('billing.usPromos.expiresAt', 'Ngày không hợp lệ.');
+  }
   for (const n of c.content.notices) {
     str(n.title, 'content.notices.title');
     str(n.body, 'content.notices.body', 4000);
@@ -641,13 +730,36 @@ export function validateConfig(input: unknown): ConfigError[] {
     if (n.startsAt && n.endsAt && Date.parse(n.startsAt) >= Date.parse(n.endsAt))
       add('content.notices', 'Thời gian kết thúc phải sau bắt đầu.');
   }
+  if (!projected && !errors.length) {
+    const us = configForMarket(c, 'US');
+    us.billing.usServices = {};
+    for (const e of validateConfig(us, true)) errors.push({ ...e, path: 'US.' + e.path });
+  }
   return errors;
 }
 export function quotePackage(p: TopupPackage, rate: number) {
   const base = p.mode === 'fixed' ? p.fixedPoints : rate > 0 ? Math.floor(p.amountVnd / rate) : 0;
   return { base, bonus: p.bonus, total: base + p.bonus };
 }
-export function publicConfig(c: AdminConfig) {
+export function configForMarket(c: AdminConfig, market: 'VN' | 'US' = 'VN'): AdminConfig {
+  if (market !== 'US') return c;
+  return {
+    ...c,
+    rewards: c.rewardsUs,
+    content: c.contentUs,
+    billing: {
+      ...c.billing,
+      promos: c.billing.usPromos,
+      unlocks: c.billing.usUnlocks,
+      services: c.billing.services
+        .filter(s => s.module !== 'experts')
+        .map(s => ({ ...s, name: englishServiceName(s.id), ...(c.billing.usServices?.[s.id] || {}) })),
+    },
+  };
+}
+
+export function publicConfig(source: AdminConfig, market: 'VN' | 'US' = 'VN') {
+  const c = configForMarket(source, market);
   return {
     engines: c.engines,
     availability: Object.fromEntries(c.billing.services.filter(s => s.id === s.module).map(s => [s.module, s.status])),
@@ -665,10 +777,7 @@ export function publicConfig(c: AdminConfig) {
         : [],
       services: c.billing.services
         .filter(s => s.status !== 'draft' && s.status !== 'hidden')
-        .map(({ id, module, name, points, status, policy }) => {
-          const us = c.billing.usServices?.[id];
-          return { id, module, name, points: us?.points ?? points, status: us?.status ?? status, policy };
-        }),
+        .map(({ id, module, name, points, status, policy }) => ({ id, module, name, points, status, policy })),
     },
     rewards: { ...c.rewards },
     content: c.content,
@@ -685,11 +794,15 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
           unlocks: c.billing.unlocks === undefined ? defaultUnlockSettings() : c.billing.unlocks,
           services: seedDiscoveryServices(addCouplesServices(c.billing.services)),
           usServices: c.billing.usServices ?? {},
+          usPromos: c.billing.usPromos ?? [],
+          usUnlocks: c.billing.usUnlocks ?? structuredClone(c.billing.unlocks ?? defaultUnlockSettings()),
         }
       : c.billing;
   return {
     ...c,
     billing: hydratedBilling,
+    rewardsUs: c.rewardsUs ?? defaultConfig().rewardsUs,
+    contentUs: c.contentUs ?? defaultConfig().contentUs,
     prompts: { templates: { ...p.templates, ...c.prompts?.templates }, tasks: { ...p.tasks, ...c.prompts?.tasks } },
     promptsEn: {
       templates: { ...defaultEnglishPromptSettings().templates, ...(c.promptsEn?.templates || {}) },

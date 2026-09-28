@@ -46,16 +46,22 @@ export async function creditPurchase(env, { userId, amount, kind = 'purchase', o
       "INSERT OR IGNORE INTO credits_accounts(user_id,balance,reserved,status,updated_at) VALUES(?,0,0,'active',?)",
     ).bind(userId, at),
     env.DB.prepare(
-      'INSERT INTO credit_lots(id,user_id,source,remaining,expires_at,created_at) VALUES(?,?,?,?,NULL,?)',
-    ).bind(lot, userId, kind === 'bonus' ? 'bonus' : 'purchase', amount, at),
+      `INSERT INTO credits_ledger(id,user_id,delta,balance_after,kind,operation_key,source_order,lot_id,created_at)
+      SELECT ?,?,?,NULL,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM credits_accounts WHERE user_id=? AND status='active')
+      ON CONFLICT(user_id,kind,operation_key) DO NOTHING`,
+    ).bind(ledgerId, userId, amount, kind, opKey, orderId, lot, at, userId),
     env.DB.prepare(
-      "UPDATE credits_accounts SET balance=balance+?, updated_at=? WHERE user_id=? AND status='active'",
-    ).bind(amount, at, userId),
+      'UPDATE credits_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND EXISTS(SELECT 1 FROM credits_ledger WHERE id=?)',
+    ).bind(amount, at, userId, ledgerId),
     env.DB.prepare(
-      'INSERT INTO credits_ledger(id,user_id,delta,balance_after,kind,operation_key,source_order,lot_id,created_at) VALUES(?,?,?,?,?,?,?,?,?)',
-    ).bind(ledgerId, userId, amount, null, kind, opKey, orderId, lot, at),
+      'INSERT INTO credit_lots(id,user_id,source,remaining,expires_at,created_at) SELECT ?,?,?,?,NULL,? WHERE EXISTS(SELECT 1 FROM credits_ledger WHERE id=?)',
+    ).bind(lot, userId, kind === 'bonus' ? 'bonus' : 'purchase', amount, at, ledgerId),
   ]);
-  return { credited: true, ledgerId, lotId: lot };
+  const written = await env.DB.prepare('SELECT id FROM credits_ledger WHERE user_id=? AND kind=? AND operation_key=?')
+    .bind(userId, kind, opKey)
+    .first();
+  if (!written) throw new Error('wallet_restricted');
+  return { credited: written.id === ledgerId, ledgerId: written.id, lotId: lot };
 }
 
 /** Reserves credits for an operation. Returns false when insufficient — never negative. */
@@ -104,8 +110,8 @@ export async function commitReserved(env, { userId, amount, operationKey, meta =
     ).results;
     const statements = [
       env.DB.prepare(
-        'UPDATE credits_accounts SET balance=balance-?, reserved=reserved-?, updated_at=? WHERE user_id=? AND reserved>=?',
-      ).bind(amount, amount, nowIso(), userId, amount),
+        "UPDATE credits_accounts SET balance=balance-?, reserved=reserved-?, updated_at=? WHERE user_id=? AND reserved>=? AND NOT EXISTS(SELECT 1 FROM credits_ledger WHERE user_id=? AND kind IN ('spend','release') AND operation_key=?)",
+      ).bind(amount, amount, nowIso(), userId, amount, userId, operationKey),
       env.DB.prepare(
         'INSERT INTO credits_ledger(id,user_id,delta,balance_after,kind,operation_key,source_order,lot_id,created_at) SELECT ?,?,?,NULL,?,?,?,?,? WHERE changes()=1',
       ).bind(ledgerId, userId, -amount, 'spend', operationKey, meta || null, null, nowIso()),
@@ -118,8 +124,8 @@ export async function commitReserved(env, { userId, amount, operationKey, meta =
       // the WHERE clause verifies the expected remaining, failing the batch on mismatch.
       statements.push(
         env.DB.prepare(
-          "UPDATE credit_lots SET remaining=remaining-? WHERE id=? AND EXISTS(SELECT 1 FROM credits_ledger WHERE user_id=? AND kind='spend' AND operation_key=?)",
-        ).bind(take, lot.id, userId, operationKey),
+          "UPDATE credit_lots SET remaining=remaining-? WHERE id=? AND EXISTS(SELECT 1 FROM credits_ledger WHERE id=? AND user_id=? AND kind='spend' AND operation_key=?)",
+        ).bind(take, lot.id, ledgerId, userId, operationKey),
       );
       left -= take;
     }
@@ -137,50 +143,64 @@ export async function commitReserved(env, { userId, amount, operationKey, meta =
     .bind(userId, operationKey)
     .first();
   if (!written) throw new Error('reserve_not_held');
-  return { committed: true, ledgerId, balanceAfter: held.balance - amount };
+  return {
+    committed: written.id === ledgerId,
+    ledgerId: written.id,
+    balanceAfter: (await creditsBalance(env, userId)).balance,
+  };
 }
 
 /** Releases a reservation after failure/abort. Idempotent per operation. */
 export async function releaseReserved(env, { userId, amount, operationKey }) {
-  const already = await env.DB.prepare(
-    "SELECT id FROM credits_ledger WHERE user_id=? AND kind='release' AND operation_key=?",
-  )
-    .bind(userId, operationKey)
-    .first();
+  const existing = () =>
+    env.DB.prepare(
+      "SELECT id,kind FROM credits_ledger WHERE user_id=? AND kind IN ('spend','release') AND operation_key=?",
+    )
+      .bind(userId, operationKey)
+      .first();
+  const already = await existing();
+  if (already?.kind === 'spend') throw Object.assign(new Error('operation_completed'), { status: 409 });
   if (already) return { released: false, ledgerId: already.id };
-  const row = await env.DB.prepare(
-    'UPDATE credits_accounts SET reserved=reserved-?, updated_at=? WHERE user_id=? AND reserved>=? RETURNING reserved',
-  )
-    .bind(amount, nowIso(), userId, amount)
-    .first();
-  if (!row) throw new Error('reserve_not_held');
-  const ledgerId = crypto.randomUUID();
-  await env.DB.prepare(
-    "INSERT INTO credits_ledger(id,user_id,delta,balance_after,kind,operation_key,created_at) VALUES(?,?,0,?,'release',?,?)",
-  )
-    .bind(ledgerId, userId, null, operationKey, nowIso())
-    .run();
-  return { released: true, ledgerId };
+  const ledgerId = crypto.randomUUID(),
+    at = nowIso();
+  await env.DB.batch([
+    env.DB.prepare(
+      "UPDATE credits_accounts SET reserved=reserved-?,updated_at=? WHERE user_id=? AND reserved>=? AND NOT EXISTS(SELECT 1 FROM credits_ledger WHERE user_id=? AND kind IN ('spend','release') AND operation_key=?)",
+    ).bind(amount, at, userId, amount, userId, operationKey),
+    env.DB.prepare(
+      "INSERT INTO credits_ledger(id,user_id,delta,kind,operation_key,created_at) SELECT ?,?,0,'release',?,? WHERE changes()=1",
+    ).bind(ledgerId, userId, operationKey, at),
+  ]);
+  const written = await existing();
+  if (written?.kind === 'spend') throw Object.assign(new Error('operation_completed'), { status: 409 });
+  if (!written) throw new Error('reserve_not_held');
+  return { released: written.id === ledgerId, ledgerId: written.id };
 }
 
 /** Paged, stable ledger history — never crosses users. */
 export async function creditsHistory(env, userId, { limit = 50, before = null } = {}) {
-  const rows = before
-    ? (
-        await env.DB.prepare(
-          'SELECT id,delta,kind,operation_key,source_order,created_at FROM credits_ledger WHERE user_id=? AND created_at<? ORDER BY created_at DESC, id DESC LIMIT ?',
-        )
-          .bind(userId, before, limit)
-          .all()
-      ).results
-    : (
-        await env.DB.prepare(
-          'SELECT id,delta,kind,operation_key,source_order,created_at FROM credits_ledger WHERE user_id=? ORDER BY created_at DESC, id DESC LIMIT ?',
-        )
-          .bind(userId, limit)
-          .all()
-      ).results;
-  return { entries: rows, nextCursor: rows.length === limit ? rows[rows.length - 1].created_at : null };
+  limit = Math.max(1, Math.min(100, Math.trunc(Number(limit) || 50)));
+  let at = before,
+    id = null;
+  if (before?.startsWith('[')) {
+    try {
+      [at, id] = JSON.parse(before);
+    } catch {
+      throw new Error('invalid_cursor');
+    }
+    if (typeof at !== 'string' || typeof id !== 'string') throw new Error('invalid_cursor');
+  }
+  const clause = at ? (id ? ' AND (created_at<? OR (created_at=? AND id<?))' : ' AND created_at<?') : '';
+  const rows = (
+    await env.DB.prepare(
+      `SELECT id,delta,kind,operation_key,source_order,created_at FROM credits_ledger WHERE user_id=?${clause} ORDER BY created_at DESC,id DESC LIMIT ?`,
+    )
+      .bind(userId, ...(at ? (id ? [at, at, id] : [at]) : []), limit + 1)
+      .all()
+  ).results;
+  const entries = rows.slice(0, limit),
+    last = entries.at(-1);
+  return { entries, nextCursor: entries.length === limit ? JSON.stringify([last.created_at, last.id]) : null };
 }
 
 /** Market preference: explicit, authenticated choice — never derived from IP/locale. */
@@ -216,4 +236,80 @@ export async function auditCredits(env, userId) {
     .first();
   const balance = account?.balance ?? 0;
   return { ok: balance === sum.inflow, balance, inflow: sum.inflow };
+}
+
+/** Explicit Admin adjustment: one receipt, wallet and FIFO lots in one batch. */
+export async function adjustCredits(env, { userId, delta, requestKey, note = '' }) {
+  if (
+    !/^[a-zA-Z0-9_-]{8,120}$/.test(requestKey || '') ||
+    !Number.isSafeInteger(delta) ||
+    !delta ||
+    Math.abs(delta) > 100000
+  )
+    throw Object.assign(new Error('invalid_adjustment'), { status: 400 });
+  const operationKey = `admin:${requestKey}`,
+    id = crypto.randomUUID(),
+    at = nowIso();
+  const existing = () =>
+    env.DB.prepare("SELECT id,delta FROM credits_ledger WHERE user_id=? AND kind='adjustment' AND operation_key=?")
+      .bind(userId, operationKey)
+      .first();
+  const replay = await existing();
+  if (replay) {
+    if (replay.delta !== delta) throw Object.assign(new Error('adjustment_conflict'), { status: 409 });
+    return { ok: true, replayed: true };
+  }
+  await ensureCreditAccount(env, userId);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const statements = [
+      env.DB.prepare(
+        "UPDATE credits_accounts SET balance=balance+?,updated_at=? WHERE user_id=? AND status='active' AND balance+?>=reserved AND NOT EXISTS(SELECT 1 FROM credits_ledger WHERE user_id=? AND kind='adjustment' AND operation_key=?)",
+      ).bind(delta, at, userId, delta, userId, operationKey),
+      env.DB.prepare(
+        "INSERT INTO credits_ledger(id,user_id,delta,kind,operation_key,source_order,created_at) SELECT ?,?,?,'adjustment',?,?,? WHERE changes()=1",
+      ).bind(id, userId, delta, operationKey, note.slice(0, 200), at),
+    ];
+    if (delta > 0)
+      statements.push(
+        env.DB.prepare(
+          "INSERT INTO credit_lots(id,user_id,source,remaining,created_at) SELECT ?,?,'bonus',?,? WHERE EXISTS(SELECT 1 FROM credits_ledger WHERE id=?)",
+        ).bind(crypto.randomUUID(), userId, delta, at, id),
+      );
+    else {
+      const lots = (
+        await env.DB.prepare(
+          'SELECT id,remaining FROM credit_lots WHERE user_id=? AND remaining>0 ORDER BY created_at,rowid',
+        )
+          .bind(userId)
+          .all()
+      ).results;
+      let left = -delta;
+      for (const lot of lots) {
+        if (!left) break;
+        const take = Math.min(left, lot.remaining);
+        left -= take;
+        statements.push(
+          env.DB.prepare(
+            'UPDATE credit_lots SET remaining=remaining-? WHERE id=? AND EXISTS(SELECT 1 FROM credits_ledger WHERE id=?)',
+          ).bind(take, lot.id, id),
+        );
+      }
+      if (left) {
+        const done = await existing();
+        if (done?.delta === delta) return { ok: true, replayed: true };
+        throw Object.assign(new Error('insufficient_credits'), { status: 409 });
+      }
+    }
+    try {
+      await env.DB.batch(statements);
+      break;
+    } catch (error) {
+      if (attempt < 2 && /constraint/i.test(String(error))) continue;
+      throw error;
+    }
+  }
+  const written = await existing();
+  if (!written) throw Object.assign(new Error('insufficient_or_restricted_credits'), { status: 409 });
+  if (written.delta !== delta) throw Object.assign(new Error('adjustment_conflict'), { status: 409 });
+  return { ok: true, replayed: written.id !== id };
 }

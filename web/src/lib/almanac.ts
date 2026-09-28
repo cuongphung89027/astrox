@@ -126,22 +126,60 @@ export function tradition(date: string, locale: 'vi' | 'en' = 'vi') {
   const en = locale === 'en';
   return {
     lunar: l,
-    dayName: en
-      ? `${STEMS_SHORT_EN[stem]}–${BRANCHES_SHORT_EN[branch]} (${stems[stem]} ${branches[branch]})`
-      : `${stems[stem]} ${branches[branch]}`,
+    dayName: en ? `${STEMS_SHORT_EN[stem]}–${BRANCHES_SHORT_EN[branch]}` : `${stems[stem]} ${branches[branch]}`,
     monthName: en
       ? `${STEMS_SHORT_EN[mod(l.year * 12 + l.month + 3, 10)]}–${BRANCHES_SHORT_EN[(l.month + 1) % 12]}`
       : `${stems[mod(l.year * 12 + l.month + 3, 10)]} ${branches[(l.month + 1) % 12]}`,
-    yearName: yearName(l.year),
+    yearName: en
+      ? `${STEMS_SHORT_EN[mod(l.year - 4, 10)]}–${BRANCHES_SHORT_EN[mod(l.year - 4, 12)]}`
+      : yearName(l.year),
     branch,
     stem,
-    god: en ? `${GODS_EN[god]} (${gods[god]})` : gods[god],
+    god: en ? GODS_EN[god] : gods[god],
     good: goodGods.has(god),
     taboos: en ? taboos.map(tb => TABOOS_EN[tb] ?? tb) : taboos,
   };
 }
-export function dayFacts(date: string) {
-  const t = tradition(date),
+const termsEn = [
+  'Spring equinox',
+  'Clear and bright',
+  'Grain rain',
+  'Beginning of summer',
+  'Grain buds',
+  'Grain in ear',
+  'Summer solstice',
+  'Minor heat',
+  'Major heat',
+  'Beginning of autumn',
+  'End of heat',
+  'White dew',
+  'Autumn equinox',
+  'Cold dew',
+  'Frost descent',
+  'Beginning of winter',
+  'Minor snow',
+  'Major snow',
+  'Winter solstice',
+  'Minor cold',
+  'Major cold',
+  'Beginning of spring',
+  'Rain water',
+  'Awakening of insects',
+];
+const phasesEn: Record<string, string> = {
+  'Trăng non': 'New moon',
+  'Trăng lưỡi liềm': 'Waxing crescent',
+  'Thượng huyền': 'First quarter',
+  'Trăng khuyết đầu tháng': 'Waxing gibbous',
+  'Trăng tròn': 'Full moon',
+  'Trăng khuyết cuối tháng': 'Waning gibbous',
+  'Hạ huyền': 'Last quarter',
+  'Trăng tàn': 'Waning crescent',
+};
+export function dayFacts(date: string, locale: 'vi' | 'en' = 'vi') {
+  const en = locale === 'en',
+    termNames = en ? termsEn : terms;
+  const t = tradition(date, locale),
     start = new Date(date + 'T00:00:00+07:00'),
     noon = new Date(date + 'T12:00:00+07:00');
   const initial = Math.floor(SunPosition(start).elon / 15),
@@ -150,7 +188,7 @@ export function dayFacts(date: string) {
   const termChange =
     crossing && crossing.date.getTime() < start.getTime() + DAY
       ? {
-          name: terms[(initial + 1) % 24],
+          name: termNames[(initial + 1) % 24],
           time: crossing.date.toLocaleTimeString('vi-VN', {
             hour: '2-digit',
             minute: '2-digit',
@@ -178,14 +216,16 @@ export function dayFacts(date: string) {
   return {
     ...t,
     date,
-    holidays: holidays(date),
-    term: terms[atNoon],
+    holidays: holidays(date, locale),
+    term: termNames[atNoon],
     termChange,
-    phase,
+    phase: en ? phasesEn[phase] : phase,
     illumination: Math.round((1 - Math.cos((angle * Math.PI) / 180)) * 50),
     hours: branches.map((branch, i) => ({
       branch,
-      name: `${stems[(t.stem * 2 + i) % 10]} ${branch}`,
+      name: en
+        ? `${STEMS_SHORT_EN[(t.stem * 2 + i) % 10]}–${BRANCHES_SHORT_EN[i]}`
+        : `${stems[(t.stem * 2 + i) % 10]} ${branch}`,
       good: hourPatterns[t.branch % 6][i] === '1',
       range:
         i === 0

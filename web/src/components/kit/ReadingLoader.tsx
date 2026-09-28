@@ -1,4 +1,5 @@
 'use client';
+import { useLocale } from '@/i18n/LocaleProvider';
 import { LoadingWhisper } from '@/components/kit/LoadingWhisper';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { FeatureIcon } from './FeatureIcon';
@@ -13,6 +14,14 @@ const COPY: Record<Kind, [string, string]> = {
   numerology: ['THẦN SỐ HỌC', 'Khám phá dấu ấn con số…'],
   compat: ['TƯƠNG HỢP', 'Tìm điểm giao của hai bạn…'],
 };
+const COPY_EN: Record<Kind, [string, string]> = {
+  tuvi: ['ZI WEI', 'Reading your chart…'],
+  tarot: ['TAROT', 'Listening to the cards…'],
+  zodiac: ['ASTROLOGY', 'Connecting the stars…'],
+  battu: ['BA ZI', 'Reading your four pillars…'],
+  numerology: ['NUMEROLOGY', 'Exploring your numbers…'],
+  compat: ['COMPATIBILITY', 'Exploring your connection…'],
+};
 const delay = (i: number) => ({ '--delay': `${i * 140}ms` }) as CSSProperties;
 export function ReadingLoader({
   kind,
@@ -25,6 +34,7 @@ export function ReadingLoader({
   showElapsed?: boolean;
   showWhisper?: boolean;
 }) {
+  const copy = useLocale().locale === 'en' ? COPY_EN : COPY;
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     const start = Date.now();
@@ -149,8 +159,8 @@ export function ReadingLoader({
         )}
       </div>
       <div className={styles.copy}>
-        <span>{COPY[kind][0]}</span>
-        <p>{label ?? COPY[kind][1]}</p>
+        <span>{copy[kind][0]}</span>
+        <p>{label ?? copy[kind][1]}</p>
         {showWhisper && (
           <small>
             <LoadingWhisper kind={kind} />

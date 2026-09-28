@@ -22,7 +22,9 @@ export function PublishedNotice({ children }: { children?: ReactNode }) {
     async function load() {
       if (document.visibilityState !== 'visible') return;
       try {
-        const response = await fetch('/api/site-config', { signal: controller.signal });
+        const response = await fetch(`/api/site-config?market=${t.locale === 'en' ? 'US' : 'VN'}`, {
+          signal: controller.signal,
+        });
         if (response.ok) {
           const data = await response.json();
           if (alive) {
@@ -43,7 +45,7 @@ export function PublishedNotice({ children }: { children?: ReactNode }) {
       clearInterval(timer);
       document.removeEventListener('visibilitychange', load);
     };
-  }, []);
+  }, [t.locale]);
   const state = publicState(config, pathname);
   const notice = state.notice && !dismissed.includes(state.notice.id) ? state.notice : null;
   if (!state.announcement && !state.blocked && !notice) return <Fragment>{children}</Fragment>;

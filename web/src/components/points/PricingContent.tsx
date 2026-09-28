@@ -2,6 +2,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { englishServiceName } from '../../../../services/admin/service-names-en';
 import { usd } from '@/lib/format-usd';
 import { serviceTree, bundleDefinitions, type ServiceNode } from '../../../../services/admin/service-tree';
 import type { UnlockSettings } from '../../../../services/admin/service-pricing';
@@ -17,11 +18,14 @@ type Billing = {
 };
 export function PricingContent() {
   const t = useLocale();
+  const en = t.locale === 'en',
+    unit = en ? 'Credits' : 'Point';
+  const label = (id: string, name: string) => (en ? englishServiceName(id, name) : name);
   const [data, setData] = useState<Billing | null>(null),
     [error, setError] = useState(false);
   useEffect(() => {
     const c = new AbortController();
-    fetch('/api/site-config', { signal: c.signal })
+    fetch(`/api/site-config?market=${en ? 'US' : 'VN'}`, { signal: c.signal })
       .then(r => {
         if (!r.ok) throw Error();
         return r.json();
@@ -34,7 +38,7 @@ export function PricingContent() {
         if (!c.signal.aborted) setError(true);
       });
     return () => c.abort();
-  }, []);
+  }, [en]);
   if (error)
     return (
       <p role="alert" className="mt-8">
@@ -48,10 +52,6 @@ export function PricingContent() {
       <p role="status" className="mt-8">
         {t.t('common.loading')}
       </p>
-    );
-  if (t.locale === 'en' && data.usPackages && data.usPackages.length > 0)
-    return (
-      <UsPricing usPackages={data.usPackages} services={data.services} enabled={data.enabled} unlocks={data.unlocks} />
     );
   const price = (p: Price) =>
     p.status === 'free'
@@ -87,16 +87,23 @@ export function PricingContent() {
         className={depth === 1 ? 'mt-6 rounded-2xl border border-[#d3d9c5] p-5' : 'mt-4 border-t border-[#e5e6db] pt-4'}
       >
         {depth === 1 ? (
-          <h2 className="font-display text-2xl">{node.name}</h2>
+          <h2 className="font-display text-2xl">{label(node.id, node.name)}</h2>
         ) : node.children.length > 0 || node.serviceIds.length > 1 ? (
-          <h3 className="font-semibold">{node.name}</h3>
+          <h3 className="font-semibold">{label(node.id, node.name)}</h3>
         ) : null}
         {showBundle && (
           <div className="mt-3 rounded-xl bg-[#edf0e2] p-4 text-sm">
             <strong>
-              {def.name} · {bundle.points.toLocaleString('vi-VN')} Point
+              {en ? `${label(def.id, def.name)} bundle` : def.name} ·{' '}
+              {bundle.points.toLocaleString(en ? 'en-US' : 'vi-VN')} {unit}
             </strong>
-            <p className="mt-1">{def.members.length} phần theo hồ sơ. Dự báo theo kỳ mua riêng.</p>
+            <p className="mt-1">
+              {en ? (
+                `${def.members.length} readings for this profile. Period forecasts are purchased separately.`
+              ) : (
+                <>{def.members.length} phần theo hồ sơ. Dự báo theo kỳ mua riêng.</>
+              )}
+            </p>
           </div>
         )}
         {depth !== 1 &&
@@ -122,76 +129,53 @@ export function PricingContent() {
     <>
       {data.unlocks?.enabled && (
         <p className="mt-6 text-sm leading-7">
-          Mua từng phần hoặc mở cả gói. Khi nâng cấp, khấu trừ {data.unlocks.credit.numerator}/
-          {data.unlocks.credit.denominator} số Point thực trả đủ điều kiện trong cùng gói và hồ sơ. Giá cuối cùng được
-          hiển thị trước khi xác nhận.
+          {en ? (
+            `Buy single readings or a bundle. Upgrades credit ${data.unlocks.credit.numerator}/${data.unlocks.credit.denominator} of eligible Credits already paid within the same bundle and profile. The final price appears before confirmation.`
+          ) : (
+            <>
+              {' '}
+              Mua từng phần hoặc mở cả gói. Khi nâng cấp, khấu trừ {data.unlocks.credit.numerator}/
+              {data.unlocks.credit.denominator} số Point thực trả đủ điều kiện trong cùng gói và hồ sơ. Giá cuối cùng
+              được hiển thị trước khi xác nhận.
+            </>
+          )}
         </p>
       )}
       {serviceTree(data.services)
         .filter(n => n.children.length)
         .map(n => row(n, 1))}
-      <h2 className="mt-10 font-display text-2xl">Gói nạp Point</h2>
+      <h2 className="mt-10 font-display text-2xl">{en ? 'Credit packages' : 'Gói nạp Point'}</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        {data.packages.map(p => (
-          <div key={p.id} className="rounded-2xl border border-[#d3d9c5] p-5">
-            <strong>{p.total ?? p.points} Point</strong>
-            <p className="mt-2">{p.amountVnd.toLocaleString('vi-VN')}đ</p>
-          </div>
-        ))}
+        {en
+          ? (data.usPackages ?? []).map(p => (
+              <div key={p.id} className="rounded-2xl border border-[#d3d9c5] p-5">
+                <strong>{p.credits.toLocaleString('en-US')} Credits</strong>
+                <p className="mt-2">{usd(p.amountUsdCents)}</p>
+              </div>
+            ))
+          : data.packages.map(p => (
+              <div key={p.id} className="rounded-2xl border border-[#d3d9c5] p-5">
+                <strong>{p.total ?? p.points} Point</strong>
+                <p className="mt-2">{p.amountVnd.toLocaleString('vi-VN')}đ</p>
+              </div>
+            ))}
       </div>
+      {en && !data.usPackages?.length && (
+        <p className="mt-4 text-sm">
+          Credit purchases are currently unavailable. Your saved readings and wallet history remain accessible.
+        </p>
+      )}
       <p className="mt-6 text-sm">
-        Đăng nhập bằng Zalo để nạp Point.{' '}
-        <Link className="underline" href="/hoso?section=points">
-          Mở ví Point ↗
+        {en
+          ? 'Sign in with Google to buy Credits. Checkout and receipts are handled by Lemon Squeezy.'
+          : 'Đăng nhập bằng Zalo để nạp Point.'}{' '}
+        <Link className="underline" href={en ? '/en/profile?section=points' : '/hoso?section=points'}>
+          {en ? 'Open your Credits wallet ↗' : 'Mở ví Point ↗'}
         </Link>
       </p>
-      <Link className="mt-4 block text-sm underline" href="/dieukhoan">
-        Điều khoản, hoàn Point và liên hệ hỗ trợ
+      <Link className="mt-4 block text-sm underline" href={en ? '/en/terms' : '/dieukhoan'}>
+        {en ? 'Terms, refunds and support' : 'Điều khoản, hoàn Point và liên hệ hỗ trợ'}
       </Link>
-    </>
-  );
-}
-
-/** US pricing view (plan Task 20): credit packages in USD + per-reading prices. */
-function UsPricing({
-  usPackages,
-  services,
-  enabled,
-  unlocks,
-}: {
-  usPackages: UsPackage[];
-  services: Price[];
-  enabled: boolean;
-  unlocks?: UnlockSettings;
-}) {
-  return (
-    <>
-      <p className="mt-6 text-sm leading-7">
-        Readings are unlocked with prepaid Credits. The exact price is always shown before you confirm; re-reading a
-        saved report never charges again.
-        {unlocks?.enabled
-          ? ' Buy single readings or upgrade to a bundle — upgrades credit 2/3 of what you already paid inside the same bundle.'
-          : ''}
-      </p>
-      <h2 className="mt-10 font-display text-2xl">Credit packages</h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        {usPackages.map(p => (
-          <div key={p.id} className="rounded-2xl border border-[#d3d9c5] p-5">
-            <strong>{p.credits.toLocaleString('en-US')} Credits</strong>
-            <p className="mt-2">{usd(p.amountUsdCents)}</p>
-          </div>
-        ))}
-      </div>
-      <p className="mt-6 text-sm">
-        Sign in with Google to buy Credits. Checkout and receipts are handled by Lemon Squeezy.
-      </p>
-      <Link className="mt-4 block text-sm underline" href="/en/terms">
-        Terms, refunds and support
-      </Link>
-      <p className="mt-8 text-xs opacity-70">
-        Per-reading prices in Credits: {services.filter(s => s.status === 'paid' && enabled).length} paid readings ·{' '}
-        {services.filter(s => s.status === 'free').length} free.
-      </p>
     </>
   );
 }

@@ -481,6 +481,10 @@ export async function handleAdmin(request, env) {
         return json({ error: 'Bạn không có quyền thực hiện thao tác này.' }, 403);
       const b = await body(request);
       const userId = typeof b.userId === 'string' ? b.userId.trim() : '';
+      const market = b.market || 'VN';
+      if (!['VN', 'US'].includes(market)) return json({ error: 'invalid_market' }, 422);
+      if (market === 'US' && !/^[a-zA-Z0-9_-]{8,120}$/.test(b.requestKey || ''))
+        return json({ error: 'invalid_request_key' }, 422);
       const delta = Number(b.delta);
       const note = typeof b.note === 'string' ? b.note.trim().slice(0, 200) : '';
       if (!userId || !Number.isSafeInteger(delta) || delta === 0 || Math.abs(delta) > 100000)
@@ -490,11 +494,17 @@ export async function handleAdmin(request, env) {
         new Request('https://astrox-internal/internal/admin/wallet/adjust', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ userId, delta, reason: note || `Điều chỉnh bởi ${user.email}` }),
+          body: JSON.stringify({
+            userId,
+            delta,
+            market,
+            requestKey: b.requestKey,
+            reason: note || `Điều chỉnh bởi ${user.email}`,
+          }),
         }),
       );
       if (!r.ok) return json({ error: 'Backend từ chối điều chỉnh — kiểm tra user id và số dư.' }, 502);
-      await recordAudit(env, user.email, 'wallet.adjust', userId, { delta, note });
+      await recordAudit(env, user.email, 'wallet.adjust', userId, { delta, note, market, requestKey: b.requestKey });
       return json({ ok: true });
     }
     if (path === 'data/users/status' && method === 'POST') {
@@ -528,13 +538,16 @@ export async function handleAdmin(request, env) {
       return json(await r.json());
     }
     if (/^data\/(users|wallet|reports|rewards)$/.test(path) && method === 'GET') {
+      const market = new URL(request.url).searchParams.get('market') || 'VN';
+      if (!['VN', 'US'].includes(market)) return json({ error: 'invalid_market' }, 422);
       if (!env.ASTROX_BACKEND) {
+        if (market === 'US') return json({ error: 'Chưa kết nối backend Credits.' }, 503);
         const data = await legacyData(env, path.slice(5));
         if (data) return json(data);
         return json({ unavailable: true, error: 'Chưa kết nối backend nghiệp vụ. Không có dữ liệu để hiển thị.' }, 503);
       }
       const r = await env.ASTROX_BACKEND.fetch(
-        new Request('https://astrox-internal/internal/admin/' + path.slice(5), {
+        new Request('https://astrox-internal/internal/admin/' + path.slice(5) + '?market=' + market, {
           headers: { 'x-admin-actor': user.email },
         }),
       );

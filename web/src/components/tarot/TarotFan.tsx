@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
 /** Decorative fan accompanying automatic drawing; no per-card interaction. */
-import { LoadingWhisper } from "@/components/kit/LoadingWhisper";
-import type { CSSProperties } from "react";
-import styles from "./Tarot.module.css";
-import type { TarotDeck } from "@/lib/tarot";
+import { useParityCopy } from '@/i18n/parity-copy';
+import { useLocale } from '@/i18n/LocaleProvider';
+import { LoadingWhisper } from '@/components/kit/LoadingWhisper';
+import type { CSSProperties } from 'react';
+import styles from './Tarot.module.css';
+import type { TarotDeck } from '@/lib/tarot';
 
 interface TarotFanProps {
   deck: TarotDeck;
@@ -14,12 +16,39 @@ interface TarotFanProps {
 }
 
 export function TarotFan({ deck, remaining, drawnCount, total }: TarotFanProps) {
+  const parityCopy = useParityCopy();
+  const en = useLocale().locale === 'en';
+
   const shown = remaining > 0 ? 7 : 0;
-  return <div className={styles.fanArea}>
-    <div className={styles.fanProgress} aria-label={`Đã rút ${drawnCount} trên ${total} lá`}>{Array.from({length:total},(_,i)=><i key={i} data-done={i < drawnCount} />)}</div>
-    <div className={styles.fan} data-tarot-source aria-hidden="true">
-      {Array.from({length:shown},(_,i)=><div className={styles.fanCard} key={i} style={{"--fan-angle":`${(i-3)*9}deg`,"--fan-x":`${(i-3)*25}px`,"--fan-y":`${Math.abs(i-3)*7}px`,"--fan-delay":`${i*35}ms`} as CSSProperties}><img src={deck.back} alt="" width={220} height={385} draggable={false} /></div>)}
+  return (
+    <div className={styles.fanArea}>
+      <div
+        className={styles.fanProgress}
+        aria-label={en ? `Drawn ${drawnCount} of ${total} cards` : `Đã rút ${drawnCount} trên ${total} lá`}
+      >
+        {Array.from({ length: total }, (_, i) => (
+          <i key={i} data-done={i < drawnCount} />
+        ))}
+      </div>
+      <div className={styles.fan} data-tarot-source aria-hidden="true">
+        {Array.from({ length: shown }, (_, i) => (
+          <div
+            className={styles.fanCard}
+            key={i}
+            style={
+              {
+                '--fan-angle': `${(i - 3) * 9}deg`,
+                '--fan-x': `${(i - 3) * 25}px`,
+                '--fan-y': `${Math.abs(i - 3) * 7}px`,
+                '--fan-delay': `${i * 35}ms`,
+              } as CSSProperties
+            }
+          >
+            <img src={deck.back} alt="" width={220} height={385} draggable={false} />
+          </div>
+        ))}
+      </div>
+      <p aria-live="polite">{remaining === 0 ? parityCopy('Trải bài của bạn') : <LoadingWhisper kind="tarot" />}</p>
     </div>
-    <p aria-live="polite">{remaining === 0 ? "Trải bài của bạn" : <LoadingWhisper kind="tarot"/>}</p>
-  </div>;
+  );
 }

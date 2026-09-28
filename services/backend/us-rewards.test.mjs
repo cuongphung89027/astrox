@@ -101,3 +101,19 @@ test('wallet summary splits purchased vs bonus and keeps available/reserved', as
   assert.equal(summary.reserved, 4);
   assert.equal(summary.purchased + summary.bonus, 13);
 });
+
+test('shared reward events credit US lots once and never create a VN wallet', async () => {
+  const env = fixture();
+  const { rewardCreditStatements } = await import('./reward-credit.mjs');
+  await env.DB.prepare("INSERT INTO market_preferences(user_id,market,updated_at) VALUES('u1','US','now')").run();
+  const input = { userId: 'u1', points: 7, reason: 'attendance', referenceId: '2026-09-28' };
+  const batches = await Promise.all([
+    rewardCreditStatements(env, input, 'now'),
+    rewardCreditStatements(env, input, 'now'),
+  ]);
+  await env.DB.batch(batches[0]);
+  await env.DB.batch(batches[1]);
+  assert.equal((await creditsBalance(env, 'u1')).balance, 7);
+  assert.equal((await env.DB.prepare("SELECT SUM(remaining) n FROM credit_lots WHERE user_id='u1'").first()).n, 7);
+  assert.equal((await env.DB.prepare("SELECT COUNT(*) n FROM credits_ledger WHERE user_id='u1'").first()).n, 1);
+});

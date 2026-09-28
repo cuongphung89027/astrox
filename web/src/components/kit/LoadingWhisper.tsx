@@ -1,4 +1,5 @@
 'use client';
+import { useLocale } from '@/i18n/LocaleProvider';
 import { useEffect, useState } from 'react';
 import styles from './LoadingWhisper.module.css';
 
@@ -79,8 +80,70 @@ const MESSAGES: Record<LoadingKind, readonly string[]> = {
   general: ['AstroX đang chuẩn bị nội dung…', 'Đang kết nối hành trình của bạn…', 'Đang sắp xếp những điều sắp mở…'],
 };
 
+const MESSAGES_EN: Record<LoadingKind, readonly string[]> = {
+  tuvi: [
+    'Reflecting on your chart…',
+    'Comparing the palaces…',
+    'Following your fortune cycles…',
+    'Connecting the turning points…',
+    'Preparing insights for you…',
+  ],
+  period: [
+    'Comparing your current cycles…',
+    'Exploring new movements…',
+    'Connecting the timelines…',
+    'Preparing guidance for what comes next…',
+  ],
+  tarot: [
+    'Reflecting on each card…',
+    'Exploring the symbols…',
+    'Connecting the story of your spread…',
+    'Considering your question…',
+    'Bringing the cards’ messages together…',
+  ],
+  zodiac: [
+    'Comparing planetary positions…',
+    'Tracing the aspects…',
+    'Reflecting on your natal chart…',
+    'Connecting the patterns in the sky…',
+    'Preparing your insights…',
+  ],
+  battu: [
+    'Comparing stems and branches…',
+    'Reflecting on the four pillars…',
+    'Examining the five-element balance…',
+    'Following the luck cycles…',
+    'Connecting the patterns in your chart…',
+  ],
+  numerology: [
+    'Exploring your numbers…',
+    'Comparing your name and birth date…',
+    'Reflecting on your life path…',
+    'Connecting your personal patterns…',
+    'Preparing insights for your journey…',
+  ],
+  compat: [
+    'Comparing the two charts…',
+    'Exploring shared strengths…',
+    'Considering your differences…',
+    'Finding ways to understand each other…',
+  ],
+  kinhdich: [
+    'Reflecting on your hexagram…',
+    'Examining the changing lines…',
+    'Connecting the symbols and your question…',
+  ],
+  shuffle: ['Shuffling the cards…', 'Preparing your spread…', 'Drawing your cards…'],
+  cast: ['Casting your hexagram…', 'Following the changing lines…', 'Preparing your result…'],
+  packages: ['Loading available packages…', 'Preparing your choices…', 'Checking package details…'],
+  payment: ['Loading payment details…', 'Preparing your checkout…', 'Waiting for an update…'],
+  general: ['Preparing your content…', 'Connecting your journey…', 'Getting things ready…'],
+};
+
 /** Visual phrases cycle without repeatedly interrupting screen-reader users. */
 export function LoadingWhisper({ kind = 'general', className = '' }: { kind?: LoadingKind; className?: string }) {
+  const en = useLocale().locale === 'en';
+  const messages = en ? MESSAGES_EN : MESSAGES;
   const [step, setStep] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setStep(value => value + 1), 2800);
@@ -88,10 +151,12 @@ export function LoadingWhisper({ kind = 'general', className = '' }: { kind?: Lo
   }, [kind]);
   return (
     <span className={`${styles.whisper} ${className}`} data-loading-whisper={kind}>
-      <span className="sr-only">AstroX đang chuẩn bị nội dung cho bạn.</span>
+      <span className="sr-only">
+        {en ? 'AstroX is preparing your content.' : 'AstroX đang chuẩn bị nội dung cho bạn.'}
+      </span>
       <span key={`${kind}-${step}`} className={styles.phrase} aria-hidden="true">
         <i />
-        {MESSAGES[kind][step % MESSAGES[kind].length]}
+        {messages[kind][step % messages[kind].length]}
       </span>
     </span>
   );

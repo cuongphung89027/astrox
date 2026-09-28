@@ -6,6 +6,7 @@
  * group "tuviPeriod.{today|week|month}", key = kỳ ISO (fingerprint hồ sơ do
  * store lo sẵn). Mỗi tab có nút làm mới (force bỏ qua cache).
  */
+import { useParityCopy } from '@/i18n/parity-copy';
 import { managedPrompt } from '@/lib/managed-prompts';
 import { LoadingWhisper } from '@/components/kit/LoadingWhisper';
 import { ReadingLoader } from '@/components/kit/ReadingLoader';
@@ -48,6 +49,9 @@ interface PeriodPanelProps {
 }
 
 function LoadingProgress({ completing }: { completing: boolean }) {
+  const en = useLocale().locale === 'en';
+  const parityCopy = useParityCopy();
+
   const [startedAt] = useState(() => Date.now());
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -59,36 +63,42 @@ function LoadingProgress({ completing }: { completing: boolean }) {
       <div
         className={styles.progressTrack}
         role="progressbar"
-        aria-label="Đang tạo luận giải"
-        aria-valuetext={completing ? 'Đã có kết quả, chuẩn bị hiển thị' : 'Đang chờ kết quả từ AstroX'}
+        aria-label={parityCopy('Đang tạo luận giải')}
+        aria-valuetext={
+          completing ? parityCopy('Đã có kết quả, chuẩn bị hiển thị') : parityCopy('Đang chờ kết quả từ AstroX')
+        }
       >
         <span />
       </div>
-      <ol aria-label="Tiến trình luận giải">
+      <ol aria-label={parityCopy('Tiến trình luận giải')}>
         <li data-state="done">
           <span className={styles.stepIndicator} aria-hidden="true">
             ✓
           </span>
-          Chuẩn bị dữ liệu lá số
+          {parityCopy('Chuẩn bị dữ liệu lá số')}
         </li>
         <li data-state={completing ? 'done' : 'active'}>
           <span className={styles.stepIndicator} aria-hidden="true">
             {completing ? '✓' : null}
           </span>
-          {completing ? 'Đã hoàn tất luận giải' : <LoadingWhisper kind="period" />}
-          <strong aria-label={`Đã chờ ${elapsed} giây`}>{elapsed}s</strong>
+          {completing ? parityCopy('Đã hoàn tất luận giải') : <LoadingWhisper kind="period" />}
+          <strong aria-label={`${en ? 'Waited' : 'Đã chờ'} ${elapsed} ${en ? 'seconds' : 'giây'}`}>{elapsed}s</strong>
         </li>
         <li data-state={completing ? 'active' : 'waiting'}>
           <span className={styles.stepIndicator} aria-hidden="true" />
-          Hiển thị luận giải
+          {parityCopy('Hiển thị luận giải')}
         </li>
       </ol>
-      {!completing && elapsed >= 25 && <p role="status">AstroX vẫn đang xử lý. Bạn chưa cần gửi lại yêu cầu.</p>}
+      {!completing && elapsed >= 25 && (
+        <p role="status">{parityCopy('AstroX vẫn đang xử lý. Bạn chưa cần gửi lại yêu cầu.')}</p>
+      )}
     </div>
   );
 }
 
 export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
+  const parityCopy = useParityCopy();
+
   const t = useLocale();
   const en = t.locale === 'en';
   const settings = usePreferences();
@@ -124,7 +134,7 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
         <svg viewBox="0 0 600 90" preserveAspectRatio="none" aria-hidden="true">
           <path d="M0 18 Q300 136 600 18" />
         </svg>
-        <div className={styles.periods} role="group" aria-label="Chọn kỳ vận trình">
+        <div className={styles.periods} role="group" aria-label={parityCopy('Chọn kỳ vận trình')}>
           {PERIOD_TABS.map((item, index) => (
             <button
               key={item.id}
@@ -134,7 +144,11 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
                 setPeriod(item.id);
               }}
             >
-              <span>{item.label}</span>
+              <span>
+                {en
+                  ? ({ today: 'Today', week: 'This week', month: 'This month' } as Record<string, string>)[item.id]
+                  : item.label}
+              </span>
             </button>
           ))}
         </div>
@@ -148,7 +162,12 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
         <div className={styles.reading} aria-busy={ai.loading}>
           {ai.loading ? (
             <div role="status" className={styles.pending}>
-              <ReadingLoader kind="tuvi" label="Đọc vận trình của bạn…" showElapsed={false} showWhisper={false} />
+              <ReadingLoader
+                kind="tuvi"
+                label={parityCopy('Đọc vận trình của bạn…')}
+                showElapsed={false}
+                showWhisper={false}
+              />
               <LoadingProgress completing={ai.completing} />
             </div>
           ) : ai.text ? (
@@ -160,7 +179,7 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
                 </p>
               )}
               <button className={styles.regenerate} disabled={price.pending} onClick={() => ai.run(true)}>
-                ↻ Đọc lại vận trình
+                {parityCopy('↻ Đọc lại vận trình')}
                 <PaidPriceBadge price={price} />
               </button>
             </>
@@ -172,7 +191,7 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
                 </p>
               )}
               <button className={styles.cta} disabled={price.pending} onClick={() => ai.run(false)}>
-                {ai.error ? 'Thử lại' : 'Mở vận trình'}
+                {ai.error ? parityCopy('Thử lại') : parityCopy('Mở vận trình')}
                 <PaidPriceBadge price={price} />
                 <span aria-hidden="true">↗</span>
               </button>

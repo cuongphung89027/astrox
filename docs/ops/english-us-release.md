@@ -21,11 +21,16 @@ us-credits.sql             # credits wallet tables
 market-ai-operations.sql   # market columns, default VN
 lemon-orders.sql           # order book
 lemon-webhook.sql          # receipts
+lemon-checkout-identity.sql # split checkout UUID from paid numeric order id
+lemon-promos.sql           # checkout promo reservations and caps
+reward-market.sql          # snapshot currency on rewarded-ad sessions (requires rewards.sql)
 ```
 
 Apply via wrangler D1 migrations to **staging first**, verify invariants
 (legacy VN counts unchanged; credits tables empty), then production. Never
 re-run old migrations blindly; check `d1_migrations` history first.
+
+Published legacy config hydrates `rewardsUs` disabled, `contentUs` empty, `usPromos` empty, and an independent `usUnlocks` copy. Review/publish US rewards, notices, prices, bundles and promotions separately in the shared Admin. A blank US notice does not fall back to Vietnamese copy.
 
 ## 2. Worker → Pages (same verified SHA)
 

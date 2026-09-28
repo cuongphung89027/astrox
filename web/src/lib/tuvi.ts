@@ -144,7 +144,7 @@ export function buildZiweiChart(input: ZiweiInput, locale: 'vi' | 'en' = 'vi'): 
       fiveElementsClass: safeText(raw.fiveElementsClass),
       soul: safeText(raw.soul),
       body: safeText(raw.body),
-      zodiac: branchName(safeText(raw.zodiac)),
+      zodiac: locale === 'en' ? safeText(raw.zodiac) : branchName(safeText(raw.zodiac)),
       sign: safeText(raw.sign),
       chineseDate: safeText(raw.chineseDate),
     },
@@ -174,7 +174,7 @@ export function yearStemBranch(chart: ZiweiChart): string {
 }
 
 export function menhPalace(chart: ZiweiChart): ZiweiPalace | undefined {
-  return chart.palaces.find(p => p.name === 'Mệnh');
+  return chart.palaces.find(p => p.name === 'Mệnh' || p.name === 'soul');
 }
 
 /* ------------------------------------------------------------------ */
@@ -216,8 +216,38 @@ const STAR_ELEMENTS: Record<string, StarElement> = {
   'Địa Kiếp': 'Hỏa',
 };
 
+const EN_STAR_ALIASES: Record<string, string> = {
+  emperor: 'Tử Vi',
+  advisor: 'Thiên Cơ',
+  sun: 'Thái Dương',
+  warrior: 'Vũ Khúc',
+  fortunate: 'Thiên Đồng',
+  judge: 'Liêm Trinh',
+  empress: 'Thiên Phủ',
+  moon: 'Thái Âm',
+  wolf: 'Tham Lang',
+  advocator: 'Cự Môn',
+  minister: 'Thiên Tướng',
+  sage: 'Thiên Lương',
+  marshal: 'Thất Sát',
+  rebel: 'Phá Quân',
+  officer: 'Tả Phù',
+  helper: 'Hữu Bật',
+  scholar: 'Văn Xương',
+  artist: 'Văn Khúc',
+  money: 'Lộc Tồn',
+  horse: 'Thiên Mã',
+  driven: 'Kình Dương',
+  tangled: 'Đà La',
+  impulsive: 'Hỏa Tinh',
+  spark: 'Linh Tinh',
+  ideologue: 'Địa Không',
+  fickle: 'Địa Kiếp',
+};
+
 export function starElement(name: string): StarElement | null {
-  const base = name.replace(/\s*·.*$/, '').trim();
+  const label = name.replace(/\s*·.*$/, '').trim();
+  const base = EN_STAR_ALIASES[label] ?? label;
   return STAR_ELEMENTS[base] ?? STAR_ELEMENTS[name] ?? null;
 }
 

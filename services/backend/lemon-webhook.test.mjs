@@ -97,11 +97,11 @@ test('signed paid order credits the wallet exactly once (PAY-01: 20 replays, one
   for (let i = 0; i < 20; i++) last = await handleLemonWebhook(env, signedRequest(payload));
   assert.equal(last.status, 200);
   const wallet = await creditsBalance(env, 'u1');
-  assert.equal(wallet.balance, 10); // 5 purchased + 5 first-topup bonus (Task 18), still exactly once
+  assert.equal(wallet.balance, 5); // No unpublished placeholder bonus.
   const ledger = (await env.DB.prepare("SELECT COUNT(*) AS n FROM credits_ledger WHERE kind='purchase'").first()).n;
   assert.equal(ledger, 1);
   const bonus = (await env.DB.prepare("SELECT COUNT(*) AS n FROM credits_ledger WHERE kind='bonus'").first()).n;
-  assert.equal(bonus, 1);
+  assert.equal(bonus, 0);
   const order = await env.DB.prepare('SELECT status FROM lemon_orders').first();
   assert.equal(order.status, 'fulfilled');
 });
@@ -208,7 +208,7 @@ test('fulfillment failure returns 5xx and a retry credits the wallet exactly onc
   assert.equal((await creditsBalance(env, 'u1')).balance, 0);
   const retry = await handleLemonWebhook(env, signedRequest(payload));
   assert.equal(retry.status, 200);
-  assert.equal((await creditsBalance(env, 'u1')).balance, 10); // 5 + 5 first-topup
+  assert.equal((await creditsBalance(env, 'u1')).balance, 5); // No reward campaign configured.
   order = await env.DB.prepare('SELECT status FROM lemon_orders').first();
   assert.equal(order.status, 'fulfilled');
 });
@@ -229,5 +229,30 @@ test('refund receipts persist the provider payload and reconcile reads refunded_
   const { reconcileLemon } = await import('./lemon-reconcile.mjs');
   const report = await reconcileLemon(env);
   assert.equal(report.refunds[0].deltaCredits, 5);
-  assert.equal((await creditsBalance(env, 'u1')).balance, 5); // bonus credits remain
+  assert.equal((await creditsBalance(env, 'u1')).balance, 0); // Full purchase refunded.
+});
+
+test('documented Lemon order data.id is persisted and cannot credit another checkout', async () => {
+  const env = fixture();
+  const a = await seedOrder(env),
+    b = await seedOrder(env);
+  await env.DB.prepare("UPDATE lemon_orders SET store_id='11111',variant_id='424242'").run();
+  const real = id => {
+    const p = event(id);
+    p.data.type = 'orders';
+    p.data.id = '90210';
+    delete p.data.attributes.order_id;
+    return p;
+  };
+  const replies = await Promise.all([
+    handleLemonWebhook(env, signedRequest(real(a))),
+    handleLemonWebhook(env, signedRequest(real(b))),
+  ]);
+  assert.deepEqual(replies.map(r => r.status).sort(), [200, 409]);
+  assert.equal((await creditsBalance(env, 'u1')).balance, 5);
+  assert.equal((await env.DB.prepare("SELECT COUNT(*) n FROM credits_ledger WHERE kind='purchase'").first()).n, 1);
+  assert.equal(
+    (await env.DB.prepare("SELECT lemon_order_id FROM lemon_orders WHERE status='fulfilled'").first()).lemon_order_id,
+    '90210',
+  );
 });

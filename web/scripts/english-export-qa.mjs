@@ -18,12 +18,24 @@ import { chromium, webkit } from 'playwright';
 
 const OUT = fileURLToPath(new URL('../out/', import.meta.url));
 const PORT = 3998;
-const MIME = { '.html': 'text/html', '.txt': 'text/plain', '.png': 'image/png', '.css': 'text/css', '.js': 'text/javascript', '.webp': 'image/webp', '.svg': 'image/svg', '.woff2': 'font/woff2', '.json': 'application/json' };
+const MIME = {
+  '.html': 'text/html',
+  '.txt': 'text/plain',
+  '.png': 'image/png',
+  '.css': 'text/css',
+  '.js': 'text/javascript',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg',
+  '.woff2': 'font/woff2',
+  '.json': 'application/json',
+};
 
 const results = [];
 const record = (id, name, status, evidence = '') => {
   results.push({ id, name, status, evidence });
-  console.log(`${status === 'PASS' ? '✔' : status === 'FAIL' ? '✖' : '⛔'} ${id} ${name}${evidence ? ' — ' + evidence : ''}`);
+  console.log(
+    `${status === 'PASS' ? '✔' : status === 'FAIL' ? '✖' : '⛔'} ${id} ${name}${evidence ? ' — ' + evidence : ''}`,
+  );
 };
 
 async function serve() {
@@ -32,10 +44,21 @@ async function serve() {
     let path = url.pathname;
     try {
       let file = join(OUT, path.slice(1));
-      if (!(await stat(file).then(s => s.isFile(), () => false))) {
+      if (
+        !(await stat(file).then(
+          s => s.isFile(),
+          () => false,
+        ))
+      ) {
         if (!path.endsWith('.html')) {
           const withHtml = file + '.html';
-          if (await stat(withHtml).then(s => s.isFile(), () => false)) file = withHtml;
+          if (
+            await stat(withHtml).then(
+              s => s.isFile(),
+              () => false,
+            )
+          )
+            file = withHtml;
           else file = join(OUT, path.replace(/\/$/, '') + '/index.html');
         }
       }
@@ -51,7 +74,21 @@ async function serve() {
   return server;
 }
 
-const EN_ROUTES = ['en', 'en/zi-wei', 'en/astrology', 'en/tarot', 'en/i-ching', 'en/ba-zi', 'en/numerology', 'en/compatibility', 'en/lunar-calendar', 'en/palm-reading', 'en/profile', 'en/pricing', 'en/terms'];
+const EN_ROUTES = [
+  'en',
+  'en/zi-wei',
+  'en/astrology',
+  'en/tarot',
+  'en/i-ching',
+  'en/ba-zi',
+  'en/numerology',
+  'en/compatibility',
+  'en/lunar-calendar',
+  'en/palm-reading',
+  'en/profile',
+  'en/pricing',
+  'en/terms',
+];
 
 async function httpChecks() {
   for (const route of EN_ROUTES) {
@@ -61,22 +98,40 @@ async function httpChecks() {
     record(`EXP-${route}`, `HTTP 200 /${route}`, okStatus ? 'PASS' : 'FAIL', `status ${res.status}`);
     if (route === 'en') {
       record('EXP-lang', 'html lang=en on /en', /<html[^>]+lang="en"/.test(html) ? 'PASS' : 'FAIL');
-      record('EXP-hreflang', 'hreflang pair vi/en/x-default', (html.match(/hrefLang=/g) || []).length >= 3 ? 'PASS' : 'FAIL', `${(html.match(/hrefLang=/g) || []).length} alternates`);
+      record(
+        'EXP-hreflang',
+        'hreflang pair vi/en/x-default',
+        (html.match(/hrefLang=/g) || []).length >= 3 ? 'PASS' : 'FAIL',
+        `${(html.match(/hrefLang=/g) || []).length} alternates`,
+      );
     }
     if (route === 'en/terms') {
-      record('EXP-terms-en', 'English terms content present', html.includes('Terms of Use') && html.includes('AI Disclosure') ? 'PASS' : 'FAIL');
+      record(
+        'EXP-terms-en',
+        'English terms content present',
+        html.includes('Terms of Use') && html.includes('AI Disclosure') ? 'PASS' : 'FAIL',
+      );
     }
     if (route === 'en/pricing') {
       record('EXP-pricing', 'US pricing page renders', res.status === 200 ? 'PASS' : 'FAIL');
     }
     // Experts must never appear in the English tree navigation.
-    if (/\/chuyengia/.test(html)) record(`EXP-noexperts-${route}`, `no VN experts link on /${route}`, 'FAIL', 'found /chuyengia');
+    if (/\/chuyengia/.test(html))
+      record(`EXP-noexperts-${route}`, `no VN experts link on /${route}`, 'FAIL', 'found /chuyengia');
   }
-  record('EXP-noexperts', 'experts absent across all EN routes', results.every(r => !r.id.startsWith('EXP-noexperts-') || r.status === 'PASS') ? 'PASS' : 'FAIL');
+  record(
+    'EXP-noexperts',
+    'experts absent across all EN routes',
+    results.every(r => !r.id.startsWith('EXP-noexperts-') || r.status === 'PASS') ? 'PASS' : 'FAIL',
+  );
   const robots = await (await fetch(`http://localhost:${PORT}/robots.txt`)).text();
   record('EXP-robots', 'robots disallows /en/profile', robots.includes('/en/profile') ? 'PASS' : 'FAIL');
   const sitemap = await (await fetch(`http://localhost:${PORT}/sitemap.xml`)).text();
-  record('EXP-sitemap', 'sitemap includes EN routes', sitemap.includes('/en/zi-wei') && sitemap.includes('/en/pricing') ? 'PASS' : 'FAIL');
+  record(
+    'EXP-sitemap',
+    'sitemap includes EN routes',
+    sitemap.includes('/en/zi-wei') && sitemap.includes('/en/pricing') ? 'PASS' : 'FAIL',
+  );
   const nf = await fetch(`http://localhost:${PORT}/en/experts`);
   record('EXP-en-experts-404', '/en/experts is not a page', nf.status === 404 ? 'PASS' : 'FAIL', `status ${nf.status}`);
 }
@@ -85,22 +140,42 @@ async function browserChecks() {
   for (const engine of [chromium, webkit]) {
     const name = engine === chromium ? 'chromium' : 'webkit';
     const browser = await engine.launch({ headless: true });
-    for (const size of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+    for (const size of [
+      { width: 390, height: 844 },
+      { width: 1440, height: 900 },
+    ]) {
       const page = await browser.newPage({ viewport: size });
       const errors = [];
-      page.on('console', m => { if (m.type() === 'error') errors.push(m.text().slice(0, 120)); });
+      page.on('console', m => {
+        if (m.type() === 'error') errors.push(m.text().slice(0, 120));
+      });
       page.on('pageerror', e => errors.push(String(e).slice(0, 120)));
       for (const route of ['en', 'en/tarot', 'en/palm-reading']) {
         try {
           await page.goto(`http://localhost:${PORT}/${route}`, { waitUntil: 'networkidle', timeout: 20000 });
           const lang = await page.evaluate(() => document.documentElement.lang);
-          record(`UI-${name}-${size.width}-${route}`, `${name} ${size.width} /${route} renders`, lang === 'en' ? 'PASS' : 'FAIL', `lang=${lang}`);
+          record(
+            `UI-${name}-${size.width}-${route}`,
+            `${name} ${size.width} /${route} renders`,
+            lang === 'en' ? 'PASS' : 'FAIL',
+            `lang=${lang}`,
+          );
         } catch (e) {
-          record(`UI-${name}-${size.width}-${route}`, `${name} ${size.width} /${route} renders`, 'FAIL', String(e).slice(0, 80));
+          record(
+            `UI-${name}-${size.width}-${route}`,
+            `${name} ${size.width} /${route} renders`,
+            'FAIL',
+            String(e).slice(0, 80),
+          );
         }
       }
       const hydration = errors.filter(e => /hydrat|Minified React error/i.test(e));
-      record(`UI-${name}-${size.width}-console`, `${name} ${size.width} no hydration errors`, hydration.length === 0 ? 'PASS' : 'FAIL', hydration[0] || '');
+      record(
+        `UI-${name}-${size.width}-console`,
+        `${name} ${size.width} no hydration errors`,
+        hydration.length === 0 ? 'PASS' : 'FAIL',
+        hydration[0] || '',
+      );
       await page.close();
     }
     await browser.close();
@@ -124,7 +199,8 @@ async function main() {
       ['AUTH-live', 'Google login end-to-end (needs production/staging client)'],
       ['PAY-live', 'Lemon checkout + webhook end-to-end (needs provider approval)'],
       ['AI-quality', 'Live AI English quality samples (needs provider key + budget)'],
-    ]) record(id, name, 'BLOCKED', 'G5 dependency — operator credentials required');
+    ])
+      record(id, name, 'BLOCKED', 'G5 dependency — operator credentials required');
   } finally {
     server.close();
   }

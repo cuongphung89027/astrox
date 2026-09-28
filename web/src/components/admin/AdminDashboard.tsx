@@ -45,10 +45,16 @@ export function AdminDashboard() {
   const api = useAdminApi();
   // Cổng chọn quốc gia trước khi vào chỉnh sửa (chỉ thị operator): một Admin chung,
   // hai bối cảnh market — panels nhận market để đọc/ghi đúng cấu hình.
+  // sessionStorage read is deferred (setTimeout 0): reading it synchronously in the
+  // initial state would mismatch SSR/prerendered admin HTML; the app-wide pattern
+  // (auth consent, LoginPrompt) defers localStorage/sessionStorage the same way.
   const [adminMarket, setAdminMarket] = useState<'VN' | 'US' | null>(null);
   useEffect(() => {
-    const saved = sessionStorage.getItem('astrox_admin_market');
-    if (saved === 'VN' || saved === 'US') setAdminMarket(saved);
+    const id = setTimeout(() => {
+      const saved = sessionStorage.getItem('astrox_admin_market');
+      if (saved === 'VN' || saved === 'US') setAdminMarket(saved);
+    }, 0);
+    return () => clearTimeout(id);
   }, []);
   const chooseMarket = (market: 'VN' | 'US') => {
     sessionStorage.setItem('astrox_admin_market', market);

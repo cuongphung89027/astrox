@@ -42,7 +42,16 @@ if (process.env.ASTROX_LOCAL_BACKEND !== '0') {
   native.exec(readFileSync(new URL('migrations/backend.sql', root), 'utf8'));
   native.exec(readFileSync(new URL('migrations/rewards.sql', root), 'utf8'));
 }
-for (const migration of ['ai-safety', 'service-unlocks', 'client-errors', 'feature-events', 'admin-insights', 'reward-events', 'bookings', 'promo-redemptions'])
+for (const migration of [
+  'ai-safety',
+  'service-unlocks',
+  'client-errors',
+  'feature-events',
+  'admin-insights',
+  'reward-events',
+  'bookings',
+  'promo-redemptions',
+])
   native.exec(readFileSync(new URL(`migrations/${migration}.sql`, root), 'utf8'));
 const prepare = (query, args = []) => ({
   bind(...values) {
@@ -122,7 +131,8 @@ createServer(async (req, res) => {
     let response;
     if (new URL(request.url).pathname === '/api/feature-events') response = await featureEvent(request, env);
     else if (new URL(request.url).pathname === '/api/client-errors') response = await clientError(request, env);
-    else if (['/api/experts', '/api/bookings', '/api/bookings/cancel'].includes(new URL(request.url).pathname)) response = await publicFetch(request, env);
+    else if (['/api/experts', '/api/bookings', '/api/bookings/cancel'].includes(new URL(request.url).pathname))
+      response = await publicFetch(request, env);
     else if (req.url.startsWith('/api/admin')) response = await handleAdmin(request, env);
     else {
       const { handlePublic } = await import('./integration-api.mjs');

@@ -12,7 +12,13 @@ async function fixture() {
     .split(';')
     .filter(s => s.trim()))
     await env.DB.prepare(q).run();
-  for (const file of ['./test/legacy-schema.sql', '../../migrations/backend.sql', '../../migrations/rewards.sql', '../../migrations/us-credits.sql', '../../migrations/market-ai-operations.sql'])
+  for (const file of [
+    './test/legacy-schema.sql',
+    '../../migrations/backend.sql',
+    '../../migrations/rewards.sql',
+    '../../migrations/us-credits.sql',
+    '../../migrations/market-ai-operations.sql',
+  ])
     for (const q of readFileSync(new URL(file, import.meta.url), 'utf8')
       .split(';')
       .filter(s => s.trim()))

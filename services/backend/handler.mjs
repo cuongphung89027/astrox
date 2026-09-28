@@ -8,6 +8,7 @@ import { readSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } f
 import { googleLogin, googleCallback } from './google-auth.mjs';
 import { creditsBalance, creditsHistory, setMarket, marketOf } from './credits.mjs';
 import { createLemonCheckout, lemonOrderStatus } from './lemon.mjs';
+import { handleLemonWebhook } from './lemon-webhook.mjs';
 import { handlePayosWebhook, handleTopupCreate, handlePromoCheck, handlePromoRedeem } from './payments.mjs';
 import { handlePointsHistory } from './points.mjs';
 import { handleRewardsSummary, handleRewardsCheckin } from './rewards.mjs';
@@ -50,6 +51,7 @@ export async function publicFetch(request, env) {
     if (path.startsWith('/internal/')) return json(env, request, { error: 'not_found' }, 404);
     if ((path === '/api/webhooks/payos' && method === 'POST') || (path === '/api/payos/webhook' && method === 'POST'))
       return await handlePayosWebhook(env, request);
+    if (path === '/api/lemon/webhook' && method === 'POST') return await handleLemonWebhook(env, request);
     if (path === '/auth/zalo/login' && method === 'GET') {
       const s = await runtimeSettings(env);
       return await zaloLogin(s.env, request, s);

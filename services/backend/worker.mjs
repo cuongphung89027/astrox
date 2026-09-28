@@ -3,6 +3,7 @@ import { reconcileAi } from './ai-operations.mjs';
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { publicFetch, internalFetch } from './handler.mjs';
 import { handlePayosWebhook, expirePendingTopups } from './payments.mjs';
+import { handleLemonWebhook } from './lemon-webhook.mjs';
 // This named entrypoint is only reachable through a Cloudflare service binding.
 // Never expose internalFetch from the default public handler.
 export class AdminBackend extends WorkerEntrypoint {
@@ -14,6 +15,12 @@ export class PaymentWebhook extends WorkerEntrypoint {
   async fetch(request) {
     if (request.method !== 'POST') return new Response(null, { status: 405 });
     return handlePayosWebhook(this.env, request);
+  }
+}
+export class LemonWebhook extends WorkerEntrypoint {
+  async fetch(request) {
+    if (request.method !== 'POST') return new Response(null, { status: 405 });
+    return handleLemonWebhook(this.env, request);
   }
 }
 export default {

@@ -4,24 +4,32 @@
  * TERMS_VERSION đổi khi nội dung trang /dieukhoan thay đổi materially —
  * khi đó người dùng phải tích đồng ý lại lần nữa (checkbox reset về bỏ trống).
  */
-export const TERMS_VERSION = "2026-09-24-r4";
-const TERMS_CONSENT_KEY = "astrox_terms_consent_v1";
+export const TERMS_VERSION = '2026-09-24-r4';
+const TERMS_CONSENT_KEY = 'astrox_terms_consent_v1';
 
-export const TERMS_PATH = "/dieukhoan";
+export const TERMS_PATH = '/dieukhoan';
 
 /** Anchor các khối chính của trang điều khoản — dùng cho link ở popup đăng nhập. */
 export const TERMS_SECTIONS = {
-  terms: { id: "dieu-khoan-su-dung", label: "Điều khoản sử dụng" },
-  disclaimer: { id: "mien-tru-trach-nhiem", label: "Tuyên bố miễn trừ trách nhiệm" },
+  terms: { id: 'dieu-khoan-su-dung', label: 'Điều khoản sử dụng' },
+  disclaimer: { id: 'mien-tru-trach-nhiem', label: 'Tuyên bố miễn trừ trách nhiệm' },
   privacy: {
-    id: "thoa-thuan-bao-mat",
-    label: "Thoả thuận xử lý và bảo mật thông tin cá nhân",
+    id: 'thoa-thuan-bao-mat',
+    label: 'Thoả thuận xử lý và bảo mật thông tin cá nhân',
   },
 } as const;
 
 export type TermsSectionKey = keyof typeof TERMS_SECTIONS;
 
-export function termsHref(key: TermsSectionKey): string {
+export function termsHref(key: TermsSectionKey, locale: 'vi' | 'en' = 'vi'): string {
+  if (locale === 'en') {
+    const en: Record<TermsSectionKey, string> = {
+      terms: 'terms-of-use',
+      disclaimer: 'ai-disclosure',
+      privacy: 'privacy',
+    };
+    return `/en/terms#${en[key]}`;
+  }
   return `${TERMS_PATH}#${TERMS_SECTIONS[key].id}`;
 }
 

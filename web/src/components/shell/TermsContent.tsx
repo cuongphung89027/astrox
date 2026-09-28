@@ -1,11 +1,17 @@
+'use client';
 import Link from 'next/link';
 import { TermsNavigation } from './TermsNavigation';
+import { useLocale } from '@/i18n/LocaleProvider';
+import { TERMS_VERSION } from '@/lib/terms';
 import styles from './TermsContent.module.css';
 
 const CONTACT_EMAIL = 'support@theastrox.space';
 const Contact = () => <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
 
 export function TermsContent() {
+  const t = useLocale();
+  if (t.locale === 'en') return <TermsContentEn />;
+
   return (
     <div className={styles.page} data-legal-document>
       <header className={styles.hero}>
@@ -435,5 +441,54 @@ export function TermsContent() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** English terms (plan Task 20): AI disclosure, Credits usage, refunds, privacy,
+ *  contact, ownership — versioned with the Vietnamese TERMS_VERSION. */
+export function TermsContentEn() {
+  return (
+    <article>
+      <h1>Terms &amp; Agreement</h1>
+      <p>
+        <em>Version {TERMS_VERSION}. English edition of the AstroX terms; entertainment content only.</em>
+      </p>
+      <h2 id="terms-of-use">1. Terms of Use</h2>
+      <p>
+        AstroX generates personalized <strong>entertainment content about traditional divination systems</strong> (Zi
+        Wei Dou Shu, Western astrology, Tarot, I Ching, Ba Zi, numerology, compatibility, lunar calendar, palm reading)
+        using AI language models from the birth data and questions you provide. Readings are not statements of fact and
+        must not guide medical, legal, financial or safety decisions.
+      </p>
+      <h2 id="ai-disclosure">2. AI Disclosure</h2>
+      <p>
+        All readings are produced by automated AI systems. Outputs can be inaccurate or contradictory. You are
+        responsible for how you interpret and use them.
+      </p>
+      <h2 id="credits">3. Credits — Usage &amp; Expiry</h2>
+      <p>
+        Credits are prepaid units used to unlock individual readings. Purchased credits do not expire. Bonus credits may
+        carry conditions shown when they are granted. Credits are non-transferable, hold no cash value and cannot be
+        withdrawn. Re-reading a report you already paid for never creates a new charge; generating new content does.
+      </p>
+      <h2 id="refunds">4. Refunds</h2>
+      <p>
+        Unused credits from a faulty order are refunded on request. If credits were already spent, we may restrict the
+        account and resolve the balance manually with you. Refunds follow the provider&apos;s (Lemon Squeezy) process;
+        see the receipt email for the refund link.
+      </p>
+      <h2 id="privacy">5. Privacy &amp; Palm Photos</h2>
+      <p>
+        Birth data, questions and palm photos are processed to produce your reading and are stored with your account so
+        you can revisit results. You can request deletion of your account data at any time via support. Palm photos are
+        used only for the reading you requested.
+      </p>
+      <h2 id="contact-ownership">6. Contact, Ownership &amp; Receipts</h2>
+      <p>
+        Support: <a href="mailto:support@theastrox.space">support@theastrox.space</a>. Receipts and billing history are
+        available from the payment provider. Content is licensed to you for personal use; AstroX retains all rights to
+        the service.
+      </p>
+    </article>
   );
 }

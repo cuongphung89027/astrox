@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS lemon_webhook_receipts (
   environment TEXT NOT NULL,
   store_id TEXT NOT NULL,
   payload_digest TEXT NOT NULL,
+  payload_json TEXT,
   processed INTEGER NOT NULL DEFAULT 0,
   received_at TEXT NOT NULL
 );

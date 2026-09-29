@@ -25,7 +25,7 @@ export default [
     id: 'tuvi.tuviPromptBody.0',
     module: 'tuvi',
     template:
-      '{{v0}}\n{{v1}}\n\nQUY TẮC PHÂN TÍCH LÁ SỐ: bắt đầu ngay từ dữ liệu trên — luận giải trực tiếp các sao, cung và đại vận đã cho. Cấm nói các câu như "không đọc được", "thiếu dữ liệu", "hãy bổ sung ngày giờ sinh". Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó và phân tích phần còn lại.\n\n{{v2}}',
+      '{{v0}}\n{{v1}}\n\nQUY TẮC PHÂN TÍCH LÁ SỐ: bắt đầu ngay từ dữ liệu trên — luận giải trực tiếp các sao, cung và đại vận đã cho. Cấm nói các câu như "không đọc được", "thiếu dữ liệu", "hãy bổ sung ngày giờ sinh". Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó và phân tích phần còn lại.\nLuận giải CÂN BẰNG sao tốt lẫn sao xấu: khi phân tích một cung, nêu cả sao phúc (Tử Vi, Lộc Tồn, Hóa Lộc/Quyền/Khoa...) lẫn tinh tú bất lợi nằm đó (Hóa Kỵ, Kình Dương, Đà La, Hỏa Tinh, Linh Tinh, Địa Không, Địa Kiếp, Tang Hư, Bạch Hổ, Thiên Hình, Tuần/Triệt...). Với mỗi sao xấu: nêu tên sao và cung tọa, ảnh hưởng cụ thể đến đời sống, và cách hoá giải thực tế. Cấm chỉ liệt kê sao tốt rồi khép lại phần khó bằng một câu chung chung.\n\n{{v2}}',
     variables: ['profileContextText(profile)', 'chartLine', 'taskText'],
     source: 'web/src/lib/tuvi.ts:316',
   },

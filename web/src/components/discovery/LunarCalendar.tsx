@@ -28,6 +28,22 @@ import {
 import s from './LunarCalendar.module.css';
 import { useLocale } from '@/i18n/LocaleProvider';
 const STORE = 'astrox-lunar-events-v1';
+// Select tháng/năm riêng thay cho input[type=month]: ô month native hiển thị
+// theo locale trình duyệt (vd. "September 2026") ngoài tầm kiểm soát của app.
+const ENGLISH_MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 const weekday = (date: string, en = false) =>
   new Date(date + 'T12:00:00Z').toLocaleDateString(en ? 'en-US' : 'vi-VN', {
     weekday: 'long',
@@ -163,20 +179,43 @@ export function LunarCalendar() {
       </button>
       <label>
         <span className={s.sr}>{copy('Chọn tháng', 'Choose month')}</span>
-        <input
+        <select
           aria-label={copy('Chọn tháng', 'Choose month')}
-          type="month"
-          value={month}
-          min={`${MIN_YEAR}-01`}
-          max={`${MAX_YEAR}-12`}
+          value={Number(month.slice(5, 7)) || 1}
           onChange={e => {
-            if (!e.target.value) return;
+            const next = `${month.slice(0, 4)}-${String(e.target.value).padStart(2, '0')}-01`;
             try {
-              civilDay(e.target.value + '-01');
-              choose(e.target.value + '-01');
+              civilDay(next);
+              choose(next);
             } catch {}
           }}
-        />
+        >
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+            <option key={m} value={m}>
+              {copy(`Tháng ${m}`, ENGLISH_MONTHS[m - 1])}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        <span className={s.sr}>{copy('Chọn năm', 'Choose year')}</span>
+        <select
+          aria-label={copy('Chọn năm', 'Choose year')}
+          value={Number(month.slice(0, 4)) || MIN_YEAR}
+          onChange={e => {
+            const next = `${e.target.value}-${month.slice(5, 7) || '01'}-01`;
+            try {
+              civilDay(next);
+              choose(next);
+            } catch {}
+          }}
+        >
+          {Array.from({ length: MAX_YEAR - MIN_YEAR + 1 }, (_, i) => MIN_YEAR + i).map(y => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
       </label>
       <button
         type="button"

@@ -26,6 +26,7 @@
 }
 .jump input,
 .monthControls input,
+.monthControls select,
 .form input:not([type="checkbox"]),
 .form select {
   min-width: 0;
@@ -183,7 +184,7 @@
 }
 .monthControls {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 40px auto;
+  grid-template-columns: 40px minmax(0, 1.15fr) minmax(0, 0.85fr) 40px auto;
   gap: 8px;
   align-items: center;
   margin-bottom: 22px;
@@ -197,12 +198,18 @@
 .monthControls label {
   min-width: 0;
 }
-.monthControls input {
+.monthControls input,
+.monthControls select {
   width: 100%;
   font-size: 15px;
   border-color: transparent;
   background: transparent;
   padding-inline: 5px;
+}
+.monthControls select {
+  appearance: none;
+  text-align: center;
+  cursor: pointer;
 }
 .monthControls .todayButton {
   font-size: 12px;
@@ -718,11 +725,12 @@
     border-radius: 20px;
   }
   .monthControls {
-    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    grid-template-columns: 32px minmax(0, 1.15fr) minmax(0, 0.85fr) 32px;
     gap: 5px;
     margin-bottom: 16px;
   }
-  .monthControls input {
+  .monthControls input,
+  .monthControls select {
     font-size: 14px;
   }
   .monthControls .todayButton {

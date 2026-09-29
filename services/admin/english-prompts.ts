@@ -28,7 +28,7 @@ export const ENGLISH_TEMPLATES: Record<string, string> = {
   'tuvi.ziweiContextText.0':
     'COMPUTED ZI WEI CHART DATA (complete — the AI must use it directly; never claim data is missing): {{v0}}',
   'tuvi.tuviPromptBody.0':
-    '{{v0}}\n{{v1}}\n\nCHART ANALYSIS RULES: start immediately from the data above — interpret the given stars, palaces and decade cycles directly. Forbidden phrases: "cannot read", "data missing", "please provide birth details". If a detail is genuinely absent from the JSON, skip it and analyze the rest.\n\n{{v2}}',
+    '{{v0}}\n{{v1}}\n\nCHART ANALYSIS RULES: start immediately from the data above — interpret the given stars, palaces and decade cycles directly. Forbidden phrases: "cannot read", "data missing", "please provide birth details". If a detail is genuinely absent from the JSON, skip it and analyze the rest.\nBalance favorable and adverse stars: when interpreting a palace, cover both its benefic stars (Zi Wei, Lu Cun, Hua Lu/Hua Quan/Hua Ke...) and any malefic stars seated there (Hua Ji, Qing Yang, Tuo Luo, Huo Xing, Ling Xing, Di Kong, Di Jie, Tang Hu, Bai Hu, Tian Xing, Tuan/Triet barriers...). For each adverse star: name the star and its palace, its concrete life impact, and a practical way to soften it. Listing only lucky stars and dismissing the hard parts with one generic sentence is forbidden.\n\n{{v2}}',
   'tuvi.tuviPeriodPromptText.0':
     "Today is {{v0}} ({{v1}}). Based on the chart above, write exactly 3 short bullets about today's {{v2}} tone: 1 line on work, 1 line on love/relationships, 1 line of advice. Anchor each line in the given stars, palaces and daily transits.",
   'tuvi.tuviPeriodPromptText.1':

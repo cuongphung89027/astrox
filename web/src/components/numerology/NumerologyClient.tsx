@@ -65,7 +65,7 @@ export function NumerologyClient() {
             <b />
           </div>
           <span className={styles.eyebrow}>{en ? 'THE IMPRINT OF NUMBERS' : 'DẤU ẤN NHỮNG CON SỐ'}</span>
-          <h2>{en ? 'Every number.<br/>A part of you.' : 'Mỗi con số.<br/>Một phần của bạn.'}</h2>
+          <h2>{en ? <>Every number.<br />A part of you.</> : <>Mỗi con số.<br />Một phần của bạn.</>}</h2>
           <p>{en ? 'Revealed from your full name and date of birth.' : 'Khám phá từ họ tên đầy đủ và ngày sinh.'}</p>
           {error && <p role="alert">{error}</p>}
           <button className={styles.primary} onClick={() => open()}>
@@ -118,7 +118,7 @@ export function NumerologyClient() {
             >
               <div className={styles.lifeCopy}>
                 <span>{en ? 'LIFE PATH' : 'SỐ CHỦ ĐẠO'}</span>
-                <h2>{en ? 'Your own<br/>rhythm.' : 'Nhịp riêng<br/>của bạn.'}</h2>
+                <h2>{en ? <>Your own<br />rhythm.</> : <>Nhịp riêng<br />của bạn.</>}</h2>
                 <small>
                   {en ? 'Explore your life path ' : 'Khám phá đường đời '}
                   <span aria-hidden="true">↗</span>

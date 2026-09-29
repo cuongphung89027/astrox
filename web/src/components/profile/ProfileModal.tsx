@@ -29,8 +29,8 @@ import { HOUR_CHI_OPTIONS } from '@/lib/utils';
 import styles from './ProfileModal.module.css';
 import { FeatureIcon } from '@/components/kit/FeatureIcon';
 import { useLocale } from '@/i18n/LocaleProvider';
-import { searchBirthPlaces, timeZoneChoices, zoneHint, resolveProfileZone } from '@/lib/birth-location';
-import { wallTimeToInstant, parseIsoDate, parseClock, isValidZone } from '@/lib/birth-time';
+import { searchBirthPlaces, timeZoneChoices, zoneHint } from '@/lib/birth-location';
+import { isValidZone } from '@/lib/birth-time';
 
 /* ------------------------------------------------------------------ */
 /* Context + registry (cho caller ngoài Provider —vd. AuthMenu header) */
@@ -228,16 +228,6 @@ function ProfileWizard({ closing, captive, editing, draft, panelRef, onDraft, on
   const placeValid = international
     ? draft.place.trim().length >= 2 && isValidZone(draft.placeTz || '')
     : draft.place.trim().length >= 2;
-  const wallZone = resolveProfileZone({ place: draft.place, placeTz: draft.placeTz });
-  const exact = parseClock(draft.birthTime);
-  const dobParts = parseIsoDate(draft.dob);
-  const wallCheck =
-    exact !== null && dobParts
-      ? wallTimeToInstant({ ...dobParts, hour: Math.floor(exact / 60), minute: exact % 60 }, wallZone)
-      : null;
-  const timeValid =
-    !wallCheck ||
-    (!wallCheck.nonexistent && (!wallCheck.ambiguous || draft.birthDst === 'first' || draft.birthDst === 'second'));
   const zoneChoices = timeZoneChoices();
   useEffect(() => {
     const previous = document.body.style.overflow;
@@ -308,9 +298,6 @@ function ProfileWizard({ closing, captive, editing, draft, panelRef, onDraft, on
             }
             if (!placeValid) {
               document.getElementById('ax-pm-place')?.focus();
-              return;
-            }
-            if (!timeValid) {
               return;
             }
             onSave();
@@ -471,34 +458,6 @@ function ProfileWizard({ closing, captive, editing, draft, panelRef, onDraft, on
                 )}
                 {attempted && !placeValid && <small role="alert">{t.t('wizard.placeError')}</small>}
               </label>
-              <label className={styles.field}>
-                {t.t('wizard.exactTime')}
-                <input
-                  type="time"
-                  value={draft.birthTime || ''}
-                  onChange={e => onDraft(d => ({ ...d, birthTime: e.target.value }))}
-                />
-                {wallCheck?.nonexistent && <small role="alert">{t.t('wizard.timeNonexistent')}</small>}
-              </label>
-              {wallCheck?.ambiguous && draft.birthTime && (
-                <fieldset className={styles.gender}>
-                  <legend>{t.t('wizard.dstPrompt')}</legend>
-                  <div>
-                    {(['first', 'second'] as const).map(choice => (
-                      <label key={choice}>
-                        <input
-                          type="radio"
-                          name="birth-dst"
-                          value={choice}
-                          checked={(draft.birthDst || 'first') === choice}
-                          onChange={() => onDraft(d => ({ ...d, birthDst: choice }))}
-                        />
-                        <span>{choice === 'first' ? t.t('wizard.dstFirst') : t.t('wizard.dstSecond')}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              )}
             </fieldset>
             <p className={styles.note}>{t.t('wizard.note')}</p>
           </div>

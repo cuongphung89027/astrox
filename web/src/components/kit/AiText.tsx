@@ -9,6 +9,7 @@
 import { Fragment, type ReactNode } from 'react';
 import { hasHan, translateKnownTerms } from '../../../../services/admin/reading-language';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { readingSegments, stripBullet } from '@/lib/reading-blocks';
 
 /** Tách "**bold**" thành các node inline (index lẻ = phần trong dấu **). */
 function renderInline(text: string, keyBase: string): ReactNode[] {
@@ -53,26 +54,23 @@ export function AiText({ text, className }: { text: string; className?: string }
       )}
       {blocks.map((block, bi) => {
         const lines = block.split('\n').filter(l => l.trim().length > 0);
-        const isList = lines.length > 0 && lines.every(l => /^\s*[-•]\s+/.test(l));
-
-        if (isList) {
-          return (
-            <ul key={bi} className="list-disc space-y-1.5 pl-5">
-              {lines.map((line, li) => (
-                <li key={li}>{renderInline(line.replace(/^\s*[-•]\s+/, ''), `${bi}-${li}`)}</li>
+        return readingSegments(lines).map((seg, si) =>
+          seg.type === 'ul' ? (
+            <ul key={`${bi}-${si}`} className="list-disc space-y-1.5 pl-5">
+              {seg.lines.map((line, li) => (
+                <li key={li}>{renderInline(stripBullet(line), `${bi}-${si}-${li}`)}</li>
               ))}
             </ul>
-          );
-        }
-        return (
-          <p key={bi}>
-            {lines.map((line, li) => (
-              <Fragment key={li}>
-                {li > 0 ? <br /> : null}
-                {renderInline(line, `${bi}-${li}`)}
-              </Fragment>
-            ))}
-          </p>
+          ) : (
+            <p key={`${bi}-${si}`}>
+              {seg.lines.map((line, li) => (
+                <Fragment key={li}>
+                  {li > 0 ? <br /> : null}
+                  {renderInline(line, `${bi}-${si}-${li}`)}
+                </Fragment>
+              ))}
+            </p>
+          ),
         );
       })}
       {legacy && (

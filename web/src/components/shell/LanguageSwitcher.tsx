@@ -42,21 +42,21 @@ export function LanguageSwitcher({ className }: { className?: string }) {
       className={className}
     >
       <svg
-        width="15"
-        height="15"
+        width="17"
+        height="17"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="1.55"
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden="true"
         focusable="false"
       >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M2 12h20" />
-        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-      </svg>
-    </button>
+        {/* Globe nét mảnh — cùng họ nét với FeatureIcon (1.55, bo đầu). */}
+        <circle cx="12" cy="12" r="8.5" />
+        <path d="M3.5 12h17" />
+        <path d="M12 3.5c2.8 2.3 4.2 5.1 4.2 8.5s-1.4 6.2-4.2 8.5c-2.8-2.3-4.2-5.1-4.2-8.5s1.4-6.2 4.2-8.5Z" />
+      </svg>    </button>
   );
 }

@@ -694,18 +694,6 @@ export function resetMarketCache() {
   marketCacheAccount = undefined;
 }
 
-/** Explicit market choice (plan Task 13/P1-7): authenticated POST, server stores it. */
-export async function chooseMarket(market: 'US' | 'VN'): Promise<boolean> {
-  const res = await fetch(`${AUTH_API_BASE}/api/market`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ market }),
-  });
-  resetMarketCache();
-  return res.ok;
-}
-
 /** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */
 type PriceInfo = {
   market?: 'VN' | 'US';

@@ -12,6 +12,7 @@ import { AUTH_API_BASE } from './config';
 import { startCloudSync } from './cloud-sync';
 import { refreshPoints, seedPointsBalance, setPointsAccount } from './points';
 import { getState, activateAccount } from './state';
+import { currentUiLocale } from './ui-locale';
 
 /** Storage namespace: provider-prefixed internal id — legacy Zalo keys stay byte-identical. */
 export function accountOwner(user: { id?: string | number; provider?: string } | null | undefined): string | null {
@@ -26,6 +27,8 @@ interface AuthContextValue {
   astroxUser: AstroxUser | null;
   loggedIn: boolean;
   ready: boolean;
+  /** Market của tài khoản (Zalo→VN, Google→US); null khi chưa đăng nhập. */
+  market: 'VN' | 'US' | null;
   displayName: string;
   moduleAccess: Record<string, boolean>;
   isModuleAllowed: (module: string) => boolean;
@@ -74,6 +77,7 @@ function LocalPreviewProvider({ children }: { children: React.ReactNode }) {
     astroxUser: active ? { id: 'localhost-preview', display_name: name } : null,
     loggedIn: active,
     ready: true,
+    market: active ? (currentUiLocale() === 'en' ? 'US' : 'VN') : null,
     displayName: name,
     moduleAccess: {},
     isModuleAllowed: () => true,
@@ -94,6 +98,7 @@ function LocalPreviewProvider({ children }: { children: React.ReactNode }) {
 function RealAuthProvider({ children }: { children: React.ReactNode }) {
   const syncStop = useRef<(() => void) | null>(null);
   const [astroxUser, setAstroxUser] = useState<AstroxUser | null>(null);
+  const [market, setMarket] = useState<'VN' | 'US' | null>(null);
   const [moduleAccess, setModuleAccess] = useState<Record<string, boolean>>({});
   const [ready, setReady] = useState(false);
 
@@ -114,6 +119,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
         setPointsAccount(axUser ? String(axUser.id) : null);
         if (axUser) seedPointsBalance(String(axUser.id), result.points, 'market' in result ? result.market : null);
         setAstroxUser(axUser);
+        setMarket(axUser ? (result.market === 'US' ? 'US' : 'VN') : null);
         setReady(true);
         void refreshModuleAccess();
       })();
@@ -167,6 +173,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
       astroxUser,
       loggedIn,
       ready,
+      market,
       displayName,
       moduleAccess,
       isModuleAllowed: (module: string) => moduleAccess[module] !== false,
@@ -185,6 +192,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
         }
         activateAccount(null);
         setAstroxUser(null);
+        setMarket(null);
       },
       zaloLogin: () => {
         if (AUTH_API_BASE) {
@@ -197,7 +205,7 @@ function RealAuthProvider({ children }: { children: React.ReactNode }) {
           window.location.href = `${AUTH_API_BASE}/auth/google/login${storedReferral() ? `?ref=${encodeURIComponent(storedReferral()!)}` : ''}`;
       },
     }),
-    [astroxUser, loggedIn, ready, displayName, moduleAccess, refreshModuleAccess],
+    [astroxUser, loggedIn, ready, market, displayName, moduleAccess, refreshModuleAccess],
   );
 
   return (

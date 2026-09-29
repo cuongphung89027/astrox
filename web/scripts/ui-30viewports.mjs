@@ -43,7 +43,7 @@ const check = (name, ok, detail = "") => { results.push({ name, ok, detail }); i
 const AUDIT = `(() => {
   const vw = document.documentElement.clientWidth;
   const overflow = document.documentElement.scrollWidth > vw + 1;
-  const chip = document.querySelector('[aria-label*="Ví AstroX Point"]');
+  const chip = document.querySelector('[aria-label^="Ví AstroX"]'); // nhãn chip: "Ví AstroX Point" (cũ) / "Ví AstroX — N Point" (từ cadddd4)
   const avatar = document.querySelector('button[aria-haspopup="menu"]');
   const title = document.querySelector('header p');
   const targets = [chip, avatar].filter(Boolean);

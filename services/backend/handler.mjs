@@ -8,7 +8,7 @@ import { readPublished } from '../admin/store.mjs';
 import { runtimeSettings, capabilities, legacySnapshot } from './config.mjs';
 import { readSession, readAiSession, aiSession, zaloLogin, zaloCallback, zaloFinish, logout } from './auth.mjs';
 import { googleLogin, googleCallback } from './google-auth.mjs';
-import { creditsBalance, creditsHistory, setMarket, marketOf } from './credits.mjs';
+import { creditsBalance, creditsHistory, marketOf } from './credits.mjs';
 import { createLemonCheckout, lemonOrderStatus } from './lemon.mjs';
 import { usWalletSummary } from './us-rewards.mjs';
 import { handleLemonWebhook } from './lemon-webhook.mjs';
@@ -165,15 +165,8 @@ export async function publicFetch(request, env) {
       return json(env, request, { market: await marketOf(env, session.sub) });
     }
     if (path === '/api/market' && method === 'POST') {
-      const session = await readSession(env, request);
-      if (!session) return json(env, request, { error: 'unauthorized' }, 401);
-      if (!trustedOrigin(env, request)) return json(env, request, { error: 'invalid_origin' }, 403);
-      const body = await request.json().catch(() => null);
-      try {
-        return json(env, request, await setMarket(env, session.sub, body?.market));
-      } catch (e) {
-        return json(env, request, { error: String(e?.message || 'invalid_market') }, 400);
-      }
+      // Sơn 29/09: market theo provider (Zalo→VN, Google→US), không đổi được.
+      return json(env, request, { error: 'market_immutable' }, 403);
     }
     if (path === '/auth/logout' && method === 'POST') return logout(env, request);
     if (path === '/api/ai/session' && method === 'POST') return await aiSession(env, request);

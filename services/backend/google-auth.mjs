@@ -216,6 +216,14 @@ export async function completeGoogleLogin(env, request, settings, me, ref = null
   )
     .bind(me.sub)
     .first();
+
+  // Sơn 29/09: tài khoản gắn một quốc gia — Google luôn là US; upsert theo user
+  // thật để chữa hàng market_preferences cũ do flow onboarding từng cho tự chọn.
+  await env.DB.prepare(
+    "INSERT INTO market_preferences(user_id,market,updated_at) VALUES(?,'US',?) ON CONFLICT(user_id) DO UPDATE SET market='US', updated_at=excluded.updated_at",
+  )
+    .bind(identity.user_id, now)
+    .run();
   if (!identity) return json(env, request, { error: 'google_login_failed' }, 500);
   const user = await env.DB.prepare("SELECT id FROM app_users WHERE id=? AND status='active'")
     .bind(identity.user_id)

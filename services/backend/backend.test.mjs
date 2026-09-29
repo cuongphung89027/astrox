@@ -413,6 +413,65 @@ test('outbound fetches only use redirect modes the Workers runtime accepts', asy
   const modes = sources.join('').matchAll(/redirect:\s*'([^']+)'/g);
   assert.ok([...modes].length >= 3, 'expected outbound fetches to pin an explicit redirect mode');
 });
+// Sơn 29/09: tài khoản gắn một quốc gia — Zalo luôn VN, market không đổi qua API.
+test('successful Zalo login binds the account to the Vietnamese market and heals stale rows', async () => {
+  const env = await fixture();
+  const seedState = () =>
+    env.DB
+      .prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)')
+      .bind('stv', 'v', new Date().toISOString())
+      .run();
+  await seedState();
+  const zaloFetch = async url =>
+    url.includes('oauth.zaloapp')
+      ? Response.json({ access_token: 'at', refresh_token: 'r' })
+      : Response.json({ id: '77001', name: 'Sơn Zalo', picture: { data: { url: 'https://zalo/x.png' } } });
+  const call = () =>
+    zaloCallback(
+      env,
+      new Request('https://api.example.com/auth/zalo/callback?state=stv&code=x', {
+        headers: { cookie: 'astrox_oauth=stv' },
+      }),
+      { zalo: { returnUrl: 'https://theastrox.space/' } },
+      zaloFetch,
+    );
+  const marketOfZalo = async () =>
+    (
+      await env.DB
+        .prepare(
+          "SELECT mp.market FROM market_preferences mp JOIN zalo_identities zi ON zi.user_id=mp.user_id WHERE zi.provider='zalo' AND zi.provider_subject='77001'",
+        )
+        .first()
+    )?.market;
+  assert.equal((await call()).status, 302);
+  assert.equal(await marketOfZalo(), 'VN');
+  // Hàng cũ ghi sai (di sản flow onboarding) phải được chữa lại khi login lại.
+  await env.DB.prepare(
+    "UPDATE market_preferences SET market='US' WHERE user_id=(SELECT user_id FROM zalo_identities WHERE provider='zalo' AND provider_subject='77001')",
+  ).run();
+  await seedState(); // callback DELETE oauth_states theo state — gieo lại cho lượt hai.
+  assert.equal((await call()).status, 302);
+  assert.equal(await marketOfZalo(), 'VN');
+});
+
+test('POST /api/market is locked: market follows the login provider', async () => {
+  const env = await fixture();
+  await env.DB
+    .prepare("INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES('m1','M','active','2026-01-01','2026-01-01')")
+    .run();
+  const headers = await cookieOfUserId(env, 'm1');
+  const res = await publicFetch(
+    new Request('https://api.example.com/api/market', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...headers },
+      body: JSON.stringify({ market: 'US' }),
+    }),
+    env,
+  );
+  assert.equal(res.status, 403);
+  assert.equal((await res.json()).error, 'market_immutable');
+});
+
 // Failed Zalo logins must persist a sanitized diagnostic row so production
 // can be triaged from D1 even when the user never reports the error text.
 test('failed Zalo callbacks persist diagnostics without leaking tokens', async () => {

@@ -208,6 +208,23 @@ test('email colliding with a Zalo user never links accounts', async () => {
   assert.notEqual(googleIdentity.user_id, 'zuser');
 });
 
+// Sơn 29/09: Google luôn buộc market US — kể cả hàng market_preferences cũ.
+test('Google login binds the account to the US market and heals stale rows', async () => {
+  const env = await fixture();
+  const claims = { sub: 'market-sub', email: 'm@example.com', name: 'M', picture: '' };
+  await completeGoogleLogin(env, req('/x', { method: 'POST' }), settings, claims);
+  const user = await env.DB
+    .prepare("SELECT user_id FROM zalo_identities WHERE provider='google' AND provider_subject='market-sub'")
+    .first();
+  const marketOf = async () =>
+    (await env.DB.prepare('SELECT market FROM market_preferences WHERE user_id=?').bind(user.user_id).first())
+      ?.market;
+  assert.equal(await marketOf(), 'US');
+  await env.DB.prepare("UPDATE market_preferences SET market='VN' WHERE user_id=?").bind(user.user_id).run();
+  await completeGoogleLogin(env, req('/y', { method: 'POST' }), settings, claims);
+  assert.equal(await marketOf(), 'US');
+});
+
 test('suspended Google account cannot log in', async () => {
   const env = await fixture();
   // Create the user first, then suspend.

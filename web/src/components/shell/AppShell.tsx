@@ -25,6 +25,7 @@ import { AuthMenu } from './AuthMenu';
 import { BottomDock } from './BottomDock';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { LoginPrompt } from './LoginPrompt';
+import { MarketGuard } from './MarketGuard';
 import { PointsChip } from './PointsChip';
 import { PublishedNotice } from './PublishedNotice';
 import { navItems, mobileTitleFor } from '@/lib/nav';
@@ -139,6 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <PaidReadingConsent />
         <BottomDock key={pathname} />
         <LoginPrompt />
+        <MarketGuard />
       </div>
     </ToastProvider>
   );

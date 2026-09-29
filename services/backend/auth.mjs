@@ -265,6 +265,13 @@ async function completeZaloLogin(env, request, settings, me, ref = null) {
   )
     .bind(String(me.id))
     .first();
+  // Sơn 29/09: tài khoản gắn một quốc gia — Zalo luôn là VN; upsert theo user
+  // thật để chữa hàng market_preferences cũ do flow onboarding từng cho tự chọn.
+  await env.DB.prepare(
+    "INSERT INTO market_preferences(user_id,market,updated_at) VALUES(?,'VN',?) ON CONFLICT(user_id) DO UPDATE SET market='VN', updated_at=excluded.updated_at",
+  )
+    .bind(identity.user_id, now)
+    .run();
   const user = await env.DB.prepare("SELECT id FROM app_users WHERE id=? AND status='active'")
     .bind(identity.user_id)
     .first();

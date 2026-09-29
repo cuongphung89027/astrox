@@ -14,9 +14,7 @@ import {
   type TopupPackage,
 } from '@/lib/api';
 import { promoErrorMessage } from './promo-message';
-import { createLemonTopup, chooseMarket } from '@/lib/api';
-import { currentMarket } from '@/lib/api';
-import { useLocale } from '@/i18n/LocaleProvider';
+import { createLemonTopup } from '@/lib/api';
 import styles from './TopupPanel.module.css';
 
 const vnd = (value: number) => `${value.toLocaleString('vi-VN')} ₫`;
@@ -30,18 +28,10 @@ export function TopupPanel({ open, onClose }: { open: boolean; onClose: () => vo
 }
 
 function TopupSession({ onClose }: { onClose: () => void }) {
-  const { astroxUser } = useAuth();
+  const { astroxUser, market: accountMarket } = useAuth();
   const eligible = !!astroxUser && astroxUser.id !== 'localhost-preview';
-  const [market, setMarket] = useState<'US' | 'VN' | null>(null);
-  useEffect(() => {
-    let active = true;
-    void currentMarket(astroxUser?.id ?? null).then(m => {
-      if (active) setMarket(m);
-    });
-    return () => {
-      active = false;
-    };
-  }, [astroxUser?.id]);
+  // Market theo provider (Zalo→VN, Google→US, Sơn 29/09) — không còn bước chọn ví.
+  const market: 'US' | 'VN' = accountMarket ?? 'VN';
   const { points: balance, refresh: refreshBalance } = usePointsBalance(eligible);
   const [packages, setPackages] = useState<TopupPackage[] | null>(null);
   const [pkgError, setPkgError] = useState(false);
@@ -187,18 +177,6 @@ function TopupSession({ onClose }: { onClose: () => void }) {
     }
   }
 
-  // P1-7: a fresh account has NO market yet — choose explicitly before any
-  // wallet surface appears, so a US user never lands on the VN PayOS flow.
-  if (market === null)
-    return (
-      <MarketOnboarding
-        onClose={onClose}
-        onChosen={next => {
-          setMarket(next);
-          void refreshBalance();
-        }}
-      />
-    );
   if (market === 'US') return <TopupUsCredits key={astroxUser?.id ?? 'guest'} onClose={onClose} />;
   return (
     <dialog
@@ -763,61 +741,3 @@ export function TopupUsCredits({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** First-wallet-open market choice (P1-7): explicit, server-stored, per account. */
-function MarketOnboarding({ onClose, onChosen }: { onClose: () => void; onChosen: (market: 'US' | 'VN') => void }) {
-  const t = useLocale();
-  const { astroxUser } = useAuth();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const choose = async (market: 'US' | 'VN') => {
-    if (busy) return;
-    if (!astroxUser) {
-      setError(t.locale === 'en' ? 'Please sign in first.' : 'Vui lòng đăng nhập trước khi chọn.');
-      return;
-    }
-    setBusy(true);
-    const ok = await chooseMarket(market);
-    setBusy(false);
-    if (ok) onChosen(market);
-    else
-      setError(
-        t.locale === 'en'
-          ? 'Could not save your choice. Please try again.'
-          : 'Chưa lưu được lựa chọn. Vui lòng thử lại.',
-      );
-  };
-  return (
-    <dialog open className={styles.dialog} aria-labelledby="ax-market-title" onCancel={onClose}>
-      <div className={styles.body}>
-        <h2 id="ax-market-title">{t.locale === 'en' ? 'Choose your wallet' : 'Chọn loại ví cho bạn'}</h2>
-        <p>
-          {t.locale === 'en'
-            ? 'AstroX has two wallets. This choice applies to purchases and cannot be switched while Credits are reserved for an active reading.'
-            : 'AstroX có hai loại ví. Lựa chọn này áp dụng cho việc nạp và không đổi khi có giao dịch đang xử lý.'}
-        </p>
-        <ul className={styles.packages}>
-          <li>
-            <button type="button" onClick={() => choose('US')} disabled={busy}>
-              <strong>🇺🇸 Credits (USD)</strong>
-              <span>Google · Lemon Squeezy checkout</span>
-            </button>
-          </li>
-          <li>
-            <button type="button" onClick={() => choose('VN')} disabled={busy}>
-              <strong>🇻🇳 Point (VND)</strong>
-              <span>Zalo · PayOS</span>
-            </button>
-          </li>
-        </ul>
-        {error && (
-          <p role="alert" className={styles.promoError}>
-            {error}
-          </p>
-        )}
-        <button type="button" className={styles.close} onClick={onClose} aria-label={t.t('common.close')}>
-          ×
-        </button>
-      </div>
-    </dialog>
-  );
-}

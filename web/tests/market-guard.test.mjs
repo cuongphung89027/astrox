@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { load } from './support/load.mjs';
+import { load, memoryStorage } from './support/load.mjs';
 
 // Sơn 29/09: bước chọn khu vực + popup cảnh báo market phải có đủ chữ hai ngôn ngữ.
 const GUARD_KEYS = [
@@ -33,6 +33,17 @@ test('region picker and market guard dictionaries are complete in both locales',
     assert.ok(vi[key].length > 3 && en[key].length > 3, `${key} quá ngắn`);
     assert.notEqual(vi[key], en[key], `${key} trùng nhau giữa hai ngôn ngữ`);
   }
+});
+
+test('login-after-logout flag round-trips once through sessionStorage', async () => {
+  const storage = memoryStorage();
+  const g = await load('lib/market-guard.ts', {
+    globals: { window: {}, sessionStorage: storage },
+  });
+  assert.equal(g.consumeLoginAfterLogout(), false, 'chưa đánh cờ → false');
+  g.markLoginAfterLogout();
+  assert.equal(g.consumeLoginAfterLogout(), true, 'đã đánh cờ → true');
+  assert.equal(g.consumeLoginAfterLogout(), false, 'tiêu thụ một lần duy nhất');
 });
 
 test('market guard store is import-safe outside React and exposes imperative open/close', async () => {

@@ -120,6 +120,42 @@ test('login prompt shows the region step first, then the provider for that regio
   );
 });
 
+test('after a market logout, the login popup opens directly on the tree provider', async () => {
+  const runtime = hookRuntime();
+  let opened = 0;
+  const auth = { ready: true, loggedIn: false, zaloLogin() {}, googleLogin() {} };
+  const mocks = loginMocks(runtime, auth);
+  mocks['@/lib/login-dialog'] = {
+    useLoginDialogOpen: () => false,
+    closeLoginDialog() {},
+    openLoginDialog() {
+      opened++;
+    },
+  };
+  mocks['@/lib/market-guard'] = {
+    consumeLoginAfterLogout: () => true,
+    markLoginAfterLogout() {},
+    openMarketGuard() {},
+    closeMarketGuard() {},
+    useMarketGuard: () => ({ open: false, reason: null, target: null }),
+  };
+  const { LoginPrompt } = await load('components/shell/LoginPrompt.tsx', {
+    mocks,
+    globals: { ...renderGlobals, localStorage: memoryStorage() },
+  });
+  runtime.reset();
+  let view = LoginPrompt({}); // render lần đầu → xếp effect tiêu thụ cờ
+  runtime.flushEffects();
+  runtime.reset();
+  view = LoginPrompt({});
+  assert.equal(opened, 1, 'popup tự mở sau logout vì market');
+  assert.ok(nodes(view).find(n => String(n.props?.className).includes('googleActive')), 'EN tree mở thẳng bước Google');
+  assert.ok(
+    !nodes(view).find(n => String(n.props?.className).includes('region') && n.type === 'button'),
+    'không bắt chọn khu vực lại',
+  );
+});
+
 test('market guard warns and logs out an account opened on the wrong tree', async () => {
   const runtime = hookRuntime();
   let loggedOut = 0;

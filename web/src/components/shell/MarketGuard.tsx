@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { closeMarketGuard, openMarketGuard, useMarketGuard } from '@/lib/market-guard';
+import { closeMarketGuard, markLoginAfterLogout, openMarketGuard, useMarketGuard } from '@/lib/market-guard';
 import { FlagUS, FlagVN } from '@/components/kit/Flags';
 import { useLocale } from '@/i18n/LocaleProvider';
 import styles from './MarketGuard.module.css';
@@ -61,6 +61,7 @@ export function MarketGuard() {
     const id = setInterval(() => {
       setSeconds(s => {
         if (s <= 1) {
+          markLoginAfterLogout();
           void logout().finally(() => closeMarketGuard());
           return 0;
         }
@@ -75,12 +76,14 @@ export function MarketGuard() {
   const providerIsGoogle = astroxUser?.provider === 'google';
   const switchToUS = guard.target?.locale === 'en';
   async function confirmLogoutNow() {
+    markLoginAfterLogout();
     await logout();
     closeMarketGuard();
   }
   async function confirmSwitch() {
     const href = guard.target?.href || '/';
     document.cookie = `axlang=${switchToUS ? 'en' : 'vi'}; path=/; max-age=31536000; samesite=lax; secure`;
+    markLoginAfterLogout();
     await logout();
     closeMarketGuard();
     window.location.assign(href);

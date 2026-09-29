@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { closeLoginDialog, openLoginDialog, useLoginDialogOpen } from '@/lib/login-dialog';
+import { consumeLoginAfterLogout } from '@/lib/market-guard';
 import { hasTermsConsent, saveTermsConsent, termsHref } from '@/lib/terms';
 import { GoogleG, ZaloWordmark } from '@/components/kit/BrandLogos';
 import { FlagUS, FlagVN } from '@/components/kit/Flags';
@@ -45,6 +46,16 @@ export function LoginPrompt() {
     const id = setTimeout(() => setConsent(hasTermsConsent()), 0);
     return () => clearTimeout(id);
   }, []);
+
+  // Vừa logout vì market (switch/bị lệch cây): mở thẳng provider của cây này
+  // — Việt Nam → Zalo, English → Google — không bắt chọn khu vực lại (Sơn 29/09).
+  useEffect(() => {
+    if (!consumeLoginAfterLogout()) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mở một lần theo cờ sessionStorage, cùng pattern setMounted của auth.tsx
+    setRegion(t.locale === 'en' ? 'US' : 'VN');
+    invited.current = true;
+    openLoginDialog();
+  }, [t.locale]);
 
   // Mời khách một lần mỗi lượt ghé thăm (đóng rồi thì không tự mở lại trong phiên).
   useEffect(() => {

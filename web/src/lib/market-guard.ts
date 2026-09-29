@@ -39,6 +39,31 @@ export function closeMarketGuard() {
   emit();
 }
 
+/**
+ * Sau logout vì market (switch chủ động hoặc bị lệch cây): cây đích phải mở thẳng
+ * popup đăng nhập của nó — VN → Zalo, EN → Google (Sơn 29/09) — chứ không tự
+ * đăng nhập lại hay bắt chọn khu vực lần nữa. Cờ sống qua điều hướng full-page.
+ */
+const LOGIN_AFTER_LOGOUT = 'axLoginAfterLogout';
+export function markLoginAfterLogout() {
+  try {
+    sessionStorage.setItem(LOGIN_AFTER_LOGOUT, '1');
+  } catch {
+    /* sessionStorage bị chặn thì thôi, popup mời mặc định vẫn chạy. */
+  }
+}
+export function consumeLoginAfterLogout(): boolean {
+  try {
+    if (sessionStorage.getItem(LOGIN_AFTER_LOGOUT) === '1') {
+      sessionStorage.removeItem(LOGIN_AFTER_LOGOUT);
+      return true;
+    }
+  } catch {
+    /* bỏ qua */
+  }
+  return false;
+}
+
 export function useMarketGuard(): MarketGuardState {
   const [snap, setSnap] = useState(state);
   useEffect(() => {

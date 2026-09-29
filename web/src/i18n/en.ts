@@ -77,7 +77,6 @@ export const en: Record<string, string> = {
   'login.later': 'Explore first',
   'login.regionTitle': 'Where are you?',
   'login.regionHint': 'Choose your region to continue.',
-  'login.regionCurrent': 'Viewing',
   'login.changeRegion': 'Choose another region',
   'guard.badgeMismatch': 'Wrong region for this account',
   'guard.badgeSwitch': 'Switch region',

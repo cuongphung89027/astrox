@@ -77,7 +77,6 @@ export const vi: Record<string, string> = {
   'login.later': 'Khám phá trước',
   'login.regionTitle': 'Bạn đang ở đâu?',
   'login.regionHint': 'Chọn khu vực của bạn để tiếp tục đăng nhập.',
-  'login.regionCurrent': 'Đang xem',
   'login.changeRegion': 'Chọn khu vực khác',
   'guard.badgeMismatch': 'Tài khoản lệch khu vực',
   'guard.badgeSwitch': 'Đổi khu vực',

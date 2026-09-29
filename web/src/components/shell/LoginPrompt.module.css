@@ -28,9 +28,9 @@
 .region { display: flex; align-items: center; gap: 13px; width: 100%; min-height: 56px; padding: 13px 16px; border: 1px solid #d9dece; border-radius: 12px; background: #f9faf3; color: #244e42; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background .2s, border-color .2s, transform .2s, box-shadow .2s; }
 .region + .region { margin-top: 10px; }
 .region:hover { background: #eff1e6; transform: translateY(-1px); box-shadow: 0 7px 20px #244e4214; }
-.regionCurrent { border-color: #a2b292; background: #f2f4ea; }
+.regionCurrent { border-color: #214d40; background: #214d40; color: #f8f5e4; }
+.regionCurrent:hover { background: #1a4034; }
 .regionName { flex: 1; text-align: left; }
-.regionTag { font-size: 9.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #6e7f66; border: 1px solid #c4cfb4; border-radius: 999px; padding: 3px 9px; }
 .changeRegion { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 11px; border: 0; background: none; color: #798272; font-size: 12px; cursor: pointer; }
 .changeRegion:hover { color: #244e42; }
 .zalo > span:not(.arrow) { flex: 1; text-align: left; }

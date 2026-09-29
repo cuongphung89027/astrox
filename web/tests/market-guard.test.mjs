@@ -20,7 +20,6 @@ const GUARD_KEYS = [
 const REGION_KEYS = [
   'login.regionTitle',
   'login.regionHint',
-  'login.regionCurrent',
   'login.changeRegion',
 ];
 

@@ -146,6 +146,7 @@ export function LoginPrompt() {
       <div className={styles.body}>
         {region === null ? (
           <>
+            {/* Hai nút đồng cấu trúc; khu vực đang xem chỉ khác bằng nền xanh (Sơn 29/09). */}
             <button
               type="button"
               className={`${styles.region} ${currentRegion === 'VN' ? styles.regionCurrent : ''}`}
@@ -153,7 +154,6 @@ export function LoginPrompt() {
             >
               <FlagVN size={26} />
               <span className={styles.regionName}>Việt Nam</span>
-              {currentRegion === 'VN' && <span className={styles.regionTag}>{t.t('login.regionCurrent')}</span>}
               <span className={styles.arrow} aria-hidden="true">
                 ↗
               </span>
@@ -165,7 +165,6 @@ export function LoginPrompt() {
             >
               <FlagUS size={26} />
               <span className={styles.regionName}>United States</span>
-              {currentRegion === 'US' && <span className={styles.regionTag}>{t.t('login.regionCurrent')}</span>}
               <span className={styles.arrow} aria-hidden="true">
                 ↗
               </span>

@@ -12,6 +12,10 @@
 2. **Bước chọn khu vực trước đăng nhập**: popup mở với 2 nút đồng kích thước/bố cục (cờ SVG VN/US + tên + ↗); khu vực đang xem nền xanh `#214d40` + nhãn "Đang xem"; chọn khu vực → provider tương ứng (VN→Zalo, US→Google), có "Chọn khu vực khác" quay lại. Cờ vẽ SVG thuần (emoji cờ Windows Chrome render thành chữ).
 3. **Nút đổi ngôn ngữ thành icon quả địa cầu** — nét 1.55 đồng bộ họ FeatureIcon (vòng tròn + xích đạo + thấu kính kinh tuyến bo). Icon Chỉ tay vẽ lại: 3 ngón + ngón cái, khe ngón 1.5đ để đọc rõ ở cỡ nhỏ.
 
+## Bổ sung cùng ngày: đích đến sau logout vì market
+
+Bấm "Đăng xuất & chuyển" hoặc bị auto-logout lệch cây → cờ một lần trong sessionStorage → popup đăng nhập trên cây đích **mở thẳng provider của cây đó** (VN → bước Zalo, EN → bước Google), không tự đăng nhập bên kia, không bắt chọn khu vực lại ("Chọn khu vực khác" vẫn có sẵn). Test: cờ tiêu thụ đúng 1 lần + LoginPrompt mở đúng provider.
+
 ## Kiểm chứng
 
 - 576/576 unit/integration (thêm 8 test: bind/heal market Zalo+Google, khoá POST /api/market, region step LoginPrompt, MarketGuard logout, topup theo auth-market, từ điển i18n); typecheck sạch; lint 0 lỗi (20 cảnh báo baseline); build static export OK.

@@ -31,6 +31,7 @@
 .regionCurrent { border-color: #214d40; background: #214d40; color: #f8f5e4; }
 .regionCurrent:hover { background: #1a4034; }
 .regionName { flex: 1; text-align: left; }
+.regionTag { flex: none; font-size: 9.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #d6dfb5; border: 1px solid #d6dfb54d; border-radius: 999px; padding: 3px 9px; }
 .changeRegion { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px; padding: 11px; border: 0; background: none; color: #798272; font-size: 12px; cursor: pointer; }
 .changeRegion:hover { color: #244e42; }
 .zalo > span:not(.arrow) { flex: 1; text-align: left; }

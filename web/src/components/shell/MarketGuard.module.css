@@ -14,7 +14,9 @@
 .countdown { margin: 0 0 14px; font-size: 11.5px; color: #798272; }
 .countdown strong { color: #b3542a; font-variant-numeric: tabular-nums; }
 
-.primary { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 50px; padding: 13px 16px; border: 0; border-radius: 12px; background: #214d40; color: #f8f5e4; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, transform .2s, box-shadow .2s; }
+/* Hai nút tương đương kích thước/bố cục: chính = xanh, phụ = trung tính (Sơn 29/09). */
+.primary, .secondary { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 50px; padding: 13px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s, transform .2s, box-shadow .2s; }
+.secondary { margin-top: 12px; border: 1px solid #d9dece; background: #f9faf3; color: #244e42; }
+.primary { border: 0; background: #214d40; color: #f8f5e4; }
 .primary:hover { background: #1a4034; box-shadow: 0 7px 20px #214d4026; transform: translateY(-1px); }
-.secondary { display: block; width: 100%; margin-top: 12px; padding: 12px; border: 0; background: none; color: #798272; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.secondary:hover { color: #244e42; }
+.secondary:hover { background: #eff1e6; box-shadow: 0 7px 20px #244e4214; transform: translateY(-1px); }

@@ -16,8 +16,8 @@
   /* Palette */
   --color-kem: #f4f7f2;
   --color-kem-2: #e8f0e7;
-  --color-accent: #246b52;
-  --color-accent-deep: #1d5642;
+  --color-accent: #244d40;
+  --color-accent-deep: #193e33;
   --color-accent-tint: #e1efe7;
   --color-son: #e8442e;
   --color-son-deep: #c42f1c;
@@ -42,7 +42,7 @@
 
   /* Soft green depth for glass and primary actions. */
   --shadow-glass: 0 2px 6px -2px rgba(32, 62, 50, 0.08), 0 14px 34px -18px rgba(32, 62, 50, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  --shadow-pop: 0 10px 26px -12px rgba(36, 107, 82, 0.3);
+  --shadow-pop: 0 10px 26px -12px rgba(36, 77, 64, 0.3);
 
   --radius-card: 26px;
 
@@ -125,7 +125,7 @@ body {
   pointer-events: none;
   background:
     radial-gradient(42rem 32rem at 10% -8%, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 60%),
-    radial-gradient(38rem 30rem at 92% 6%, color-mix(in srgb, var(--color-ngoc) 5%, transparent), transparent 58%),
+    radial-gradient(38rem 30rem at 92% 6%, color-mix(in srgb, var(--color-kim) 9%, transparent), transparent 58%),
     radial-gradient(44rem 36rem at 80% 76%, color-mix(in srgb, var(--color-ngoc) 6%, transparent), transparent 62%),
     var(--color-kem);
 }
@@ -138,7 +138,7 @@ body {
   inset: 0;
   background-image:
     repeating-radial-gradient(circle at 50% 50%, transparent 0 52px, color-mix(in srgb, var(--color-accent) 1.5%, transparent) 52px 54px),
-    repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--color-accent) 1.2%, transparent) 0deg 3deg, transparent 3deg 30deg);
+    repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--color-kim) 1.2%, transparent) 0deg 3deg, transparent 3deg 30deg);
   mask-image: radial-gradient(64rem 40rem at 50% 0%, black, transparent 74%);
 }
 
@@ -1058,7 +1058,7 @@ body {
 .ax-nav-link[aria-current="page"] { color: var(--nav-accent, #187650); }
 .ax-nav-link:not([aria-current="page"]):hover .ax-nav-underline { transform: scaleX(0); }
 .ax-nav-link[aria-current="page"]:hover .ax-nav-underline { transform: scaleX(1); opacity: 1; }
-.ax-nav-link:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; border-radius: 8px; }
+.ax-nav-link:focus-visible { outline: 2px solid #b69753; outline-offset: 1px; border-radius: 8px; }
 @media (min-width:1024px) {
   .ax-top-inner { display: grid; grid-template-columns: auto minmax(0,1fr) auto; column-gap: 20px; }
   .ax-top-inner > nav { justify-self: center; width: 100%; max-width: 1040px; min-width: 0; }

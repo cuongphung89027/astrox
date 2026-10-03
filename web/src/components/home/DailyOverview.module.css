@@ -25,7 +25,7 @@
 .calendar {
   color: #284d40;
   background: linear-gradient(135deg, #fcfefb, var(--color-accent-tint));
-  border: 1px solid #c9ded2;
+  border: 1px solid #dfd4bc;
   box-shadow:
     0 16px 32px -28px #244d4060,
     inset 0 1px #fff;
@@ -92,7 +92,7 @@
   right: -10px;
   top: 50%;
   transform: translateY(-50%);
-  color: #72a68c;
+  color: #aa9461;
   opacity: 0.09;
   pointer-events: none;
 }
@@ -108,8 +108,8 @@
   stroke-dasharray: 1 5;
 }
 .moonArt path {
-  fill: #99c6ad;
-  stroke: #6c9b80;
+  fill: #bda670;
+  stroke: #a18d5a;
   stroke-width: 0.7;
 }
 .calendarRetry {
@@ -130,7 +130,7 @@
   flex-shrink: 0;
   min-height: 28px;
   padding-top: 4px;
-  border-top: 1px solid #c9ded2;
+  border-top: 1px solid #d9d2c0;
   font-size: clamp(10px, 5cqi, 12px);
   color: #5b6c53;
   white-space: nowrap;
@@ -142,7 +142,7 @@
   z-index: 1;
 }
 .calendar:focus-within {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid #85632e;
   outline-offset: 3px;
 }
 .calendarLink > span:last-child,
@@ -170,7 +170,7 @@
   opacity: 0.7;
 }
 .checkinMain > svg {
-  color: #b9dfcb;
+  color: #e3d6a5;
 }
 .reward {
   display: flex;
@@ -209,7 +209,7 @@
 .checkinMain:focus-visible,
 .calendarRetry:focus-visible,
 .claimButton:focus-visible {
-  outline: 2px solid #b9dfcb;
+  outline: 2px solid #d5c48f;
   outline-offset: 3px;
 }
 .claimButton {

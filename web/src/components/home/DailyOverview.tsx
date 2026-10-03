@@ -105,7 +105,7 @@ export function DailyOverview({ now }: { now: Date | null }) {
         <header className={s.cardTop}>
           <h2 id="home-calendar-title">
             <FeatureIcon name="calendar" size={17} />
-            {text('Lịch âm hôm nay', 'Today’s lunar date')}
+            {text('Lịch âm', 'Lunar date')}
           </h2>
           <span className={s.timezone}>UTC+7</span>
         </header>
@@ -115,7 +115,7 @@ export function DailyOverview({ now }: { now: Date | null }) {
             <strong>{date ? Number(date.slice(-2)) : '—'}</strong>
             <span>
               {date
-                ? `${text('Tháng', 'Month')} ${Number(date.slice(5, 7))} · ${date.slice(0, 4)}`
+                ? `${Number(date.slice(5, 7))} / ${date.slice(0, 4)}`
                 : text('Đang mở ngày mới…', 'Opening a new day…')}
             </span>
           </div>
@@ -129,7 +129,7 @@ export function DailyOverview({ now }: { now: Date | null }) {
               </svg>
             </div>
             <span>{text('Âm lịch', 'Lunar')}</span>
-            <strong>{facts ? `${facts.lunar.day} / ${facts.lunar.month}` : '— / —'}</strong>
+            <strong>{facts ? `${facts.lunar.day}/${facts.lunar.month}` : '— / —'}</strong>
             <span>
               {facts
                 ? `${facts.yearName}${facts.lunar.leap ? text(' · nhuận', ' · leap') : ''}`
@@ -140,7 +140,7 @@ export function DailyOverview({ now }: { now: Date | null }) {
         <div className={s.calendarMeta} aria-live="polite">
           {current?.error ? (
             <button type="button" onClick={() => setCalendarRetry(n => n + 1)}>
-              {text('Chưa tải được lịch · Thử lại', 'Unable to load · Try again')}
+              {text('Thử lại lịch', 'Retry calendar')}
             </button>
           ) : (
             <>
@@ -149,16 +149,25 @@ export function DailyOverview({ now }: { now: Date | null }) {
             </>
           )}
         </div>
-        <Link className={s.calendarLink} href={moduleRoute('lunar-calendar', locale)}>
-          {text('Mở lịch đầy đủ', 'Open full calendar')}
+        <Link
+          className={s.calendarLink}
+          href={moduleRoute('lunar-calendar', locale)}
+          aria-label={text('Mở lịch đầy đủ', 'Open full calendar')}
+        >
+          {text('Xem lịch', 'Calendar')}
           <span aria-hidden="true">↗</span>
         </Link>
       </article>
-      <article className={s.checkin} data-claimed={today} aria-labelledby="home-checkin-title">
+      <article
+        className={s.checkin}
+        data-guest={!loggedIn || preview}
+        data-claimed={today}
+        aria-labelledby="home-checkin-title"
+      >
         <header className={s.cardTop}>
           <h2 id="home-checkin-title">
             <FeatureIcon name="wallet" size={17} />
-            {text('Điểm danh mỗi ngày', 'Daily check-in')}
+            {text('Điểm danh', 'Check-in')}
           </h2>
           <span className={s.badge}>
             {loading
@@ -193,11 +202,12 @@ export function DailyOverview({ now }: { now: Date | null }) {
                 <>
                   <strong>+{a.daily}</strong>
                   <span>
-                    {unit} / {text('ngày', 'day')}
+                    {unit}
+                    <small>{text('/ ngày', '/ day')}</small>
                   </span>
                 </>
               ) : (
-                <span>{text('Nhận thưởng mỗi ngày', 'Daily rewards')}</span>
+                <span className={s.rewardHint}>{text('Nhận thưởng', 'Daily rewards')}</span>
               )}
             </div>
           </div>
@@ -219,7 +229,7 @@ export function DailyOverview({ now }: { now: Date | null }) {
             </svg>
             <div>
               <strong>{loggedIn && a ? streak : '✦'}</strong>
-              <span>{loggedIn && a ? text('ngày liên tiếp', 'day streak') : 'AstroX'}</span>
+              <span>{loggedIn && a ? text('ngày', 'days') : 'AstroX'}</span>
             </div>
           </div>
         </div>
@@ -231,13 +241,27 @@ export function DailyOverview({ now }: { now: Date | null }) {
                 ? text(`Mốc tiếp theo: ${target} ngày`, `Next milestone: day ${target}`)
                 : text('Nhịp quen mỗi ngày.', 'Your daily ritual.')}
           </span>
-          <Link href={`${moduleRoute('profile', locale)}?section=earn`}>
-            {text('Xem hành trình', 'Your journey')} <span aria-hidden="true">↗</span>
+          <Link
+            href={`${moduleRoute('profile', locale)}?section=earn`}
+            aria-label={text('Xem hành trình', 'Your journey')}
+          >
+            {text('Hành trình', 'Journey')} <span aria-hidden="true">↗</span>
           </Link>
         </div>
         <button
           type="button"
           className={s.claimButton}
+          aria-label={
+            rewards.busy
+              ? text('Đang nhận thưởng', 'Claiming rewards')
+              : today
+                ? text('Đã điểm danh hôm nay', 'Checked in today')
+                : failed
+                  ? text('Tải lại trạng thái', 'Reload status')
+                  : !loggedIn
+                    ? text('Đăng nhập để điểm danh', 'Sign in to check in')
+                    : text('Điểm danh ngay', 'Check in now')
+          }
           disabled={loading || rewards.busy || today || (loggedIn && !preview && !failed && !open)}
           onClick={() => void checkin()}
         >
@@ -246,12 +270,12 @@ export function DailyOverview({ now }: { now: Date | null }) {
             {rewards.busy
               ? text('Đang nhận…', 'Claiming…')
               : today
-                ? text('Đã điểm danh hôm nay', 'Checked in today')
+                ? text('Đã nhận', 'Claimed')
                 : failed
-                  ? text('Tải lại trạng thái', 'Reload status')
+                  ? text('Thử lại', 'Retry')
                   : !loggedIn
-                    ? text('Đăng nhập để điểm danh', 'Sign in to check in')
-                    : text('Điểm danh ngay', 'Check in now')}
+                    ? text('Đăng nhập', 'Sign in')
+                    : text('Điểm danh', 'Check in')}
           </span>
           <span aria-hidden="true">{today ? '✓' : '↗'}</span>
         </button>

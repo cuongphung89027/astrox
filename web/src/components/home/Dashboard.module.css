@@ -9,8 +9,8 @@
 .notice button { font-size: 13px; color: #345c42; white-space: nowrap; cursor: pointer; }
 .profilePrompt { display: flex; justify-content: space-between; gap: 20px; text-align: left; padding: 16px; border: 1px solid #dce2ce; border-radius: 14px; background: #ffffff80; font-size: 16px; cursor: pointer; }
 .profilePrompt small { display: block; font-size: 13px; color: #92987f; margin-top: 5px; }
-.dashboardGrid { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 16px; }
-.today { position: relative; overflow: hidden; padding: 26px; border-radius: 20px; background: #224d40; color: #fff5dc; grid-row: span 2; }
+.personalMain { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 16px; }
+.today { position: relative; overflow: hidden; padding: 26px; border-radius: 20px; background: #224d40; color: #fff5dc; grid-row: auto; }
 .todayCopy { position: relative; z-index: 1; min-width: 0; }
 .eyebrow { font-size: 11px; letter-spacing: .12em; color: #b9bf9d; }
 .today h2 { font-family: var(--font-display); font-size: 35px; line-height: 1.2; margin: 18px 0; overflow-wrap: anywhere; }
@@ -42,8 +42,8 @@
 .recent a > div { min-width: 0; flex: 1; }
 .recent h3 { font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
 .recent p { font-size: 13px; color: #949a82; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-@media(max-width:767px) { .dashboardGrid { grid-template-columns: minmax(0,1fr); gap: 12px; } .today { grid-row: auto; padding: 22px; } .today h2 { font-size: 30px; } .preview { -webkit-line-clamp: 4; } .identity { padding: 18px; } .tools { grid-template-columns: repeat(3,minmax(0,1fr)); } }
-@media(min-width:768px) and (max-width:1023px) { .dashboardGrid { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .today { padding: 22px; } .tarotAction { gap: 12px; padding: 16px; } .cards { display: none; } }
+@media(max-width:767px) { .personalMain { grid-template-columns: minmax(0,1fr); gap: 12px; } .today { grid-row: auto; padding: 22px; } .today h2 { font-size: 30px; } .preview { -webkit-line-clamp: 4; } .identity { padding: 18px; } .tools { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media(min-width:768px) and (max-width:1023px) { .personalMain { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .today { padding: 22px; } .tarotAction { gap: 12px; padding: 16px; } .cards { display: none; } }
 
 .guestHeader { align-items: center; padding-bottom: 22px; border-bottom: 1px solid #dce3d0; }
 .guestLogin { display: grid; gap: 9px; min-width: 0; }
@@ -66,3 +66,28 @@
 @media (hover:hover) { .tools a:hover { transform: translateY(-3px); background: #fffcf5; border-color: #b7bc9d; } }
 html[data-motion=reduced] .tools a:hover { transform: none; }
 @media (prefers-reduced-motion:reduce) { .tools a:hover { transform: none; } }
+
+/* Compact daily utilities stay alongside the original personal cards. */
+.summary { display: grid; gap: 16px; align-items: start; }
+.dailyCards { grid-area: daily; min-width: 0; }
+.personalMain { grid-area: personal; }
+.summary .tarotAction { grid-area: tarot; }
+.summary .profilePrompt { grid-area: prompt; }
+.summary .quickAccess { grid-area: tools; }
+.withProfile { grid-template-areas: "daily" "personal" "tarot"; }
+.withoutProfile { grid-template-areas: "daily" "prompt" "tools"; }
+@media (min-width: 1024px) {
+  .summary { grid-template-columns: minmax(0,.82fr) minmax(0,1.18fr); gap: 16px 22px; }
+  .withProfile { grid-template-areas: "daily personal" "tarot personal"; grid-template-rows: min-content auto; }
+  .withoutProfile { grid-template-areas: "daily tools" "prompt tools"; grid-template-rows: min-content auto; }
+  .personalMain { align-self: stretch; gap: 14px; }
+  .summary .today { padding: 22px; }
+  .summary .today h2 { font-size: 29px; margin: 14px 0; }
+  .summary .today p { font-size: 14px; line-height: 1.7; }
+  .summary .preview { -webkit-line-clamp: 4; }
+  .summary .today a { margin-top: 18px; gap: 12px; }
+  .summary .identity { padding: 20px; }
+  .summary .facts { gap: 14px 10px; }
+  .summary .tarotAction { min-height: 88px; }
+  .withoutProfile .tools a { font-size: 11px; padding: 8px 4px; }
+}

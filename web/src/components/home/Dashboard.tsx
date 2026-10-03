@@ -48,7 +48,10 @@ export function Dashboard() {
     update();
     const timer = setInterval(update, 15000);
     window.addEventListener('focus', update);
-    return () => { clearInterval(timer); window.removeEventListener('focus', update); };
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', update);
+    };
   }, []);
   const cache = profile ? state.aiCache.profiles[cacheFingerprint()] : undefined;
   const today =
@@ -87,6 +90,21 @@ export function Dashboard() {
         ? t.t('dash.greetingAfternoon')
         : t.t('dash.greetingEvening')
     : t.t('dash.greetingGeneric');
+  const quickAccess = (
+    <section className={styles.quickAccess} aria-labelledby="dashboard-tools">
+      <div className={styles.sectionHeading}>
+        <h2 id="dashboard-tools">{t.t('dash.quickTools')}</h2>
+      </div>
+      <div className={styles.tools}>
+        {quickTools(t.locale).map(tool => (
+          <Link key={tool.href} href={tool.href}>
+            <FeatureIcon name={FEATURE_BY_ID[tool.id] ?? 'home'} size={28} />
+            {tool.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
   return (
     <div className={styles.page}>
       <header className={`${styles.header} ${!loggedIn ? styles.guestHeader : ''}`}>
@@ -126,103 +144,98 @@ export function Dashboard() {
           </div>
         )}
       </header>
-      <DailyOverview now={now} />
-      {!profile && (
-        <button className={styles.profilePrompt} onClick={() => open()}>
-          <span>
-            {t.t('dash.completeProfile')} <small>{t.t('dash.completeProfileHint')}</small>
-          </span>
-          <span aria-hidden="true">↗</span>
-        </button>
-      )}
-      {profile && (
-        <div className={styles.dashboardGrid}>
-          <section className={styles.today} aria-label={t.t('dash.yourToday')}>
-            <div className={styles.todayCopy}>
-              <span className={styles.eyebrow}>
-                {t.formatDate(now ?? new Date())} · {t.t('dash.fortune')}
-              </span>
-              <h2>{name}</h2>
-              {usableToday ? (
-                <p className={styles.preview}>{excerpt(usableToday.text)}</p>
-              ) : (
-                <p>{t.t('dash.noReadingToday')}</p>
-              )}
-              <Link href={`${moduleRoute('tuvi', t.locale)}?view=period`}>
-                {usableToday ? t.t('dash.readMore') : t.t('dash.createToday')} <span>↗</span>
-              </Link>
-            </div>
-            <FeatureIcon name="tuvi" size={120} className={styles.sun} />
-          </section>
-          <section
-            className={styles.identity}
-            aria-label={t.locale === 'en' ? 'Personal birth chart details' : 'Thông tin lá số cá nhân'}
-          >
-            <div className={styles.sectionHeading}>
-              <h2>{t.t('dash.yourChart', { name: profile.name })}</h2>
-              <Link href={moduleRoute('tuvi', t.locale)} aria-label={t.t('dash.openChart')}>
-                ↗
-              </Link>
-            </div>
-            <p className={styles.birth}>
-              {formatDob(profile.dob)} · {hourChiLabel(profile.hourChi, t.locale)}
-            </p>
-            {chart ? (
-              <dl className={styles.facts}>
-                <div>
-                  <dt>{t.t('dash.birthYear')}</dt>
-                  <dd>
-                    <img
-                      src={zodiacAsset(chart.meta.zodiac)}
-                      alt=""
-                      aria-hidden="true"
-                      width={48}
-                      height={48}
-                      className={styles.zodiacAnimal}
-                    />
-                    {chart.meta.zodiac}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t.t('dash.elementClass')}</dt>
-                  <dd>{chart.meta.fiveElementsClass}</dd>
-                </div>
-                <div>
-                  <dt>{t.t('dash.menhAt')}</dt>
-                  <dd>{menh?.earthlyBranch || '—'}</dd>
-                </div>
-                <div>
-                  <dt>{t.t('dash.majorStars')}</dt>
-                  <dd>{menh?.majorStars.map(star => star.name).join(' · ') || t.t('dash.noMajorStar')}</dd>
-                </div>
-              </dl>
-            ) : (
-              <button onClick={() => open()}>{t.t('dash.addBirthInfo')}</button>
-            )}
-          </section>
-          <Link href={`${moduleRoute('tarot', t.locale)}?history=1`} className={styles.tarotAction}>
-            <FeatureIcon name="tarot" size={34} />
-            <div>
-              <h2>Tarot</h2>
-              <p>{tarotCount ? t.t('dash.tarotJournal', { count: tarotCount }) : t.t('dash.tarotEmpty')}</p>
-            </div>
-            <span>{t.t('dash.viewJournal')} ↗</span>
-          </Link>
+      <div className={`${styles.summary} ${profile ? styles.withProfile : styles.withoutProfile}`}>
+        <div className={styles.dailyCards}>
+          <DailyOverview now={now} />
         </div>
-      )}
-      <section aria-labelledby="dashboard-tools">
-        <div className={styles.sectionHeading}>
-          <h2 id="dashboard-tools">{t.t('dash.quickTools')}</h2>
-        </div>
-        <div className={styles.tools}>
-          {quickTools(t.locale).map(tool => (
-            <Link key={tool.href} href={tool.href}>
-              <FeatureIcon name={FEATURE_BY_ID[tool.id] ?? 'home'} size={28} />
-              {tool.label}
+        {!profile && (
+          <button className={styles.profilePrompt} onClick={() => open()}>
+            <span>
+              {t.t('dash.completeProfile')} <small>{t.t('dash.completeProfileHint')}</small>
+            </span>
+            <span aria-hidden="true">↗</span>
+          </button>
+        )}
+        {profile && (
+          <>
+            <div className={styles.personalMain}>
+              <section className={styles.today} aria-label={t.t('dash.yourToday')}>
+                <div className={styles.todayCopy}>
+                  <span className={styles.eyebrow}>
+                    {t.formatDate(now ?? new Date())} · {t.t('dash.fortune')}
+                  </span>
+                  <h2>{name}</h2>
+                  {usableToday ? (
+                    <p className={styles.preview}>{excerpt(usableToday.text)}</p>
+                  ) : (
+                    <p>{t.t('dash.noReadingToday')}</p>
+                  )}
+                  <Link href={`${moduleRoute('tuvi', t.locale)}?view=period`}>
+                    {usableToday ? t.t('dash.readMore') : t.t('dash.createToday')} <span>↗</span>
+                  </Link>
+                </div>
+                <FeatureIcon name="tuvi" size={120} className={styles.sun} />
+              </section>
+              <section
+                className={styles.identity}
+                aria-label={t.locale === 'en' ? 'Personal birth chart details' : 'Thông tin lá số cá nhân'}
+              >
+                <div className={styles.sectionHeading}>
+                  <h2>{t.t('dash.yourChart', { name: profile.name })}</h2>
+                  <Link href={moduleRoute('tuvi', t.locale)} aria-label={t.t('dash.openChart')}>
+                    ↗
+                  </Link>
+                </div>
+                <p className={styles.birth}>
+                  {formatDob(profile.dob)} · {hourChiLabel(profile.hourChi, t.locale)}
+                </p>
+                {chart ? (
+                  <dl className={styles.facts}>
+                    <div>
+                      <dt>{t.t('dash.birthYear')}</dt>
+                      <dd>
+                        <img
+                          src={zodiacAsset(chart.meta.zodiac)}
+                          alt=""
+                          aria-hidden="true"
+                          width={48}
+                          height={48}
+                          className={styles.zodiacAnimal}
+                        />
+                        {chart.meta.zodiac}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{t.t('dash.elementClass')}</dt>
+                      <dd>{chart.meta.fiveElementsClass}</dd>
+                    </div>
+                    <div>
+                      <dt>{t.t('dash.menhAt')}</dt>
+                      <dd>{menh?.earthlyBranch || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>{t.t('dash.majorStars')}</dt>
+                      <dd>{menh?.majorStars.map(star => star.name).join(' · ') || t.t('dash.noMajorStar')}</dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <button onClick={() => open()}>{t.t('dash.addBirthInfo')}</button>
+                )}
+              </section>
+            </div>
+            <Link href={`${moduleRoute('tarot', t.locale)}?history=1`} className={styles.tarotAction}>
+              <FeatureIcon name="tarot" size={34} />
+              <div>
+                <h2>Tarot</h2>
+                <p>{tarotCount ? t.t('dash.tarotJournal', { count: tarotCount }) : t.t('dash.tarotEmpty')}</p>
+              </div>
+              <span>{t.t('dash.viewJournal')} ↗</span>
             </Link>
-          ))}
-        </div>
-      </section>
+          </>
+        )}
+        {!profile && quickAccess}
+      </div>
+      {profile && quickAccess}
       {recent.length > 0 && (
         <section aria-labelledby="dashboard-recent">
           <div className={styles.sectionHeading}>

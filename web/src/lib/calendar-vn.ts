@@ -7,7 +7,6 @@ export type LunarDate = {
 };
 const DAY = 86400000,
   OFFSET = 7 * 3600000;
-export const CALENDAR_VERSION = 'vn-utc7-astronomy-v1';
 export const MIN_YEAR = 1976,
   MAX_YEAR = 2100;
 const ordinal = (d: Date) => Math.floor((d.getTime() + OFFSET) / DAY);
@@ -131,24 +130,6 @@ export function festival(l: LunarDate) {
       } as Record<string, string>
     )[`${l.day}/${l.month}`] || (l.day === 1 ? 'Mùng một' : l.day === 15 ? 'Ngày rằm' : '')
   );
-}
-export type FamilyEvent = {
-  id: string;
-  title: string;
-  day: number;
-  month: number;
-  leap: boolean;
-};
-export function nextOccurrence(event: FamilyEvent, from: string) {
-  const start = civilDay(from),
-    y = Number(from.slice(0, 4));
-  for (let year = y - 1; year <= Math.min(y + 20, MAX_YEAR); year++) {
-    try {
-      const date = lunarToSolar({ ...event, year });
-      if (civilDay(date) >= start) return date;
-    } catch {}
-  }
-  return null;
 }
 export function eventIcs(title: string, date: string) {
   civilDay(date);

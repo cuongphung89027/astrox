@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { load } from './support/load.mjs';
+import * as en from '../src/i18n/divination-en.ts';
 
 async function mods() {
-  const en = await load('i18n/divination-en.ts');
   const tarot = await load('lib/tarot.ts');
   const kd = await load('lib/kinhdich.ts');
   const ns = await load('lib/numerology.ts');

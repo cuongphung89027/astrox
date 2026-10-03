@@ -61,10 +61,6 @@ export const ASPECT_LABEL_EN: Record<string, string> = {
   'Đối đỉnh': 'Opposition',
 };
 
-export const ZIWEI_MUTAGEN_EN = ['Hua Lu', 'Hua Quan', 'Hua Ke', 'Hua Ji'] as const;
-
-export const TUVI_PERIOD_LABELS_EN: Record<string, string> = { today: 'today', week: 'this week', month: 'this month' };
-
 /** Zi Wei hour-chi labels: stable pinyin names with EN clock ranges. */
 export const HOUR_CHI_EN: Record<string, string> = {
   Tí: 'Zi (11pm–1am)',
@@ -265,12 +261,6 @@ export const ZODIAC_TOPICS_EN: Record<string, { title: string; subs: Record<stri
     subs: { 'phong-cach-yeu': 'Love style', 'nhu-cau-cam-xuc': 'Emotional needs' },
   },
   'su-nghiep-cung': { title: 'Work & money', subs: { 'huong-su-nghiep': 'Career direction', 'tai-chinh': 'Money' } },
-};
-
-export const ZODIAC_PERIOD_LABELS_EN: Record<string, string> = {
-  today: 'today',
-  week: 'this week',
-  month: 'this month',
 };
 
 export const TUVI_TOPIC_DESCRIPTIONS_EN: Record<string, string> = {

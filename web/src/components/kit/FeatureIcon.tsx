@@ -1,5 +1,5 @@
 import type { SVGProps } from 'react';
-import { MODULES, type ModuleId } from '../../../../services/admin/modules.ts';
+import type { ModuleId } from '../../../../services/admin/modules.ts';
 
 export type FeatureName =
   | 'palm'
@@ -36,11 +36,6 @@ const MODULE_ICON: Record<ModuleId, FeatureName> = {
 };
 /** Icon by route id (locale-independent) — preferred over path lookups in localized nav. */
 export const FEATURE_BY_ID: Record<string, FeatureName> = { home: 'home', profile: 'profile', ...MODULE_ICON };
-export const FEATURE_BY_PATH: Record<string, FeatureName> = {
-  '/': 'home',
-  ...Object.fromEntries(MODULES.flatMap(m => [m.route, ...m.legacyRoutes].map(route => [route, MODULE_ICON[m.id]]))),
-  '/hoso': 'profile',
-};
 /** Shared AstroX line icons. Use currentColor so only the active navigation item is accented. */
 export function FeatureIcon({
   name,

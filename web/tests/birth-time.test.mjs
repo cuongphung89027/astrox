@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { load } from './support/load.mjs';
+import * as bt from '../src/lib/birth-time.ts';
+import * as bl from '../src/lib/birth-location.ts';
 
 async function libs() {
-  const bt = await load('lib/birth-time.ts');
-  const bl = await load('lib/birth-location.ts');
   return { bt, bl };
 }
 
@@ -106,7 +106,13 @@ test('natalTime: legacy VN profiles keep byte-identical instants; US zone shifts
   const { natalTime } = await load('lib/zodiac.ts');
   const legacy = natalTime({ dob: '1990-05-05', hourChi: 'Tý (23–1)', birthTime: '23:30' });
   assert.equal(legacy.getTime(), new Date('1990-05-05T23:30:00+07:00').getTime());
-  const us = natalTime({ dob: '1990-05-05', hourChi: 'Tý (23–1)', birthTime: '23:30', place: 'California', placeTz: 'America/Los_Angeles' });
+  const us = natalTime({
+    dob: '1990-05-05',
+    hourChi: 'Tý (23–1)',
+    birthTime: '23:30',
+    place: 'California',
+    placeTz: 'America/Los_Angeles',
+  });
   assert.equal(new Date(us).toISOString(), '1990-05-06T06:30:00.000Z');
   const noon = natalTime({ dob: '2000-02-29', hourChi: '', placeTz: 'America/New_York' });
   assert.equal(new Date(noon).toISOString(), '2000-02-29T17:00:00.000Z');

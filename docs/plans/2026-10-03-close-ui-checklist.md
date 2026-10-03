@@ -37,3 +37,8 @@ Files: `web/src/components/kinhdich/KinhDichClient.tsx`, `web/src/components/dis
 2. Inspect D1/config state read-only; deploy Worker before Pages from that SHA.
 3. Verify deployed commit/assets, VI/EN public routes/API and relevant browser behaviors.
 4. Write `qa-report/2026-10-03-checklist-closure/` evidence, deployment IDs, rollback and explicit per-item closure state. Do not infer authenticated-flow success from public route checks.
+# Additional audit findings
+
+During mobile QA, the absolute header title overlapped the language/wallet controls. Use the remaining flex width and truncate long titles; verify geometry at seven viewport widths.
+
+CI reproduced the pre-existing unused-code inventory failure. Keep the gate enabled: expose real test dependencies using static imports, run the existing native library tests in `npm test`, and remove only definitions with no CodeGraph callers. Re-run the full suite, Knip, typecheck, lint and production build, then release Worker and Pages from the new clean SHA and verify both domains again.

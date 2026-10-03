@@ -25,7 +25,7 @@ Branch: `codex/close-ui-checklist`. Scope: eight screenshot tasks, prompt locale
 
 ## Known limits
 
-`knip` fails identically on the clean pre-change base and this branch: two unused files, 23 exports and four exported types. Several are dynamically loaded by the test harness. This pre-existing CI inventory failure is not suppressed or represented as a green CI run. The three pre-existing backend test formatting failures were corrected with formatting-only changes.
+The first CI run reproduced the baseline `knip` failure. Static imports now expose the actual test dependencies to Knip, and the existing native TypeScript library tests are included in the normal test command and Knip entries. Two unreachable components, 12 unused runtime declarations, one unused type and unused locale-wrapper re-exports were removed after CodeGraph confirmed no callers. No inventory check was suppressed. `npm run knip` now passes. The three pre-existing backend test formatting failures were corrected with formatting-only changes.
 
 Live AI evidence uses the configured production provider and published settings with synthetic chart data; it does not claim a paid authenticated production wallet flow. Booking permissions/idempotency/wallet regressions are verified by the full integration suite. Physical-device camera/permissions, real payments and authenticated production bookings were not exercised.
 

@@ -200,19 +200,6 @@ export const NUMEROLOGY_LABEL_EN: Record<string, string> = {
   'Thử Thách': 'Challenge',
 };
 
-// ---------------------------------------------------------- Compatibility ----
-export const COMPAT_LABELS_EN = {
-  pair: 'Zodiac compatibility',
-  'tuvi-pair': 'Zi Wei pair reading',
-  'batu-pair': 'Ba Zi pair reading',
-  you: 'You',
-  partner: 'Your partner',
-  strengths: 'Strengths',
-  watchouts: 'Watch-outs',
-  advice: 'Advice',
-  percent: 'Compatibility score',
-};
-
 // ------------------------------------------------------- Lunar calendar ----
 /** Day-officer gods (Thiên tướng), solar terms, holiday and taboo glosses. */
 export const GODS_EN = [
@@ -243,8 +230,6 @@ export const HOLIDAYS_EN: Record<string, string> = {
   '12-25': 'Christmas',
 };
 export const TABOOS_EN: Record<string, string> = { 'Tam nương': 'Tam Nuong days', 'Nguyệt kỵ': 'Moon-taboo days' };
-export const LUNAR_MONTH_LABEL_EN = (month: number, leap: boolean, day?: number) =>
-  `${day ? `Day ${day}, ` : ''}lunar month ${month}${leap ? ' (leap)' : ''}`;
 export const FESTIVALS_EN: Record<string, string> = {
   '1/1': 'Lunar New Year (Tet)',
   '15/1': 'First Full Moon',

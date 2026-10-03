@@ -83,7 +83,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* Tiêu đề mobile dùng phần trống thực tế giữa logo và controls.
                 Truncate tiêu đề dài thay vì chồng lên nút đổi ngôn ngữ/ví. */}
             {mobileTitle && (
-              <p className="pointer-events-none min-w-0 flex-1 truncate px-1 text-center text-[14px] leading-tight sm:text-[16px] font-semibold text-muc lg:hidden" title={mobileTitle}>
+              <p
+                className="pointer-events-none min-w-0 flex-1 truncate px-1 text-center text-[14px] leading-tight sm:text-[16px] font-semibold text-muc lg:hidden"
+                title={mobileTitle}
+              >
                 {mobileTitle}
               </p>
             )}

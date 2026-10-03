@@ -365,22 +365,6 @@ export async function runAiPrompt(
   return result;
 }
 
-/* ------------------------------------------------------------------ */
-/* Auth AstroX (Zalo) + module access + topup                          */
-/* ------------------------------------------------------------------ */
-
-export async function fetchAstroxUser(): Promise<AstroxUser | null> {
-  if (!AUTH_API_BASE) return null;
-  try {
-    const res = await fetch(`${AUTH_API_BASE}/api/me`, { credentials: 'include' });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.user || null;
-  } catch {
-    return null;
-  }
-}
-
 export async function fetchModuleAccessAstrox(): Promise<Record<string, boolean>> {
   try {
     const res = await fetch(`${AUTH_API_BASE}/api/module-access?market=${currentUiLocale() === 'en' ? 'US' : 'VN'}`, {
@@ -663,13 +647,6 @@ export async function createLemonTopup(
   return res.json().catch(() => ({ ok: false, error: 'network' }));
 }
 
-export async function lemonOrder(orderId: string): Promise<{ id: string; status: string } | null> {
-  const res = await fetch(`${AUTH_API_BASE}/api/lemon/order?id=${encodeURIComponent(orderId)}`, {
-    credentials: 'include',
-  });
-  return res.ok ? res.json() : null;
-}
-
 /** Market preference of the signed-in account (server-stored); null when unset. */
 let marketCache: Promise<'US' | 'VN' | null> | null = null;
 let marketCacheAccount: string | null | undefined = undefined; // undefined = never fetched
@@ -686,12 +663,6 @@ export function currentMarket(account?: string | number | null): Promise<'US' | 
       .catch(() => null);
   }
   return marketCache;
-}
-
-/** Explicit reset after a market choice POST or auth lifecycle change. */
-export function resetMarketCache() {
-  marketCache = null;
-  marketCacheAccount = undefined;
 }
 
 /** Giá dịch vụ trả phí từ cấu hình đã publish — cache theo phiên tab. */

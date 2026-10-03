@@ -98,10 +98,12 @@ export function createDailyCheckinStore(api: {
         });
         void api.refreshBalance();
       }
+      if (id !== epoch) return { error: 'account_changed' };
       return result;
     } catch {
       if (id !== epoch) return { error: 'account_changed' };
       await reload(); // A lost response may already have credited the server ledger.
+      if (id !== epoch) return { error: 'account_changed' };
       void api.refreshBalance();
       return { error: 'unconfirmed' };
     } finally {

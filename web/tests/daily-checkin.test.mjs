@@ -194,3 +194,31 @@ test('navigation away invalidates a pending claim before another account can see
   assert.equal(result.error, 'account_changed');
   assert.equal(RenderHarness().summary, null);
 });
+
+for (const lostResponse of [false, true]) {
+  test(`account change during claim recovery suppresses stale feedback (${lostResponse ? 'lost response' : 'server error'})`, async () => {
+    let reads = 0,
+      resolveRead;
+    const f = await fixture({
+      read: () =>
+        ++reads === 1
+          ? Promise.resolve(summary())
+          : new Promise(r => {
+              resolveRead = r;
+            }),
+      claim: async () => {
+        if (lostResponse) throw Error('network');
+        return { error: 'temporarily_unavailable' };
+      },
+    });
+    f.store.setAccount('a');
+    await f.store.reload();
+    const pending = f.store.claim();
+    await new Promise(r => setImmediate(r));
+    f.store.setAccount('b');
+    resolveRead(summary());
+    assert.equal((await pending).error, 'account_changed');
+    assert.equal(f.store.getSnapshot().summary, null);
+    assert.equal(f.counters().refreshes, 0);
+  });
+}

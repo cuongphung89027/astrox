@@ -29,9 +29,9 @@ const SIZES: Record<Size, string> = {
 };
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-son text-white shadow-[var(--shadow-pop)] hover:-translate-y-0.5 active:translate-y-0',
-  ghost: 'glass text-muc hover:-translate-y-0.5 active:translate-y-0',
-  gold: 'bg-kim text-muc shadow-[0_14px_34px_-12px_rgba(199,134,10,0.55)] hover:-translate-y-0.5 active:translate-y-0',
+  primary: 'bg-son text-white shadow-[var(--shadow-pop)]',
+  ghost: 'glass text-muc',
+  gold: 'bg-kim text-muc shadow-[0_14px_34px_-12px_rgba(199,134,10,0.55)]',
 };
 
 export function Btn({
@@ -47,7 +47,7 @@ export function Btn({
   ariaLabel,
 }: BtnProps) {
   const cls = [
-    'group/btn inline-flex items-center justify-center rounded-full font-semibold transition-all duration-200',
+    'ax-action group/btn inline-flex items-center justify-center rounded-full font-semibold',
     SIZES[size],
     VARIANTS[variant],
     disabled ? 'pointer-events-none opacity-50' : '',
@@ -63,7 +63,7 @@ export function Btn({
         <svg
           aria-hidden="true"
           viewBox="0 0 20 20"
-          className="size-[1.1em] transition-transform duration-200 group-hover/btn:translate-x-1"
+          className="ax-action-arrow size-[1.1em]"
           fill="none"
         >
           <path

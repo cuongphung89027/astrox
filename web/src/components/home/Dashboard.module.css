@@ -56,3 +56,13 @@
 .zodiacAnimal { display: inline-block; width: 48px; height: 48px; object-fit: contain; vertical-align: middle; margin-right: 6px; }
 /* Reserve greeting space before the client resolves time/name. */
 @media (max-width: 600px) { .header h1 { min-height: 2.4em; } }
+
+/* Keep the greeting compact so daily cards lead the home. */
+.guestHeader { padding-bottom: 0; border-bottom: 0; }
+.guestLogin { display: none; }
+.header h1 { font-size: clamp(26px,3vw,36px); min-height: 0; }
+.header p { margin-bottom: 5px; font-size: 11px; }
+.tools a { transition: background var(--motion-fast),border-color var(--motion-fast),transform var(--motion-fast) var(--motion-ease); }
+@media (hover:hover) { .tools a:hover { transform: translateY(-3px); background: #fffcf5; border-color: #b7bc9d; } }
+html[data-motion=reduced] .tools a:hover { transform: none; }
+@media (prefers-reduced-motion:reduce) { .tools a:hover { transform: none; } }

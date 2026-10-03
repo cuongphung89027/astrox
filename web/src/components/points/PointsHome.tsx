@@ -15,14 +15,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { openLoginDialog } from '@/lib/login-dialog';
 import { usePointsBalance } from '@/lib/points';
+import { useDailyCheckin } from '@/lib/use-daily-checkin';
 import {
   rewardedAdAction,
-  fetchRewardsSummary,
   loadPointsHistory,
   loadTopupHistory,
-  rewardsCheckin,
   type PointTxn,
-  type RewardsSummary,
   type TopupOrder,
 } from '@/lib/api';
 import { FeatureIcon } from '@/components/kit/FeatureIcon';
@@ -164,9 +162,9 @@ export function PointsHome({ view = 'wallet' }: { view?: 'wallet' | 'earn' }) {
   const toast = useToast();
 
   const [topupOpen, setTopupOpen] = useState(false);
-  const [summary, setSummary] = useState<RewardsSummary | null>(null);
-  const [checkingIn, setCheckingIn] = useState(false);
-  const [summaryError, setSummaryError] = useState(false);
+  const daily = useDailyCheckin();
+  const { summary, busy: checkingIn, reload: reloadDaily } = daily;
+  const summaryError = daily.status === 'error';
   const [adConsent, setAdConsent] = useState(false),
     [adBusy, setAdBusy] = useState(false);
   const adDialog = useRef<HTMLDialogElement>(null),
@@ -194,19 +192,6 @@ export function PointsHome({ view = 'wallet' }: { view?: 'wallet' | 'earn' }) {
   useEffect(() => {
     if (!loggedIn || !astroxUser || preview) return;
     let alive = true;
-    fetchRewardsSummary()
-      .then(s => {
-        if (alive) {
-          setSummary(s);
-          setSummaryError(false);
-        }
-      })
-      .catch(() => {
-        if (alive) {
-          setSummary(null);
-          setSummaryError(true);
-        }
-      });
     loadPointsHistory()
       .then(p => {
         if (alive) setHistory({ status: 'ready', txns: p.transactions, nextCursor: p.nextCursor });
@@ -247,7 +232,7 @@ export function PointsHome({ view = 'wallet' }: { view?: 'wallet' | 'earn' }) {
     };
   }, [loggedIn, preview, orders, refresh]);
 
-  const reloadHistory = useCallback(() => setHistoryEpoch(n => n + 1), []);
+  const reloadHistory = useCallback(() => { setHistoryEpoch(n => n + 1); void reloadDaily(); }, [reloadDaily]);
 
   useEffect(
     () => () => {
@@ -336,60 +321,20 @@ export function PointsHome({ view = 'wallet' }: { view?: 'wallet' | 'earn' }) {
       );
       return;
     }
-    setCheckingIn(true);
-    try {
-      const r = await rewardsCheckin();
-      if ('error' in r) {
-        if (r.error === 'already_checked_in') {
-          toast.show(copy('Hôm nay bạn đã điểm danh rồi.', 'You have already checked in today.'), 'info');
-          setSummary(s => (s ? { ...s, attendance: { ...s.attendance, today: true } } : s));
-        } else if (r.error === 'attendance_disabled') {
-          toast.show(copy('Điểm danh đang tạm khoá.', 'Check-in is currently paused.'), 'error');
-        } else {
-          toast.show(
-            copy('Không điểm danh được — thử lại sau.', 'Unable to check in. Please try again later.'),
-            'error',
-          );
-        }
-      } else {
-        const bonus = r.milestones.length
-          ? en
-            ? ` — day ${r.milestones.join(', ')} milestone!`
-            : ` — mốc ngày ${r.milestones.join(', ')}!`
-          : '';
-        toast.show(
-          `${en ? 'Checked in' : 'Điểm danh thành công'} +${r.points.toLocaleString(en ? 'en-US' : 'vi-VN')} ${unit}${bonus}`,
-          'success',
-        );
-        void refresh();
-        reloadHistory();
-        setSummary(s =>
-          s
-            ? {
-                ...s,
-                attendance: {
-                  ...s.attendance,
-                  today: true,
-                  streak: r.streak,
-                  lastDay: r.day,
-                  claimed: [...new Set([...s.attendance.claimed, ...r.milestones])],
-                },
-              }
-            : s,
-        );
-      }
-    } catch {
-      toast.show(
-        copy(
-          'Chưa xác nhận được điểm danh. Kiểm tra lịch sử Point rồi thử lại.',
-          'Check-in could not be confirmed. Check your transaction history before retrying.',
-        ),
-        'error',
-      );
-      reloadHistory();
-    } finally {
-      setCheckingIn(false);
+    const r = await daily.claim();
+    if ('error' in r) {
+      if (['account_changed', 'checkin_busy'].includes(r.error)) return;
+      toast.show(r.error === 'already_checked_in'
+        ? copy('Hôm nay bạn đã điểm danh rồi.', 'You have already checked in today.')
+        : r.error === 'attendance_disabled'
+          ? copy('Điểm danh đang tạm khoá.', 'Check-in is currently paused.')
+          : copy('Chưa xác nhận được điểm danh. Kiểm tra lịch sử Point rồi thử lại.', 'Check-in could not be confirmed. Check your transaction history before retrying.'),
+        r.error === 'already_checked_in' ? 'info' : 'error');
+    } else {
+      const bonus = r.milestones.length ? en ? ` — day ${r.milestones.join(', ')} milestone!` : ` — mốc ngày ${r.milestones.join(', ')}!` : '';
+      toast.show(`${en ? 'Checked in' : 'Điểm danh thành công'} +${r.points.toLocaleString(en ? 'en-US' : 'vi-VN')} ${unit}${bonus}`, 'success');
     }
+    reloadHistory();
   };
 
   const copyReferral = async () => {

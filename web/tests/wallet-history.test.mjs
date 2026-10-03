@@ -33,6 +33,7 @@ for (const locale of ['vi', 'en'])
         react: runtime.react,
         '@/i18n/LocaleProvider': { useLocale: () => ({ locale }) },
         '@/lib/auth': { useAuth: () => ({ loggedIn: true, ready: true, astroxUser: user }) },
+        '@/lib/use-daily-checkin': { useDailyCheckin: () => ({ summary, busy: false, status: 'ready', reload: async () => {}, claim: async () => ({error: 'attendance_disabled'}) }) },
         '@/lib/points': { usePointsBalance: () => ({ points: 2000, status: 'ready', refresh }) },
         '@/components/motion': { NumberPopIn: () => null, ShimmerText: () => null, useToast: () => ({ show() {} }) },
         '@/lib/api': {

@@ -45,7 +45,7 @@ const ProfileModalContext = createContext<ProfileModalContextValue | null>(null)
 
 let providerControls: ProfileModalContextValue | null = null;
 
-export function ProfileModalProvider({ children }: { children: React.ReactNode }) {
+export function ProfileModalProvider({ children, autoOnboarding = true }: { children: React.ReactNode; autoOnboarding?: boolean }) {
   const [openState, setOpenState] = useState(false);
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,17 +110,17 @@ export function ProfileModalProvider({ children }: { children: React.ReactNode }
 
   // Wait for successful cloud hydration before deciding the account has no profile.
   useEffect(() => {
-    if (!loggedIn || !profileResolved || profile || captiveTriggeredRef.current) return;
+    if (!autoOnboarding || !loggedIn || !profileResolved || profile || captiveTriggeredRef.current) return;
     const t = setTimeout(() => {
       captiveTriggeredRef.current = true;
       open({ captive: true });
     }, 600);
     return () => clearTimeout(t);
-  }, [loggedIn, profileResolved, profile, open]);
+  }, [autoOnboarding, loggedIn, profileResolved, profile, open]);
 
   // Tự giải trừ captive: hồ sơ xuất hiện (vừa lưu / sync từ tài khoản) hoặc
   // đăng xuất giữa chừng → không còn lý do khoá modal.
-  if (openState && captive && (profile || !loggedIn || !profileResolved)) {
+  if (openState && captive && (!autoOnboarding || profile || !loggedIn || !profileResolved)) {
     setOpenState(false);
     setCaptive(false);
     setClosing(false);

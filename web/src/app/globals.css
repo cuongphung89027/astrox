@@ -1102,3 +1102,15 @@ html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-
  .ax-top-inner .ax-nav-link[aria-current="page"] { background: #e6eddf; }
  .ax-top-inner .ax-nav-link:focus-visible { outline-offset: -2px; }
 }
+
+/* Shared scene/action rhythm: no animation runtime in the site bundle. */
+:root { --motion-fast: 240ms; --motion-scene: 650ms; --motion-ease: cubic-bezier(.22,1,.36,1); }
+.ax-route-scene { animation: ax-scene-enter var(--motion-scene) var(--motion-ease); }
+@keyframes ax-scene-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.ax-action { transition: transform var(--motion-fast) var(--motion-ease),background var(--motion-fast),box-shadow var(--motion-fast),opacity var(--motion-fast); }
+.ax-action-arrow { transition: transform var(--motion-fast) var(--motion-ease); }
+@media (hover:hover) { .ax-action:not(:disabled):hover { transform: translateY(-2px); } .ax-action:not(:disabled):hover .ax-action-arrow { transform: translateX(3px); } }
+.ax-action:not(:disabled):active { transform: translateY(0) scale(.98); }
+html[data-motion=reduced] .ax-route-scene { animation: none; }
+html[data-motion=reduced] .ax-action,html[data-motion=reduced] .ax-action-arrow { transform: none !important; }
+@media (prefers-reduced-motion:reduce) { .ax-route-scene { animation: none; } .ax-action,.ax-action-arrow { transform: none !important; } }

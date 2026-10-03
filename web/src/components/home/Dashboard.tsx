@@ -19,6 +19,7 @@ import { useTarotHistoryCount } from '@/lib/use-tarot-history';
 import { quickTools } from '@/lib/nav';
 import { moduleRoute } from '@/lib/locale';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { DailyOverview } from './DailyOverview';
 import styles from './Dashboard.module.css';
 
 const excerpt = (text: string) => text.replace(/[#*`]/g, '').replace(/\s+/g, ' ').trim();
@@ -45,8 +46,9 @@ export function Dashboard() {
   useEffect(() => {
     const update = () => setNow(new Date());
     update();
-    const timer = setInterval(update, 60000);
-    return () => clearInterval(timer);
+    const timer = setInterval(update, 15000);
+    window.addEventListener('focus', update);
+    return () => { clearInterval(timer); window.removeEventListener('focus', update); };
   }, []);
   const cache = profile ? state.aiCache.profiles[cacheFingerprint()] : undefined;
   const today =
@@ -124,6 +126,7 @@ export function Dashboard() {
           </div>
         )}
       </header>
+      <DailyOverview now={now} />
       {!profile && (
         <button className={styles.profilePrompt} onClick={() => open()}>
           <span>

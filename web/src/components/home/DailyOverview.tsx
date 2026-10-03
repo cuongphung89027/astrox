@@ -55,12 +55,18 @@ export function DailyOverview({ now }: { now: Date | null }) {
   const loading = !ready || (loggedIn && !preview && ['idle', 'loading'].includes(rewards.status));
   const failed = rewards.status === 'error';
   const streak = a?.streak ?? 0;
-  const target = a?.milestones.find(m => !a.claimed.includes(m.day) && m.day > streak)?.day ?? Math.max(7, streak);
   const weekday = date
-    ? new Intl.DateTimeFormat(en ? 'en-US' : 'vi-VN', { weekday: 'long', timeZone: 'Asia/Ho_Chi_Minh' }).format(
+    ? new Intl.DateTimeFormat(en ? 'en-US' : 'vi-VN', { weekday: 'short', timeZone: 'Asia/Ho_Chi_Minh' }).format(
         new Date(date + 'T12:00:00+07:00'),
       )
     : text('Hôm nay', 'Today');
+  const solarDate = date
+    ? en
+      ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' }).format(
+          new Date(date + 'T12:00:00+07:00'),
+        )
+      : `${Number(date.slice(-2))}/${Number(date.slice(5, 7))}`
+    : '';
   async function checkin() {
     if (!loggedIn) {
       openLoginDialog();
@@ -101,181 +107,121 @@ export function DailyOverview({ now }: { now: Date | null }) {
       className={s.overview}
       aria-label={text('Lịch âm và điểm danh hôm nay', 'Today’s lunar calendar and check-in')}
     >
-      <article className={s.calendar} aria-labelledby="home-calendar-title">
+      <article className={s.calendar} aria-labelledby="home-calendar-title" aria-describedby="home-lunar-date">
         <header className={s.cardTop}>
           <h2 id="home-calendar-title">
             <FeatureIcon name="calendar" size={17} />
             {text('Lịch âm', 'Lunar date')}
           </h2>
-          <span className={s.timezone}>UTC+7</span>
-        </header>
-        <div className={s.calendarMain}>
-          <div className={s.solar}>
-            <span className={s.weekday}>{weekday}</span>
-            <strong>{date ? Number(date.slice(-2)) : '—'}</strong>
-            <span>
-              {date
-                ? `${Number(date.slice(5, 7))} / ${date.slice(0, 4)}`
-                : text('Đang mở ngày mới…', 'Opening a new day…')}
-            </span>
-          </div>
-          <div className={s.lunar}>
-            <div className={s.moonArt} aria-hidden="true">
-              <svg viewBox="0 0 140 140" fill="none">
-                <circle cx="70" cy="70" r="62" />
-                <circle cx="70" cy="70" r="49" />
-                <path d="M96 40a39 39 0 1 0 0 60 34 34 0 0 1 0-60Z" />
-                <path d="m112 24 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" />
-              </svg>
-            </div>
-            <span>{text('Âm lịch', 'Lunar')}</span>
-            <strong>{facts ? `${facts.lunar.day}/${facts.lunar.month}` : '— / —'}</strong>
-            <span>
-              {facts
-                ? `${facts.yearName}${facts.lunar.leap ? text(' · nhuận', ' · leap') : ''}`
-                : text('Theo lịch Việt Nam', 'Vietnamese calendar')}
-            </span>
-          </div>
-        </div>
-        <div className={s.calendarMeta} aria-live="polite">
-          {current?.error ? (
-            <button type="button" onClick={() => setCalendarRetry(n => n + 1)}>
-              {text('Thử lại lịch', 'Retry calendar')}
+          {current?.error && (
+            <button
+              className={s.calendarRetry}
+              type="button"
+              onClick={() => setCalendarRetry(n => n + 1)}
+              aria-label={text('Thử lại lịch', 'Retry calendar')}
+            >
+              ↻
             </button>
-          ) : (
-            <>
-              <span>{facts?.term ?? text('Đang tính lịch…', 'Calculating dates…')}</span>
-              <span>{facts?.holidays[0] || facts?.phase || text('Nhịp trăng hôm nay', 'Today’s moon')}</span>
-            </>
           )}
+        </header>
+        <div id="home-lunar-date" className={s.calendarMain} aria-live="polite">
+          <div className={s.moonArt} aria-hidden="true">
+            <svg viewBox="0 0 140 140" fill="none">
+              <circle cx="70" cy="70" r="62" />
+              <circle cx="70" cy="70" r="49" />
+              <path d="M96 40a39 39 0 1 0 0 60 34 34 0 0 1 0-60Z" />
+              <path d="m112 24 2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" />
+            </svg>
+          </div>
+          <strong>{facts ? `${facts.lunar.day}/${facts.lunar.month}` : '—'}</strong>
+          {facts?.lunar.leap && <span>{text('Tháng nhuận', 'Leap month')}</span>}
+          {current?.error && <span>{text('Chưa tải được lịch', 'Calendar unavailable')}</span>}
         </div>
         <Link
           className={s.calendarLink}
           href={moduleRoute('lunar-calendar', locale)}
           aria-label={text('Mở lịch đầy đủ', 'Open full calendar')}
         >
-          {text('Xem lịch', 'Calendar')}
+          <span>{date ? `${solarDate} · ${weekday}` : '—'}</span>
           <span aria-hidden="true">↗</span>
         </Link>
       </article>
       <article
         className={s.checkin}
-        data-guest={!loggedIn || preview}
         data-claimed={today}
         aria-labelledby="home-checkin-title"
+        aria-describedby="home-reward-detail"
       >
         <header className={s.cardTop}>
           <h2 id="home-checkin-title">
             <FeatureIcon name="wallet" size={17} />
             {text('Điểm danh', 'Check-in')}
           </h2>
-          <span className={s.badge}>
-            {loading
-              ? text('Đang tải…', 'Loading…')
-              : preview
-                ? text('Xem thử', 'Preview')
-                : !loggedIn
-                  ? text('Dành cho bạn', 'For you')
-                  : failed
-                    ? text('Chưa tải được', 'Unable to load')
-                    : today
-                      ? text('Đã nhận', 'Claimed')
-                      : open
-                        ? text('Sẵn sàng', 'Ready')
-                        : text('Tạm đóng', 'Paused')}
-          </span>
         </header>
-        <div className={s.checkinMain}>
-          <div className={s.rewardCopy}>
-            <p>
-              {today ? text('Một thói quen nhỏ.', 'A little daily habit.') : text('Ghé mỗi ngày.', 'Visit every day.')}
-              <br />
-              <em>
-                {today
-                  ? text('Thêm một ngày vui.', 'Another day of discovery.')
-                  : text('Nhận điểm mới.', 'More to discover.')}
-              </em>
-            </p>
-            <div className={s.reward}>
-              <PointCoin size={23} />
-              {a ? (
-                <>
-                  <strong>+{a.daily}</strong>
-                  <span>
-                    {unit}
-                    <small>{text('/ ngày', '/ day')}</small>
-                  </span>
-                </>
-              ) : (
-                <span className={s.rewardHint}>{text('Nhận thưởng', 'Daily rewards')}</span>
+        <Link
+          id="home-reward-detail"
+          className={s.checkinMain}
+          href={`${moduleRoute('profile', locale)}?section=earn`}
+          aria-label={text('Xem hành trình', 'Your journey')}
+        >
+          {a && !loading && !failed ? (
+            <>
+              <div className={s.reward}>
+                <strong>+{a.daily}</strong>
+                <span>{unit}</span>
+              </div>
+              <span className={s.streak}>
+                <FeatureIcon name="calendar" size={12} />
+                {text(`${streak} ngày liên tiếp`, `${streak}-day streak`)}
+              </span>
+            </>
+          ) : (
+            <>
+              <PointCoin size={32} />
+              {!loading && (
+                <span className={s.rewardHint}>
+                  {failed ? text('Chưa tải được', 'Unable to load') : text('Nhận thưởng', 'Daily rewards')}
+                </span>
               )}
-            </div>
-          </div>
-          <div
-            className={s.streak}
-            aria-label={
-              a ? text(`Chuỗi ${streak} ngày`, `${streak}-day streak`) : text('Điểm danh AstroX', 'AstroX check-in')
-            }
-          >
-            <svg viewBox="0 0 120 120" aria-hidden="true">
-              <circle cx="60" cy="60" r="52" />
-              <circle
-                cx="60"
-                cy="60"
-                r="52"
-                pathLength="100"
-                strokeDasharray={`${Math.min(100, (streak / target) * 100)} 100`}
-              />
-            </svg>
-            <div>
-              <strong>{loggedIn && a ? streak : '✦'}</strong>
-              <span>{loggedIn && a ? text('ngày', 'days') : 'AstroX'}</span>
-            </div>
-          </div>
-        </div>
-        <div className={s.journey}>
-          <span>
-            {today
-              ? text('Hẹn bạn ngày mai.', 'See you tomorrow.')
-              : a
-                ? text(`Mốc tiếp theo: ${target} ngày`, `Next milestone: day ${target}`)
-                : text('Nhịp quen mỗi ngày.', 'Your daily ritual.')}
-          </span>
-          <Link
-            href={`${moduleRoute('profile', locale)}?section=earn`}
-            aria-label={text('Xem hành trình', 'Your journey')}
-          >
-            {text('Hành trình', 'Journey')} <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
+            </>
+          )}
+        </Link>
         <button
           type="button"
           className={s.claimButton}
           aria-label={
-            rewards.busy
-              ? text('Đang nhận thưởng', 'Claiming rewards')
-              : today
-                ? text('Đã điểm danh hôm nay', 'Checked in today')
-                : failed
-                  ? text('Tải lại trạng thái', 'Reload status')
-                  : !loggedIn
-                    ? text('Đăng nhập để điểm danh', 'Sign in to check in')
-                    : text('Điểm danh ngay', 'Check in now')
+            loading
+              ? text('Đang tải trạng thái', 'Loading status')
+              : rewards.busy
+                ? text('Đang nhận thưởng', 'Claiming rewards')
+                : today
+                  ? text('Đã điểm danh hôm nay', 'Checked in today')
+                  : failed
+                    ? text('Tải lại trạng thái', 'Reload status')
+                    : !loggedIn
+                      ? text('Đăng nhập để điểm danh', 'Sign in to check in')
+                      : loggedIn && !preview && !open
+                        ? text('Điểm danh đang tạm đóng', 'Check-in is paused')
+                        : text('Điểm danh ngay', 'Check in now')
           }
           disabled={loading || rewards.busy || today || (loggedIn && !preview && !failed && !open)}
           onClick={() => void checkin()}
         >
           <span>
             <FeatureIcon name="calendar" size={18} />
-            {rewards.busy
-              ? text('Đang nhận…', 'Claiming…')
-              : today
-                ? text('Đã nhận', 'Claimed')
-                : failed
-                  ? text('Thử lại', 'Retry')
-                  : !loggedIn
-                    ? text('Đăng nhập', 'Sign in')
-                    : text('Điểm danh', 'Check in')}
+            {loading
+              ? text('Đang tải…', 'Loading…')
+              : rewards.busy
+                ? text('Đang nhận…', 'Claiming…')
+                : today
+                  ? text('Đã nhận', 'Claimed')
+                  : failed
+                    ? text('Thử lại', 'Retry')
+                    : !loggedIn
+                      ? text('Đăng nhập', 'Sign in')
+                      : loggedIn && !preview && !open
+                        ? text('Tạm đóng', 'Paused')
+                        : text('Điểm danh', 'Check in')}
           </span>
           <span aria-hidden="true">{today ? '✓' : '↗'}</span>
         </button>

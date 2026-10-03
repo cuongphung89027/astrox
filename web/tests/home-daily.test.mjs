@@ -75,3 +75,27 @@ test('real claim confirmation displays wallet market unit even on another UI loc
   assert.equal(s.counters().claims, 1);
   assert.equal(s.messages[0][0], 'Checked in +2 Point');
 });
+
+function visibleText(node) {
+  if (node == null || typeof node === 'boolean') return '';
+  if (Array.isArray(node)) return node.map(visibleText).join(' ');
+  if (typeof node === 'object') return visibleText(node.props?.children);
+  return String(node);
+}
+test('reward value is visible only when the account summary is resolved, in the wallet market unit', async () => {
+  for (const status of ['loading', 'error']) {
+    const pending = await screen({ account: 'user', status });
+    assert.doesNotMatch(visibleText(pending.tree), /\+\s*2/);
+  }
+  const ready = await screen({ account: 'user', locale: 'en', market: 'VN' });
+  assert.match(visibleText(ready.tree), /\+\s*2\s+Point/);
+  assert.match(visibleText(ready.tree), /3-day streak/);
+});
+test('paused and loading actions explain why they cannot be activated', async () => {
+  const paused = await screen({ account: 'user', enabled: false });
+  assert.equal(paused.button.props.disabled, true);
+  assert.equal(paused.button.props['aria-label'], 'Điểm danh đang tạm đóng');
+  const loading = await screen({ account: 'user', status: 'loading', locale: 'en' });
+  assert.equal(loading.button.props.disabled, true);
+  assert.equal(loading.button.props['aria-label'], 'Loading status');
+});

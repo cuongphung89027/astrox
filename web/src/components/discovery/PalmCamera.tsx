@@ -23,9 +23,16 @@ import {
   type HandVerdict,
 } from '@/lib/hand-tracker';
 import s from './Palm.module.css';
+import { samplePalmQuality, type PalmQuality } from '@/lib/palm-quality';
+import { palmQualityMessage } from './PalmQualityPanel';
 
 export type PalmCapture = { dataUrl: string; w: number; h: number };
-type Props = { onCapture: (shot: PalmCapture) => void; onClose: () => void; onFatal: (message: string) => void };
+type Props = {
+  onCapture: (shot: PalmCapture) => void;
+  onClose: () => void;
+  onFatal: (message: string) => void;
+  onFallback?: (kind: 'native' | 'upload') => void;
+};
 const stopStream = (stream: MediaStream | null) => stream?.getTracks().forEach(t => t.stop());
 
 const CAMERA_EN: Record<string, string> = {
@@ -77,6 +84,7 @@ const CAMERA_EN: Record<string, string> = {
   'Chụp ảnh': 'Take photo',
   'Sẵn sàng': 'Ready',
   'Căn bàn tay': 'Align your hand',
+  'Đưa trọn bàn tay vào giữa khung': 'Move your whole hand into the center of the frame',
   'Đưa lòng bàn tay vào khung': 'Place your palm in the frame',
   'Đưa tay sát hơn': 'Move your hand closer',
   'Xoay lòng bàn tay về phía máy': 'Turn your palm towards the camera',
@@ -95,7 +103,7 @@ export function PalmCamera(props: Props) {
   const alive = useRef(false),
     operation = useRef(0),
     switching = useRef(false);
-  const auto = useRef(false),
+  const auto = useRef(true),
     stable = useRef(0),
     deadline = useRef(0);
   const previous = useRef<HandPoint[] | null>(null);
@@ -110,7 +118,7 @@ export function PalmCamera(props: Props) {
   const [controls, setControls] = useState({ torch: false, focus: false });
   const [torch, setTorch] = useState(false),
     [controlBusy, setControlBusy] = useState(false);
-  const [autoCapture, setAutoCapture] = useState(false),
+  const [autoCapture, setAutoCapture] = useState(true),
     [count, setCount] = useState(0);
   const [tracking, setTracking] = useState<'loading' | 'ready' | 'error'>('loading');
   const [hint, setHint] = useState(copy('Đang mở camera…')),
@@ -120,9 +128,15 @@ export function PalmCamera(props: Props) {
   const [landmarks, setLandmarks] = useState<HandPoint[] | null>(null);
   const [verdict, setVerdict] = useState<HandVerdict>('none');
   const [stability, setStability] = useState(0);
+  const photoQuality = useRef<PalmQuality | null>(null);
+  const sampledAt = useRef(0);
+  const [quality, setQuality] = useState<PalmQuality | null>(null);
   const [frameSize, setFrameSize] = useState({ width: 3, height: 4 });
 
   const resetTracking = useCallback(() => {
+    photoQuality.current = null;
+    sampledAt.current = 0;
+    setQuality(null);
     stable.current = 0;
     deadline.current = 0;
     previous.current = null;
@@ -151,6 +165,20 @@ export function PalmCamera(props: Props) {
       setWarning(copy('Đưa trọn bàn tay vào khung để nhận diện trước khi chụp.'));
       return;
     }
+    try {
+      const checked = samplePalmQuality(v, v.videoWidth, v.videoHeight, previous.current);
+      if (checked.state === 'retake') {
+        setWarning(palmQualityMessage(checked, en));
+        return;
+      }
+    } catch {
+      setWarning(
+        en
+          ? 'Unable to check this frame. Use your phone camera or choose a photo.'
+          : 'Chưa kiểm tra được khung hình. Dùng camera điện thoại hoặc chọn ảnh.',
+      );
+      return;
+    }
     const scale = Math.min(1, 1200 / Math.max(v.videoWidth, v.videoHeight));
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(v.videoWidth * scale);
@@ -170,7 +198,7 @@ export function PalmCamera(props: Props) {
     const shot = { dataUrl, w: canvas.width, h: canvas.height };
     cleanup();
     callbacks.current.onCapture(shot);
-  }, [cleanup, copy]);
+  }, [cleanup, copy, en]);
 
   const runTracker = useCallback(() => {
     stopLoop.current();
@@ -190,14 +218,28 @@ export function PalmCamera(props: Props) {
         const frame = frameFromLandmarks(pts, previous.current, v.videoWidth, v.videoHeight);
         previous.current = pts;
         const detected = assessHand(frame);
+        if (pts && performance.now() - sampledAt.current > 400) {
+          try {
+            photoQuality.current = samplePalmQuality(v, v.videoWidth, v.videoHeight, pts);
+            setQuality(photoQuality.current);
+            sampledAt.current = performance.now();
+          } catch {
+            photoQuality.current = null;
+            setQuality(null);
+          }
+        }
         observedAt.current = performance.now();
         verdictRef.current = detected;
         setLandmarks(pts);
         setVerdict(detected);
         stable.current = bumpStable(stable.current, frame);
         setStability(Math.min(100, Math.round((stable.current / 12) * 100)));
-        setHint(copy(verdictMessage(detected)));
-        if (!auto.current || !readyToCountdown(stable.current)) {
+        setHint(
+          detected === 'ready' && photoQuality.current && photoQuality.current.state !== 'ready'
+            ? palmQualityMessage(photoQuality.current, en)
+            : copy(verdictMessage(detected)),
+        );
+        if (!auto.current || !readyToCountdown(stable.current) || photoQuality.current?.state !== 'ready') {
           deadline.current = 0;
           setCount(0);
           return;
@@ -214,7 +256,7 @@ export function PalmCamera(props: Props) {
         setHint(copy('Nhận diện bị gián đoạn. Hãy thử lại để tiếp tục.'));
       },
     );
-  }, [capture, resetTracking, copy]);
+  }, [capture, resetTracking, copy, en]);
 
   const initializeTracker = useCallback(async () => {
     loadAbort.current?.abort();
@@ -395,7 +437,7 @@ export function PalmCamera(props: Props) {
           className={s.cameraFrame}
           style={{
             aspectRatio: `${frameSize.width}/${frameSize.height}`,
-            width: `min(100%, ${(43 * frameSize.width) / frameSize.height}svh)`,
+            width: `min(100%, ${(55 * frameSize.width) / frameSize.height}svh)`,
           }}
         >
           <video
@@ -480,6 +522,12 @@ export function PalmCamera(props: Props) {
           <span data-ok={!!landmarks}>{copy('Bàn tay')}</span>
           <span data-ok={verdict === 'ready'}>{copy('Trong khung')}</span>
           <span data-ok={stability === 100}>{copy('Giữ yên')}</span>
+          <span data-ok={quality?.checks.find(c => c.id === 'sharpness')?.status === 'pass'}>
+            {en ? 'Sharp' : 'Độ nét'}
+          </span>
+          <span data-ok={quality?.checks.find(c => c.id === 'lighting')?.status === 'pass'}>
+            {en ? 'Light' : 'Ánh sáng'}
+          </span>
         </div>
       </div>
       <div className={s.cameraTools}>
@@ -535,7 +583,7 @@ export function PalmCamera(props: Props) {
         </label>
         <button
           className={s.shutter}
-          disabled={!ready || changing || tracking !== 'ready' || verdict !== 'ready'}
+          disabled={!ready || changing || tracking !== 'ready' || verdict !== 'ready' || quality?.state === 'retake'}
           onClick={capture}
           aria-label={copy('Chụp ảnh')}
         >
@@ -543,6 +591,26 @@ export function PalmCamera(props: Props) {
         </button>
         <span className={s.captureCaption}>{verdict === 'ready' ? copy('Sẵn sàng') : copy('Căn bàn tay')}</span>
       </div>
+      {props.onFallback && (
+        <div className={s.cameraFallback}>
+          <button
+            onClick={() => {
+              cleanup();
+              callbacks.current.onFallback?.('native');
+            }}
+          >
+            {en ? 'Use phone camera' : 'Dùng camera điện thoại'}
+          </button>
+          <button
+            onClick={() => {
+              cleanup();
+              callbacks.current.onFallback?.('upload');
+            }}
+          >
+            {en ? 'Choose photo' : 'Chọn ảnh'}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

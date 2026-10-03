@@ -1239,3 +1239,342 @@
   max-height: none;
   object-fit: fill;
 }
+
+/* Full flow: use the image as evidence, make the next action easy to find. */
+.flowSteps {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 24px;
+  font-size: 12px;
+  flex-wrap: wrap;
+  color: var(--color-muc-2);
+}
+.flowSteps span {
+  padding: 8px 12px;
+  border-radius: 100px;
+  border: 1px solid #214d4224;
+}
+.flowSteps span[data-current='true'] {
+  color: var(--color-ngoc-deep);
+  background: #e3eee5;
+  border-color: #214d4250;
+  font-weight: 600;
+}
+.qualityPanel {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f5f1e7;
+  border-radius: 14px;
+  border: 1px solid #26190f19;
+}
+.qualityHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+.qualityHeading > span {
+  color: var(--color-muc-2);
+}
+.qualityChecks {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: grid;
+  gap: 6px;
+}
+.qualityChecks li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+.qualityChecks strong {
+  color: var(--color-ngoc-deep);
+  font-weight: 500;
+}
+.qualityChecks li[data-status='fail'] strong {
+  color: var(--color-son-deep);
+}
+.qualityChecks li[data-status='warn'] strong,
+.qualityChecks li[data-status='unknown'] strong {
+  color: #796030;
+}
+.qualityPanel p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.resultEyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--color-muc-2);
+  margin-bottom: 10px;
+}
+.visibility {
+  font-size: 11px;
+  color: var(--color-ngoc-deep);
+  margin-bottom: 6px;
+}
+.observation {
+  background: #e8eee5;
+  border-radius: 14px;
+  padding: 0 16px 14px;
+  margin-top: 8px;
+}
+.observation summary {
+  color: var(--color-ngoc-deep);
+  font-size: 13px;
+  font-weight: 600;
+}
+.observation p {
+  color: var(--color-muc);
+}
+.uncertainty {
+  background: #f5efdc;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+.interpretation {
+  margin-top: 20px;
+}
+.interpretation > span {
+  font-size: 11px;
+  color: var(--color-muc-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.interpretation p {
+  margin: 8px 0 0;
+}
+.resultActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.primaryAction,
+.secondaryAction {
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  flex: 1;
+}
+.primaryAction {
+  background: var(--color-ngoc-deep);
+  color: white;
+}
+.secondaryAction {
+  border: 1px solid #214d4240;
+  background: #ffffff80;
+  color: var(--color-ngoc-deep);
+}
+.primaryAction:disabled {
+  background: #e3eee5;
+  color: var(--color-ngoc-deep);
+  cursor: default;
+}
+.historyPanel {
+  margin-bottom: 24px;
+  border: 1px solid #214d4224;
+  border-radius: 16px;
+  padding: 0 16px;
+}
+.historyPanel summary {
+  min-height: 48px;
+  padding: 14px 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+.historyPanel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  max-height: 340px;
+  overflow: auto;
+}
+.historyPanel li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid #214d4219;
+}
+.historyPanel li button {
+  text-align: left;
+  min-height: 48px;
+  padding: 12px 0;
+  cursor: pointer;
+  min-width: 0;
+}
+.historyPanel li button:first-child {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+}
+.historyPanel li strong {
+  font-size: 13px;
+}
+.historyPanel li span {
+  font-size: 12px;
+  color: var(--color-muc-2);
+  overflow-wrap: anywhere;
+}
+.historyPanel li button:last-child {
+  font-size: 12px;
+  color: var(--color-son-deep);
+  padding-inline: 10px;
+}
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.suggestions button {
+  text-align: left;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #214d4224;
+  font-size: 12px;
+  color: var(--color-muc-2);
+  cursor: pointer;
+}
+.followAnswer {
+  border-top: 1px solid #214d4224;
+  margin-top: 20px;
+  padding-top: 20px;
+}
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.comparison article {
+  min-width: 0;
+}
+.comparison h3 {
+  color: var(--color-ngoc-deep);
+  font-size: 16px;
+  font-weight: 600;
+}
+.comparison strong {
+  font-size: 13px;
+}
+.cameraFallback {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.cameraFallback button {
+  min-height: 44px;
+  padding: 10px;
+  font-size: 12px;
+  color: #d8eee3;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.qualitySignals {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.retakeRecovery {
+  padding: 14px;
+  border: 1px solid #79603030;
+  background: #f5efdc;
+  border-radius: 14px;
+}
+.retakeRecovery p {
+  margin: 0 0 8px;
+}
+.page button:focus-visible,
+.page summary:focus-visible,
+.page select:focus-visible,
+.page textarea:focus-visible {
+  outline: 2px solid var(--color-ngoc-deep);
+  outline-offset: 4px;
+}
+.camera button:focus-visible {
+  outline-color: #b6f6d8;
+}
+@media (max-width: 720px) {
+  .page {
+    padding-inline: 12px;
+  }
+  .flowSteps {
+    gap: 6px;
+    margin-bottom: 18px;
+    font-size: 10px;
+  }
+  .flowSteps span {
+    padding: 7px 9px;
+  }
+  .cameraStage {
+    margin-inline: 8px;
+  }
+  .camera .cameraFrame {
+    max-height: none;
+  }
+  .cameraFeedback,
+  .cameraTools {
+    padding-inline: 14px;
+  }
+  .qualitySignals {
+    column-gap: 12px;
+    font-size: 11px;
+  }
+  .cameraNote {
+    font-size: 11px;
+  }
+  .panel {
+    padding: 20px;
+  }
+  .resultActions {
+    position: sticky;
+    bottom: calc(74px + env(safe-area-inset-bottom));
+    z-index: 2;
+    padding: 8px;
+    margin-inline: -8px;
+    background: var(--color-kem);
+    border-radius: 16px;
+    box-shadow: 0 6px 20px #214d4214;
+  }
+  .primaryAction,
+  .secondaryAction {
+    padding: 12px 10px;
+  }
+  .comparison {
+    grid-template-columns: 1fr;
+  }
+  .comparison article + article {
+    border-top: 1px solid #214d4224;
+    padding-top: 18px;
+  }
+  .entryAside .moduleLabel {
+    display: none;
+  }
+  .photo {
+    max-height: 40svh;
+  }
+}
+
+.comparePicker {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-muc-2);
+}
+.comparePicker select {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #214d4240;
+  background: var(--color-kem);
+  color: var(--color-muc);
+  font-size: 16px;
+}

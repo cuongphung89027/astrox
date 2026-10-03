@@ -1,6 +1,7 @@
 import templates from './prompt-templates.ts';
 import originals from './original-prompts.ts';
 import { COMPAT_INCLUSION_GUIDANCE_EN } from './english-prompts.ts';
+import { PALM_READING_GUIDANCE, PALM_FOLLOWUP_GUIDANCE } from './palm-guidance.ts';
 import { TUVI_BALANCED_GUIDANCE } from './tuvi-guidance.ts';
 
 export type PromptLocale = 'vi' | 'en';
@@ -97,7 +98,12 @@ export function renderServicePrompt(
   };
   try {
     const rendered = renderPrompt(visit(node), settings.templates, 0, locale);
-    const result = module === 'tuvi' ? `${rendered}\n\n${TUVI_BALANCED_GUIDANCE[locale]}` : rendered;
+    const result =
+      module === 'tuvi'
+        ? `${rendered}\n\n${TUVI_BALANCED_GUIDANCE[locale]}`
+        : module === 'palm'
+          ? `${rendered}\n\n${node.id === 'palm.followup.v1' ? PALM_FOLLOWUP_GUIDANCE[locale] : PALM_READING_GUIDANCE[locale]}`
+          : rendered;
     if (result.length > 100000) throw new Error('PROMPT_TOO_LARGE');
     return result;
   } catch (error) {

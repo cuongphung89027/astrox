@@ -5,13 +5,13 @@
  * trong trình duyệt.
  */
 
-import type { HandLandmarker } from "@mediapipe/tasks-vision";
+import type { HandLandmarker } from '@mediapipe/tasks-vision';
 
 export type { HandLandmarker };
 
 export type HandPoint = { x: number; y: number };
-export type HandVerdict = "none" | "far" | "tilt" | "ready";
-export type HandFrame = { present: boolean; bboxRatio: number; aspect: number; motion: number };
+export type HandVerdict = 'none' | 'far' | 'tilt' | 'clipped' | 'ready';
+export type HandFrame = { present: boolean; bboxRatio: number; aspect: number; motion: number; clipped?: boolean };
 
 export const HAND_THRESHOLDS = {
   minBboxRatio: 0.12, // diện tích bbox tay / khung
@@ -38,6 +38,9 @@ export function frameFromLandmarks(
       : 1;
   return {
     present: true,
+    clipped: pts.some(
+      p => !Number.isFinite(p.x) || !Number.isFinite(p.y) || p.x < 0.025 || p.x > 0.975 || p.y < 0.025 || p.y > 0.975,
+    ),
     bboxRatio: w * h,
     aspect: (w / Math.max(h, 1e-6)) * (sourceWidth > 0 && sourceHeight > 0 ? sourceWidth / sourceHeight : 1),
     motion,
@@ -45,22 +48,24 @@ export function frameFromLandmarks(
 }
 
 export function assessHand(f: HandFrame): HandVerdict {
-  if (!f.present) return "none";
-  if (f.bboxRatio < HAND_THRESHOLDS.minBboxRatio) return "far";
-  if (f.aspect < HAND_THRESHOLDS.minAspect || f.aspect > HAND_THRESHOLDS.maxAspect) return "tilt";
-  return "ready";
+  if (!f.present) return 'none';
+  if (f.clipped) return 'clipped';
+  if (f.bboxRatio < HAND_THRESHOLDS.minBboxRatio) return 'far';
+  if (f.aspect < HAND_THRESHOLDS.minAspect || f.aspect > HAND_THRESHOLDS.maxAspect) return 'tilt';
+  return 'ready';
 }
 
 export function verdictMessage(v: HandVerdict): string {
-  if (v === "none") return "Đưa lòng bàn tay vào khung";
-  if (v === "far") return "Đưa tay sát hơn";
-  if (v === "tilt") return "Xoay lòng bàn tay về phía máy";
-  return "Giữ yên…";
+  if (v === 'clipped') return 'Đưa trọn bàn tay vào giữa khung';
+  if (v === 'none') return 'Đưa lòng bàn tay vào khung';
+  if (v === 'far') return 'Đưa tay sát hơn';
+  if (v === 'tilt') return 'Xoay lòng bàn tay về phía máy';
+  return 'Giữ yên…';
 }
 
 /** Bộ đếm frame ổn định: reset khi tay mất, rời chuẩn hoặc giật. */
 export function bumpStable(stable: number, f: HandFrame): number {
-  if (assessHand(f) !== "ready" || f.motion > HAND_THRESHOLDS.maxMotion) return 0;
+  if (assessHand(f) !== 'ready' || f.motion > HAND_THRESHOLDS.maxMotion) return 0;
   return stable + 1;
 }
 
@@ -75,13 +80,13 @@ export function fingertipsOf(pts: HandPoint[]): HandPoint[] {
   return FINGERTIP_INDEXES.map(i => pts[i]).filter(Boolean);
 }
 
-export type HandTrackerLoadOptions = { signal?: AbortSignal; timeoutMs?: number };
+export type HandTrackerLoadOptions = { signal?: AbortSignal; timeoutMs?: number; runningMode?: 'IMAGE' | 'VIDEO' };
 
 /** Nạp có giới hạn thời gian; giải phóng model đến muộn sau khi hủy. */
 export async function loadHandTracker(options: HandTrackerLoadOptions = {}): Promise<HandLandmarker> {
   const { signal, timeoutMs = 20_000 } = options;
   let cancelled: Error | null = null;
-  const abortError = () => new DOMException("Đã dừng tải nhận diện bàn tay", "AbortError");
+  const abortError = () => new DOMException('Đã dừng tải nhận diện bàn tay', 'AbortError');
   if (signal?.aborted) throw abortError();
   let timer: ReturnType<typeof setTimeout> | undefined;
   let onAbort: () => void = () => {};
@@ -90,10 +95,10 @@ export async function loadHandTracker(options: HandTrackerLoadOptions = {}): Pro
       cancelled = abortError();
       reject(cancelled);
     };
-    signal?.addEventListener("abort", onAbort, { once: true });
+    signal?.addEventListener('abort', onAbort, { once: true });
     timer = setTimeout(
       () => {
-        cancelled = new DOMException("Tải nhận diện bàn tay quá lâu. Hãy kiểm tra kết nối và thử lại.", "TimeoutError");
+        cancelled = new DOMException('Tải nhận diện bàn tay quá lâu. Hãy kiểm tra kết nối và thử lại.', 'TimeoutError');
         reject(cancelled);
       },
       Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 20_000,
@@ -103,14 +108,14 @@ export async function loadHandTracker(options: HandTrackerLoadOptions = {}): Pro
     if (cancelled) throw cancelled;
   };
   const loading = async () => {
-    const vision = await import("@mediapipe/tasks-vision");
+    const vision = await import('@mediapipe/tasks-vision');
     checkCancelled();
-    const fileset = await vision.FilesetResolver.forVisionTasks("/mediapipe/wasm");
+    const fileset = await vision.FilesetResolver.forVisionTasks('/mediapipe/wasm');
     checkCancelled();
-    const make = async (delegate: "GPU" | "CPU") => {
+    const make = async (delegate: 'GPU' | 'CPU') => {
       const tracker = await vision.HandLandmarker.createFromOptions(fileset, {
-        baseOptions: { modelAssetPath: "/models/hand_landmarker.task", delegate },
-        runningMode: "VIDEO",
+        baseOptions: { modelAssetPath: '/models/hand_landmarker.task', delegate },
+        runningMode: options.runningMode ?? 'VIDEO',
         numHands: 1,
       });
       if (cancelled) {
@@ -120,17 +125,17 @@ export async function loadHandTracker(options: HandTrackerLoadOptions = {}): Pro
       return tracker;
     };
     try {
-      return await make("GPU");
+      return await make('GPU');
     } catch {
       checkCancelled();
-      return await make("CPU");
+      return await make('CPU');
     }
   };
   try {
     return await Promise.race([loading(), deadline]);
   } finally {
     clearTimeout(timer);
-    signal?.removeEventListener("abort", onAbort);
+    signal?.removeEventListener('abort', onAbort);
   }
 }
 
@@ -180,5 +185,5 @@ export function startDetectLoop(
 
 /** A running camera is not proof of a detected hand. Expire frozen observations. */
 export function canCaptureHand(verdict: HandVerdict, observedAt: number, now: number): boolean {
-  return verdict === "ready" && observedAt > 0 && now >= observedAt && now - observedAt <= 500;
+  return verdict === 'ready' && observedAt > 0 && now >= observedAt && now - observedAt <= 500;
 }

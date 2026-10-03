@@ -12,22 +12,25 @@
 
 export type PalmPhoto = { dataUrl: string; width: number; height: number };
 
-/** Ba định dạng trình duyệt giải mã ổn định; HEIC cần người dùng tự chuyển. */
-export const PALM_PHOTO_TYPES: readonly string[] = ["image/jpeg", "image/png", "image/webp"];
+/** HEIC/HEIF được thử qua decoder native; không tải ảnh lên server để chuyển đổi. */
+export const PALM_PHOTO_TYPES: readonly string[] = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+];
 export const PALM_PHOTO_MAX_BYTES = 8 * 1024 * 1024;
 export const PALM_PHOTO_MAX_EDGE = 1200;
 /** Trần độ dài dataURL (khoảng 825 KB nhị phân) để ảnh gửi AI không phình. */
 export const PALM_PHOTO_MAX_DATA_LENGTH = 1_150_000;
-export const PALM_PHOTO_TYPE_ERROR =
-  "Chọn ảnh JPG, PNG hoặc WebP dưới 8 MB. Nếu ảnh là HEIC, hãy chuyển sang JPG.";
-export const PALM_PHOTO_READ_ERROR = "Không đọc được ảnh. Hãy chọn ảnh khác.";
-export const PALM_PHOTO_SIZE_ERROR = "Ảnh còn quá lớn. Hãy chọn ảnh khác.";
+export const PALM_PHOTO_TYPE_ERROR = 'Chọn ảnh JPG, PNG hoặc WebP dưới 8 MB. Nếu ảnh là HEIC, hãy chuyển sang JPG.';
+export const PALM_PHOTO_READ_ERROR = 'Không đọc được ảnh. Hãy chọn ảnh khác.';
+export const PALM_PHOTO_SIZE_ERROR = 'Ảnh còn quá lớn. Hãy chọn ảnh khác.';
 
 /** Lỗi đầu vào trả về chuỗi cho UI; null nghĩa là file đủ điều kiện giải mã. */
 export function palmPhotoGate(file: File): string | null {
-  return !PALM_PHOTO_TYPES.includes(file.type) || file.size > PALM_PHOTO_MAX_BYTES
-    ? PALM_PHOTO_TYPE_ERROR
-    : null;
+  return !PALM_PHOTO_TYPES.includes(file.type) || file.size > PALM_PHOTO_MAX_BYTES ? PALM_PHOTO_TYPE_ERROR : null;
 }
 
 type DecodedPhoto = {
@@ -38,13 +41,13 @@ type DecodedPhoto = {
   release: () => void;
 };
 
-const abortError = () => new DOMException("Đã hủy đọc ảnh", "AbortError");
+const abortError = () => new DOMException('Đã hủy đọc ảnh', 'AbortError');
 function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw abortError();
 }
 
 async function decodeWithBitmap(file: File): Promise<DecodedPhoto> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   return { source: bitmap, width: bitmap.width, height: bitmap.height, release: () => bitmap.close() };
 }
 
@@ -57,14 +60,14 @@ function decodeWithElement(file: File, signal?: AbortSignal): Promise<DecodedPho
     const detach = () => {
       image.onload = null;
       image.onerror = null;
-      signal?.removeEventListener("abort", onAbort);
+      signal?.removeEventListener('abort', onAbort);
       URL.revokeObjectURL(url);
     };
     const fail = (error: Error) => {
       if (settled) return;
       settled = true;
       detach();
-      image.src = "";
+      image.src = '';
       reject(error);
     };
     const onAbort = () => fail(abortError());
@@ -75,7 +78,7 @@ function decodeWithElement(file: File, signal?: AbortSignal): Promise<DecodedPho
       resolve({ source: image, width: image.naturalWidth, height: image.naturalHeight, release: () => {} });
     };
     image.onerror = () => fail(new Error(PALM_PHOTO_READ_ERROR));
-    signal?.addEventListener("abort", onAbort, { once: true });
+    signal?.addEventListener('abort', onAbort, { once: true });
     if (signal?.aborted) {
       fail(abortError());
       return;
@@ -85,11 +88,11 @@ function decodeWithElement(file: File, signal?: AbortSignal): Promise<DecodedPho
 }
 
 async function decode(file: File, signal?: AbortSignal): Promise<DecodedPhoto> {
-  if (typeof createImageBitmap === "function") {
+  if (typeof createImageBitmap === 'function') {
     try {
       return await decodeWithBitmap(file);
     } catch (error) {
-      if ((error as DOMException | undefined)?.name === "AbortError") throw error;
+      if ((error as DOMException | undefined)?.name === 'AbortError') throw error;
       // API có nhưng không dùng được (bản cũ, ảnh lạ) → thử đường <img>.
       throwIfAborted(signal);
     }
@@ -103,19 +106,24 @@ export async function normalizePalmPhoto(file: File, options: { signal?: AbortSi
   if (gate) throw new Error(gate);
   const { signal } = options;
   throwIfAborted(signal);
-  const decoded = await decode(file, signal);
+  const decoded = await decode(file, signal).catch(error => {
+    if ((error as Error).name === 'AbortError') throw error;
+    if (file.type === 'image/heic' || file.type === 'image/heif')
+      throw new Error('Trình duyệt chưa đọc được HEIC. Dùng camera điện thoại hoặc chuyển ảnh sang JPG.');
+    throw error;
+  });
   try {
     throwIfAborted(signal);
     if (!decoded.width || !decoded.height) throw new Error(PALM_PHOTO_READ_ERROR);
     const ratio = Math.min(1, PALM_PHOTO_MAX_EDGE / Math.max(decoded.width, decoded.height));
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(decoded.width * ratio));
     canvas.height = Math.max(1, Math.round(decoded.height * ratio));
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error(PALM_PHOTO_READ_ERROR);
     ctx.drawImage(decoded.source, 0, 0, canvas.width, canvas.height);
-    let dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-    if (dataUrl.length > PALM_PHOTO_MAX_DATA_LENGTH) dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+    let dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    if (dataUrl.length > PALM_PHOTO_MAX_DATA_LENGTH) dataUrl = canvas.toDataURL('image/jpeg', 0.6);
     if (dataUrl.length > PALM_PHOTO_MAX_DATA_LENGTH) throw new Error(PALM_PHOTO_SIZE_ERROR);
     return { dataUrl, width: canvas.width, height: canvas.height };
   } finally {

@@ -32,7 +32,7 @@ const MAIN_LENS_LABEL = /wide|main/i;
 const NEUTRAL_SCORE = 0.5;
 
 export function normalizeZoomUnit(mins: number[]): number[] {
-  return mins.every((v) => v >= UNIT_THRESHOLD) ? mins.map((v) => v / 100) : mins;
+  return mins.every(v => v >= UNIT_THRESHOLD) ? mins.map(v => v / 100) : mins;
 }
 
 /**
@@ -43,15 +43,13 @@ export function normalizeZoomUnit(mins: number[]): number[] {
  */
 export function scoreLenses(candidates: LensCandidate[]): LensCandidate | null {
   if (candidates.length === 0) return null;
-  const withZoom = candidates.filter(
-    (c) => c.zoomMin !== null,
-  ) as (LensCandidate & { zoomMin: number })[];
+  const withZoom = candidates.filter(c => c.zoomMin !== null) as (LensCandidate & { zoomMin: number })[];
   const zoomOf = new Map<LensCandidate, number>();
-  normalizeZoomUnit(withZoom.map((c) => c.zoomMin)).forEach((v, i) => zoomOf.set(withZoom[i], v));
-  const preferred = candidates.filter((c) => !SIDE_LENS_LABEL.test(c.label));
+  normalizeZoomUnit(withZoom.map(c => c.zoomMin)).forEach((v, i) => zoomOf.set(withZoom[i], v));
+  const preferred = candidates.filter(c => !SIDE_LENS_LABEL.test(c.label));
   // Mọi candidate đều là lens phụ → bỏ tiêu chí nhãn, còn hơn không thử gì.
   const pool = preferred.length > 0 ? preferred : candidates;
-  const scored = pool.map((c) => {
+  const scored = pool.map(c => {
     const zoom = zoomOf.get(c) ?? null;
     let score = zoom === null ? NEUTRAL_SCORE : 1 / (Math.abs(zoom - 1) + 0.05);
     if (MAIN_LENS_LABEL.test(c.label) && !SIDE_LENS_LABEL.test(c.label)) score += 100;
@@ -110,7 +108,7 @@ export async function probeZoomMin(track: MediaStreamTrack): Promise<number | nu
 }
 
 function checkCameraAbort(signal?: AbortSignal): void {
-  if (signal?.aborted) throw new DOMException("Đã đóng camera", "AbortError");
+  if (signal?.aborted) throw new DOMException('Đã đóng camera', 'AbortError');
 }
 const stopCameraStream = (stream: MediaStream) => stream.getTracks().forEach(track => track.stop());
 
@@ -118,14 +116,22 @@ const stopCameraStream = (stream: MediaStream) => stream.getTracks().forEach(tra
 function cameraAwait<T>(pending: Promise<T>, signal?: AbortSignal, dispose?: (value: T) => void): Promise<T> {
   if (!signal) return pending;
   return new Promise<T>((resolve, reject) => {
-    const abort = () => reject(new DOMException("Đã đóng camera", "AbortError"));
-    signal.addEventListener("abort", abort, { once: true });
+    const abort = () => reject(new DOMException('Đã đóng camera', 'AbortError'));
+    signal.addEventListener('abort', abort, { once: true });
     if (signal.aborted) abort();
-    pending.then(value => {
-      signal.removeEventListener("abort", abort);
-      if (signal.aborted) { dispose?.(value); abort(); }
-      else resolve(value);
-    }, error => { signal.removeEventListener("abort", abort); reject(error); });
+    pending.then(
+      value => {
+        signal.removeEventListener('abort', abort);
+        if (signal.aborted) {
+          dispose?.(value);
+          abort();
+        } else resolve(value);
+      },
+      error => {
+        signal.removeEventListener('abort', abort);
+        reject(error);
+      },
+    );
   });
 }
 
@@ -135,14 +141,21 @@ export async function listBackCameras(signal?: AbortSignal): Promise<LensCandida
   const devices = await cameraAwait(navigator.mediaDevices.enumerateDevices(), signal);
   checkCameraAbort(signal);
   const out: LensCandidate[] = [];
-  for (const d of devices.filter(v => v.kind === "videoinput" && !FRONT_LABEL.test(v.label))) {
+  for (const d of devices.filter(v => v.kind === 'videoinput' && !FRONT_LABEL.test(v.label))) {
     checkCameraAbort(signal);
     let stream: MediaStream | null = null;
     try {
-      stream = await cameraAwait(navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: d.deviceId } }, audio: false }), signal, stopCameraStream);
+      stream = await cameraAwait(
+        navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: d.deviceId } }, audio: false }),
+        signal,
+        stopCameraStream,
+      );
       checkCameraAbort(signal);
       const track = stream.getVideoTracks()[0];
-      if (track.getSettings().facingMode === "environment" || (!track.getSettings().facingMode && /back|rear|sau|wide|main/i.test(d.label))) {
+      if (
+        track.getSettings().facingMode === 'environment' ||
+        (!track.getSettings().facingMode && /back|rear|sau|wide|main/i.test(d.label))
+      ) {
         const zoomMin = await cameraAwait(probeZoomMin(track), signal);
         checkCameraAbort(signal);
         out.push({ deviceId: d.deviceId, label: d.label, zoomMin });
@@ -159,12 +172,12 @@ export async function listBackCameras(signal?: AbortSignal): Promise<LensCandida
 
 let cachedLensId: string | null = null;
 let cachedBackList: LensCandidate[] = [];
-const BASE_VIDEO: MediaTrackConstraints = { facingMode: "environment", width: { ideal: 1280 } };
-const LENS_STORAGE_KEY = "astrox.palm.lensId";
+const BASE_VIDEO: MediaTrackConstraints = { facingMode: 'environment', width: { ideal: 1280 } };
+const LENS_STORAGE_KEY = 'astrox.palm.lensId';
 
 function readStoredLens(): string | null {
   try {
-    if (typeof localStorage === "undefined") return null;
+    if (typeof localStorage === 'undefined') return null;
     return localStorage.getItem(LENS_STORAGE_KEY);
   } catch {
     return null; // Safari private mode — coi như chưa có lựa chọn nào
@@ -173,7 +186,7 @@ function readStoredLens(): string | null {
 
 function clearStoredLens(): void {
   try {
-    if (typeof localStorage !== "undefined") localStorage.removeItem(LENS_STORAGE_KEY);
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(LENS_STORAGE_KEY);
   } catch {
     /* không xoá được cũng không sao */
   }
@@ -182,7 +195,7 @@ function clearStoredLens(): void {
 /** Nhớ lens người dùng đã chọn — máy không có tín hiệu zoom vẫn đúng ở lần sau. */
 export function persistLensChoice(deviceId: string): void {
   try {
-    if (typeof localStorage !== "undefined") localStorage.setItem(LENS_STORAGE_KEY, deviceId);
+    if (typeof localStorage !== 'undefined') localStorage.setItem(LENS_STORAGE_KEY, deviceId);
   } catch {
     /* Safari private mode ném khi ghi — bỏ qua */
   }
@@ -190,10 +203,14 @@ export function persistLensChoice(deviceId: string): void {
 
 function openLensStream(deviceId: string, signal?: AbortSignal): Promise<MediaStream> {
   checkCameraAbort(signal);
-  return cameraAwait(navigator.mediaDevices.getUserMedia({
-    video: { deviceId: { exact: deviceId }, width: { ideal: 1280 } },
-    audio: false,
-  }), signal, stopCameraStream);
+  return cameraAwait(
+    navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: deviceId }, width: { ideal: 1280 } },
+      audio: false,
+    }),
+    signal,
+    stopCameraStream,
+  );
 }
 
 /**
@@ -205,15 +222,12 @@ async function lensListFromDevices(activeId: string, signal?: AbortSignal): Prom
   checkCameraAbort(signal);
   const devices = await cameraAwait(navigator.mediaDevices.enumerateDevices(), signal);
   checkCameraAbort(signal);
-  const cams = devices.filter((d) => d.kind === "videoinput");
-  const back = cams.filter((d) => !FRONT_LABEL.test(d.label));
+  const cams = devices.filter(d => d.kind === 'videoinput');
+  const back = cams.filter(d => !FRONT_LABEL.test(d.label));
   const list = back.length > 0 ? back : cams;
-  const ordered = [
-    ...list.filter((d) => d.deviceId === activeId),
-    ...list.filter((d) => d.deviceId !== activeId),
-  ];
-  const out = ordered.map((d) => ({ deviceId: d.deviceId, label: d.label, zoomMin: null }));
-  return out.length > 0 ? out : [{ deviceId: activeId, label: "", zoomMin: null }];
+  const ordered = [...list.filter(d => d.deviceId === activeId), ...list.filter(d => d.deviceId !== activeId)];
+  const out = ordered.map(d => ({ deviceId: d.deviceId, label: d.label, zoomMin: null }));
+  return out.length > 0 ? out : [{ deviceId: activeId, label: '', zoomMin: null }];
 }
 
 /** Mở lens đã chọn trước đó (localStorage rồi cache session) — khỏi dò lại. */
@@ -242,7 +256,7 @@ async function openRememberedLens(
 /** Lỗi khẳng định lens không còn tồn tại (khác lỗi tạm thời như bận/quyền). */
 function isGoneError(err: unknown): boolean {
   const name = (err as { name?: string } | null | undefined)?.name;
-  return name === "NotFoundError" || name === "OverconstrainedError";
+  return name === 'NotFoundError' || name === 'OverconstrainedError';
 }
 
 export type OpenedCamera = { stream: MediaStream; deviceId: string; backList: LensCandidate[] };
@@ -252,10 +266,7 @@ export type OpenedCamera = { stream: MediaStream; deviceId: string; backList: Le
  * hụt thì mở lại `fallback` (lens mặc định) để caller luôn còn preview. Hai id
  * trùng nhau nghĩa là không có phương án dự phòng — lỗi mở phải nổi lên caller.
  */
-export function lensOpenPlan(
-  backList: LensCandidate[],
-  defaultId: string,
-): { primary: string; fallback: string } {
+export function lensOpenPlan(backList: LensCandidate[], defaultId: string): { primary: string; fallback: string } {
   const best = pickLens(backList);
   const primary = best?.deviceId ?? defaultId;
   return { primary, fallback: defaultId };
@@ -292,22 +303,29 @@ export async function openBackCamera(signal?: AbortSignal): Promise<OpenedCamera
     cachedBackList = [];
   }
   checkCameraAbort(signal);
-  const stream = await cameraAwait(navigator.mediaDevices.getUserMedia({ video: BASE_VIDEO, audio: false }), signal, stopCameraStream);
+  const stream = await cameraAwait(
+    navigator.mediaDevices.getUserMedia({ video: BASE_VIDEO, audio: false }),
+    signal,
+    stopCameraStream,
+  );
   let keepDefault = false;
   let defaultLens: LensCandidate;
   try {
     checkCameraAbort(signal);
     const track = stream.getVideoTracks()[0];
     defaultLens = {
-      deviceId: track.getSettings().deviceId ?? "",
+      deviceId: track.getSettings().deviceId ?? '',
       label: track.label,
       zoomMin: await cameraAwait(probeZoomMin(track), signal),
     };
     checkCameraAbort(signal);
-    const inputs = (await cameraAwait(navigator.mediaDevices.enumerateDevices(), signal)).filter(d => d.kind === "videoinput");
+    const inputs = (await cameraAwait(navigator.mediaDevices.enumerateDevices(), signal)).filter(
+      d => d.kind === 'videoinput',
+    );
     checkCameraAbort(signal);
     const deviceCount = inputs.some(d => FRONT_LABEL.test(d.label))
-      ? inputs.filter(d => !FRONT_LABEL.test(d.label)).length : inputs.length;
+      ? inputs.filter(d => !FRONT_LABEL.test(d.label)).length
+      : inputs.length;
     if (deviceCount < 2) {
       cacheLens(defaultLens.deviceId, [defaultLens]);
       keepDefault = true;
@@ -332,7 +350,10 @@ export async function openBackCamera(signal?: AbortSignal): Promise<OpenedCamera
     opened = await openLensStream(plan.fallback, signal);
     selected = plan.fallback;
   }
-  if (signal?.aborted) { stopCameraStream(opened); checkCameraAbort(signal); }
+  if (signal?.aborted) {
+    stopCameraStream(opened);
+    checkCameraAbort(signal);
+  }
   cacheLens(selected, backList);
   return { stream: opened, deviceId: selected, backList: [...cachedBackList] };
 }
@@ -350,28 +371,16 @@ export async function switchToLens(deviceId: string): Promise<MediaStream> {
 /** Độ sáng trung bình 0..255 theo luminance Rec.709. */
 export function luminanceMean(data: Uint8ClampedArray): number {
   let sum = 0;
-  for (let i = 0; i < data.length; i += 4)
-    sum += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+  for (let i = 0; i < data.length; i += 4) sum += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
   return sum / (data.length / 4);
 }
 
 export const LIGHT_RANGE = { min: 40, max: 225 } as const;
 
-export function lightVerdict(mean: number): "dark" | "bright" | "ok" {
-  if (mean < LIGHT_RANGE.min) return "dark";
-  if (mean > LIGHT_RANGE.max) return "bright";
-  return "ok";
-}
-
-/** Vẽ nguồn vào canvas 64x64 rồi đo độ sáng — dùng cho cả camera và ảnh upload. */
-export function isWellLit(source: CanvasImageSource, w: number, h: number): boolean {
-  const canvas = document.createElement("canvas");
-  canvas.width = 64;
-  canvas.height = 64;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return true;
-  ctx.drawImage(source, 0, 0, w, h, 0, 0, 64, 64);
-  return lightVerdict(luminanceMean(ctx.getImageData(0, 0, 64, 64).data)) === "ok";
+export function lightVerdict(mean: number): 'dark' | 'bright' | 'ok' {
+  if (mean < LIGHT_RANGE.min) return 'dark';
+  if (mean > LIGHT_RANGE.max) return 'bright';
+  return 'ok';
 }
 
 type CaptureCapabilities = MediaTrackCapabilities & {
@@ -380,37 +389,59 @@ type CaptureCapabilities = MediaTrackCapabilities & {
   pointsOfInterest?: unknown;
 };
 function capabilities(track: MediaStreamTrack): CaptureCapabilities {
-  try { return track.getCapabilities?.() ?? {}; } catch { return {}; }
+  try {
+    return track.getCapabilities?.() ?? {};
+  } catch {
+    return {};
+  }
 }
 export function cameraControls(track: MediaStreamTrack): { torch: boolean; focus: boolean } {
   const caps = capabilities(track);
-  return { torch: caps.torch === true, focus: !!caps.pointsOfInterest && !!caps.focusMode?.some(m => m === "single-shot" || m === "continuous") };
+  return {
+    torch: caps.torch === true,
+    focus: !!caps.pointsOfInterest && !!caps.focusMode?.some(m => m === 'single-shot' || m === 'continuous'),
+  };
 }
 
 /** Yêu cầu điều khiển phải tự kết thúc; track treo không được giữ UI khóa vô hạn. */
 export const CONTROL_SETTLE_MS = 5000;
 
-export type SettleResult<T> = { settled: true; value: T } | { settled: false; reason: "timeout" | "error" };
+export type SettleResult<T> = { settled: true; value: T } | { settled: false; reason: 'timeout' | 'error' };
 
 /**
  * Kết quả trong hạn hay không. Promise đến muộn (sau deadline) bị bỏ qua nhưng
  * vẫn có handler nên không sinh unhandled rejection.
  */
 export function settleWithin<T>(pending: Promise<T>, timeoutMs: number = CONTROL_SETTLE_MS): Promise<SettleResult<T>> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let done = false;
-    const finish = (result: SettleResult<T>) => { if (!done) { done = true; resolve(result); } };
-    const timer = setTimeout(() => finish({ settled: false, reason: "timeout" }), timeoutMs);
+    const finish = (result: SettleResult<T>) => {
+      if (!done) {
+        done = true;
+        resolve(result);
+      }
+    };
+    const timer = setTimeout(() => finish({ settled: false, reason: 'timeout' }), timeoutMs);
     pending.then(
-      (value) => { clearTimeout(timer); finish({ settled: true, value }); },
-      () => { clearTimeout(timer); finish({ settled: false, reason: "error" }); },
+      value => {
+        clearTimeout(timer);
+        finish({ settled: true, value });
+      },
+      () => {
+        clearTimeout(timer);
+        finish({ settled: false, reason: 'error' });
+      },
     );
   });
 }
 
 type ControlOptions = { timeoutMs?: number };
 
-export async function setCameraTorch(track: MediaStreamTrack, enabled: boolean, options: ControlOptions = {}): Promise<boolean> {
+export async function setCameraTorch(
+  track: MediaStreamTrack,
+  enabled: boolean,
+  options: ControlOptions = {},
+): Promise<boolean> {
   if (!cameraControls(track).torch) return false;
   const applied = await settleWithin(
     (async () => {
@@ -422,15 +453,24 @@ export async function setCameraTorch(track: MediaStreamTrack, enabled: boolean, 
   return applied.settled && applied.value;
 }
 /** True means the focus request was accepted; it cannot prove optical sharpness. */
-export async function focusCamera(track: MediaStreamTrack, x: number, y: number, options: ControlOptions = {}): Promise<boolean> {
+export async function focusCamera(
+  track: MediaStreamTrack,
+  x: number,
+  y: number,
+  options: ControlOptions = {},
+): Promise<boolean> {
   if (!cameraControls(track).focus || !Number.isFinite(x) || !Number.isFinite(y)) return false;
   const caps = capabilities(track);
   const applied = await settleWithin(
     (async () => {
-      await track.applyConstraints({ advanced: [{
-        focusMode: caps.focusMode?.includes("single-shot") ? "single-shot" : "continuous",
-        pointsOfInterest: [{ x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) }],
-      } as MediaTrackConstraintSet] });
+      await track.applyConstraints({
+        advanced: [
+          {
+            focusMode: caps.focusMode?.includes('single-shot') ? 'single-shot' : 'continuous',
+            pointsOfInterest: [{ x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) }],
+          } as MediaTrackConstraintSet,
+        ],
+      });
       return true;
     })(),
     options.timeoutMs,

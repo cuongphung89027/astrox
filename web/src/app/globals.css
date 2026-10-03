@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   ASTROX — jade accents and mint surfaces
+   ASTROX v5 — "MẶT TRỜI ĐÔNG SƠN" (Dong Son Sunrise)
 
    Ngôn ngữ thiết kế mới, KHÔNG kế thừa palette/bố cục v2–v4:
-   - Nền mint nhẹ, điểm nhấn xanh ngọc đậm; đỏ son giữ cho lỗi/biến động ví.
-     Kim (gold), sen (lotus pink), chàm (indigo) giữ vai trò riêng của module.
+   - Nền kem giấy ấm, spot màu tươi: son (vermillion), ngọc (jade),
+     kim (gold), sen (lotus pink), chàm (indigo) — lấy từ sơn mài/trống đồng.
    - Liquid glass: panel trắng mờ blur + viền trắng hairline + highlight trong.
    - Họa tiết Việt (vẽ SVG gốc — Đông Sơn, mây Lý–Trần, sen) ở layer nền
      opacity thấp, không dùng asset của bên thứ ba.
@@ -14,11 +14,11 @@
 
 @theme {
   /* Palette */
-  --color-kem: #f4f7f2;
-  --color-kem-2: #e8f0e7;
+  --color-kem: #fbf6ec;
+  --color-kem-2: #f6edd9;
   --color-accent: #244d40;
   --color-accent-deep: #193e33;
-  --color-accent-tint: #e1efe7;
+  /* Son remains semantic red for errors and outgoing wallet entries. */
   --color-son: #e8442e;
   --color-son-deep: #c42f1c;
   --color-son-tint: #ffe9e2;
@@ -33,16 +33,16 @@
   --color-sen-tint: #ffe7f0;
   --color-cham: #2f3fae;
   --color-cham-deep: #1c2560;
-  --color-muc: #203e32;
-  --color-muc-2: #54685b;
+  --color-muc: #26190f;
+  --color-muc-2: #6f5d4c;
 
   /* Type */
   --font-display: var(--font-beautique), "Be Vietnam Pro", Georgia, serif;
   --font-sans: var(--font-bevn), system-ui, sans-serif;
 
-  /* Soft green depth for glass and primary actions. */
-  --shadow-glass: 0 2px 6px -2px rgba(32, 62, 50, 0.08), 0 14px 34px -18px rgba(32, 62, 50, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  --shadow-pop: 0 10px 26px -12px rgba(36, 77, 64, 0.3);
+  /* Shadow ấm cho glass + CTA — bản tinh giản: nhẹ, cao, ít màu */
+  --shadow-glass: 0 2px 6px -2px rgba(64, 36, 14, 0.08), 0 14px 34px -18px rgba(64, 36, 14, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow-pop: 0 10px 26px -12px rgba(36, 77, 64, 0.38);
 
   --radius-card: 26px;
 
@@ -124,7 +124,7 @@ body {
   overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(42rem 32rem at 10% -8%, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 60%),
+    radial-gradient(42rem 32rem at 10% -8%, color-mix(in srgb, var(--color-accent) 8%, transparent), transparent 60%),
     radial-gradient(38rem 30rem at 92% 6%, color-mix(in srgb, var(--color-kim) 9%, transparent), transparent 58%),
     radial-gradient(44rem 36rem at 80% 76%, color-mix(in srgb, var(--color-ngoc) 6%, transparent), transparent 62%),
     var(--color-kem);
@@ -257,8 +257,8 @@ body {
 .ax-liquid-topbar {
   --nav-progress: 0;
   background: linear-gradient(to bottom,
-    rgba(calc(255 - 11 * var(--nav-progress)), calc(255 - 8 * var(--nav-progress)), calc(255 - 13 * var(--nav-progress)), .8),
-    rgba(calc(255 - 11 * var(--nav-progress)), calc(255 - 8 * var(--nav-progress)), calc(255 - 13 * var(--nav-progress)), .8));
+    rgba(calc(255 - 4 * var(--nav-progress)), calc(255 - 9 * var(--nav-progress)), calc(255 - 19 * var(--nav-progress)), .8),
+    rgba(calc(255 - 4 * var(--nav-progress)), calc(255 - 9 * var(--nav-progress)), calc(255 - 19 * var(--nav-progress)), .8));
   backdrop-filter: blur(24px) saturate(170%);
   -webkit-backdrop-filter: blur(24px) saturate(170%);
   box-shadow:

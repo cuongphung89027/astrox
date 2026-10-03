@@ -325,7 +325,6 @@ export function KinhDichClient() {
                 id="kd-question"
                 disabled={rolling}
                 rows={2}
-                maxLength={200}
                 value={question}
                 onChange={e => setQuestion(e.target.value)}
                 placeholder={en ? 'Write your question…' : 'Viết điều bạn muốn hỏi…'}

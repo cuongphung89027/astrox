@@ -286,7 +286,10 @@ test('English locale reaches the provider chain: English policy, no Vietnamese p
     sent.push(JSON.parse(o.body));
     return Response.json({
       choices: [
-        { message: { role: 'assistant', content: sent.length === 1 ? vietnameseReply : englishRewrite }, finish_reason: 'stop' },
+        {
+          message: { role: 'assistant', content: sent.length === 1 ? vietnameseReply : englishRewrite },
+          finish_reason: 'stop',
+        },
       ],
     });
   };
@@ -299,7 +302,10 @@ test('English locale reaches the provider chain: English policy, no Vietnamese p
     assert.equal(res.status, 200);
     assert.equal(body.languagePolicyVersion, 'en-reading-2');
     const system = sent[0].messages.filter(m => m.role === 'system').map(m => m.content);
-    assert.ok(system.some(t => t.includes('natural, direct English')), 'English system prompt must reach the provider');
+    assert.ok(
+      system.some(t => t.includes('natural, direct English')),
+      'English system prompt must reach the provider',
+    );
     assert.ok(!system.some(t => t.includes('Viết toàn bộ')), 'Vietnamese reading policy must never be sent for en');
     assert.equal(sent.length, 2, 'a Vietnamese reply must trigger exactly one English repair call');
     assert.ok(

@@ -289,10 +289,11 @@ export function Experts() {
             <textarea
               required
               minLength={3}
-              maxLength={2000}
+              maxLength={5000}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
             />
+            <small>Tối đa 5.000 ký tự</small>
           </label>
           <label className={s.field}>
             Email hoặc số điện thoại liên hệ

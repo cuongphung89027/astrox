@@ -417,8 +417,7 @@ test('outbound fetches only use redirect modes the Workers runtime accepts', asy
 test('successful Zalo login binds the account to the Vietnamese market and heals stale rows', async () => {
   const env = await fixture();
   const seedState = () =>
-    env.DB
-      .prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)')
+    env.DB.prepare('INSERT INTO oauth_states(id,code_verifier,created_at) VALUES(?,?,?)')
       .bind('stv', 'v', new Date().toISOString())
       .run();
   await seedState();
@@ -437,11 +436,9 @@ test('successful Zalo login binds the account to the Vietnamese market and heals
     );
   const marketOfZalo = async () =>
     (
-      await env.DB
-        .prepare(
-          "SELECT mp.market FROM market_preferences mp JOIN zalo_identities zi ON zi.user_id=mp.user_id WHERE zi.provider='zalo' AND zi.provider_subject='77001'",
-        )
-        .first()
+      await env.DB.prepare(
+        "SELECT mp.market FROM market_preferences mp JOIN zalo_identities zi ON zi.user_id=mp.user_id WHERE zi.provider='zalo' AND zi.provider_subject='77001'",
+      ).first()
     )?.market;
   assert.equal((await call()).status, 302);
   assert.equal(await marketOfZalo(), 'VN');
@@ -456,9 +453,9 @@ test('successful Zalo login binds the account to the Vietnamese market and heals
 
 test('POST /api/market is locked: market follows the login provider', async () => {
   const env = await fixture();
-  await env.DB
-    .prepare("INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES('m1','M','active','2026-01-01','2026-01-01')")
-    .run();
+  await env.DB.prepare(
+    "INSERT INTO app_users(id,display_name,status,created_at,updated_at) VALUES('m1','M','active','2026-01-01','2026-01-01')",
+  ).run();
   const headers = await cookieOfUserId(env, 'm1');
   const res = await publicFetch(
     new Request('https://api.example.com/api/market', {

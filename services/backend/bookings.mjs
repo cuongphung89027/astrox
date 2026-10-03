@@ -20,9 +20,10 @@ export async function bookingCatalog(env) {
 }
 export async function createBooking(env, userId, b) {
   const slotId = str(b?.slotId, 80),
-    question = str(b?.question, 2000),
+    question = typeof b?.question === 'string' ? b.question.trim() : '',
     contact = str(b?.contact, 200),
     key = str(b?.idempotencyKey, 100);
+  if (question.length > 5000) fail('Câu hỏi tối đa 5.000 ký tự. Hãy rút gọn rồi gửi lại.');
   if (!slotId || question.length < 3 || contact.length < 5 || !/^[\w-]{12,100}$/.test(key))
     fail('Điền câu hỏi, thông tin liên hệ và chọn giờ tư vấn.');
   const previous = await env.DB.prepare('SELECT * FROM expert_bookings WHERE user_id=? AND idempotency_key=?')

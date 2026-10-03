@@ -67,6 +67,24 @@ test('idempotency key may not be reused with different content', async () => {
   await createBooking(env, 'u1', input(slot));
   await assert.rejects(() => createBooking(env, 'u1', { ...input(slot), question: 'Changed' }));
 });
+
+test('long booking question is stored intact and retries preserve every character', async () => {
+  const { env, slot } = await fixture();
+  const question = 'Câu hỏi dài có dấu. '.repeat(300).slice(0, 4999) + '?';
+  assert.equal(question.length, 5000);
+  const row = await createBooking(env, 'u1', { ...input(slot), question });
+  assert.equal(row.question, question);
+  assert.equal((await createBooking(env, 'u1', { ...input(slot), question })).id, row.id);
+});
+
+test('oversized booking question is rejected without truncation or database writes', async () => {
+  const { env, slot } = await fixture();
+  await assert.rejects(
+    () => createBooking(env, 'u1', { ...input(slot), question: 'x'.repeat(5001) }),
+    error => error.status === 422 && /5[.,]?000/.test(error.message),
+  );
+  assert.equal((await env.DB.prepare('SELECT COUNT(*) AS count FROM expert_bookings').first()).count, 0);
+});
 test('admin validates status transitions and safe meeting URL', async () => {
   const { env, slot } = await fixture();
   const row = await createBooking(env, 'u1', input(slot));

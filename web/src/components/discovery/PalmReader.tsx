@@ -404,7 +404,6 @@ export function PalmReader() {
                     <label>
                       {text('Câu hỏi', 'Question')}
                       <textarea
-                        maxLength={600}
                         disabled={busy}
                         value={question}
                         onChange={e => setQuestion(e.target.value)}

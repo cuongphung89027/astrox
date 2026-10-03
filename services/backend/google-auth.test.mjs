@@ -213,12 +213,11 @@ test('Google login binds the account to the US market and heals stale rows', asy
   const env = await fixture();
   const claims = { sub: 'market-sub', email: 'm@example.com', name: 'M', picture: '' };
   await completeGoogleLogin(env, req('/x', { method: 'POST' }), settings, claims);
-  const user = await env.DB
-    .prepare("SELECT user_id FROM zalo_identities WHERE provider='google' AND provider_subject='market-sub'")
-    .first();
+  const user = await env.DB.prepare(
+    "SELECT user_id FROM zalo_identities WHERE provider='google' AND provider_subject='market-sub'",
+  ).first();
   const marketOf = async () =>
-    (await env.DB.prepare('SELECT market FROM market_preferences WHERE user_id=?').bind(user.user_id).first())
-      ?.market;
+    (await env.DB.prepare('SELECT market FROM market_preferences WHERE user_id=?').bind(user.user_id).first())?.market;
   assert.equal(await marketOf(), 'US');
   await env.DB.prepare("UPDATE market_preferences SET market='VN' WHERE user_id=?").bind(user.user_id).run();
   await completeGoogleLogin(env, req('/y', { method: 'POST' }), settings, claims);

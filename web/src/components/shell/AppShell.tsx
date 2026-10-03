@@ -80,11 +80,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <img src="/assets/logo.png" alt="AstroX" width={1254} height={1254} className="h-10 w-auto" />
             </Link>
 
-            {/* Tiêu đề trang (mobile <lg). Co ô chữ theo 3 dải width để không
-                đè chip Point + avatar: 56/168 (<360), 64/124 (360–439),
-                đối xứng 72/72 từ 440px (font 14px + tiêu đề dài nhất an toàn). */}
+            {/* Tiêu đề mobile dùng phần trống thực tế giữa logo và controls.
+                Truncate tiêu đề dài thay vì chồng lên nút đổi ngôn ngữ/ví. */}
             {mobileTitle && (
-              <p className="pointer-events-none absolute left-[56px] right-[168px] min-[360px]:left-[64px] min-[360px]:right-[124px] min-[440px]:left-[72px] min-[440px]:right-[72px] text-center text-[14px] leading-tight sm:text-[16px] font-semibold text-muc lg:hidden">
+              <p className="pointer-events-none min-w-0 flex-1 truncate px-1 text-center text-[14px] leading-tight sm:text-[16px] font-semibold text-muc lg:hidden" title={mobileTitle}>
                 {mobileTitle}
               </p>
             )}

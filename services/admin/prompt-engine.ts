@@ -1,6 +1,7 @@
 import templates from './prompt-templates.ts';
 import originals from './original-prompts.ts';
 import { COMPAT_INCLUSION_GUIDANCE_EN } from './english-prompts.ts';
+import { TUVI_BALANCED_GUIDANCE } from './tuvi-guidance.ts';
 
 export type PromptLocale = 'vi' | 'en';
 export type PromptNode = { id: string; values: (string | PromptNode)[] };
@@ -19,7 +20,7 @@ export function renderPrompt(
     throw new Error('INVALID_PROMPT');
   if (node.id === '$join') {
     if (node.values.length > 100) throw new Error('INVALID_PROMPT');
-    return node.values.map(v => (typeof v === 'string' ? v : renderPrompt(v, overrides, depth + 1))).join('');
+    return node.values.map(v => (typeof v === 'string' ? v : renderPrompt(v, overrides, depth + 1, locale))).join('');
   }
   const entry = templates.find(t => t.id === node.id);
   if (!entry || node.values.length !== entry.variables.length) throw new Error('INVALID_PROMPT');
@@ -28,7 +29,7 @@ export function renderPrompt(
   const result = text.replace(/\{\{v(\d+)\}\}/g, (_, index) => {
     const value = node.values[Number(index)];
     if (value === undefined) throw new Error('INVALID_PROMPT_VARIABLE');
-    return typeof value === 'string' ? value : renderPrompt(value, overrides, depth + 1);
+    return typeof value === 'string' ? value : renderPrompt(value, overrides, depth + 1, locale);
   });
   if (result.length > 100000) throw new Error('PROMPT_TOO_LARGE');
   return ['compat.original', 'zodiac.compatPrompt.0', 'compat.tuviPair.v1', 'compat.batuPair.v1'].includes(node.id)
@@ -85,13 +86,20 @@ export function renderServicePrompt(
       id: n.id,
       values: n.values.map((v, i) => {
         if (t.variables[i] === 'taskText' && settings.tasks[serviceId])
-          return renderTask(serviceId, typeof v === 'string' ? v : renderPrompt(v), settings.tasks[serviceId]);
+          return renderTask(
+            serviceId,
+            typeof v === 'string' ? v : renderPrompt(v, settings.templates, depth + 1, locale),
+            settings.tasks[serviceId],
+          );
         return typeof v === 'string' ? v : visit(v, depth + 1);
       }),
     };
   };
   try {
-    return renderPrompt(visit(node), settings.templates, 0, locale);
+    const rendered = renderPrompt(visit(node), settings.templates, 0, locale);
+    const result = module === 'tuvi' ? `${rendered}\n\n${TUVI_BALANCED_GUIDANCE[locale]}` : rendered;
+    if (result.length > 100000) throw new Error('PROMPT_TOO_LARGE');
+    return result;
   } catch (error) {
     if (error instanceof Error && error.message === 'EN_PROMPT_MISSING') throw error;
     throw error;

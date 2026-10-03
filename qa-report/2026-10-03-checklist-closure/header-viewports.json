@@ -1,0 +1,66 @@
+{
+  "before": {
+    "width": 390,
+    "titleRight": 266,
+    "controlsLeft": 191.171875,
+    "overlap": true
+  },
+  "after": [
+    {
+      "controlsLeft": 131.015625,
+      "overflow": false,
+      "overlap": false,
+      "titleRight": 125.015625,
+      "titleVisible": true,
+      "width": 320
+    },
+    {
+      "controlsLeft": 171.015625,
+      "overflow": false,
+      "overlap": false,
+      "titleRight": 165.015625,
+      "titleVisible": true,
+      "width": 360
+    },
+    {
+      "controlsLeft": 191.171875,
+      "overflow": false,
+      "overlap": false,
+      "titleRight": 185.171875,
+      "titleVisible": true,
+      "width": 390
+    },
+    {
+      "controlsLeft": 241.171875,
+      "overflow": false,
+      "overlap": false,
+      "titleRight": 235.171875,
+      "titleVisible": true,
+      "width": 440
+    },
+    {
+      "controlsLeft": 561.171875,
+      "overflow": false,
+      "overlap": false,
+      "titleRight": 553.171875,
+      "titleVisible": true,
+      "width": 768
+    },
+    {
+      "controlsLeft": 821.171875,
+      "overflow": false,
+      "overlap": false,
+      "titleRight": 0,
+      "titleVisible": false,
+      "width": 1024
+    },
+    {
+      "controlsLeft": 1237.171875,
+      "overflow": false,
+      "overlap": false,
+      "titleRight": 0,
+      "titleVisible": false,
+      "width": 1440
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "publishedRevision": 8,
+  "scope": "Real configured provider chain with synthetic chart, new runtime policy and published Admin settings; no authenticated wallet/API claim.",
+  "results": [
+    {
+      "locale": "vi",
+      "ok": true,
+      "prompt": "Hồ sơ kiểm thử tổng hợp, không thuộc người thật.\n{\"synthetic\":true,\"palaces\":[{\"name\":\"Mệnh\",\"majorStars\":[{\"name\":\"Tử Vi\",\"brightness\":\"Miếu\"}],\"minorStars\":[{\"name\":\"Kình Dương\"}],\"adjectiveStars\":[]},{\"name\":\"Quan Lộc\",\"majorStars\":[{\"name\":\"Thiên Cơ\",\"mutagen\":\"Kỵ\"}],\"minorStars\":[{\"name\":\"Hỏa Tinh\"}],\"adjectiveStars\":[]},{\"name\":\"Tài Bạch\",\"majorStars\":[{\"name\":\"Thiên Phủ\",\"brightness\":\"Vượng\"}],\"minorStars\":[{\"name\":\"Lộc Tồn\"},{\"name\":\"Địa Kiếp\"}],\"adjectiveStars\":[]}]}\n\nQUY TẮC PHÂN TÍCH LÁ SỐ: bắt đầu ngay từ dữ liệu trên — luận giải trực tiếp các sao, cung và đại vận đã cho. Cấm nói các câu như \"không đọc được\", \"thiếu dữ liệu\", \"hãy bổ sung ngày giờ sinh\". Nếu một chi tiết thật sự không có trong JSON thì bỏ qua chi tiết đó và phân tích phần còn lại.\n\nPhân tích tính cách và khuynh hướng chính dựa trên cung Mệnh và các sao chính. Chia đoạn có tiêu đề in đậm: **Điểm mạnh**, **Điểm cần lưu ý**, **Lời khuyên rèn luyện**. ~260-440 từ.\n\nQUY TẮC LUẬN GIẢI CÂN BẰNG: phân tích cả sao tốt và sao xấu thực sự có trong dữ liệu của cung hoặc vận trình đang hỏi. Với mỗi sao xấu liên quan, nêu tên sao, cung tọa hoặc cung chịu tác động, ảnh hưởng cụ thể và cách hoá giải thực tế; không lướt qua bằng một câu chung chung. Không bịa sao, vị trí hay ảnh hưởng không được dữ liệu hỗ trợ; nếu không có sao xấu liên quan, nói rõ thay vì tự thêm. Bám đúng chủ đề, độ dài và số bullet đã yêu cầu; với vận trình ngắn, gộp tác động và lời khuyên vào các bullet đó.",
+      "text": "Cung Mệnh có Tử Vi Miếu tọa thủ cho thấy cốt cách lãnh đạo, tư duy tổ chức và khát vọng vươn lên vị trí đứng đầu. Bạn có khí chất chững chạc, tầm nhìn xa và khả năng quy tụ người khác.\n\n**Điểm mạnh**\nBạn sở hữu bản lĩnh của Tử Vi Miếu tại Mệnh: tự tôn, có trách nhiệm, suy nghĩ có hệ thống và dám gánh vác việc lớn. Khi đã xác định mục tiêu, bạn kiên định và có khả năng điều hành, phân công công việc rõ ràng.\nCung Tài Bạch có Thiên Phủ Vượng đi cùng Lộc Tồn là điểm sáng lớn về tiền bạc. Thiên Phủ chủ kho khố vững vàng, khả năng tích lũy và quản lý tài sản tốt, còn Lộc Tồn chủ nguồn lộc chính đáng, dễ có thu nhập ổn định từ nghề nghiệp chuyên môn. Tam hợp Mệnh - Tài - Quan cho thấy hướng phát triển phù hợp là quản lý, điều hành, tài chính, xây dựng sự nghiệp bền vững từ năng lực thật.\n\n**Điểm cần lưu ý**\n* Kình Dương tại cung Mệnh: tạo tính cương trực nhưng cứng rắn, quyết liệt, dễ nóng nảy và bảo thủ khi bị phản đối. Ảnh hưởng cụ thể là lời nói sắc bén gây mất lòng, dễ va chạm với cấp trên, đồng nghiệp và tăng nguy cơ chấn thương, tranh chấp do hấp tấp. Cách hoá giải: tập phản ứng chậm một nhịp, viết ra rồi mới nói, rèn luyện thể thao đều đặn để xả năng lượng cứng, ưu tiên thương lượng bằng văn bản rõ ràng.\n* Thiên Cơ Hóa Kỵ và Hỏa Tinh tại cung Quan Lộc: Thiên Cơ chủ mưu trí nhưng khi Hóa Kỵ thì dễ tính sai, bỏ sót chi tiết, giấy tờ trục trặc, kế hoạch thay đổi phút chót. Hỏa Tinh càng làm công việc thêm áp lực, vội vàng, dễ xung đột với đồng nghiệp và cấp trên. Cách hoá giải: kiểm tra kỹ hợp đồng, số liệu, sao lưu dữ liệu, chia việc lớn thành bước nhỏ có thời hạn, giữ thái độ điềm tĩnh khi có sự cố trong công việc.\n* Địa Kiếp tại cung Tài Bạch: dù có Thiên Phủ và Lộc Tồn giữ của, Địa Kiếp vẫn gây hao tán bất ngờ, đầu tư mạo hiểm dễ mất vốn, cho vay khó đòi. Cách hoá giải: giữ quỹ dự phòng, không dồn hết tiền vào một kênh, không bảo lãnh vay mượn, ghi chép thu chi minh bạch.\n\n**Lời khuyên rèn luyện**\nBạn cần rèn sự mềm dẻo trong cứng cỏi: lắng nghe nhiều hơn, hạ thấp cái tôi để giữ nhân hòa cho Tử Vi phát huy. Trong công việc, lấy chắc chắn bù nhanh nhạy, luôn có phương án dự phòng. Về tiền bạc, lấy tích tiểu thành đại, ưu tiên tích sản an toàn thay vì làm giàu nhanh.",
+      "model": "muse-spark-1.3-contributor",
+      "attempts": [
+        {
+          "providerId": "legacy",
+          "model": "muse-spark-1.3-contributor",
+          "protocol": "responses",
+          "status": 200,
+          "outcome": "success",
+          "usage": {
+            "input": 605,
+            "output": 1106,
+            "cacheRead": 0,
+            "cacheWrite": null
+          },
+          "costUsd": null,
+          "language": "clean",
+          "durationMs": 11563
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "ok": true,
+      "prompt": "Synthetic QA profile, no real person.\n{\"synthetic\":true,\"palaces\":[{\"name\":\"Mệnh\",\"majorStars\":[{\"name\":\"Tử Vi\",\"brightness\":\"Miếu\"}],\"minorStars\":[{\"name\":\"Kình Dương\"}],\"adjectiveStars\":[]},{\"name\":\"Quan Lộc\",\"majorStars\":[{\"name\":\"Thiên Cơ\",\"mutagen\":\"Kỵ\"}],\"minorStars\":[{\"name\":\"Hỏa Tinh\"}],\"adjectiveStars\":[]},{\"name\":\"Tài Bạch\",\"majorStars\":[{\"name\":\"Thiên Phủ\",\"brightness\":\"Vượng\"}],\"minorStars\":[{\"name\":\"Lộc Tồn\"},{\"name\":\"Địa Kiếp\"}],\"adjectiveStars\":[]}]}\n\nCHART ANALYSIS RULES: start immediately from the data above — interpret the given stars, palaces and decade cycles directly. Forbidden phrases: \"cannot read\", \"data missing\", \"please provide birth details\". If a detail is genuinely absent from the JSON, skip it and analyze the rest.\n\nAnalyze the main personality traits and tendencies from the Life palace and major stars. Use bold section headings: **Strengths**, **Watch-outs**, **Growth advice**. ~260-440 words.\n\nBALANCED CHART INTERPRETATION: analyze both favorable and adverse stars actually present in the supplied data for the requested palace or period. For each relevant adverse star, state the star name, its palace or affected palace, concrete impact and practical mitigation; do not dismiss difficulties with one generic sentence. Never invent stars, placements or effects unsupported by the data; if no relevant adverse star is supplied, say so rather than adding one. Respect the requested topic, length and bullet count; for short forecasts, combine the effects and advice within those bullets.",
+      "text": "**Strengths**\n- Tử Vi (Purple Star, emperor star) in Mệnh (Life palace) at Miếu (temple brightness) points to a proud, organized character with natural leadership tendencies. There is a desire for order, reputation, and taking responsibility for others.\n- The triangle with Thiên Phủ (Treasure House, stewardship star) at Vượng (prosperous) in Tài Bạch (Wealth palace) and Lộc Tồn (存禄, stored prosperity) in the same palace suggests practical management ability. Financial thinking tends to be careful, with an interest in stable accumulation.\n- Thiên Cơ (Heavenly Planning, strategist star) in Quan Lộc (Career palace) adds quick thinking and adaptability in work. This person often likes to plan, analyze, and find flexible solutions.\n\n**Watch-outs**\n- Kình Dương (Sharp Blade, assertive-hard star) in Mệnh: this can make expression direct and stubborn under pressure. Concrete impact is a tendency to react strongly when feeling challenged or disrespected, which may create friction in close relationships. Mitigation is to pause before responding and clarify intent in writing when tense.\n- Hỏa Tinh (Fire Spark, impulsive-flare star) in Quan Lộc with Thiên Cơ carrying Hua Ji (obstructive transform): thinking may race and become worried or over-calculating at work. Concrete impact is possible hasty decisions, changing plans mid-way, or mental fatigue from overthinking. Mitigation is to limit to one main work priority at a time and build in a review step before acting.\n- Địa Kiếp (Earth Void, loss-disruption star) in Tài Bạch with Lộc Tồn: money flow may be uneven, with periods of gain followed by sudden spending or risky moves. Concrete impact is possible impulse purchases or uneven cash management. Mitigation is to keep reserves separate, set spending limits, and avoid borrowing or large speculative outlays when excited.\n\n**Growth advice**\n- Use the Tử Vi sense of duty by leading through service rather than control. Asking for feedback regularly can soften the Kình Dương edge.\n- For career, turn Thiên Cơ curiosity into a system: write plans down, test small, then expand. Short breaks can help balance Hỏa Tinh restlessness.\n- For finances, let Thiên Phủ and Lộc Tồn work by favoring steady budgeting and documented goals. A simple rule like waiting 48 hours before major spending can reduce Địa Kiếp volatility.",
+      "model": "muse-spark-1.3-contributor",
+      "attempts": [
+        {
+          "providerId": "legacy",
+          "model": "muse-spark-1.3-contributor",
+          "protocol": "responses",
+          "status": 200,
+          "outcome": "success",
+          "usage": {
+            "input": 599,
+            "output": 1422,
+            "cacheRead": 0,
+            "cacheWrite": null
+          },
+          "costUsd": null,
+          "language": "clean",
+          "durationMs": 10642
+        }
+      ]
+    }
+  ]
+}

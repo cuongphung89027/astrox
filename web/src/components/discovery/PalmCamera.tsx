@@ -23,6 +23,7 @@ import {
   type HandVerdict,
 } from '@/lib/hand-tracker';
 import s from './Palm.module.css';
+import { PalmActionLabel } from './PalmActionLabel';
 import { samplePalmQuality, type PalmQuality } from '@/lib/palm-quality';
 import { palmQualityMessage } from './PalmQualityPanel';
 
@@ -429,7 +430,7 @@ export function PalmCamera(props: Props) {
             callbacks.current.onClose();
           }}
         >
-          ×
+          <PalmActionLabel icon="close">{null}</PalmActionLabel>
         </button>
       </div>
       <div className={s.cameraStage}>
@@ -550,7 +551,7 @@ export function PalmCamera(props: Props) {
           title={controls.torch ? copy('Đèn camera') : copy('Trình duyệt không hỗ trợ đèn trên camera này')}
           onClick={() => void toggleTorch()}
         >
-          {torch ? copy('Đèn: Bật') : copy('Đèn: Tắt')}
+          <PalmActionLabel icon="light">{torch ? copy('Đèn: Bật') : copy('Đèn: Tắt')}</PalmActionLabel>
         </button>
       </div>
       <p className={s.cameraNote}>
@@ -563,7 +564,7 @@ export function PalmCamera(props: Props) {
         <div className={s.trackerStatus} role="alert">
           <span>{copy('Chưa thể nhận diện bàn tay. Không chụp khi bộ nhận diện chưa sẵn sàng.')}</span>
           <button className={s.retryButton} disabled={changing} onClick={() => void initializeTracker()}>
-            {copy('Thử lại')}
+            <PalmActionLabel icon="retake">{copy('Thử lại')}</PalmActionLabel>
           </button>
         </div>
       )}
@@ -587,7 +588,9 @@ export function PalmCamera(props: Props) {
           onClick={capture}
           aria-label={copy('Chụp ảnh')}
         >
-          <span />
+          <span>
+            <PalmActionLabel icon="camera">{null}</PalmActionLabel>
+          </span>
         </button>
         <span className={s.captureCaption}>{verdict === 'ready' ? copy('Sẵn sàng') : copy('Căn bàn tay')}</span>
       </div>
@@ -599,7 +602,7 @@ export function PalmCamera(props: Props) {
               callbacks.current.onFallback?.('native');
             }}
           >
-            {en ? 'Use phone camera' : 'Dùng camera điện thoại'}
+            <PalmActionLabel icon="camera">{en ? 'Use phone camera' : 'Dùng camera điện thoại'}</PalmActionLabel>
           </button>
           <button
             onClick={() => {
@@ -607,7 +610,7 @@ export function PalmCamera(props: Props) {
               callbacks.current.onFallback?.('upload');
             }}
           >
-            {en ? 'Choose photo' : 'Chọn ảnh'}
+            <PalmActionLabel icon="image">{en ? 'Choose photo' : 'Chọn ảnh'}</PalmActionLabel>
           </button>
         </div>
       )}

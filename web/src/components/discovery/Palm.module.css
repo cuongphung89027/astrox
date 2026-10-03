@@ -1578,3 +1578,66 @@
   color: var(--color-muc);
   font-size: 16px;
 }
+
+/* Compact labels with consistent vector icons; tap areas remain generous. */
+.actionLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+  vertical-align: middle;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.actionIcon {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+}
+.actionText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.startCamera,
+.uploadButton,
+.primaryAction,
+.secondaryAction {
+  font-size: 12px;
+}
+.startCamera {
+  justify-content: center;
+}
+.startCamera .actionLabel,
+.startCamera .actionText {
+  font-size: 12px;
+}
+.closeCamera {
+  width: 44px;
+  height: 44px;
+}
+.retryButton,
+.camera .toolButton {
+  min-height: 44px;
+}
+.shutter > span {
+  display: grid;
+  place-items: center;
+  color: #173d31;
+}
+.shutter .actionIcon {
+  width: 22px;
+  height: 22px;
+}
+.resultActions > button {
+  min-width: min(140px, 100%);
+}
+
+.actionButton {
+  min-height: 48px;
+  font-size: 12px;
+}
+.suggestions .actionLabel {
+  justify-content: flex-start;
+  text-align: left;
+}

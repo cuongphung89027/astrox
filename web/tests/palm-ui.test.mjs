@@ -316,7 +316,13 @@ test('result view: summary and active reading, named switcher, folded observatio
   const all = visibleText(f.tree());
   assert.equal(all.split('chưa xác minh').length - 1, 1, 'limitation stated once');
   assert.equal(all.split('chiêm nghiệm').length - 1, 1);
-  none(f.tree(), 'no speculative overlays', el => el.type === 'svg');
+  none(
+    f.tree(),
+    'no speculative overlays; decorative button icons are allowed',
+    (el, ancestors) =>
+      el.type === 'svg' &&
+      !(el.props['aria-hidden'] === 'true' && ancestors.some(a => a.type?.name === 'PalmActionLabel')),
+  );
 });
 
 test('full flow result exposes save, other hand and a text-only managed follow-up', async () => {

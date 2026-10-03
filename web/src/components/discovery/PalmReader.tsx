@@ -7,6 +7,7 @@ import { managedPrompt } from '@/lib/managed-prompts';
 import { normalizePalmPhoto } from '@/lib/palm-photo';
 import { usePaidPrice } from '@/lib/use-paid-price';
 import { inspectPalmPhoto, type PalmQuality } from '@/lib/palm-quality';
+import { PalmActionLabel } from './PalmActionLabel';
 import { PalmQualityPanel } from './PalmQualityPanel';
 import { PalmReadingCards } from './PalmReadingCards';
 import { readPalmHistory, savePalmHistory, deletePalmHistory, type PalmHistoryEntry } from '@/lib/palm-history';
@@ -391,7 +392,7 @@ export function PalmReaderSession() {
                     }
                   }}
                 >
-                  {text('Xóa', 'Delete')}
+                  <PalmActionLabel icon="trash">{text('Xóa', 'Delete')}</PalmActionLabel>
                 </button>
               </li>
             ))}
@@ -444,10 +445,10 @@ export function PalmReaderSession() {
             </div>
             <div className={s.scannerActions}>
               <button className={s.startCamera} disabled={loadingPhoto} onClick={() => beginCapture()}>
-                {en ? 'Open camera' : 'Mở camera'} <span aria-hidden="true">↗</span>
+                <PalmActionLabel icon="camera">{en ? 'Open camera' : 'Mở camera'}</PalmActionLabel>
               </button>
               <button className={s.uploadButton} disabled={loadingPhoto} onClick={() => upload.current?.click()}>
-                {en ? 'Choose photo' : 'Chọn ảnh'}
+                <PalmActionLabel icon="image">{en ? 'Choose photo' : 'Chọn ảnh'}</PalmActionLabel>
               </button>
             </div>
           </div>
@@ -513,7 +514,9 @@ export function PalmReaderSession() {
                 nativeCamera.current?.click();
               }}
             >
-              {en ? 'Use your phone camera' : 'Dùng camera của điện thoại'}
+              <PalmActionLabel icon="camera">
+                {en ? 'Use your phone camera' : 'Dùng camera của điện thoại'}
+              </PalmActionLabel>
             </button>
           </aside>
         </div>
@@ -525,7 +528,7 @@ export function PalmReaderSession() {
               <div className={s.photoTop}>
                 <span>{en ? (side === 'Tay trái' ? 'Left hand' : 'Right hand') : side}</span>
                 <button ref={zoomTrigger} className={s.textButton} onClick={() => setZoom(true)}>
-                  {text('Phóng to ↗', 'Zoom ↗')}
+                  <PalmActionLabel icon="zoom">{text('Phóng to', 'Zoom')}</PalmActionLabel>
                 </button>
               </div>
               <button
@@ -541,17 +544,17 @@ export function PalmReaderSession() {
               </button>
               <div className={s.photoActions}>
                 <button className={s.textButton} disabled={busy || loadingPhoto} onClick={() => beginCapture()}>
-                  {text('Chụp lại', 'Retake photo')}
+                  <PalmActionLabel icon="retake">{text('Chụp lại', 'Retake photo')}</PalmActionLabel>
                 </button>
                 <button
                   className={s.textButton}
                   disabled={busy || loadingPhoto}
                   onClick={() => upload.current?.click()}
                 >
-                  {text('Thay ảnh', 'Change photo')}
+                  <PalmActionLabel icon="image">{text('Thay ảnh', 'Change photo')}</PalmActionLabel>
                 </button>
                 <button className={s.textButton} onClick={() => reset()}>
-                  {text('Xóa ảnh', 'Remove photo')}
+                  <PalmActionLabel icon="trash">{text('Xóa ảnh', 'Remove photo')}</PalmActionLabel>
                 </button>
               </div>
               {quality && <PalmQualityPanel quality={quality} en={en} />}
@@ -562,7 +565,9 @@ export function PalmReaderSession() {
             {result?.quality === 'retake' ? (
               <GlassCard className={s.panel}>
                 <p>{result.message}</p>
-                <Btn onClick={() => beginCapture()}>{text('Chụp lại', 'Retake photo')}</Btn>
+                <Btn className={s.actionButton} onClick={() => beginCapture()}>
+                  <PalmActionLabel icon="retake">{text('Chụp lại', 'Retake photo')}</PalmActionLabel>
+                </Btn>
               </GlassCard>
             ) : result ? (
               <>
@@ -575,11 +580,15 @@ export function PalmReaderSession() {
                 />
                 <div className={s.resultActions}>
                   <button className={s.primaryAction} onClick={save} disabled={saved || loadingPhoto || busy}>
-                    {saved ? text('Đã lưu trên thiết bị', 'Saved on this device') : text('Lưu bài đọc', 'Save reading')}
+                    <PalmActionLabel icon={saved ? 'check' : 'save'}>
+                      {saved
+                        ? text('Đã lưu trên thiết bị', 'Saved on this device')
+                        : text('Lưu bài đọc', 'Save reading')}
+                    </PalmActionLabel>
                   </button>
                   {!photo && (
                     <button className={s.secondaryAction} disabled={busy || followBusy} onClick={() => beginCapture()}>
-                      {text('Chụp ảnh mới', 'Take a new photo')}
+                      <PalmActionLabel icon="camera">{text('Chụp ảnh mới', 'Take a new photo')}</PalmActionLabel>
                     </button>
                   )}
                   <button
@@ -587,7 +596,7 @@ export function PalmReaderSession() {
                     disabled={loadingPhoto || busy || followBusy}
                     onClick={addOtherHand}
                   >
-                    {text('Thêm tay còn lại', 'Add your other hand')}
+                    <PalmActionLabel icon="compare">{text('Thêm tay còn lại', 'Add your other hand')}</PalmActionLabel>
                   </button>
                 </div>
                 {snapshot && history.some(item => item.side !== snapshot.side) && (
@@ -684,11 +693,12 @@ export function PalmReaderSession() {
                         text('Quan sát nào còn chưa chắc?', 'Which observations are uncertain?'),
                       ].map(q => (
                         <button key={q} type="button" disabled={followBusy} onClick={() => setFollowQuestion(q)}>
-                          {q}
+                          <PalmActionLabel icon="chat">{q}</PalmActionLabel>
                         </button>
                       ))}
                     </div>
                     <Btn
+                      className={s.actionButton}
                       type="submit"
                       disabled={
                         followBusy ||
@@ -699,8 +709,10 @@ export function PalmReaderSession() {
                         followPrice.pending
                       }
                     >
-                      {followBusy ? text('Đang trả lời…', 'Answering…') : text('Hỏi tiếp', 'Ask a follow-up')}
-                      {!followBusy && <PaidPriceBadge price={followPrice} />}
+                      <PalmActionLabel icon="chat">
+                        {followBusy ? text('Đang trả lời…', 'Answering…') : text('Hỏi tiếp', 'Ask a follow-up')}
+                        {!followBusy && <PaidPriceBadge price={followPrice} />}
+                      </PalmActionLabel>
                     </Btn>
                     {followBusy && (
                       <button
@@ -711,7 +723,7 @@ export function PalmReaderSession() {
                           setFollowBusy(false);
                         }}
                       >
-                        {text('Dừng trả lời', 'Cancel answer')}
+                        <PalmActionLabel icon="stop">{text('Dừng trả lời', 'Cancel answer')}</PalmActionLabel>
                       </button>
                     )}
                   </form>
@@ -733,8 +745,8 @@ export function PalmReaderSession() {
                   )}
                 </p>
                 {!en && (
-                  <Btn variant="ghost" href="/chuyengia" arrow>
-                    Trao đổi với chuyên gia
+                  <Btn className={s.actionButton} variant="ghost" href="/chuyengia" arrow>
+                    <PalmActionLabel icon="expert">Trao đổi với chuyên gia</PalmActionLabel>
                   </Btn>
                 )}
               </>
@@ -800,14 +812,15 @@ export function PalmReaderSession() {
                         )}
                       </p>
                       <button type="button" className={s.secondaryAction} onClick={() => beginCapture()}>
-                        {text('Chụp lại', 'Retake')}
+                        <PalmActionLabel icon="retake">{text('Chụp lại', 'Retake')}</PalmActionLabel>
                       </button>
                       <button type="button" className={s.textButton} onClick={() => upload.current?.click()}>
-                        {text('Chọn ảnh khác', 'Choose another photo')}
+                        <PalmActionLabel icon="image">{text('Chọn ảnh khác', 'Choose another photo')}</PalmActionLabel>
                       </button>
                     </div>
                   )}
                   <Btn
+                    className={s.actionButton}
                     type="submit"
                     disabled={
                       !consent ||
@@ -819,13 +832,15 @@ export function PalmReaderSession() {
                     }
                     arrow
                   >
-                    {busy ? (
-                      text('Đang quan sát ảnh…', 'Analyzing your photo…')
-                    ) : (
-                      <>
-                        {text('Khám phá chỉ tay', 'Explore your palm')} <PaidPriceBadge price={price} />
-                      </>
-                    )}
+                    <PalmActionLabel icon="zoom">
+                      {busy ? (
+                        text('Đang quan sát ảnh…', 'Analyzing your photo…')
+                      ) : (
+                        <>
+                          {text('Khám phá chỉ tay', 'Explore your palm')} <PaidPriceBadge price={price} />
+                        </>
+                      )}
+                    </PalmActionLabel>
                   </Btn>
                   {busy && (
                     <div className={s.pending} role="status">
@@ -837,7 +852,7 @@ export function PalmReaderSession() {
                           setBusy(false);
                         }}
                       >
-                        {text('Dừng phân tích', 'Stop analysis')}
+                        <PalmActionLabel icon="stop">{text('Dừng phân tích', 'Stop analysis')}</PalmActionLabel>
                       </button>
                     </div>
                   )}
@@ -881,7 +896,7 @@ export function PalmReaderSession() {
         <div className={s.zoomHeader}>
           <span>{text('Ảnh gốc · Cuộn để xem chi tiết', 'Original photo · Scroll to explore')}</span>
           <button autoFocus className={s.toolButton} onClick={() => setZoom(false)}>
-            {text('Đóng', 'Close')}
+            <PalmActionLabel icon="close">{text('Đóng', 'Close')}</PalmActionLabel>
           </button>
         </div>
         <div className={s.zoomScroll}>

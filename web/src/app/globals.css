@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 /* ============================================================================
-   ASTROX v5 — "MẶT TRỜI ĐÔNG SƠN" (Dong Son Sunrise)
+   ASTROX — jade accents and mint surfaces
 
    Ngôn ngữ thiết kế mới, KHÔNG kế thừa palette/bố cục v2–v4:
-   - Nền kem giấy ấm, spot màu tươi: son (vermillion), ngọc (jade),
-     kim (gold), sen (lotus pink), chàm (indigo) — lấy từ sơn mài/trống đồng.
+   - Nền mint nhẹ, điểm nhấn xanh ngọc đậm; đỏ son giữ cho lỗi/biến động ví.
+     Kim (gold), sen (lotus pink), chàm (indigo) giữ vai trò riêng của module.
    - Liquid glass: panel trắng mờ blur + viền trắng hairline + highlight trong.
    - Họa tiết Việt (vẽ SVG gốc — Đông Sơn, mây Lý–Trần, sen) ở layer nền
      opacity thấp, không dùng asset của bên thứ ba.
@@ -14,8 +14,11 @@
 
 @theme {
   /* Palette */
-  --color-kem: #fbf6ec;
-  --color-kem-2: #f6edd9;
+  --color-kem: #f4f7f2;
+  --color-kem-2: #e8f0e7;
+  --color-accent: #246b52;
+  --color-accent-deep: #1d5642;
+  --color-accent-tint: #e1efe7;
   --color-son: #e8442e;
   --color-son-deep: #c42f1c;
   --color-son-tint: #ffe9e2;
@@ -30,16 +33,16 @@
   --color-sen-tint: #ffe7f0;
   --color-cham: #2f3fae;
   --color-cham-deep: #1c2560;
-  --color-muc: #26190f;
-  --color-muc-2: #6f5d4c;
+  --color-muc: #203e32;
+  --color-muc-2: #54685b;
 
   /* Type */
   --font-display: var(--font-beautique), "Be Vietnam Pro", Georgia, serif;
   --font-sans: var(--font-bevn), system-ui, sans-serif;
 
-  /* Shadow ấm cho glass + CTA — bản tinh giản: nhẹ, cao, ít màu */
-  --shadow-glass: 0 2px 6px -2px rgba(64, 36, 14, 0.08), 0 14px 34px -18px rgba(64, 36, 14, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  --shadow-pop: 0 10px 26px -12px rgba(196, 47, 28, 0.38);
+  /* Soft green depth for glass and primary actions. */
+  --shadow-glass: 0 2px 6px -2px rgba(32, 62, 50, 0.08), 0 14px 34px -18px rgba(32, 62, 50, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow-pop: 0 10px 26px -12px rgba(36, 107, 82, 0.3);
 
   --radius-card: 26px;
 
@@ -64,12 +67,12 @@ body {
 }
 
 ::selection {
-  background: var(--color-son);
+  background: var(--color-accent);
   color: #fff;
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-son);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -121,8 +124,8 @@ body {
   overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(42rem 32rem at 10% -8%, color-mix(in srgb, var(--color-son) 8%, transparent), transparent 60%),
-    radial-gradient(38rem 30rem at 92% 6%, color-mix(in srgb, var(--color-kim) 9%, transparent), transparent 58%),
+    radial-gradient(42rem 32rem at 10% -8%, color-mix(in srgb, var(--color-accent) 6%, transparent), transparent 60%),
+    radial-gradient(38rem 30rem at 92% 6%, color-mix(in srgb, var(--color-ngoc) 5%, transparent), transparent 58%),
     radial-gradient(44rem 36rem at 80% 76%, color-mix(in srgb, var(--color-ngoc) 6%, transparent), transparent 62%),
     var(--color-kem);
 }
@@ -134,8 +137,8 @@ body {
   position: absolute;
   inset: 0;
   background-image:
-    repeating-radial-gradient(circle at 50% 50%, transparent 0 52px, color-mix(in srgb, var(--color-son) 1.5%, transparent) 52px 54px),
-    repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--color-kim) 1.2%, transparent) 0deg 3deg, transparent 3deg 30deg);
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 52px, color-mix(in srgb, var(--color-accent) 1.5%, transparent) 52px 54px),
+    repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--color-accent) 1.2%, transparent) 0deg 3deg, transparent 3deg 30deg);
   mask-image: radial-gradient(64rem 40rem at 50% 0%, black, transparent 74%);
 }
 
@@ -254,8 +257,8 @@ body {
 .ax-liquid-topbar {
   --nav-progress: 0;
   background: linear-gradient(to bottom,
-    rgba(calc(255 - 4 * var(--nav-progress)), calc(255 - 9 * var(--nav-progress)), calc(255 - 19 * var(--nav-progress)), .8),
-    rgba(calc(255 - 4 * var(--nav-progress)), calc(255 - 9 * var(--nav-progress)), calc(255 - 19 * var(--nav-progress)), .8));
+    rgba(calc(255 - 11 * var(--nav-progress)), calc(255 - 8 * var(--nav-progress)), calc(255 - 13 * var(--nav-progress)), .8),
+    rgba(calc(255 - 11 * var(--nav-progress)), calc(255 - 8 * var(--nav-progress)), calc(255 - 13 * var(--nav-progress)), .8));
   backdrop-filter: blur(24px) saturate(170%);
   -webkit-backdrop-filter: blur(24px) saturate(170%);
   box-shadow:
@@ -1055,7 +1058,7 @@ body {
 .ax-nav-link[aria-current="page"] { color: var(--nav-accent, #187650); }
 .ax-nav-link:not([aria-current="page"]):hover .ax-nav-underline { transform: scaleX(0); }
 .ax-nav-link[aria-current="page"]:hover .ax-nav-underline { transform: scaleX(1); opacity: 1; }
-.ax-nav-link:focus-visible { outline: 2px solid #b69753; outline-offset: 1px; border-radius: 8px; }
+.ax-nav-link:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; border-radius: 8px; }
 @media (min-width:1024px) {
   .ax-top-inner { display: grid; grid-template-columns: auto minmax(0,1fr) auto; column-gap: 20px; }
   .ax-top-inner > nav { justify-self: center; width: 100%; max-width: 1040px; min-width: 0; }

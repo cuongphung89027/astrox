@@ -1,5 +1,5 @@
 /**
- * Btn — nút/anchor chuẩn của AstroX: 3 biến thể (primary son / ghost glass /
+ * Btn — nút/anchor chuẩn của AstroX: 3 biến thể (primary jade / ghost glass /
  * gold kim) × 3 cỡ. Hỗ trợ href (render <Link>) hoặc button. Hover nâng nhẹ.
  */
 import Link from 'next/link';
@@ -29,7 +29,7 @@ const SIZES: Record<Size, string> = {
 };
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-son text-white shadow-[var(--shadow-pop)]',
+  primary: 'bg-accent text-white shadow-[var(--shadow-pop)]',
   ghost: 'glass text-muc',
   gold: 'bg-kim text-muc shadow-[0_14px_34px_-12px_rgba(199,134,10,0.55)]',
 };

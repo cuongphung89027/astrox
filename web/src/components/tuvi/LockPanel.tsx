@@ -24,7 +24,7 @@ export function LockPanel() {
         </p>
         <Link
           href={en ? '/en/pricing' : '/banggia'}
-          className="inline-flex items-center gap-2 rounded-full bg-son px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-pop)] transition-all duration-200 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-son"
+          className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-pop)] transition-all duration-200 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {en ? 'View pricing →' : 'Xem bảng giá →'}
         </Link>

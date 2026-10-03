@@ -100,7 +100,7 @@ export function AuthMenu() {
       <button
         type="button"
         onClick={openLoginDialog}
-        className="rounded-full bg-son px-4 py-1.5 text-sm font-semibold text-white"
+        className="rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-white"
       >
         {t.t('auth.login')}
       </button>

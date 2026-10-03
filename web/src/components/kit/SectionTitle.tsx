@@ -1,6 +1,6 @@
 import { FeatureIcon, type FeatureName } from './FeatureIcon';
 /**
- * SectionTitle — tiêu đề section: eyebrow (chấm son + chữ hoa tracking rộng)
+ * SectionTitle — tiêu đề section: eyebrow (chấm xanh ngọc + chữ hoa tracking rộng)
  * + heading font-display + mô tả ngắn. Align left | center.
  */
 interface SectionTitleProps {
@@ -32,11 +32,11 @@ export function SectionTitle({ eyebrow, title, sub, align = 'left', as = 'h2', c
       className={`flex flex-col gap-3 ${align === 'center' ? 'items-center text-center' : 'items-start'} ${className ?? ''}`}
     >
       {eyebrow ? (
-        <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.24em] text-son-deep">
+        <p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.24em] text-accent-deep">
           {feature ? (
             <FeatureIcon name={feature} size={22} />
           ) : (
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-son" />
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
           )}
           {eyebrow}
         </p>

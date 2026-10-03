@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header
           ref={headerRef}
           className="ax-liquid-topbar fixed inset-x-0 top-0 z-40 border-x-0 border-t-0"
-          style={{ borderBottom: '1px solid color-mix(in srgb, var(--color-kim) 40%, transparent)' }}
+          style={{ borderBottom: '1px solid color-mix(in srgb, var(--color-accent) 18%, transparent)' }}
         >
           <div className="ax-top-inner relative mx-auto flex h-16 max-w-7xl items-center gap-1.5 px-4 md:gap-2 md:px-6">
             {/* Logo AstroX chính thức (PNG, có wordmark) */}

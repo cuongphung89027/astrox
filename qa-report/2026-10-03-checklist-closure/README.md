@@ -30,3 +30,5 @@ The first CI run reproduced the baseline `knip` failure. Static imports now expo
 Live AI evidence uses the configured production provider and published settings with synthetic chart data; it does not claim a paid authenticated production wallet flow. Booking permissions/idempotency/wallet regressions are verified by the full integration suite. Physical-device camera/permissions, real payments and authenticated production bookings were not exercised.
 
 Production deployment IDs, route/API checks, exact SHA and rollback are recorded in the final release handoff after deployment.
+
+The export UI harness still searched for literal button text `EN`, which was replaced by the accessible Globe button in the earlier icon change. Its visibility check now uses the actual Vietnamese accessible name. The switch action itself was manually verified in the production browser. CI exercised Chromium and WebKit at 390/1440px; the final rerun confirms the corrected harness.

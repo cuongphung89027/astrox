@@ -263,8 +263,8 @@ async function browserChecks() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle' });
-  const switcher = await page.$('button:has-text("EN")');
-  record('UI-switcher', 'language switcher on VI home', switcher ? 'PASS' : 'FAIL');
+  const switcher = page.getByRole('button', { name: 'Chuyển sang tiếng Anh', exact: true });
+  record('UI-switcher', 'language switcher on VI home', await switcher.isVisible() ? 'PASS' : 'FAIL');
   await browser.close();
 }
 

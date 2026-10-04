@@ -6,10 +6,10 @@ import { LocaleProvider } from '@/i18n/LocaleProvider';
 export const metadata: Metadata = {
   metadataBase: new URL('https://theastrox.space'),
   title: {
-    default: 'AstroX — Zi Wei · Tarot · Astrology',
+    default: 'AstroX — Tarot, Astrology & Numerology',
     template: '%s | AstroX',
   },
-  description: 'Explore your world with AstroX.',
+  description: 'Explore Tarot, astrology, numerology, Zi Wei and Ba Zi with AstroX. Build your chart, draw cards and use the lunar calendar for everyday reflection.',
   icons: { icon: '/assets/logo.png' },
   ...socialMetadata('/en'),
 };

@@ -5,7 +5,7 @@ export const metadata = {
     canonical: '/en/palm-reading',
     languages: { vi: '/chitay', en: '/en/palm-reading', 'x-default': '/chitay' },
   },
-  title: 'Palm Reading — AstroX',
+  title: 'Palm Reading',
   description: 'Photograph your palm and explore its lines with AstroX.',
   ...socialMetadata('/en/palm-reading'),
 };

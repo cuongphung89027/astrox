@@ -68,15 +68,15 @@ function certifyHtml(raw, route, entry) {
   const canonical = entry.canonical === '/' ? origin : `${origin}${entry.canonical}`;
   assert.deepEqual(
     links.filter(x => x.rel === 'canonical').map(x => x.href),
-    privateRoute || alias ? [] : [canonical],
+    privateRoute ? [] : [canonical],
     `${route}: canonical preservation`,
   );
   if (['/hoso', '/en/profile', '/admin'].includes(route)) {
     assert.match(meta.get('robots')?.join(' ') || '', /noindex/, `${route}: noindex`);
     assert.match(meta.get('robots')?.join(' ') || '', /nofollow/, `${route}: nofollow`);
   }
-  // Preserve the existing canonical-only EN pricing policy, aliases and private pages.
-  const paired = theme.en && !privateRoute && !alias && route !== '/en/pricing';
+  // Public language pairs are reciprocal; aliases and private pages do not advertise variants.
+  const paired = theme.en && !privateRoute && !alias;
   const vi = Object.entries(catalog.routes).find(
     ([r, e]) => e.theme === theme.id && e.locale === 'vi' && r === e.canonical && r !== '/admin',
   )?.[0];
@@ -109,9 +109,14 @@ for (const [route, entry] of Object.entries(catalog.routes)) {
       headers: { 'Accept-Language': entry.locale === 'vi' ? 'vi-VN,vi;q=0.9' : 'en-US,en;q=0.9' },
       signal: AbortSignal.timeout(30000),
     });
-    assert.equal(response.status, 200, `${route}: deployed HTTP status`);
-    assert.match(response.headers.get('content-type') || '', /text\/html/, `${route}: deployed content type`);
-    certifyHtml(await response.text(), route, entry);
+    if (route !== entry.canonical) {
+      assert.equal(response.status, 301, `${route}: permanent alias`);
+      assert.equal(response.headers.get('location'), entry.canonical, `${route}: redirect target`);
+    } else {
+      assert.equal(response.status, 200, `${route}: deployed HTTP status`);
+      assert.match(response.headers.get('content-type') || '', /text\/html/, `${route}: deployed content type`);
+      certifyHtml(await response.text(), route, entry);
+    }
     result.http = response.status;
   }
   report.routes.push(result);

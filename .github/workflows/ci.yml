@@ -27,3 +27,4 @@ jobs:
       - run: npm run knip
       - run: npm run build
       - run: npm run qa:english-export
+      - run: npm run qa:seo

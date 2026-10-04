@@ -6,8 +6,14 @@
  * edition is not yet published (independent kill switch). */
 import { entryLocale, cookieLocale } from './lib/locale-routing.js';
 
+const LEGACY_ROUTES = { '/trangchu': '/', '/hoangdao': '/cunghoangdao', '/thanso': '/thansohoc' };
+
 export async function onRequest({ request, env }) {
   const url = new URL(request.url);
+  const canonical = LEGACY_ROUTES[url.pathname];
+  if (canonical && (request.method === 'GET' || request.method === 'HEAD')) {
+    return new Response(null, { status: 301, headers: { Location: `${canonical}${url.search}` } });
+  }
   if (env.AX_EN_ROUTING === '1' && url.pathname === '/' && (request.method === 'GET' || request.method === 'HEAD')) {
     const locale = entryLocale({
       saved: cookieLocale(request.headers.get('cookie')),
@@ -25,6 +31,7 @@ export async function onRequest({ request, env }) {
   if (response.status !== 200 || !response.headers.get('content-type')?.includes('text/html')) return response;
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))));
   const headers = new Headers(response.headers);
+  if (url.hostname.endsWith('.pages.dev')) headers.set('X-Robots-Tag', 'noindex, nofollow');
   // Shared by client-side navigation: /tarot -> /chitay keeps this document CSP.
   // Permit WASM compilation only; JavaScript unsafe-eval remains blocked.
   headers.set(

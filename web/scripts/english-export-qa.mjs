@@ -125,7 +125,9 @@ async function httpChecks() {
     results.every(r => !r.id.startsWith('EXP-noexperts-') || r.status === 'PASS') ? 'PASS' : 'FAIL',
   );
   const robots = await (await fetch(`http://localhost:${PORT}/robots.txt`)).text();
-  record('EXP-robots', 'robots disallows /en/profile', robots.includes('/en/profile') ? 'PASS' : 'FAIL');
+  record('EXP-robots', 'robots lets crawlers read the profile noindex directive', !robots.includes('Disallow: /en/profile') ? 'PASS' : 'FAIL');
+  const profileHtml = await (await fetch(`http://localhost:${PORT}/en/profile`)).text();
+  record('EXP-profile-noindex', 'profile HTML excludes indexing', /<meta[^>]+name="robots"[^>]+content="[^"]*noindex/.test(profileHtml) ? 'PASS' : 'FAIL');
   const sitemap = await (await fetch(`http://localhost:${PORT}/sitemap.xml`)).text();
   record(
     'EXP-sitemap',

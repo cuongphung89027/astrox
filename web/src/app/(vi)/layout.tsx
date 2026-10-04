@@ -6,10 +6,10 @@ import { LocaleProvider } from '@/i18n/LocaleProvider';
 export const metadata: Metadata = {
   metadataBase: new URL('https://theastrox.space'),
   title: {
-    default: 'AstroX — Tử vi · Kinh Dịch · Cung Hoàng Đạo',
+    default: 'AstroX — Tử vi, Tarot & Thần số học',
     template: '%s | AstroX',
   },
-  description: 'Khám phá thế giới của bạn cùng AstroX.',
+  description: 'Khám phá Tử vi, Tarot, Bát tự, Thần số học, cung hoàng đạo và lịch âm trên AstroX. Lập lá số, trải bài và tìm hiểu bản thân theo cách của bạn.',
   icons: { icon: '/assets/logo.png' },
   ...socialMetadata('/'),
 };

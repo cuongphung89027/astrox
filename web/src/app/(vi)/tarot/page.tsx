@@ -5,7 +5,7 @@ import { TarotClient } from '@/components/tarot/TarotClient';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/tarot', languages: { vi: '/tarot', en: '/en/tarot', 'x-default': '/tarot' } },
-  title: 'Tarot — Trải bài và luận giải bằng AstroX',
+  title: 'Tarot — Trải bài và luận giải',
   description:
     'Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AstroX dựa trên đúng các lá đã rút.',
   ...socialMetadata('/tarot'),
@@ -16,6 +16,7 @@ export default function Page() {
     <Suspense
       fallback={
         <div role="status" className="p-6 text-center">
+          <h1 className="sr-only">Tarot</h1>
           Đang mở Tarot…
         </div>
       }

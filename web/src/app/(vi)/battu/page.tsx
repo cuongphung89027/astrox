@@ -4,7 +4,7 @@ import { BatuClient } from '@/components/batu/BatuClient';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/battu', languages: { vi: '/battu', en: '/en/ba-zi', 'x-default': '/battu' } },
-  title: 'Bát Tự (Tứ Trụ) — Luận giải mệnh lý bằng AstroX',
+  title: 'Bát Tự (Tứ Trụ) — Luận giải mệnh lý',
   description: 'Lập lá số Bát Tự Tứ Trụ, xem Thập Thần, Dụng Thần và luận giải mệnh lý bằng AstroX.',
   ...socialMetadata('/battu'),
 };

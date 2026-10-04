@@ -1,8 +1,8 @@
 # English export certification
 
-2026-10-03T05:33:00.844Z
+2026-10-04T06:03:46.158Z
 
-**55 PASS · 0 FAIL · 3 BLOCKED**
+**56 PASS · 0 FAIL · 3 BLOCKED**
 
 | id | check | status | evidence |
 |---|---|---|---|
@@ -24,7 +24,8 @@
 | EXP-en/terms | HTTP 200 /en/terms | PASS | status 200 |
 | EXP-terms-en | English terms content present | PASS |  |
 | EXP-noexperts | experts absent across all EN routes | PASS |  |
-| EXP-robots | robots disallows /en/profile | PASS |  |
+| EXP-robots | robots lets crawlers read the profile noindex directive | PASS |  |
+| EXP-profile-noindex | profile HTML excludes indexing | PASS |  |
 | EXP-sitemap | sitemap includes EN routes | PASS |  |
 | EXP-en-experts-404 | /en/experts is not a page | PASS | status 404 |
 | LANG-en | English UI free of Vietnamese chrome | PASS |  |

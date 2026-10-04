@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Khám phá thế giới của bạn cùng AstroX',
+  alternates: { canonical: '/' },
+  title: 'Khám phá thế giới của bạn',
   description: 'Khám phá thế giới của bạn cùng AstroX.',
   ...socialMetadata('/trangchu'),
 };

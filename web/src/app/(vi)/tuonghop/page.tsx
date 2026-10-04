@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     languages: { vi: '/tuonghop', en: '/en/compatibility', 'x-default': '/tuonghop' },
   },
   title: 'Tương Hợp — Đối chiếu hai lá số',
-  description: 'Đối chiếu cung hoàng đạo của hai người, xem mức độ tương hợp về tính cách và cảm xúc.',
+  description: 'Khám phá tương hợp của hai người theo Tử vi, Bát tự hoặc cung hoàng đạo. Đối chiếu lá số và tìm hiểu điểm kết nối cùng AstroX.',
   ...socialMetadata('/tuonghop'),
 };
 

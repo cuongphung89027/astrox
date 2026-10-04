@@ -5,7 +5,7 @@ export const metadata = {
     canonical: '/en/lunar-calendar',
     languages: { vi: '/licham', en: '/en/lunar-calendar', 'x-default': '/licham' },
   },
-  title: 'Lunar Calendar — AstroX',
+  title: 'Lunar Calendar',
   description: 'Convert solar and lunar dates and keep track of family occasions.',
   ...socialMetadata('/en/lunar-calendar'),
 };

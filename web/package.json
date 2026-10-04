@@ -23,6 +23,7 @@
     "deploy:worker": "node ../scripts/deploy-worker.mjs",
     "format": "prettier --ignore-path ../.prettierignore --write ../services ../functions",
     "format:check": "prettier --ignore-path ../.prettierignore --check ../services ../functions",
+    "qa:seo": "node scripts/qa-seo-export.mjs",
     "qa:english-export": "node scripts/english-export-qa.mjs",
     "build:og": "node scripts/build-og-images.mjs",
     "qa:og": "node scripts/qa-og-export.mjs"

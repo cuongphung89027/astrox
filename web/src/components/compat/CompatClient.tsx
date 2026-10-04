@@ -404,8 +404,14 @@ function WesternCompatClient() {
 }
 
 export function CompatClient() {
+  const { locale } = useLocale();
   return (
-    <Suspense fallback={<ReadingLoader kind="compat" />}>
+    <Suspense fallback={
+      <>
+        <h1 className="sr-only">{locale === 'en' ? 'Compatibility' : 'Tương Hợp'}</h1>
+        <ReadingLoader kind="compat" />
+      </>
+    }>
       <CompatModes />
     </Suspense>
   );

@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { closeLoginDialog, openLoginDialog, useLoginDialogOpen } from '@/lib/login-dialog';
+import { markLoginRegion, consumeLoginRegion } from '@/lib/login-region';
 import { consumeLoginAfterLogout } from '@/lib/market-guard';
 import { hasTermsConsent, saveTermsConsent, termsHref } from '@/lib/terms';
 import { GoogleG, ZaloWordmark } from '@/components/kit/BrandLogos';
 import { FlagUS, FlagVN } from '@/components/kit/Flags';
-import { moduleRoute } from '@/lib/locale';
+import { crossLocalePath, moduleRoute, type Locale } from '@/lib/locale';
 import { useLocale } from '@/i18n/LocaleProvider';
 import styles from './LoginPrompt.module.css';
 
@@ -20,7 +21,8 @@ import styles from './LoginPrompt.module.css';
  *
  * Bước 1 là chọn khu vực (Sơn 29/09): Việt Nam (cờ VN) → Zalo, United States
  * (cờ US) → Google. Một tài khoản chỉ dùng tại một quốc gia, nên provider đi
- * theo khu vực đã chọn chứ không theo cây đang xem.
+ * theo khu vực đã chọn. Chọn khu vực khác chuyển cả cây ngôn ngữ trước khi
+ * mở bước provider, tránh popup và trang dùng ngôn ngữ cũ.
  *
  * Bắt buộc tích đồng ý với bộ điều khoản (Điều khoản sử dụng · Miễn trừ trách
  * nhiệm · Bảo mật thông tin cá nhân) trước khi sang provider. Đồng ý được
@@ -50,7 +52,9 @@ export function LoginPrompt() {
   // Vừa logout vì market (switch/bị lệch cây): mở thẳng provider của cây này
   // — Việt Nam → Zalo, English → Google — không bắt chọn khu vực lại (Sơn 29/09).
   useEffect(() => {
-    if (!consumeLoginAfterLogout()) return;
+    const afterLogout = consumeLoginAfterLogout();
+    const afterRegionChange = consumeLoginRegion(t.locale);
+    if (!afterLogout && !afterRegionChange) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- mở một lần theo cờ sessionStorage, cùng pattern setMounted của auth.tsx
     setRegion(t.locale === 'en' ? 'US' : 'VN');
     invited.current = true;
@@ -100,6 +104,13 @@ export function LoginPrompt() {
   function chooseRegion(next: Region) {
     setError('');
     setRegion(next);
+    const target: Locale = next === 'US' ? 'en' : 'vi';
+    if (target === t.locale) return;
+    // Root layouts fix their locale, so this must be a full navigation.
+    const destination = crossLocalePath(pathname || '/', target) || moduleRoute('home', target);
+    markLoginRegion(target);
+    document.cookie = `axlang=${target}; path=/; max-age=31536000; samesite=lax; secure`;
+    window.location.assign(destination + window.location.search + window.location.hash);
   }
 
   function proceed() {
@@ -224,15 +235,15 @@ export function LoginPrompt() {
           />
           <span id="login-consent-label">
             {t.t('login.consentAgree')}{' '}
-            <Link href={termsHref('terms')} onClick={close} aria-label={t.t('login.terms')}>
+            <Link href={termsHref('terms', t.locale)} onClick={close} aria-label={t.t('login.terms')}>
               {t.t('login.terms')}
             </Link>
             ,{' '}
-            <Link href={termsHref('disclaimer')} onClick={close} aria-label={t.t('login.disclaimer')}>
+            <Link href={termsHref('disclaimer', t.locale)} onClick={close} aria-label={t.t('login.disclaimer')}>
               {t.t('login.disclaimer')}
             </Link>{' '}
             {t.t('login.and')}{' '}
-            <Link href={termsHref('privacy')} onClick={close} aria-label={t.t('login.privacy')}>
+            <Link href={termsHref('privacy', t.locale)} onClick={close} aria-label={t.t('login.privacy')}>
               {t.t('login.privacy')}
             </Link>
             .

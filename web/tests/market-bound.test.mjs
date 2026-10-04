@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { crossLocalePath } from '../../services/admin/markets.ts';
 import { load, hookRuntime, nodes, memoryStorage } from './support/load.mjs';
 
 /**
@@ -68,7 +69,7 @@ const loginMocks = (runtime, auth) => ({
   },
   '@/lib/terms': { hasTermsConsent: () => true, saveTermsConsent: () => {}, termsHref: () => '/terms' },
   '@/components/kit/BrandLogos': { GoogleG: () => null, ZaloWordmark: () => null },
-  '@/lib/locale': { moduleRoute: () => '/' },
+  '@/lib/locale': { moduleRoute: () => '/', crossLocalePath },
   '@/i18n/LocaleProvider': { useLocale: () => ({ locale: 'en', t: k => k }) },
 });
 

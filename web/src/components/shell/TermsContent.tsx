@@ -25,8 +25,8 @@ export function TermsContent() {
           Những điều cần biết để bạn an tâm khám phá AstroX — từ cách sử dụng dịch vụ đến quyền riêng tư của mình.
         </p>
         <div className={styles.meta}>
-          <span>Phiên bản 2.0</span>
-          <span>Cập nhật &amp; hiệu lực: 27.09.2026</span>
+          <span>Phiên bản 2.1</span>
+          <span>Cập nhật &amp; hiệu lực: 04.10.2026</span>
           <span>03 văn bản</span>
         </div>
       </header>
@@ -301,6 +301,23 @@ export function TermsContent() {
                   </dd>
                 </div>
               </dl>
+              <h3 id="dang-nhap-google">Đăng nhập Google</h3>
+              <p>
+                Khi bạn chọn đăng nhập Google, AstroX yêu cầu quyền openid, email và profile để xác minh tài khoản và
+                nhận mã định danh Google, email đã xác minh, tên hiển thị và ảnh đại diện. Thông tin này được lưu trên
+                hạ tầng Cloudflare để đăng nhập, quản lý tài khoản và hiển thị hồ sơ. AstroX không yêu cầu quyền truy
+                cập Gmail, Google Drive hoặc danh bạ.
+              </p>
+              <p>
+                Dữ liệu đăng nhập Google không được bán, cho thuê hoặc dùng cho quảng cáo. Việc lưu giữ, chia sẻ với nhà
+                xử lý và yêu cầu xóa tuân theo các mục 3.4, 3.6 và 3.8 bên dưới; bạn có thể gửi yêu cầu tới <Contact />{' '}
+                và thu hồi quyền truy cập trong phần kết nối ứng dụng của tài khoản Google. Thu hồi quyền không tự xóa
+                dữ liệu đã được AstroX lưu. Việc sử dụng và chuyển dữ liệu Google tuân theo{' '}
+                <a href="https://developers.google.com/terms/api-services-user-data-policy">
+                  Google API Services User Data Policy
+                </a>
+                , bao gồm các yêu cầu Limited Use.
+              </p>
               <p>
                 Thông tin bạn nhập có thể chứa dữ liệu nhạy cảm như sức khỏe, đời sống riêng tư, xu hướng tính dục hoặc
                 thông tin tài chính. Không đưa mật khẩu, OTP, giấy tờ định danh, thông tin thẻ hay chi tiết riêng tư
@@ -510,6 +527,24 @@ export function TermsContentEn() {
                 Birth data, questions and palm photos are processed to produce your reading and are stored with your
                 account so you can revisit results. You can request deletion of your account data at any time via
                 support. Palm photos are used only for the reading you requested.
+              </p>
+              <h3 id="google-sign-in">Google Sign-in</h3>
+              <p>
+                When you choose Google Sign-in, AstroX requests openid, email and profile to authenticate your account
+                and receive your Google identifier, verified email address, display name and avatar. These account
+                fields are stored on Cloudflare infrastructure for sign-in, account management and your profile. AstroX
+                does not request access to Gmail, Google Drive or your contacts.
+              </p>
+              <p>
+                Google account data is not sold, rented or used for advertising. It is shared with infrastructure
+                processors only as needed to provide account functions and retained while needed for your account. You
+                can request deletion through <Contact /> and revoke AstroX access in your Google account&apos;s
+                connected-app settings. Revoking access does not itself delete data already stored by AstroX. AstroX
+                follows the{' '}
+                <a href="https://developers.google.com/terms/api-services-user-data-policy">
+                  Google API Services User Data Policy
+                </a>
+                , including its Limited Use requirements, when using or transferring Google account information.
               </p>
               <h3 id="contact-ownership">Contact, Ownership &amp; Receipts</h3>
               <p>

@@ -1,0 +1,437 @@
+{
+  "version": "v2",
+  "width": 1200,
+  "height": 630,
+  "themes": [
+    {
+      "id": "home",
+      "art": "home.png",
+      "vi": {
+        "label": "Trang chủ",
+        "title": "AstroX — Tử vi · Tarot · Khám phá bản thân",
+        "lines": ["Khám phá", "thế giới", "của bạn."],
+        "caption": "Tử vi · Tarot · Khám phá bản thân",
+        "description": "Tử vi · Tarot · Khám phá bản thân",
+        "alt": "AstroX — Trang chủ: Khám phá thế giới của bạn."
+      },
+      "en": {
+        "label": "Home",
+        "title": "AstroX — Astrology · Tarot · Self-discovery",
+        "lines": ["Explore", "your world."],
+        "caption": "Astrology · Tarot · Self-discovery",
+        "description": "Astrology · Tarot · Self-discovery",
+        "alt": "AstroX — Home: Explore your world."
+      }
+    },
+    {
+      "id": "tuvi",
+      "art": "tuvi.png",
+      "vi": {
+        "label": "Tử Vi Đẩu Số",
+        "title": "Tử Vi Đẩu Số | AstroX",
+        "lines": ["Tử vi", "đẩu số."],
+        "caption": "Lá số và những nhịp chuyển của cuộc đời.",
+        "description": "Lá số và những nhịp chuyển của cuộc đời.",
+        "alt": "AstroX — Tử Vi Đẩu Số: Tử vi đẩu số."
+      },
+      "en": {
+        "label": "Zi Wei",
+        "title": "Zi Wei | AstroX",
+        "lines": ["Zi Wei."],
+        "caption": "Explore your chart and life cycles.",
+        "description": "Explore your chart and life cycles.",
+        "alt": "AstroX — Zi Wei: Zi Wei."
+      }
+    },
+    {
+      "id": "astrology",
+      "art": "astrology.png",
+      "vi": {
+        "label": "Cung Hoàng Đạo",
+        "title": "Cung Hoàng Đạo | AstroX",
+        "lines": ["Cung", "hoàng đạo."],
+        "caption": "Khám phá góc nhìn từ những vì sao.",
+        "description": "Khám phá góc nhìn từ những vì sao.",
+        "alt": "AstroX — Cung Hoàng Đạo: Cung hoàng đạo."
+      },
+      "en": {
+        "label": "Astrology",
+        "title": "Astrology | AstroX",
+        "lines": ["Astrology."],
+        "caption": "Discover a perspective from the stars.",
+        "description": "Discover a perspective from the stars.",
+        "alt": "AstroX — Astrology: Astrology."
+      }
+    },
+    {
+      "id": "iching",
+      "art": "iching.png",
+      "vi": {
+        "label": "Kinh Dịch",
+        "title": "Kinh Dịch | AstroX",
+        "lines": ["Kinh Dịch."],
+        "caption": "Gieo quẻ, đọc ý nghĩa, tìm góc nhìn mới.",
+        "description": "Gieo quẻ, đọc ý nghĩa, tìm góc nhìn mới.",
+        "alt": "AstroX — Kinh Dịch: Kinh Dịch."
+      },
+      "en": {
+        "label": "I Ching",
+        "title": "I Ching | AstroX",
+        "lines": ["I Ching."],
+        "caption": "Cast a hexagram. Explore a new perspective.",
+        "description": "Cast a hexagram. Explore a new perspective.",
+        "alt": "AstroX — I Ching: I Ching."
+      }
+    },
+    {
+      "id": "battu",
+      "art": "battu.png",
+      "vi": {
+        "label": "Bát Tự",
+        "title": "Bát Tự | AstroX",
+        "lines": ["Bát Tự."],
+        "caption": "Khám phá bốn trụ và cân bằng ngũ hành.",
+        "description": "Khám phá bốn trụ và cân bằng ngũ hành.",
+        "alt": "AstroX — Bát Tự: Bát Tự."
+      },
+      "en": {
+        "label": "Ba Zi",
+        "title": "Ba Zi | AstroX",
+        "lines": ["Ba Zi."],
+        "caption": "Explore the Four Pillars and Five Elements.",
+        "description": "Explore the Four Pillars and Five Elements.",
+        "alt": "AstroX — Ba Zi: Ba Zi."
+      }
+    },
+    {
+      "id": "numerology",
+      "art": "numerology.png",
+      "vi": {
+        "label": "Thần Số Học",
+        "title": "Thần Số Học | AstroX",
+        "lines": ["Thần", "số học."],
+        "caption": "Khám phá câu chuyện sau những con số.",
+        "description": "Khám phá câu chuyện sau những con số.",
+        "alt": "AstroX — Thần Số Học: Thần số học."
+      },
+      "en": {
+        "label": "Numerology",
+        "title": "Numerology | AstroX",
+        "lines": ["Numerology."],
+        "caption": "Discover the stories behind your numbers.",
+        "description": "Discover the stories behind your numbers.",
+        "alt": "AstroX — Numerology: Numerology."
+      }
+    },
+    {
+      "id": "tarot",
+      "art": "tarot.png",
+      "vi": {
+        "label": "Tarot",
+        "title": "Tarot | AstroX",
+        "lines": ["Tarot."],
+        "caption": "Một trải bài. Một góc nhìn mới.",
+        "description": "Một trải bài. Một góc nhìn mới.",
+        "alt": "AstroX — Tarot: Tarot."
+      },
+      "en": {
+        "label": "Tarot",
+        "title": "Tarot | AstroX",
+        "lines": ["Tarot."],
+        "caption": "A new spread. A fresh perspective.",
+        "description": "A new spread. A fresh perspective.",
+        "alt": "AstroX — Tarot: Tarot."
+      }
+    },
+    {
+      "id": "palm",
+      "art": "palm.png",
+      "vi": {
+        "label": "Chỉ tay",
+        "title": "Chỉ tay | AstroX",
+        "lines": ["Chỉ tay."],
+        "caption": "Khám phá đường nét trên lòng bàn tay.",
+        "description": "Khám phá đường nét trên lòng bàn tay.",
+        "alt": "AstroX — Chỉ tay: Chỉ tay."
+      },
+      "en": {
+        "label": "Palm Reading",
+        "title": "Palm Reading | AstroX",
+        "lines": ["Palm", "Reading."],
+        "caption": "Explore the lines on your palm.",
+        "description": "Explore the lines on your palm.",
+        "alt": "AstroX — Palm Reading: Palm Reading."
+      }
+    },
+    {
+      "id": "lunar",
+      "art": "lunar.png",
+      "vi": {
+        "label": "Lịch âm",
+        "title": "Lịch âm | AstroX",
+        "lines": ["Lịch âm."],
+        "caption": "Theo nhịp trăng, nhớ ngày quan trọng.",
+        "description": "Theo nhịp trăng, nhớ ngày quan trọng.",
+        "alt": "AstroX — Lịch âm: Lịch âm."
+      },
+      "en": {
+        "label": "Lunar Calendar",
+        "title": "Lunar Calendar | AstroX",
+        "lines": ["Lunar", "Calendar."],
+        "caption": "Follow the moon. Remember special days.",
+        "description": "Follow the moon. Remember special days.",
+        "alt": "AstroX — Lunar Calendar: Lunar Calendar."
+      }
+    },
+    {
+      "id": "compatibility",
+      "art": "compatibility.png",
+      "vi": {
+        "label": "Tương hợp",
+        "title": "Tương hợp | AstroX",
+        "lines": ["Tương hợp."],
+        "caption": "Hai cá tính. Một hành trình kết nối.",
+        "description": "Hai cá tính. Một hành trình kết nối.",
+        "alt": "AstroX — Tương hợp: Tương hợp."
+      },
+      "en": {
+        "label": "Compatibility",
+        "title": "Compatibility | AstroX",
+        "lines": ["Compatibility."],
+        "caption": "Two personalities. A shared journey.",
+        "description": "Two personalities. A shared journey.",
+        "alt": "AstroX — Compatibility: Compatibility."
+      }
+    },
+    {
+      "id": "experts",
+      "art": "experts.png",
+      "vi": {
+        "label": "Đặt lịch chuyên gia",
+        "title": "Đặt lịch chuyên gia | AstroX",
+        "lines": ["Gặp gỡ", "chuyên gia."],
+        "caption": "Thêm góc nhìn từ một cuộc trò chuyện.",
+        "description": "Thêm góc nhìn từ một cuộc trò chuyện.",
+        "alt": "AstroX — Đặt lịch chuyên gia: Gặp gỡ chuyên gia."
+      },
+      "en": null
+    },
+    {
+      "id": "pricing",
+      "art": "pricing.png",
+      "vi": {
+        "label": "Bảng giá",
+        "title": "Bảng giá | AstroX",
+        "lines": ["Chọn lượt", "khám phá."],
+        "caption": "Giá dịch vụ và các gói Point minh bạch.",
+        "description": "Giá dịch vụ và các gói Point minh bạch.",
+        "alt": "AstroX — Bảng giá: Chọn lượt khám phá."
+      },
+      "en": {
+        "label": "Pricing",
+        "title": "Pricing | AstroX",
+        "lines": ["Choose your", "next discovery."],
+        "caption": "Clear service prices and credit packages.",
+        "description": "Clear service prices and credit packages.",
+        "alt": "AstroX — Pricing: Choose your next discovery."
+      }
+    },
+    {
+      "id": "terms",
+      "art": "terms.png",
+      "vi": {
+        "label": "Điều khoản & quyền riêng tư",
+        "title": "Điều khoản & quyền riêng tư | AstroX",
+        "lines": ["An tâm", "khám phá."],
+        "caption": "Điều khoản, quyền riêng tư và sự rõ ràng.",
+        "description": "Điều khoản, quyền riêng tư và sự rõ ràng.",
+        "alt": "AstroX — Điều khoản & quyền riêng tư: An tâm khám phá."
+      },
+      "en": {
+        "label": "Terms & Privacy",
+        "title": "Terms & Privacy | AstroX",
+        "lines": ["Explore with", "confidence."],
+        "caption": "Clear terms. Respect for your privacy.",
+        "description": "Clear terms. Respect for your privacy.",
+        "alt": "AstroX — Terms & Privacy: Explore with confidence."
+      }
+    },
+    {
+      "id": "profile",
+      "art": "profile.png",
+      "vi": {
+        "label": "Hồ sơ & ví",
+        "title": "Hồ sơ & ví | AstroX",
+        "lines": ["Hành trình", "của bạn."],
+        "caption": "Hồ sơ, ví và những khám phá đã lưu.",
+        "description": "Hồ sơ, ví và những khám phá đã lưu.",
+        "alt": "AstroX — Hồ sơ & ví: Hành trình của bạn."
+      },
+      "en": {
+        "label": "Profile & Wallet",
+        "title": "Profile & Wallet | AstroX",
+        "lines": ["Your", "journey."],
+        "caption": "Your profile, wallet and saved discoveries.",
+        "description": "Your profile, wallet and saved discoveries.",
+        "alt": "AstroX — Profile & Wallet: Your journey."
+      }
+    }
+  ],
+  "routes": {
+    "/": {
+      "theme": "home",
+      "locale": "vi",
+      "canonical": "/"
+    },
+    "/en": {
+      "theme": "home",
+      "locale": "en",
+      "canonical": "/en"
+    },
+    "/tuvi": {
+      "theme": "tuvi",
+      "locale": "vi",
+      "canonical": "/tuvi"
+    },
+    "/en/zi-wei": {
+      "theme": "tuvi",
+      "locale": "en",
+      "canonical": "/en/zi-wei"
+    },
+    "/cunghoangdao": {
+      "theme": "astrology",
+      "locale": "vi",
+      "canonical": "/cunghoangdao"
+    },
+    "/en/astrology": {
+      "theme": "astrology",
+      "locale": "en",
+      "canonical": "/en/astrology"
+    },
+    "/kinhdich": {
+      "theme": "iching",
+      "locale": "vi",
+      "canonical": "/kinhdich"
+    },
+    "/en/i-ching": {
+      "theme": "iching",
+      "locale": "en",
+      "canonical": "/en/i-ching"
+    },
+    "/battu": {
+      "theme": "battu",
+      "locale": "vi",
+      "canonical": "/battu"
+    },
+    "/en/ba-zi": {
+      "theme": "battu",
+      "locale": "en",
+      "canonical": "/en/ba-zi"
+    },
+    "/thansohoc": {
+      "theme": "numerology",
+      "locale": "vi",
+      "canonical": "/thansohoc"
+    },
+    "/en/numerology": {
+      "theme": "numerology",
+      "locale": "en",
+      "canonical": "/en/numerology"
+    },
+    "/tarot": {
+      "theme": "tarot",
+      "locale": "vi",
+      "canonical": "/tarot"
+    },
+    "/en/tarot": {
+      "theme": "tarot",
+      "locale": "en",
+      "canonical": "/en/tarot"
+    },
+    "/chitay": {
+      "theme": "palm",
+      "locale": "vi",
+      "canonical": "/chitay"
+    },
+    "/en/palm-reading": {
+      "theme": "palm",
+      "locale": "en",
+      "canonical": "/en/palm-reading"
+    },
+    "/licham": {
+      "theme": "lunar",
+      "locale": "vi",
+      "canonical": "/licham"
+    },
+    "/en/lunar-calendar": {
+      "theme": "lunar",
+      "locale": "en",
+      "canonical": "/en/lunar-calendar"
+    },
+    "/tuonghop": {
+      "theme": "compatibility",
+      "locale": "vi",
+      "canonical": "/tuonghop"
+    },
+    "/en/compatibility": {
+      "theme": "compatibility",
+      "locale": "en",
+      "canonical": "/en/compatibility"
+    },
+    "/chuyengia": {
+      "theme": "experts",
+      "locale": "vi",
+      "canonical": "/chuyengia"
+    },
+    "/banggia": {
+      "theme": "pricing",
+      "locale": "vi",
+      "canonical": "/banggia"
+    },
+    "/en/pricing": {
+      "theme": "pricing",
+      "locale": "en",
+      "canonical": "/en/pricing"
+    },
+    "/dieukhoan": {
+      "theme": "terms",
+      "locale": "vi",
+      "canonical": "/dieukhoan"
+    },
+    "/en/terms": {
+      "theme": "terms",
+      "locale": "en",
+      "canonical": "/en/terms"
+    },
+    "/hoso": {
+      "theme": "profile",
+      "locale": "vi",
+      "canonical": "/hoso"
+    },
+    "/en/profile": {
+      "theme": "profile",
+      "locale": "en",
+      "canonical": "/en/profile"
+    },
+    "/trangchu": {
+      "theme": "home",
+      "locale": "vi",
+      "canonical": "/"
+    },
+    "/hoangdao": {
+      "theme": "astrology",
+      "locale": "vi",
+      "canonical": "/cunghoangdao"
+    },
+    "/thanso": {
+      "theme": "numerology",
+      "locale": "vi",
+      "canonical": "/thansohoc"
+    },
+    "/admin": {
+      "theme": "home",
+      "locale": "vi",
+      "canonical": "/admin"
+    }
+  }
+}

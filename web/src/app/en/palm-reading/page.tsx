@@ -1,3 +1,4 @@
+import { socialMetadata } from '@/lib/social-metadata';
 import { PalmReader } from '@/components/discovery/PalmReader';
 export const metadata = {
   alternates: {
@@ -6,6 +7,7 @@ export const metadata = {
   },
   title: 'Palm Reading — AstroX',
   description: 'Photograph your palm and explore its lines with AstroX.',
+  ...socialMetadata('/en/palm-reading'),
 };
 export default function Page() {
   return <PalmReader />;

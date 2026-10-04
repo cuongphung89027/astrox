@@ -1,3 +1,4 @@
+import { socialMetadata } from '@/lib/social-metadata';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { TarotClient } from '@/components/tarot/TarotClient';
@@ -7,12 +8,7 @@ export const metadata: Metadata = {
   title: 'Tarot — Trải bài và luận giải bằng AstroX',
   description:
     'Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AstroX dựa trên đúng các lá đã rút.',
-  openGraph: {
-    title: 'Tarot — Trải bài và luận giải bằng AstroX',
-    description:
-      'Chọn bộ bài, trải bài Tarot theo nhiều kiểu trải phổ biến và xem luận giải bằng AstroX dựa trên đúng các lá đã rút.',
-    images: ['/assets/og/tarot.png'],
-  },
+  ...socialMetadata('/tarot'),
 };
 
 export default function Page() {

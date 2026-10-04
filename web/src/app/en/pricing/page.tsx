@@ -1,9 +1,11 @@
+import { socialMetadata } from '@/lib/social-metadata';
 import type { Metadata } from 'next';
 import { PricingContent } from '@/components/points/PricingContent';
 export const metadata: Metadata = {
   title: 'AstroX Pricing',
   description: 'See the price of every service and credit package before you sign in.',
   alternates: { canonical: '/en/pricing' },
+  ...socialMetadata('/en/pricing'),
 };
 export default function PricingPage() {
   return (

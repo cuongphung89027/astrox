@@ -1,3 +1,4 @@
+import { socialMetadata } from '@/lib/social-metadata';
 import type { Metadata, Viewport } from 'next';
 import { DocumentLayout } from '@/components/shell/DocumentLayout';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
@@ -10,11 +11,7 @@ export const metadata: Metadata = {
   },
   description: 'Explore your world with AstroX.',
   icons: { icon: '/assets/logo.png' },
-  openGraph: {
-    type: 'website',
-    siteName: 'AstroX',
-    images: ['/assets/og/trangchu.png'],
-  },
+  ...socialMetadata('/en'),
 };
 
 export const viewport: Viewport = {

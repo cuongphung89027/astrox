@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AstroX — Concept trình bày luận giải</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Beautique:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --kem:#fbf6ec; --kem2:#f6edd9; --accent:#244d40; --accent-deep:#193e33;
+  --son:#e8442e; --ngoc:#0ea768; --kim:#f2a912; --sen:#ff6fa5; --cham:#2f3fae;
+  --muc:#26190f; --muc2:#6f5d4c;
+  --r:26px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--kem);color:var(--muc);font-family:'Be Vietnam Pro',system-ui,sans-serif;padding:18px 16px 60px;max-width:760px;margin:0 auto}
+.tag{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muc2);background:#fff;border:1px solid #eadfc8;padding:4px 10px;border-radius:999px;margin-bottom:10px}
+h1{font-family:'Beautique',Georgia,serif;font-size:26px;line-height:1.15;color:var(--accent-deep);margin-bottom:4px}
+.sub{color:var(--muc2);font-size:13px;margin-bottom:26px}
+.card{background:rgba(255,255,255,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.85);box-shadow:0 2px 6px -2px rgba(64,36,14,.08),0 14px 34px -18px rgba(64,36,14,.14),inset 0 1px 0 rgba(255,255,255,.7);border-radius:var(--r);padding:22px;margin-bottom:18px}
+.card h2{font-family:'Beautique',serif;font-size:16px;color:var(--accent-deep);margin-bottom:2px}
+.card .desc{font-size:12px;color:var(--muc2);margin-bottom:18px}
+/* ---- CONCEPT A: sliders 2 cực ---- */
+.axis{margin-bottom:20px}
+.axis:last-child{margin-bottom:4px}
+.axis .poles{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;margin-bottom:7px}
+.axis .poles .r{text-align:right}
+.axis .poles .on{color:var(--accent)} .axis .poles .off{color:#b3a893}
+.track{position:relative;height:10px;border-radius:999px;background:linear-gradient(to right,#e9e0cc 0%,#e9e0cc 100%)}
+.track .fill{position:absolute;left:0;top:0;height:100%;border-radius:999px;background:var(--accent);opacity:.92}
+.track .dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 3px 8px rgba(36,77,64,.35)}
+.axis .note{font-size:12px;color:var(--muc2);margin-top:8px;line-height:1.5}
+.axis .note b{color:var(--muc);font-weight:600}
+/* ---- CONCEPT B: dual cards ---- */
+.dual{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:600px){.dual{grid-template-columns:1fr 1fr}}
+.dcard{border-radius:20px;padding:18px 16px}
+.dcard.light{background:#fff;border:1px solid #eadfc8}
+.dcard.dark{background:var(--accent-deep);color:#f3ede0}
+.dcard h3{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dcard.light h3{color:var(--ngoc)} .dcard.dark h3{color:var(--kim)}
+.dcard ul{list-style:none}
+.dcard li{font-size:13px;line-height:1.5;padding:7px 0 7px 26px;position:relative;border-top:1px dashed rgba(120,100,70,.18)}
+.dcard.dark li{border-top-color:rgba(255,255,255,.14)}
+.dcard li:first-child{border-top:0}
+.dcard.light li::before{content:"+";position:absolute;left:2px;top:6px;font-weight:700;color:var(--ngoc)}
+.dcard.dark li::before{content:"!";position:absolute;left:4px;top:7px;font-weight:700;color:var(--kim);font-size:11px}
+/* ---- CONCEPT C: radar ---- */
+.radarWrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.radar-legend{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;font-size:11.5px;color:var(--muc2)}
+.radar-legend b{color:var(--muc);font-weight:600}
+/* ---- CONCEPT D: four pillars ---- */
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pillar{background:#fff;border:1px solid #eadfc8;border-radius:16px;padding:12px 8px;text-align:center}
+.pillar .lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muc2);font-weight:700;margin-bottom:8px}
+.pillar .cc{font-family:'Beautique',serif;font-size:14px;white-space:nowrap;font-weight:700;color:var(--accent-deep);line-height:1.4}
+.pillar .el{display:inline-block;margin-top:8px;font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:999px}
+.el.moc{background:#e3f3e9;color:#0a7d4f}.el.tho{background:#f3e9d2;color:#8a6d1d}.el.thuy{background:#e2edf7;color:#1c4f8a}.el.hoa{background:#ffe9e2;color:#c42f1c}.el.kim{background:#f1f1ee;color:#6b6b60}
+.pillar .dong{margin-top:6px;font-size:10px;color:var(--son);font-weight:700}
+/* ---- CONCEPT E: hexagram ---- */
+.hex{display:flex;gap:26px;align-items:center;justify-content:center}
+.hexcol{text-align:center}
+.hexcol .nm{font-family:'Beautique',serif;font-size:13px;color:var(--accent-deep);margin-top:8px}
+.hexcol .sb{font-size:10.5px;color:var(--muc2)}
+.hline{width:74px;height:8px;border-radius:3px;background:var(--accent);margin:7px auto;position:relative}
+.hline.broken{background:none;display:flex;gap:8px}
+.hline.broken i{flex:1;height:8px;border-radius:3px;background:var(--accent)}
+.hline.dong::after{content:"";position:absolute;right:-14px;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--son)}
+/* ---- CONCEPT F: timeline ---- */
+.tl{position:relative;padding-left:18px}
+.tl::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--accent),#c9d8cf)}
+.tl .ev{position:relative;padding:0 0 16px}
+.tl .ev::before{content:"";position:absolute;left:-18px;top:5px;width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--accent)}
+.tl .ev.now::before{background:var(--kim);border-color:var(--accent-deep)}
+.tl .yr{font-size:10.5px;letter-spacing:.1em;font-weight:700;color:var(--accent);text-transform:uppercase}
+.tl .ev.now .yr{color:var(--kim)}
+.tl .tt{font-size:13.5px;font-weight:600;margin:2px 0}
+.tl .tx{font-size:12px;color:var(--muc2);line-height:1.5}
+/* ---- CONCEPT G: compat gauge ---- */
+.gaugeWrap{text-align:center}
+.gaugeWrap .num{font-family:'Beautique',serif;font-size:44px;font-weight:700;color:var(--accent-deep)}
+.gaugeWrap .num small{font-size:18px}
+.cbar{margin:14px 0}
+.cbar .row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.cbar .who{font-size:12px;font-weight:600;width:88px;text-align:right}
+.cbar .bar{flex:1;height:9px;border-radius:999px;background:#eee4cd;overflow:hidden}
+.cbar .bar i{display:block;height:100%;border-radius:999px}
+.cbar .v{font-size:11.5px;font-weight:700;width:34px}
+footer{margin-top:26px;text-align:center;font-size:11px;color:var(--muc2)}
+</style>
+</head>
+<body>
+
+<h1>Luận giải Tử Vi — tổng quan</h1>
+<div class="sub">Nam · 01/01/1990 · giờ Tý · Xem ngày 05/10/2026</div>
+
+<span class="tag">Concept A · Trục tính cách 2 cực</span>
+<div class="card">
+  <h2>Bạn nghiêng về đâu?</h2>
+  <div class="desc">4 trục cốt lõi trong lá số — chấm trượt là vị trí của bạn</div>
+  <div class="axis">
+    <div class="poles"><span class="off">Lý trí</span><span class="on">Trực giác</span></div>
+    <div class="track"><div class="fill" style="width:72%"></div><div class="dot" style="left:72%"></div></div>
+    <div class="note"><b>72% trực giác</b> — Thái Âm chiếu mệnh khiến bạn đọc người bằng cảm nhận trước phân tích.</div>
+  </div>
+  <div class="axis">
+    <div class="poles"><span class="on">Hướng nội</span><span class="off">Hướng ngoại</span></div>
+    <div class="track"><div class="fill" style="width:34%"></div><div class="dot" style="left:34%"></div></div>
+    <div class="note"><b>34% hướng ngoại</b> — đủ sức dẫn dắt đám đông nhưng nguồn năng lượng hồi phục ở nơi yên tĩnh.</div>
+  </div>
+  <div class="axis">
+    <div class="poles"><span class="off">Ổn định</span><span class="on">Dám thay đổi</span></div>
+    <div class="track"><div class="fill" style="width:58%"></div><div class="dot" style="left:58%"></div></div>
+    <div class="note"><b>58% linh hoạt</b> — Mộc sinh mùa Đông thích nghi nhanh, nhưng cần gốc để không trôi.</div>
+  </div>
+</div>
+
+<span class="tag">Concept B · Thẻ sáng / tối</span>
+<div class="card">
+  <h2>Chất bẩm sinh của bạn</h2>
+  <div class="desc">Tóm tắt 3+3 điều đáng nhớ nhất trong lá số</div>
+  <div class="dual">
+    <div class="dcard light">
+      <h3>◈ Điểm mạnh</h3>
+      <ul>
+        <li>Trí nhớ và trực giác sắc — nhớ chi tiết người khác bỏ qua</li>
+        <li>Bền bỉ âm thầm: việc khó không làm bạn nản giữa chừng</li>
+        <li>Uy tín trong nhóm: người khác tự nhiên tin lời hứa của bạn</li>
+      </ul>
+    </div>
+    <div class="dcard dark">
+      <h3>◈ Cần lưu ý</h3>
+      <ul>
+        <li>Dễ ôm hết việc vào mình rồi kiệt sức mới nhận ra</li>
+        <li>Nói "không" khó — dễ bị lợi dụng lòng tốt</li>
+        <li>Suy nghĩ nhiều ban đêm, giấc ngủ không sâu</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<span class="tag">Concept C · Radar năng lượng</span>
+<div class="card">
+  <h2>Tổng quan năm 2026</h2>
+  <div class="desc">Mức năng lượng 5 lĩnh vực — dữ liệu AI chấm điểm, vẽ SVG theo brand</div>
+  <div class="radarWrap">
+    <svg width="270" height="250" viewBox="0 0 270 250">
+      <g stroke="#e5dbc4" fill="none">
+        <polygon points="135,25 231.6,95.3 194.7,208.7 75.3,208.7 38.4,95.3"/>
+        <polygon points="135,55 200.6,102.7 175.5,179.8 94.5,179.8 69.4,102.7"/>
+        <polygon points="135,85 169.6,110.1 156.4,150.9 113.6,150.9 100.4,110.1"/>
+        <line x1="135" y1="125" x2="135" y2="25"/><line x1="135" y1="125" x2="231.6" y2="95.3"/>
+        <line x1="135" y1="125" x2="194.7" y2="208.7"/><line x1="135" y1="125" x2="75.3" y2="208.7"/>
+        <line x1="135" y1="125" x2="38.4" y2="95.3"/>
+      </g>
+      <polygon points="135,40 215,99 178,195 92,190 58,102" fill="rgba(14,167,104,.16)" stroke="#0ea768" stroke-width="2.5" stroke-linejoin="round"/>
+      <g fill="#244d40" font-size="10.5" font-weight="600" text-anchor="middle" font-family="'Be Vietnam Pro'">
+        <text x="135" y="16">Sự nghiệp</text><text x="243" y="92">Tài lộc</text><text x="200" y="224">Tình cảm</text>
+        <text x="70" y="224">Sức khoẻ</text><text x="27" y="92">Trí tuệ</text>
+      </g>
+      <g fill="#193e33" font-size="11" font-weight="700" text-anchor="middle">
+        <circle cx="135" cy="40" r="3.5" fill="#0ea768"/><circle cx="215" cy="99" r="3.5" fill="#0ea768"/><circle cx="178" cy="195" r="3.5" fill="#0ea768"/><circle cx="92" cy="190" r="3.5" fill="#0ea768"/><circle cx="58" cy="102" r="3.5" fill="#0ea768"/>
+      </g>
+    </svg>
+    <div class="radar-legend"><span>Sự nghiệp <b>85</b></span><span>Tài lộc <b>72</b></span><span>Tình cảm <b>64</b></span><span>Sức khoẻ <b>68</b></span><span>Trí tuệ <b>90</b></span></div>
+  </div>
+</div>
+
+<span class="tag">Concept D · Tứ trụ Bát Tự</span>
+<div class="card">
+  <h2>Tứ trụ ngày xem</h2>
+  <div class="desc">Dữ liệu tính sẵn từ engine — không tốn AI, hào động/nghũ hành tô màu</div>
+  <div class="pillars">
+    <div class="pillar"><div class="lbl">Giờ</div><div class="cc">Giáp Thân</div><span class="el moc">Mộc</span></div>
+    <div class="pillar"><div class="lbl">Ngày</div><div class="cc">Đinh Mão</div><span class="el hoa">Hoả</span><div class="dong">● trụ ngày</div></div>
+    <div class="pillar"><div class="lbl">Tháng</div><div class="cc">Kỷ Dậu</div><span class="el tho">Thổ</span></div>
+    <div class="pillar"><div class="lbl">Năm</div><div class="cc">Kỷ Tỵ</div><span class="el tho">Thổ</span></div>
+  </div>
+</div>
+
+<span class="tag">Concept E · Quẻ Kinh Dịch</span>
+<div class="card">
+  <h2>Quẻ hôm nay</h2>
+  <div class="desc">Hào vẽ SVG — hào động chấm son, quẻ biến bên phải</div>
+  <div class="hex">
+    <div class="hexcol">
+      <div class="hline broken"><i></i><i></i></div>
+      <div class="hline dong"></div>
+      <div class="hline"></div>
+      <div class="hline"></div>
+      <div class="hline broken"><i></i><i></i></div>
+      <div class="hline"></div>
+      <div class="nm">Sơn Thiên Đại Súc</div><div class="sb">26 · Quẻ chính</div>
+    </div>
+    <div style="font-size:20px;color:#b3a893">→</div>
+    <div class="hexcol">
+      <div class="hline broken"><i></i><i></i></div>
+      <div class="hline broken"><i></i><i></i></div>
+      <div class="hline"></div>
+      <div class="hline"></div>
+      <div class="hline broken"><i></i><i></i></div>
+      <div class="hline"></div>
+      <div class="nm">Sơn Địa Bác</div><div class="sb">Quẻ biến</div>
+    </div>
+  </div>
+</div>
+
+<span class="tag">Concept F · Dòng thời gian vận hạn</span>
+<div class="card">
+  <h2>Các giai đoạn lớn</h2>
+  <div class="desc">Đại hạn 10 năm — AI viết chú giải ngắn, trục vẽ cố định</div>
+  <div class="tl">
+    <div class="ev"><div class="yr">2024–2033</div><div class="tt">Đại hạn Thủy — tích luỹ</div><div class="tx">Giai đoạn xây nền: học nghề sâu, tích quan hệ đúng người. Không nên liều vốn lớn trước 2027.</div></div>
+    <div class="ev now"><div class="yr">2026 · hôm nay</div><div class="tt">Năm Bính Ngọ — quang hoả</div><div class="tx">Năm sáng cho danh tiếng: người khác nhìn thấy bạn rõ hơn bạn nghĩ. Tránh tranh chấp trực diện.</div></div>
+    <div class="ev"><div class="yr">2034–2043</div><div class="tt">Đại hạn Mộc — phát triển</div><div class="tx">Cái nền tích được bắt đầu sinh lời; hợp mở rộng quy mô.</div></div>
+  </div>
+</div>
+
+<span class="tag">Concept G · Đồng hồ độ hợp (Tương Hợp)</span>
+<div class="card">
+  <h2>Cặp đôi Tử Vi × Bát Tự</h2>
+  <div class="desc">Điểm tổng + phân rã 3 trục — dùng cho trang tương hợp</div>
+  <div class="gaugeWrap">
+    <div class="num">78<small>/100</small></div>
+    <svg width="220" height="16" style="margin-top:4px"><rect x="0" y="4" width="220" height="8" rx="4" fill="#eee4cd"/><rect x="0" y="4" width="171" height="8" rx="4" fill="url(#g1)"/><defs><linearGradient id="g1"><stop offset="0" stop-color="#0ea768"/><stop offset="1" stop-color="#244d40"/></linearGradient></defs></svg>
+    <div style="margin-top:16px;text-align:left">
+      <div class="cbar"><div class="row"><div class="who">Giao tiếp</div><div class="bar"><i style="width:88%;background:#0ea768"></i></div><div class="v">88</div></div>
+      <div class="row"><div class="who">Tài chính</div><div class="bar"><i style="width:64%;background:#f2a912"></i></div><div class="v">64</div></div>
+      <div class="row"><div class="who">Đời sống intim</div><div class="bar"><i style="width:71%;background:#ff6fa5"></i></div><div class="v">71</div></div></div>
+    </div>
+  </div>
+</div>
+
+<footer>AstroX · prototype concept 05/10/2026 — dữ liệu minh hoạ từ bài đọc thật + điểm AI</footer>
+</body>
+</html>

@@ -18,6 +18,7 @@ export type Provider = {
   retries: number;
   maxTokens: number;
   temperature: number;
+  reasoningEffort?: '' | 'low' | 'medium' | 'high';
   secretRef: string;
   models?: ProviderModel[];
   pricing?: { input: number; output: number; cacheRead: number; cacheWrite: number };
@@ -426,6 +427,7 @@ export function validateConfig(input: unknown, projected = false): ConfigError[]
       retries: 0,
       maxTokens: 0,
       temperature: 0,
+      reasoningEffort: '',
       secretRef: '',
       models: [],
     },
@@ -444,6 +446,7 @@ export function validateConfig(input: unknown, projected = false): ConfigError[]
         retries: 0,
         maxTokens: 0,
         temperature: 0,
+        reasoningEffort: '',
       });
   list(c.billing.packages, 'billing.packages', {
     id: '',
@@ -556,6 +559,10 @@ export function validateConfig(input: unknown, projected = false): ConfigError[]
     integer(p.maxTokens, 'ai.providers.maxTokens', 1, 32000);
     if (!Number.isFinite(p.temperature) || p.temperature < 0 || p.temperature > 2)
       add('ai.providers.temperature', 'Nhiệt độ từ 0 đến 2.');
+    if (!['', 'low', 'medium', 'high'].includes(p.reasoningEffort ?? ''))
+      add('ai.providers.reasoningEffort', 'Mức suy luận chỉ nhận low, medium hoặc high.');
+    if (p.reasoningEffort && p.protocol === 'anthropic')
+      add('ai.providers.reasoningEffort', 'Giao thức anthropic chưa hỗ trợ mức suy luận.');
   }
   for (const p of c.billing.packages) {
     str(p.name, 'billing.packages.name');
@@ -787,6 +794,11 @@ export function publicConfig(source: AdminConfig, market: 'VN' | 'US' = 'VN') {
 
 export function hydrateConfig(c: AdminConfig): AdminConfig {
   const p = defaultPromptSettings();
+  const withEffort = (v: Provider): Provider => ({
+    ...v,
+    reasoningEffort: v.reasoningEffort ?? '',
+    models: v.models?.map(m => ({ ...m, reasoningEffort: m.reasoningEffort ?? '' })),
+  });
   const hydratedBilling =
     c.billing && Array.isArray(c.billing.services)
       ? {
@@ -800,6 +812,10 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
       : c.billing;
   return {
     ...c,
+    ai:
+      c.ai && Array.isArray(c.ai.providers)
+        ? { ...c.ai, providers: c.ai.providers.map(withEffort) }
+        : c.ai,
     billing: hydratedBilling,
     rewardsUs: c.rewardsUs ?? defaultConfig().rewardsUs,
     contentUs: c.contentUs ?? defaultConfig().contentUs,

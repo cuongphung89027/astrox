@@ -29,6 +29,7 @@ export function ProvidersPanel({ config, snapshot, session, update, patch, rende
                             retries: 1,
                             maxTokens: 4000,
                             temperature: 0.7,
+                            reasoningEffort: "",
                             secretRef: `provider:${id}`,
                           });
                         })
@@ -96,6 +97,11 @@ export function ProvidersPanel({ config, snapshot, session, update, patch, rende
                             ["retries", "Số lần thử lại (0–3)", "number"],
                             ["maxTokens", "Giới hạn output token", "number"],
                             ["temperature", "Temperature", "number"],
+                            [
+                              "reasoningEffort",
+                              "Mức suy luận (thinking)",
+                              ["", "low", "medium", "high"],
+                            ],
                           ]}
                           onChange={(key, value) =>
                             update((d) => {
@@ -186,6 +192,11 @@ export function ProvidersPanel({ config, snapshot, session, update, patch, rende
                                     "number",
                                   ],
                                   ["temperature", "Temperature", "number"],
+                                  [
+                                    "reasoningEffort",
+                                    "Mức suy luận (thinking)",
+                                    ["", "low", "medium", "high"],
+                                  ],
                                 ]}
                                 onChange={(key, value) =>
                                   update((d) => {
@@ -277,6 +288,7 @@ export function ProvidersPanel({ config, snapshot, session, update, patch, rende
                                 retries: parent.retries,
                                 maxTokens: parent.maxTokens,
                                 temperature: parent.temperature,
+                                reasoningEffort: parent.reasoningEffort ?? "",
                               });
                             })
                           }

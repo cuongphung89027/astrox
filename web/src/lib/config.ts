@@ -5,5 +5,5 @@ export const AUTH_API_BASE = (
 
 export const AI_BASE = "/api/ai";
 export const STORAGE_KEY = "astrox_v2_state";
-export const DEFAULT_MODEL = "muse-spark-1.3-contributor";
+export const DEFAULT_MODEL = "mimo-v2.6-flash";
 export const PROMPT_VERSION = "2026-09-content-fix-v5";

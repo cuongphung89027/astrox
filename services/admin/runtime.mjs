@@ -276,6 +276,10 @@ export async function executeProviderChain(
                   stream: false,
                 }
               : { model: p.model, messages, max_tokens: p.maxTokens, temperature: p.temperature, stream: false };
+        if (p.reasoningEffort && p.protocol !== 'anthropic') {
+          if (p.protocol === 'responses') body.reasoning = { effort: p.reasoningEffort };
+          else body.reasoning_effort = p.reasoningEffort;
+        }
         // Preserve the existing Muse connection's low-reasoning setting.
         if (new URL(url).hostname === 'opencode.ai' && p.protocol === 'responses' && p.model.startsWith('muse-spark-'))
           body.reasoning = { effort: 'low' };

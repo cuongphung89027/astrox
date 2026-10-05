@@ -454,3 +454,44 @@ test('health telemetry failure after repair cannot retry or repair the operation
   assert.equal(calls, 2);
   assert.equal(result.attempts.filter(a => a.purpose === 'language_repair').length, 1);
 });
+test('reasoning effort maps to per-protocol body fields', async () => {
+  const chat = setup();
+  chat.ai.providers[0].reasoningEffort = 'high';
+  let chatBody;
+  await executeProviderChain(chat, input, async () => 'key', {
+    fetchImpl: async (u, o) => {
+      chatBody = JSON.parse(o.body);
+      return good();
+    },
+    allowHosts: ['api.openai.com'],
+  });
+  assert.equal(chatBody.reasoning_effort, 'high');
+  assert.equal('reasoning' in chatBody, false);
+
+  const responses = setup();
+  responses.ai.providers = [responses.ai.providers[0]];
+  responses.ai.chain = ['a'];
+  responses.ai.providers[0].protocol = 'responses';
+  responses.ai.providers[0].reasoningEffort = 'medium';
+  let responsesBody;
+  await executeProviderChain(responses, input, async () => 'key', {
+    fetchImpl: async (u, o) => {
+      responsesBody = JSON.parse(o.body);
+      return Response.json({ output: [{ type: 'message', content: [{ type: 'output_text', text: 'OK' }] }] });
+    },
+    allowHosts: ['api.openai.com'],
+  });
+  assert.deepEqual(responsesBody.reasoning, { effort: 'medium' });
+  assert.equal('reasoning_effort' in responsesBody, false);
+
+  let plainBody;
+  await executeProviderChain(setup(), input, async () => 'key', {
+    fetchImpl: async (u, o) => {
+      plainBody = JSON.parse(o.body);
+      return good();
+    },
+    allowHosts: ['api.openai.com'],
+  });
+  assert.equal('reasoning_effort' in plainBody, false);
+  assert.equal('reasoning' in plainBody, false);
+});

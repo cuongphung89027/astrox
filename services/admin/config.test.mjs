@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultConfig, validateConfig, quotePackage, publicConfig } from './config.ts';
+import { defaultConfig, validateConfig, quotePackage, publicConfig, hydrateConfig } from './config.ts';
 test('safe defaults have unlimited referrals, no active billing and no assumed package prices', () => {
   const c = defaultConfig();
   assert.equal(c.rewards.referralMode, 'unlimited');
@@ -82,4 +82,45 @@ test('enabled rewarded ad unit must belong to configured Google network', () => 
   assert.ok(validateConfig(c).some(e => e.path === 'rewards.ads.adUnit'));
   c.rewards.ads.adUnit = '/1234/test';
   assert.equal(validateConfig(c).length, 0);
+});
+test('reasoning effort hydrates onto stored providers and validates its enum', () => {
+  const c = defaultConfig();
+  const provider = {
+    id: 'bai',
+    name: 'B.AI',
+    baseUrl: 'https://api.b.ai/v1',
+    protocol: 'chat',
+    model: 'mimo-v2.6-flash',
+    enabled: true,
+    timeoutMs: 90000,
+    retries: 1,
+    maxTokens: 8000,
+    temperature: 0.7,
+    secretRef: 'provider:bai',
+  };
+  const stored = { ...c, ai: { ...c.ai, enabled: true, providers: [provider], chain: ['bai'] } };
+  const hydrated = hydrateConfig(stored);
+  assert.equal(hydrated.ai.providers[0].reasoningEffort, '');
+  assert.equal(validateConfig(stored).length, 0);
+
+  const withEffort = hydrateConfig({
+    ...stored,
+    ai: {
+      ...stored.ai,
+      providers: [
+        { ...provider, reasoningEffort: 'high', models: [(({ secretRef, models, ...child }) => (void secretRef, void models, child))({ ...provider, id: 'nano', name: 'Nano', reasoningEffort: 'low' })] },
+      ],
+      chain: ['bai', 'bai:nano'],
+    },
+  });
+  assert.equal(validateConfig(withEffort).length, 0);
+
+  const badValue = hydrateConfig({ ...stored, ai: { ...stored.ai, providers: [{ ...provider, reasoningEffort: 'ultra' }] } });
+  assert.ok(validateConfig(badValue).some(e => e.path === 'ai.providers.reasoningEffort'));
+
+  const anthropic = hydrateConfig({
+    ...stored,
+    ai: { ...stored.ai, providers: [{ ...provider, protocol: 'anthropic', reasoningEffort: 'high' }] },
+  });
+  assert.ok(validateConfig(anthropic).some(e => e.path === 'ai.providers.reasoningEffort'));
 });

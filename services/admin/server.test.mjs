@@ -369,6 +369,7 @@ test('multi-model provider draft persists with child fallback and encrypted pare
     retries: 0,
     maxTokens: 100,
     temperature: 0.5,
+    reasoningEffort: '',
     secretRef: 'provider:gateway',
   };
   c.ai.providers = [
@@ -386,6 +387,7 @@ test('multi-model provider draft persists with child fallback and encrypted pare
           retries: 0,
           maxTokens: 100,
           temperature: 0.5,
+          reasoningEffort: '',
         },
       ],
     },

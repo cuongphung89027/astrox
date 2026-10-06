@@ -14,7 +14,7 @@ import {
 import { normalizeUsage, estimateCost } from './metrics.ts';
 import { providerRoutes } from './provider-models.ts';
 import { ENGLISH_SYSTEM_PROMPT as ENGLISH_SYSTEM_PROMPT_RUNTIME } from './english-prompts.ts';
-import { visualInput, saveVisualReading, VISUAL_FORMAT_ADAPTER } from './visual-reading.ts';
+import { visualInput, saveVisualReading, visualResponseFormat, VISUAL_FORMAT_ADAPTER } from './visual-reading.ts';
 /** Server-only adapters. No wallet mutations; callers own auth, rate limits and idempotency. */
 export class RuntimeError extends Error {
   constructor(code, status = 503, attempts = []) {
@@ -298,6 +298,13 @@ export async function executeProviderChain(
                   stream: false,
                 }
               : { model: p.model, messages, max_tokens: p.maxTokens, temperature: p.temperature, stream: false };
+        // These endpoints document structured outputs. Other gateways keep the
+        // prompt contract and the same strict server validation.
+        if (visual && ['api.b.ai', 'api.openai.com'].includes(new URL(url).hostname)) {
+          const format = visualResponseFormat(visual);
+          if (p.protocol === 'chat') body.response_format = format;
+          else if (p.protocol === 'responses') body.text = { format: { type: format.type, ...format.json_schema } };
+        }
         if (p.reasoningEffort && p.protocol !== 'anthropic') {
           if (p.protocol === 'responses') body.reasoning = { effort: p.reasoningEffort };
           else body.reasoning_effort = p.reasoningEffort;
@@ -383,12 +390,23 @@ export async function executeProviderChain(
             const repairStarted = now();
             try {
               const repairMessages = en ? englishRepairMessages(plan) : languageRepairMessages(plan);
+              if (en && visual)
+                repairMessages[0].content =
+                  ENGLISH_READING_POLICY +
+                  '\nRewrite the human-readable text in this JSON report in natural English. Preserve every key, identifier, evidence reference, number and array order. Return the complete report object.\n' +
+                  VISUAL_FORMAT_ADAPTER.en;
               const repairBody =
                 p.protocol === 'anthropic'
                   ? { ...body, system: repairMessages[0].content, messages: [repairMessages[1]], temperature: 0 }
                   : p.protocol === 'responses'
                     ? { ...body, input: repairMessages, temperature: 0 }
                     : { ...body, messages: repairMessages, temperature: 0 };
+              // Vietnamese span repair returns {translations}; English visual
+              // repair returns the full report and retains its shape constraints.
+              if (!en || !visual) {
+                delete repairBody.response_format;
+                delete repairBody.text;
+              }
               const fixed = await fetchImpl(url, {
                 method: 'POST',
                 headers: {

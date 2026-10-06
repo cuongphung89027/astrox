@@ -399,6 +399,82 @@ export const VISUAL_DEPTH_GUIDANCE = {
   vi: 'Viết bài chuyên sâu khoảng 900–1500 từ, ưu tiên chất lượng hơn đếm từ; không kéo dài bằng lặp ý. Phần diễn giải của toàn bài không dưới 600 từ. Bốn chương có đúng 2 nhận định mỗi chương, tổng 8 nhận định. Ưu tiên gần 900–1100 từ trong khoảng trên, không tăng số ý. Mỗi trường có mục đích riêng, tránh kể lại cùng một ý. Mỗi nhận định cần: kết luận cụ thể; detail giải thích cơ chế và bối cảnh (3 câu ngắn, khoảng 40–60 từ), rationale chỉ rõ dữ kiện nào dẫn tới cách hiểu này và giới hạn suy luận (2 câu ngắn, khoảng 20–35 từ), example là tình huống giả định đời thường (1–2 câu, khoảng 20–30 từ, không nói đã xảy ra), action là bước áp dụng thực tế (1 câu cụ thể). Phân biệt dữ kiện đã tính với diễn giải của trường phái; không chẩn đoán, khẳng định định mệnh hay bịa trải nghiệm cá nhân. Giải thích thuật ngữ khó ở lần dùng đầu trong terms bằng một câu phổ thông; mỗi nhận định tối đa 1 thuật ngữ mới. Các lần sau dùng terms=[] và không lặp lại định nghĩa. Nhận định phải gắn đúng chủ đề đang mua, có mặt thuận và mặt cần cân bằng, tránh lời khen chung chung dùng được cho bất kỳ ai. Summary/label ngắn để đọc nhanh; chiều sâu nằm trong các trường chi tiết. Giữ đúng tên sao/cung/số, dùng trực tiếp dữ liệu gốc; nếu không có căn cứ thì bỏ nhận định, không tự thêm dữ kiện.',
   en: 'Write an in-depth reading of roughly 900–1500 words, prioritizing quality over word counting and avoiding repetition. The interpretation body must contain at least 600 words. Use exactly 2 insights per chapter, 8 total. Aim near 900–1100 words within the range above. Give every field a distinct purpose instead of repeating the same idea. Each insight needs a specific conclusion, detail explaining mechanism and context in 3 short sentences (40–60 words), rationale naming the supporting calculated facts and inference limits in 2 short sentences (20–35 words), a clearly hypothetical everyday example in 1–2 sentences (20–30 words), and one concrete actionable sentence. Separate calculated facts from traditional interpretation; never diagnose, assert destiny or invent personal experiences. Define a difficult term once at its first use, in a one-sentence everyday definition. Include at most one new term per insight; use terms=[] thereafter rather than repeat definitions. Stay within the purchased topic, cover strengths and balancing factors, and avoid generic praise. Keep labels/summaries short; put depth in the detail fields. Use the original chart data directly; omit unsupported claims.',
 };
+/** Provider-side shape constraints complement, never replace, semantic validation. */
+export function visualResponseFormat(input: VisualInput) {
+  const text = { type: 'string' };
+  const choice = (values: string[]) => ({ type: 'string', enum: values });
+  const record = (properties: Record<string, unknown>) => ({
+    type: 'object',
+    properties,
+    required: Object.keys(properties),
+    additionalProperties: false,
+  });
+  const list = (items: unknown, minItems = 0, maxItems?: number) => ({
+    type: 'array',
+    items,
+    minItems,
+    ...(maxItems !== undefined ? { maxItems } : {}),
+  });
+  const factRefs = list(choice(input.facts.map(f => f.id)), 1, 12);
+  const insightIds = input.chapters.flatMap(c => [1, 2].map(n => `${c.id}-${n}`));
+  const insight = record({
+    id: choice(insightIds),
+    role: choice(['strength', 'balance', 'context', 'action']),
+    label: text,
+    summary: text,
+    detail: text,
+    rationale: text,
+    example: text,
+    action: text,
+    terms: list(record({ term: text, explanation: text }), 0, 1),
+    sourceFactIds: factRefs,
+  });
+  const visuals = input.chapters.map(plan =>
+    record({
+      kind: choice([plan.kind]),
+      factIds: factRefs,
+      ...(plan.allowedAxes
+        ? {
+            signals: list(
+              record({
+                axisId: choice(plan.allowedAxes.map(a => a.id)),
+                lean: choice(['left', 'balanced', 'right', 'unknown']),
+                insightId: choice([`${plan.id}-1`, `${plan.id}-2`]),
+              }),
+              plan.allowedAxes.length,
+              plan.allowedAxes.length,
+            ),
+          }
+        : {}),
+    }),
+  );
+  return {
+    type: 'json_schema',
+    json_schema: {
+      name: 'astrox_visual_report_v1',
+      strict: true,
+      schema: record({
+        schemaVersion: choice([REPORT_VERSION]),
+        module: choice([input.module]),
+        serviceId: choice([input.serviceId]),
+        locale: choice([input.locale]),
+        title: text,
+        summary: text,
+        chapters: list(
+          record({
+            id: choice(input.chapters.map(c => c.id)),
+            title: text,
+            summary: text,
+            visual: { anyOf: visuals },
+            insights: list(insight, 2, 2),
+          }),
+          input.chapters.length,
+          input.chapters.length,
+        ),
+      }),
+    },
+  };
+}
 export function visualContract(input: VisualInput): string {
   const roles = [
     ['strength', 'context'],

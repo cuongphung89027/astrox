@@ -98,6 +98,13 @@ test('runtime puts format adapter after old system instructions and saves valida
         calls++;
         const b = JSON.parse(o.body);
         assert.equal(b.max_tokens, 8000);
+        assert.equal(b.response_format.type, 'json_schema');
+        assert.equal(b.response_format.json_schema.strict, true);
+        const schema = b.response_format.json_schema.schema;
+        assert.deepEqual(schema.properties.serviceId.enum, [serviceId]);
+        const insight = schema.properties.chapters.items.properties.insights.items;
+        assert.ok(insight.required.includes('sourceFactIds'));
+        assert.equal(insight.additionalProperties, false);
         const systems = b.messages.filter(m => m.role === 'system');
         assert.equal(systems.length, 1);
         assert.ok(systems[0].content.endsWith(VISUAL_FORMAT_ADAPTER.vi));
@@ -170,6 +177,24 @@ for (const protocol of ['chat', 'responses', 'anthropic'])
           calls++;
           const body = JSON.parse(options.body);
           assert.equal(body.max_tokens ?? body.max_output_tokens, 8000);
+          if (calls === 2) {
+            if (protocol === 'chat') assert.equal(body.response_format.type, 'json_schema');
+            if (protocol === 'responses') assert.equal(body.text.format.type, 'json_schema');
+            const policy = protocol === 'anthropic' ? body.system : (body.messages ?? body.input)[0].content;
+            assert.ok(policy.endsWith(VISUAL_FORMAT_ADAPTER.en));
+            assert.ok(!policy.includes('no JSON'));
+            const text = JSON.stringify(fixture(input));
+            return Response.json(
+              protocol === 'chat'
+                ? { choices: [{ message: { content: text }, finish_reason: 'stop' }] }
+                : protocol === 'responses'
+                  ? { status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text }] }] }
+                  : { stop_reason: 'end_turn', content: [{ type: 'text', text }] },
+            );
+          }
+          if (protocol === 'chat') assert.equal(body.response_format.type, 'json_schema');
+          if (protocol === 'responses') assert.equal(body.text.format.type, 'json_schema');
+          if (protocol === 'anthropic') assert.ok(!body.response_format && !body.text);
           if (protocol === 'anthropic') assert.ok(body.system.endsWith(VISUAL_FORMAT_ADAPTER.en));
           else {
             const systems = (body.messages ?? body.input).filter(m => m.role === 'system');
@@ -177,7 +202,9 @@ for (const protocol of ['chat', 'responses', 'anthropic'])
             assert.ok(systems[0].content.endsWith(VISUAL_FORMAT_ADAPTER.en));
             assert.ok(systems[0].content.includes('Use **bold**.'));
           }
-          const text = JSON.stringify(fixture(input));
+          const report = fixture(input);
+          report.chapters[0].insights[0].summary += ' 测试新词';
+          const text = JSON.stringify(report);
           return Response.json(
             protocol === 'chat'
               ? { choices: [{ message: { content: text }, finish_reason: 'stop' }] }
@@ -191,6 +218,6 @@ for (const protocol of ['chat', 'responses', 'anthropic'])
         },
       },
     );
-    assert.equal(calls, 1);
+    assert.equal(calls, 2);
     assert.equal(readVisualReading(result.choices[0].message.content).report.locale, 'en');
   });

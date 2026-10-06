@@ -410,8 +410,8 @@ function prose(v: unknown, min: number, max: number): string {
   return v
     .trim()
     .replace(/^\s*#{1,6}\s+/gm, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/(?<!\w)\*([^*\n]+)\*(?!\w)/g, '$1')
+    .replace(/\*\*([^\s*](?:[^*\n]*[^\s*])?)\*\*/g, '$1')
+    .replace(/(?<!\w)\*([^\s*](?:[^*\n]*[^\s*])?)\*(?!\w)/g, '$1')
     .replace(/^\s*[-*•]\s+/gm, '');
 }
 function refs(v: unknown, allowed: Set<string>, min = 1): string[] {

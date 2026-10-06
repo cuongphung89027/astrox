@@ -31,7 +31,7 @@ The pre-existing edit in `docs/visual-readings/prompts/numerology.visual-report.
 
 ## Verification
 
-- `npm --prefix web test`: 703 unit/integration tests, 22 library tests, 79 original full prompt roundtrips, cache retention/history and long-question checks passed.
+- `npm --prefix web test`: 707 unit/integration tests, 22 library tests, 79 original full prompt roundtrips, cache retention/history and long-question checks passed.
 - Typecheck, formatting check, Knip and production Next build passed. ESLint passed with 20 existing warnings outside this feature.
 - `wrangler deploy --dry-run --outdir /tmp/astrox-visual-worker-bundle` and Pages Functions build compiled successfully; neither command deploys.
 - Browser QA: 320/375/800px, all four chapters/details, no horizontal overflow or clipped controls, keyboard, rapid choices, idle animation cleanup, reduced motion, document-hide event, leaving the view, React unmount and reopening the cache without another AI request. No page errors. Evidence: `/tmp/astrox-visual-integration-qa/result.json` and screenshots.

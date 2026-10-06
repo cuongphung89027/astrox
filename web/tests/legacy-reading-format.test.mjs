@@ -12,11 +12,14 @@ async function renderReading(renderer, locale, text) {
   const { AiText } = await load('components/kit/AiText.tsx', {
     mocks: { '@/i18n/LocaleProvider': localeMock },
   });
-  const Component = renderer === 'AiText'
-    ? AiText
-    : (await load('components/kit/StructuredReading.tsx', {
-        mocks: { '@/components/kit': { AiText }, '@/i18n/LocaleProvider': localeMock },
-      })).StructuredReading;
+  const Component =
+    renderer === 'AiText'
+      ? AiText
+      : (
+          await load('components/kit/StructuredReading.tsx', {
+            mocks: { '@/components/kit': { AiText }, '@/i18n/LocaleProvider': localeMock },
+          })
+        ).StructuredReading;
   return renderToStaticMarkup(createElement(Component, { text }));
 }
 
@@ -86,7 +89,11 @@ for (const renderer of ['AiText', 'StructuredReading']) {
       const literal = '**literal** #123 2 * 3';
       const text = `Dữ liệu: \`${literal}\`.\n\n\`\`\`text\n# literal-heading\n* literal-item\n2 * 3 = 6\n\`\`\``;
       const markup = await renderReading(renderer, locale, text);
-      assert.match(markup, /<code(?:\s[^>]*)?>\*\*literal\*\* #123 2 \* 3<\/code>/, 'inline code is displayed verbatim');
+      assert.match(
+        markup,
+        /<code(?:\s[^>]*)?>\*\*literal\*\* #123 2 \* 3<\/code>/,
+        'inline code is displayed verbatim',
+      );
       assert.match(markup, /<pre(?:\s[^>]*)?>[\s\S]*<code(?:\s[^>]*)?>/, 'fenced code has preformatted structure');
       assert.ok(visibleText(markup).includes('# literal-heading'));
       assert.ok(visibleText(markup).includes('* literal-item'));
@@ -96,18 +103,32 @@ for (const renderer of ['AiText', 'StructuredReading']) {
     });
 
     test(`${name}: regular # identifiers, C#, and multiplication survive formatting cleanup`, async () => {
-      const text = '#123 là mã bài đọc.\nKỹ năng C# hữu ích.\n2 * 3 = 6.\nGiá trị * chưa được xác định.';
+      const text =
+        '#123 là mã bài đọc.\nKỹ năng C# hữu ích.\n2 * 3 = 6.\n2 * 3 + 4 * 5 = 26.\n2 ** 3 + 4 ** 2 = 24.\nGiá trị * chưa được xác định.';
       const markup = await renderReading(renderer, locale, text);
       const rendered = visibleText(markup);
-      for (const literal of ['#123', 'C#', '2 * 3 = 6', 'Giá trị * chưa được xác định.']) {
+      for (const literal of [
+        '#123',
+        'C#',
+        '2 * 3 = 6',
+        '2 * 3 + 4 * 5 = 26.',
+        '2 ** 3 + 4 ** 2 = 24.',
+        'Giá trị * chưa được xác định.',
+      ]) {
         assert.ok(rendered.includes(literal), `preserve ${literal}`);
       }
       assert.equal(elementCount(markup, 'li'), 0);
       assert.doesNotMatch(markup, /<h[1-6](?:\s[^>]*)?>/, 'an identifier is not a Markdown heading');
     });
+    test(`${name}: a literal trailing hash in a heading is preserved`, async () => {
+      const markup = await renderReading(renderer, locale, '## Lập trình C#\n\nNội dung đã lưu.');
+      assert.ok(visibleText(markup).includes('Lập trình C#'));
+      assert.ok(!visibleText(markup).includes('## Lập trình'));
+    });
 
     test(`${name}: AI-supplied HTML and script text cannot become executable elements`, async () => {
-      const text = '# <script>alert(1)</script>\n\n**<img src=x onerror=alert(2)>**\n\n- <svg onload=alert(3)>\n- [unsafe](javascript:alert(4))';
+      const text =
+        '# <script>alert(1)</script>\n\n**<img src=x onerror=alert(2)>**\n\n- <svg onload=alert(3)>\n- [unsafe](javascript:alert(4))';
       const markup = await renderReading(renderer, locale, text);
       assert.doesNotMatch(markup, /<(?:script|img|svg|iframe|object)\b/i);
       assert.doesNotMatch(markup, /\b(?:href|src)=["']javascript:/i);

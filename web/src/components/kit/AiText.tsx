@@ -15,7 +15,7 @@ import { readingSegments, stripBullet } from '@/lib/reading-blocks';
 export function ReadingInline({ text, depth = 0 }: { text: string; depth?: number }) {
   if (depth > 4) return text;
   const token =
-    /(`+)([^`]*?)\1|\*\*([^*\n]+)\*\*|(?<![\w*])\*([^*\n]+)\*(?![\w*])|__([^_\n]+)__|(?<!\w)_([^_\n]+)_(?!\w)/g;
+    /(`+)([^`]*?)\1|\*\*([^\s*](?:[^*\n]*[^\s*])?)\*\*|(?<![\w*])\*([^\s*](?:[^*\n]*[^\s*])?)\*(?![\w*])|__([^\s_](?:[^_\n]*[^\s_])?)__|(?<!\w)_([^\s_](?:[^_\n]*[^\s_])?)_(?!\w)/g;
   const nodes: ReactNode[] = [];
   let at = 0;
   let match;
@@ -42,7 +42,7 @@ export function ReadingInline({ text, depth = 0 }: { text: string; depth?: numbe
 }
 export function readingHeading(line: string): string | null {
   const match =
-    line.match(/^\s*#{1,6}\s+(.+?)\s*#*\s*$/) || line.match(/^\s*(?:\d+[.)]\s*)?\*\*([^*]+)\*\*\s*[:：]?\s*$/);
+    line.match(/^\s*#{1,6}\s+(.+?)(?:\s+#+)?\s*$/) || line.match(/^\s*(?:\d+[.)]\s*)?\*\*([^*]+)\*\*\s*[:：]?\s*$/);
   return match ? match[1] : null;
 }
 function readingBlocks(text: string) {

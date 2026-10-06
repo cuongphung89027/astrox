@@ -1,4 +1,5 @@
 'use client';
+import { ReadingUpgrade, type ReadingUpgradeContext } from '@/components/kit/ReadingUpgrade';
 
 /**
  * PeriodPanel — khối 3: vận trình hôm nay / tuần này / tháng này. Prompt port
@@ -127,6 +128,12 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
 
   const [direction, setDirection] = useState(1);
   const periodIndex = PERIOD_TABS.findIndex(item => item.id === period);
+  const upgrade: ReadingUpgradeContext = {
+    serviceId: `tuvi--period--${period}`,
+    prompt,
+    cache: { group: GROUP_BY_PERIOD[period], key: cacheKey, meta: { module: 'tuvi', period } },
+    onComplete: ai.acceptUpgrade,
+  };
 
   return (
     <section className={styles.screen} aria-label={en ? 'Your fortune period' : 'Vận trình của bạn'}>
@@ -172,7 +179,7 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
             </div>
           ) : ai.text ? (
             <>
-              <SavedReading text={ai.text} periodic />
+              <SavedReading text={ai.text} periodic upgrade={upgrade} />
               {ai.error && (
                 <p role="alert" className={styles.error}>
                   {ai.error}
@@ -185,6 +192,7 @@ export function PeriodPanel({ profile, chart }: PeriodPanelProps) {
             </>
           ) : (
             <div className={styles.invitation}>
+              <ReadingUpgrade context={upgrade} onlyEntitled />
               {ai.error && (
                 <p role="alert" className={styles.error}>
                   {ai.error}

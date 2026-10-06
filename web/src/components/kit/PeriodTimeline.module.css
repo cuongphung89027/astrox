@@ -1,0 +1,122 @@
+.timeline {
+  color: #f1e3bf;
+  background: radial-gradient(ellipse at 65% 15%, #79977929, transparent 55%), #244d40;
+  border: 1px solid #809d79;
+  border-radius: 24px;
+  padding: 22px 20px 20px;
+  overflow: hidden;
+}
+.window {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+}
+.window div {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.window span,
+.sampleCopy > span {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #becdaf;
+}
+.window strong {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 3.5vw, 26px);
+  font-weight: 400;
+  line-height: 1.3;
+}
+.window time {
+  font-size: 11px;
+  white-space: nowrap;
+  color: #c2ceb3;
+}
+.timeline svg {
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+.sample {
+  cursor: pointer;
+  outline: none;
+}
+.node {
+  fill: #244d40;
+  stroke: #cab986;
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    fill 0.28s,
+    stroke-width 0.28s;
+}
+.sample[data-selected='true'] .node {
+  fill: #ecdba9;
+  stroke: #f7e8bd;
+  transform: scale(1.35);
+}
+.sample:hover .node,
+.sample:focus-visible .node {
+  stroke-width: 5;
+  stroke: #f7e8bd;
+}
+.sampleCopy {
+  border-top: 1px solid #bccb9b33;
+  padding-top: 16px;
+}
+.sampleCopy h4 {
+  margin: 6px 0 9px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+.sampleCopy details {
+  font-size: 12px;
+  line-height: 1.85;
+}
+.sampleCopy summary {
+  cursor: pointer;
+  list-style: none;
+  color: #e0e3cc;
+}
+.sampleCopy summary::after {
+  content: ' +';
+  color: #e9d39c;
+}
+.sampleCopy details[open] summary::after {
+  content: ' −';
+}
+.sampleCopy p {
+  margin-top: 12px;
+  color: #e0e3cc;
+}
+.sampleCopy small {
+  display: block;
+  margin-top: 12px;
+  color: #c1cbae;
+  font-size: 11px;
+  line-height: 1.6;
+}
+@media (max-width: 420px) {
+  .timeline {
+    padding: 18px 14px 16px;
+    border-radius: 20px;
+  }
+  .window {
+    align-items: start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .node {
+    transition: none;
+  }
+}
+[data-motion-suspended='true'] .node {
+  transition: none;
+}

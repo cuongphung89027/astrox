@@ -1,4 +1,5 @@
 'use client';
+import type { ReadingUpgradeContext } from '@/components/kit/ReadingUpgrade';
 import { useFeatureResult } from '@/lib/use-feature-result';
 import { refreshPromptRevision } from '@/lib/state';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -71,6 +72,18 @@ export function TopicPanel({
       setState('error');
     }
   }, [markFresh, requireProfile, key, topic, chart, profile]);
+  const upgrade: ReadingUpgradeContext = {
+    serviceId: `numerology--${topic.id}`,
+    prompt: numerologyPromptBody(topic.prompt, chart, profile),
+    cache: { group: 'numerologyTopics', key, meta: { module: 'numerology', topic: topic.id } },
+    onComplete: next => {
+      generation.current++;
+      markFresh(next);
+      setText(next);
+      setState('done');
+      setError('');
+    },
+  };
   return (
     <div aria-live="polite" aria-busy={state === 'loading'}>
       {state === 'idle' ? (
@@ -79,11 +92,12 @@ export function TopicPanel({
           onRun={run}
           serviceId={`numerology--${topic.id}`}
           prompt={numerologyPromptBody(topic.prompt, chart, profile)}
+          upgrade={upgrade}
         />
       ) : state === 'loading' ? (
         <ReadingLoader kind="numerology" />
       ) : state === 'done' ? (
-        <SavedReading text={text} periodic={topic.id === 'personal-year'} />
+        <SavedReading text={text} periodic={topic.id === 'personal-year'} upgrade={upgrade} />
       ) : (
         <div>
           <p role="alert">{error}</p>
@@ -92,6 +106,7 @@ export function TopicPanel({
             onRun={run}
             serviceId={`numerology--${topic.id}`}
             prompt={numerologyPromptBody(topic.prompt, chart, profile)}
+            upgrade={upgrade}
           />
         </div>
       )}

@@ -1,4 +1,5 @@
 'use client';
+import type { ReadingUpgradeContext } from '@/components/kit/ReadingUpgrade';
 import { useParityCopy } from '@/i18n/parity-copy';
 import { useFeatureResult } from '@/lib/use-feature-result';
 import { refreshPromptRevision } from '@/lib/state';
@@ -104,6 +105,18 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
   );
 
   const done = aiState === 'done';
+  const upgrade: ReadingUpgradeContext = {
+    serviceId: `batu--${topic.id}`,
+    prompt: buildBatuPromptBody(topic.prompt, chart, profile),
+    cache: { group: 'batuTopics', key: cacheKey, meta: { module: 'batu', topic: topic.id } },
+    onComplete: next => {
+      request.current++;
+      markFresh(next);
+      setText(next);
+      setAiState('done');
+      setErrorMsg('');
+    },
+  };
 
   const icons: FeatureName[] = ['profile', 'wallet', 'compat', 'battu'];
   if (!reading)
@@ -141,6 +154,7 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
           onRun={run}
           serviceId={`batu--${topic.id}`}
           prompt={buildBatuPromptBody(topic.prompt, chart, profile)}
+          upgrade={upgrade}
         />
       )}
       {aiState === 'loading' && <ReadingLoader kind="battu" />}
@@ -152,12 +166,13 @@ export function BatuTopics({ chart }: BatuTopicsProps) {
             onRun={run}
             serviceId={`batu--${topic.id}`}
             prompt={buildBatuPromptBody(topic.prompt, chart, profile)}
+            upgrade={upgrade}
           />
         </div>
       )}
       {done && (
         <PanelReveal open>
-          <SavedReading text={text} />
+          <SavedReading text={text} upgrade={upgrade} />
           <div className={styles.like}>
             <LikeButton
               label={`${t.locale === 'en' ? 'Like' : 'Thích bài'} ${t.locale === 'en' ? BATU_TOPICS_EN[topic.id]?.title : topic.title}`}

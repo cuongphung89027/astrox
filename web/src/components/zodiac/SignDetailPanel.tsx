@@ -1,4 +1,5 @@
 'use client';
+import type { ReadingUpgradeContext } from '@/components/kit/ReadingUpgrade';
 import { useParityCopy } from '@/i18n/parity-copy';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { ZODIAC_TOPICS_EN } from '@/i18n/astrology-en';
@@ -118,6 +119,24 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
     [scope],
   );
 
+  const upgrade: ReadingUpgradeContext | undefined = pricePrompt
+    ? {
+        serviceId: `zodiac--${topic.id}--${topic.subId}`,
+        prompt: pricePrompt,
+        cache: {
+          group: 'zodiacTopics',
+          key: `natal-v2::${topic.id}::${topic.subId}::${sign.id}`,
+          meta: { module: 'zodiac', topic: topic.id },
+        },
+        onComplete: next => {
+          reqRef.current++;
+          markFresh(next);
+          setText(next);
+          setLoading(false);
+          setError('');
+        },
+      }
+    : undefined;
   return (
     <section className={`${styles.detail} ${className || ''}`}>
       <div className={styles.topicChoices}>
@@ -137,7 +156,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
         {loading ? (
           <ReadingLoader kind="zodiac" />
         ) : text ? (
-          <SavedReading text={text} />
+          <SavedReading text={text} upgrade={upgrade} />
         ) : (
           <>
             {error && <p role="alert">{error}</p>}
@@ -150,6 +169,7 @@ export function SignDetailPanel({ sign, profile, natalChart, className }: SignDe
               }}
               serviceId={`zodiac--${topic.id}--${topic.subId}`}
               prompt={pricePrompt}
+              upgrade={upgrade}
             />
           </>
         )}

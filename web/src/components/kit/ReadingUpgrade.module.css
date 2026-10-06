@@ -1,0 +1,119 @@
+.upgrade {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 24px;
+  margin: 20px 0;
+  border: 1px solid #c4caaa;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #edf0df, #faf6e9);
+  color: #244d40;
+}
+.upgrade::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  width: 180px;
+  height: 180px;
+  right: -55px;
+  top: -70px;
+  border: 1px solid #81957538;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 18px #81957508,
+    0 0 0 40px #81957508;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: #7b8b69;
+}
+.upgrade h3 {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 5vw, 34px);
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 9px 0;
+}
+.upgrade p {
+  max-width: 48ch;
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 0 0 18px;
+}
+.upgrade button {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px;
+  background: #244d40;
+  color: #faf6e9;
+  border: 1px solid #244d40;
+  padding: 13px 17px;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+.upgrade button:hover {
+  background: #315d4b;
+  transform: translateY(-1px);
+}
+.upgrade button:focus-visible {
+  outline: 2px solid #9a8547;
+  outline-offset: 4px;
+}
+.upgrade button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+}
+.upgrade .error {
+  color: #955940;
+  font-size: 12px;
+}
+.history {
+  margin: 16px 0 22px;
+  padding: 12px 0;
+  border-top: 1px solid #c7ccb6;
+  border-bottom: 1px solid #c7ccb6;
+  color: #244d40;
+  font-size: 12px;
+}
+.history summary {
+  cursor: pointer;
+}
+.history > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.history button {
+  padding: 9px 12px;
+  border: 1px solid #c4caaa;
+  border-radius: 10px;
+  background: transparent;
+  color: #244d40;
+  cursor: pointer;
+}
+.history button[aria-pressed='true'] {
+  background: #244d40;
+  color: #faf6e9;
+}
+@media (max-width: 380px) {
+  .upgrade {
+    padding: 20px;
+  }
+  .upgrade button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .upgrade button {
+    transition: none;
+    transform: none;
+  }
+}

@@ -1,4 +1,5 @@
 'use client';
+import type { ReadingUpgradeContext } from '@/components/kit/ReadingUpgrade';
 import { useParityCopy } from '@/i18n/parity-copy';
 import { useFeatureResult } from '@/lib/use-feature-result';
 import { refreshPromptRevision } from '@/lib/state';
@@ -156,6 +157,24 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
   }
 
   const key = periodCacheKey(period);
+  const upgrade: ReadingUpgradeContext | undefined = pricePrompt
+    ? {
+        serviceId: `zodiac--period--${period}`,
+        prompt: pricePrompt,
+        cache: {
+          group: `zodiacPeriod.${period}`,
+          key: `natal-v2::${sign.id}::${period}::${key}`,
+          meta: { module: 'zodiac', period },
+        },
+        onComplete: next => {
+          reqRef.current++;
+          markFresh(next);
+          setText(next);
+          setLoading(false);
+          setError('');
+        },
+      }
+    : undefined;
 
   return (
     <div className={className}>
@@ -187,7 +206,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
           </div>
         ) : text ? (
           <PanelReveal open key={`${sign.id}-${period}-${text.slice(0, 24)}`}>
-            <SavedReading text={text} periodic />
+            <SavedReading text={text} periodic upgrade={upgrade} />
             <div className="mt-4">
               <Btn variant="ghost" size="sm" disabled={price.pending} onClick={() => void load(true)}>
                 {parityCopy('↻ Tạo lại')}
@@ -201,6 +220,7 @@ export function Horoscope({ sign, profile, natalChart, className }: HoroscopePro
             onRun={() => void load(false)}
             serviceId={`zodiac--period--${period}`}
             prompt={pricePrompt}
+            upgrade={upgrade}
           />
         )}
       </div>

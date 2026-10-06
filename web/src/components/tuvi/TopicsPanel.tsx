@@ -182,6 +182,7 @@ export function TopicsPanel({ profile, chart }: TopicsPanelProps) {
               'Một góc nhìn dành riêng cho bạn, dựa trên thông tin và các cung trong lá số đã lưu.',
             )}
             onRun={ai.run}
+            onUpgrade={ai.acceptUpgrade}
             serviceId={`tuvi--${topic.id}--${sub.id}`}
             prompt={prompt}
           />

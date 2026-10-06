@@ -13,6 +13,14 @@ import { readPublished } from '../admin/store.mjs';
 import { encrypt, decrypt, b64 } from '../admin/crypto.mjs';
 import { bodyJson } from './http.mjs';
 import { ensureCreditAccount, commitReserved, releaseReserved, marketOf } from './credits.mjs';
+import {
+  READING_UPGRADE_CAMPAIGN,
+  quoteReadingUpgrade,
+  reserveReadingUpgrade,
+  replayReadingUpgrade,
+  completeReadingUpgrade,
+  refundReadingUpgrade,
+} from './reading-upgrades.mjs';
 const reply = (body, status = 200) => Response.json(body, { status, headers: { 'cache-control': 'no-store' } });
 const LEASE_MS = 180000; // Provider runtime is capped at 120s; leave time for persistence.
 async function resultKey(env) {
@@ -45,6 +53,15 @@ export async function chargeAi(env, request) {
     .bind(session.sub, operationId)
     .first();
   if (existing) return replay(env, existing, b);
+  if (b.upgradeCampaign !== undefined) {
+    try {
+      if (b.upgradeCampaign !== READING_UPGRADE_CAMPAIGN) return reply({ error: 'invalid_upgrade' }, 400);
+      const replayed = await replayReadingUpgrade(env, session.sub, b, market.value);
+      if (replayed) return reply(replayed);
+    } catch (e) {
+      return reply({ error: e.message }, e.status || 503);
+    }
+  }
   try {
     const unlocked = await replayUnlock(env, session.sub, b);
     if (unlocked) return reply(unlocked);
@@ -55,6 +72,13 @@ export async function chargeAi(env, request) {
   if (!published || published.revision !== b.revision) return reply({ error: 'revision_mismatch' }, 409);
   const c = published.config,
     sharedService = c.billing.services.find(s => s.id === b.serviceId);
+  if (b.upgradeCampaign !== undefined) {
+    try {
+      return reply(await reserveReadingUpgrade(env, session.sub, c, published.revision, b, market.value));
+    } catch (e) {
+      return reply({ error: e.message }, e.status || 503);
+    }
+  }
   // US market: the sparse usServices overlay overrides price/status per service (P1-e).
   const usOverlay = market.value === 'US' ? c.billing.usServices?.[b.serviceId] : null;
   const service = usOverlay ? { ...sharedService, points: usOverlay.points, status: usOverlay.status } : sharedService;
@@ -160,6 +184,13 @@ export async function completeAi(env, request) {
   if (!session) return reply({ error: 'unauthorized' }, 401);
   const b = await bodyJson(request, 600000);
   if (!b?.chargeId || !b?.response || !Array.isArray(b.response.choices)) return reply({ error: 'bad_request' }, 400);
+  if (b.upgradeCampaign === READING_UPGRADE_CAMPAIGN) {
+    try {
+      return reply(await completeReadingUpgrade(env, session.sub, b.chargeId, b.response));
+    } catch (e) {
+      return reply({ error: e.message }, e.status || 503);
+    }
+  }
   const unlock = await env.DB.prepare('SELECT id FROM service_unlock_operations WHERE id=? AND user_id=?')
     .bind(b.chargeId, session.sub)
     .first();
@@ -220,6 +251,13 @@ export async function refundAi(env, request) {
   if (!session) return reply({ error: 'unauthorized' }, 401);
   const b = await bodyJson(request);
   if (typeof b?.chargeId !== 'string') return reply({ error: 'bad_request' }, 400);
+  if (b.upgradeCampaign === READING_UPGRADE_CAMPAIGN) {
+    try {
+      return reply(await refundReadingUpgrade(env, session.sub, b.chargeId));
+    } catch (e) {
+      return reply({ error: e.message }, e.status || 503);
+    }
+  }
   const unlock = await env.DB.prepare('SELECT id FROM service_unlock_operations WHERE id=? AND user_id=?')
     .bind(b.chargeId, session.sub)
     .first();
@@ -336,6 +374,30 @@ export async function quoteAi(env, request) {
       market.value,
     );
     return reply(quote);
+  } catch (e) {
+    return reply({ error: e.message }, e.status || 503);
+  }
+}
+export async function quoteAiUpgrade(env, request) {
+  const session = await readAiSession(env, request);
+  if (!session) return reply({ error: 'unauthorized' }, 401);
+  try {
+    const input = await bodyJson(request, 300000),
+      published = await readPublished(env);
+    if (!published) return reply({ error: 'service_unavailable' }, 403);
+    const market = await resolveMarket(env, session.sub, input?.market);
+    if (market.error) return market.error;
+    return reply(
+      await quoteReadingUpgrade(
+        env,
+        session.sub,
+        published.config,
+        published.revision,
+        { ...input, upgradeCampaign: READING_UPGRADE_CAMPAIGN },
+        Date.now(),
+        market.value,
+      ),
+    );
   } catch (e) {
     return reply({ error: e.message }, e.status || 503);
   }

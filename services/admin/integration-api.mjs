@@ -1,4 +1,5 @@
 import { supportsUnlock } from '../backend/service-unlocks.mjs';
+import { READING_UPGRADE_CAMPAIGN } from '../backend/reading-upgrades.mjs';
 import { normalizeMessages, withManagedText } from './vision.mjs';
 import { limitAi } from './ai-rate-limit.mjs';
 import { renderServicePrompt } from './prompt-engine.ts';
@@ -65,12 +66,15 @@ function normalizedInput(input) {
     throw new RuntimeError('INVALID_LOCALE', 400);
   if (input.market !== undefined && input.market !== 'VN' && input.market !== 'US')
     throw new RuntimeError('INVALID_MARKET', 400);
+  if (input.upgradeCampaign !== undefined && input.upgradeCampaign !== READING_UPGRADE_CAMPAIGN)
+    throw new RuntimeError('INVALID_MESSAGES', 400);
   return {
     messages,
     serviceId: input.serviceId,
     operationId: input.operationId,
     expectedPoints: input.expectedPoints,
     selection: input.selection,
+    upgradeCampaign: input.upgradeCampaign,
     promptDescriptor: input.promptDescriptor,
     compact: input.compact === true,
     locale: input.locale === 'en' ? 'en' : 'vi',
@@ -220,6 +224,7 @@ export async function handleConfiguredAi(request, env) {
               messages: input.messages,
               promptDescriptor: input.promptDescriptor,
               compact: input.compact,
+              ...(input.upgradeCampaign ? { upgradeCampaign: input.upgradeCampaign } : {}),
               ...(input.selection ? { offerId: input.selection.offerId, scopeKey: input.selection.scopeKey } : {}),
             }),
           ),
@@ -261,6 +266,7 @@ export async function handleConfiguredAi(request, env) {
     }
     if (service.status === 'paid') {
       if (
+        !input.upgradeCampaign &&
         !supportsUnlock(c, input.serviceId) &&
         input.expectedPoints !== undefined &&
         input.expectedPoints !== service.points
@@ -295,6 +301,7 @@ export async function handleConfiguredAi(request, env) {
         requestHash,
         promptDescriptor: input.promptDescriptor,
         selection: input.selection,
+        ...(input.upgradeCampaign ? { upgradeCampaign: input.upgradeCampaign } : {}),
         ...(input.market ? { market: input.market } : {}),
       });
       const charge = await chargeResponse.json().catch(() => null);
@@ -314,6 +321,9 @@ export async function handleConfiguredAi(request, env) {
           operation_refunded: 'Lượt trước đã được hoàn Point. Bạn có thể thử một lượt mới.',
           operation_conflict: 'Thông tin của lượt luận giải đã thay đổi. Vui lòng tải lại trang.',
           result_expired: 'Lượt này đã xử lý trước đó. Hãy kiểm tra bài đã lưu hoặc liên hệ hỗ trợ.',
+          upgrade_unavailable: 'Không còn lượt nâng cấp miễn phí cho bài này. Bài cũ vẫn được giữ.',
+          upgrade_in_progress: 'Bài đang được nâng cấp. Vui lòng chờ rồi mở lại.',
+          invalid_upgrade: 'Chưa xác định được cấu trúc mới. Vui lòng mở lại bài.',
           revision_mismatch: 'Cấu hình vừa thay đổi. Vui lòng thử lại.',
         };
         return json(
@@ -349,7 +359,11 @@ export async function handleConfiguredAi(request, env) {
             configRevision: published.revision,
             chargedPoints: charge.points,
           };
-        const saved = await backend('complete', { chargeId, response });
+        const saved = await backend('complete', {
+          chargeId,
+          response,
+          ...(input.upgradeCampaign ? { upgradeCampaign: input.upgradeCampaign } : {}),
+        });
         if (!saved.ok || !(await saved.json().catch(() => null))?.ok)
           throw new RuntimeError('RESULT_PERSIST_FAILED', 503);
         outcome = 'success';
@@ -358,7 +372,10 @@ export async function handleConfiguredAi(request, env) {
         let refunded = false;
         for (let retry = 0; retry < 2 && !refunded; retry++)
           try {
-            const r = await backend('refund', { chargeId });
+            const r = await backend('refund', {
+              chargeId,
+              ...(input.upgradeCampaign ? { upgradeCampaign: input.upgradeCampaign } : {}),
+            });
             refunded = r.ok && (await r.json().catch(() => null))?.ok === true;
           } catch {}
         attempts = [
@@ -370,7 +387,11 @@ export async function handleConfiguredAi(request, env) {
         return json(
           {
             error: refunded
-              ? `${diagnostic(e.code)} Point đã được hoàn lại.`
+              ? input.upgradeCampaign
+                ? input.locale === 'en'
+                  ? 'The upgrade could not be completed. Your free upgrade remains available and your old reading is kept.'
+                  : 'Chưa hoàn tất nâng cấp. Bạn vẫn còn lượt miễn phí và bài cũ được giữ.'
+                : `${diagnostic(e.code)} Point đã được hoàn lại.`
               : 'Chưa xác nhận được kết quả của lượt này. Hệ thống đang đối soát Point; vui lòng thử lại sau.',
             code: refunded ? 'operation_refunded' : 'refund_pending',
           },
@@ -414,6 +435,31 @@ export async function handleConfiguredAi(request, env) {
       .catch(() => {});
   }
 }
+export async function handleAiUpgrade(request, env) {
+  if (!env.ASTROX_BACKEND) return json({ error: 'backend_unavailable' }, 503);
+  try {
+    const input = await parse(request),
+      headers = new Headers({ 'content-type': 'application/json' });
+    for (const name of ['cookie', 'authorization']) {
+      const value = request.headers.get(name);
+      if (value) headers.set(name, value);
+    }
+    return env.ASTROX_BACKEND.fetch(
+      new Request('https://astrox-internal/internal/ai/upgrade', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          serviceId: input.serviceId,
+          promptDescriptor: input.promptDescriptor,
+          ...(input.market ? { market: input.market } : {}),
+        }),
+        signal: AbortSignal.timeout(15000),
+      }),
+    );
+  } catch (e) {
+    return json({ error: 'upgrade_unavailable' }, e.status || 503);
+  }
+}
 
 /** The only public projection of the published config; served same-origin by Pages and the local dev server. */
 export async function siteConfig(env, market = 'VN') {
@@ -432,6 +478,7 @@ export async function handlePublic(request, env) {
   if (path === '/api/site-config' && request.method === 'GET')
     return siteConfig(env, new URL(request.url).searchParams.get('market') === 'US' ? 'US' : 'VN');
   if (path === '/api/ai/quote' && request.method === 'POST') return handleAiQuote(request, env);
+  if (path === '/api/ai/upgrade' && request.method === 'POST') return handleAiUpgrade(request, env);
   if (path === '/api/ai' && request.method === 'POST')
     return (await handleConfiguredAi(request, env)) || json({ error: 'Chưa áp dụng cấu hình AI.' }, 503);
   return json({ error: 'Không tìm thấy API.' }, 404);

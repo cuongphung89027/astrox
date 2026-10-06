@@ -10,6 +10,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AiText } from '@/components/kit';
 import { FeatureIcon } from '@/components/kit/FeatureIcon';
 import { ReadingLoader } from '@/components/kit/ReadingLoader';
+import { SavedReading } from '@/components/kit/SavedReading';
+import { ReadingUpgrade, type ReadingUpgradeContext } from '@/components/kit/ReadingUpgrade';
 import { useProfileModal } from '@/components/profile/ProfileModal';
 import { cacheFingerprint, readAiCache, writeAiCache } from '@/lib/state';
 import { runAiPrompt } from '@/lib/api';
@@ -167,6 +169,21 @@ function WesternCompatClient() {
     ca && cb && analysis && profile ? compatPrompt(ca, cb, analysis, profile) : undefined,
   );
   const key = checked ? `${[checked.a, checked.b].sort().join('+')}::${cacheFingerprint()}` : '';
+  const upgrade: ReadingUpgradeContext | undefined =
+    ca && cb && analysis && profile
+      ? {
+          serviceId: 'compat--pair',
+          prompt: compatPrompt(ca, cb, analysis, profile),
+          cache: { group: 'compatibility', key, meta: { module: 'compatibility', topic: 'pair' } },
+          onComplete: next => {
+            req.current++;
+            markFresh(next);
+            setRaw(next);
+            setLoading(false);
+            setError('');
+          },
+        }
+      : undefined;
   const scope = key + JSON.stringify(profile),
     [previousScope, setPreviousScope] = useState<string | null>(null);
   if (scope !== previousScope) {
@@ -367,12 +384,13 @@ function WesternCompatClient() {
                   <ReadingLoader kind="compat" />
                 ) : raw ? (
                   <>
-                    <Reading raw={raw} />
+                    <SavedReading text={raw} upgrade={upgrade} renderLegacy={value => <Reading raw={value} />} />
                     <span className={styles.saved}>{copy('✓ Đã lưu luận giải', '✓ Reading saved')}</span>
                   </>
                 ) : (
                   <>
                     <h3 className={styles.readingTitle}>{copy('Hiểu nhau sâu hơn', 'Understand each other better')}</h3>
+                    {ca && cb && analysis && profile && <ReadingUpgrade context={upgrade!} onlyEntitled />}
                     {error && (
                       <p role="alert" className={styles.error}>
                         {error}

@@ -593,7 +593,7 @@ const periodSkyCache: Record<string, string> = {};
 
 /** Dữ liệu quá cảnh nạp vào prompt — port periodSkyText. */
 export function periodSkyText(period: ZodiacPeriod, natalChart: NatalChart | null): string {
-  const cacheKey = `${period}_${new Date().toISOString().slice(0, 10)}`;
+  const cacheKey = `${period}_${new Date().toISOString().slice(0, 10)}_${JSON.stringify(natalChart?.planets ?? [])}`;
   if (periodSkyCache[cacheKey]) return periodSkyCache[cacheKey];
   const now = new Date();
   const days = period === 'today' ? [0] : period === 'week' ? [0, 2, 4, 6] : [0, 7, 14, 21, 28];

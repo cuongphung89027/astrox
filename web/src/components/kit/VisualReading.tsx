@@ -1,4 +1,5 @@
 'use client';
+import { PeriodTimeline } from './PeriodTimeline';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { Chapter, Insight, SavedVisualReading, VisualInput } from '../../../../services/admin/visual-reading';
 import styles from './VisualReading.module.css';
@@ -14,6 +15,7 @@ const kinds: Record<string, [string, string]> = {
   'balance-path': ['Từ thử thách đến cân bằng', 'From challenge to balance'],
   'factor-map': ['Những yếu tố tác động', 'Connecting the influences'],
   'action-path': ['Một bước nhỏ để bắt đầu', 'A small step forward'],
+  'period-timeline': ['Trục thời gian của kỳ', 'The period timeline'],
 };
 
 /** Finite transitions; cancel on a new selection, hidden view, reduced motion or unmount. */
@@ -118,6 +120,7 @@ function Diagram({
   const uid = useId().replace(/:/g, ''),
     en = input.locale === 'en';
   const plan = input.chapters.find(p => p.id === chapter.id)!;
+  if (chapter.visual.kind === 'period-timeline' && input.period) return <PeriodTimeline input={input} />;
   if (plan.allowedAxes) {
     return (
       <div className={styles.spectrum}>
@@ -399,11 +402,21 @@ export function VisualReading({ saved }: { saved: SavedVisualReading }) {
   return (
     <div ref={root} className={styles.reader} data-visual-reading={report.module}>
       <header className={styles.intro}>
-        <span className={styles.eyebrow}>{copy('GÓC NHÌN DÀNH CHO BẠN', 'A PERSPECTIVE FOR YOU')}</span>
+        <span className={styles.eyebrow}>
+          {snapshot.period
+            ? copy('VẬN TRÌNH DÀNH CHO BẠN', 'YOUR PERIOD FORECAST')
+            : copy('GÓC NHÌN DÀNH CHO BẠN', 'A PERSPECTIVE FOR YOU')}
+        </span>
         <h2>{report.title}</h2>
         <p>{report.summary}</p>
         <span className={styles.primaryFact}>
-          {snapshot.facts[0].label}: {String(snapshot.facts[0].value).slice(0, 160)}
+          {snapshot.period ? (
+            snapshot.period.label
+          ) : (
+            <>
+              {snapshot.facts[0].label}: {String(snapshot.facts[0].value).slice(0, 160)}
+            </>
+          )}
         </span>
       </header>
       <div role="tablist" aria-label={copy('Các chương luận giải', 'Reading chapters')} className={styles.contents}>
@@ -537,7 +550,9 @@ export function VisualReading({ saved }: { saved: SavedVisualReading }) {
             <span className={styles.eyebrow}>{copy('NHÌN LẠI', 'AT A GLANCE')}</span>
             <h3>
               {role === 'strength'
-                ? copy('Điểm tựa của bạn', 'Your strengths')
+                ? snapshot.period
+                  ? copy('Cơ hội trong kỳ', 'Opportunities this period')
+                  : copy('Điểm tựa của bạn', 'Your strengths')
                 : copy('Để cân bằng hơn', 'Finding your balance')}
             </h3>
             {report.chapters
@@ -567,10 +582,15 @@ export function VisualReading({ saved }: { saved: SavedVisualReading }) {
         </button>
       </nav>
       <p className={styles.provenance}>
-        {copy(
-          'Dữ kiện từ lá số đã tính; sơ đồ giúp khám phá các mối liên hệ trong luận giải, không phải phép đo tính cách.',
-          'Calculated chart evidence; diagrams help explore interpretive connections, rather than measure personality.',
-        )}
+        {snapshot.period
+          ? copy(
+              'Dữ kiện lưu chuyển và quá cảnh theo ngày đã tính, được giữ cùng kỳ vận trình này.',
+              'Dated moving-chart and transit evidence is saved with this forecast window.',
+            )
+          : copy(
+              'Dữ kiện từ lá số đã tính; sơ đồ giúp khám phá các mối liên hệ trong luận giải, không phải phép đo tính cách.',
+              'Calculated chart evidence; diagrams help explore interpretive connections, rather than measure personality.',
+            )}
       </p>
     </div>
   );

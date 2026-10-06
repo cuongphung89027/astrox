@@ -24,12 +24,13 @@ test('real managed prompts for every persistent feature derive a server scope', 
     n = await load('lib/numerology.ts');
   const readings = [];
   const tc = t.buildZiweiChart(p);
+  const calculationDate = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10).split('-').reverse().join('/');
   for (const topic of t.TUVI_TOPICS)
     for (const sub of topic.subs) readings.push([`tuvi--${topic.id}--${sub.id}`, t.tuviPromptBody(p, tc, sub.prompt)]);
   for (const period of ['today', 'week', 'month'])
     readings.push([
       `tuvi--period--${period}`,
-      t.tuviPromptBody(p, tc, t.tuviPeriodPromptText(p, '22/09/2026', period, period)),
+      t.tuviPromptBody(p, tc, t.tuviPeriodPromptText(p, calculationDate, period, period)),
     ]);
   const natal = z.buildNatalChart(p);
   for (const topic of z.ZODIAC_DEEP_TOPICS)
@@ -57,13 +58,18 @@ test('real managed prompts for every persistent feature derive a server scope', 
         const wrapped = readingPromptDescriptor(prompt, id, locale);
         assert.deepEqual(await scopeForReading(id, wrapped), scoped, `${id} ${locale} purchase scope`);
         const input = visualInput(wrapped, id, locale);
-        if (SERVICE_CATALOG.find(s => s.id === id).policy === 'profile') {
+        const policy = SERVICE_CATALOG.find(s => s.id === id).policy;
+        if (['profile', 'period'].includes(policy)) {
           assert.ok(input, `${id} is integrated`);
           assert.ok(input.facts.length > 0);
           assert.equal(
             readVisualReading(saveVisualReading(JSON.stringify(fixture(input)), input)).report.serviceId,
             id,
           );
+          if (policy === 'period') {
+            assert.equal(input.chapters[0].kind, 'period-timeline');
+            assert.ok(input.period.samples.every(s => input.facts.some(f => f.id === s.factId)));
+          }
         } else assert.equal(input, null);
       }
     } catch (e) {

@@ -22,6 +22,8 @@ import {
 import type { AstroxUser } from './types';
 import { routeModule } from '../../../services/admin/modules.ts';
 import { resolveRoute } from '../../../services/admin/markets.ts';
+import { READING_UPGRADE_CAMPAIGN } from '../../../services/admin/reading-upgrade-policy';
+import { isVisualPrompt, readVisualReading } from '../../../services/admin/visual-reading';
 
 /* ------------------------------------------------------------------ */
 /* AstroX                                                                  */
@@ -101,7 +103,36 @@ async function aiRequest(body: Record<string, unknown>, signal?: AbortSignal): P
   const ticket = auth.ok ? await auth.json() : null;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (typeof ticket?.token === 'string') headers.Authorization = `Bearer ${ticket.token}`;
-  if (price.status === 'paid') {
+  if (body.upgradeCampaign === READING_UPGRADE_CAMPAIGN && price.status === 'paid') {
+    const quote = await requestReadingUpgrade(
+      String(body.serviceId),
+      body.promptDescriptor,
+      headers,
+      (await currentMarket(ticket?.userId ?? null)) ?? price.market,
+      signal,
+    );
+    assertOwner();
+    const recovered = quote.result?.choices?.[0]?.message?.content;
+    if (recovered) {
+      const saved = readVisualReading(recovered);
+      if (!saved || saved.report.serviceId !== body.serviceId || saved.report.locale !== ownerLocale)
+        throw new Error(
+          uiText('Chưa nhận được bản nâng cấp hợp lệ.', 'A valid upgraded reading could not be recovered.'),
+        );
+      if (typeof quote.result?.configRevision === 'number') recordPromptResult(recovered, quote.result.configRevision);
+      if (typeof quote.result?.languagePolicyVersion === 'string')
+        recordLanguageResult(recovered, quote.result.languagePolicyVersion);
+      return recovered;
+    }
+    if (!quote.available || quote.points !== 0)
+      throw new Error(
+        uiText(
+          'Không còn lượt nâng cấp miễn phí cho bài này. Bài cũ vẫn được giữ.',
+          'No free upgrade remains for this reading. Your original is kept.',
+        ),
+      );
+    body = { ...body, expectedPoints: 0 };
+  } else if (price.status === 'paid') {
     if (price.unlocks && price.policy !== 'session') {
       const qr = await fetch('/api/ai/quote', {
         method: 'POST',
@@ -281,6 +312,7 @@ export async function callAiText(opts: {
   signal?: AbortSignal;
   serviceId?: string;
   locale?: 'vi' | 'en';
+  formatUpgrade?: boolean;
 }): Promise<string> {
   const temperature = opts.temperature === undefined ? 0.7 : opts.temperature;
   const compact = opts.compact === true;
@@ -295,6 +327,7 @@ export async function callAiText(opts: {
     promptDescriptor: readingPromptDescriptor(opts.parts?.[0]?.text || '', serviceId || '', locale),
     compact,
     serviceId,
+    ...(opts.formatUpgrade ? { upgradeCampaign: READING_UPGRADE_CAMPAIGN } : {}),
     messages: [
       {
         role: 'system',
@@ -334,6 +367,7 @@ export async function runAiPrompt(
     temperature?: number;
     signal?: AbortSignal;
     serviceId?: string;
+    formatUpgrade?: boolean;
   } = {},
 ): Promise<string> {
   const state = getState();
@@ -354,6 +388,7 @@ export async function runAiPrompt(
     temperature: opts.temperature,
     signal: opts.signal,
     serviceId: opts.serviceId,
+    formatUpgrade: opts.formatUpgrade,
   });
   // Captive: hồ sơ bị xoá giữa chừng (đăng xuất) thì huỷ kết quả.
   if (!getState().profile)
@@ -364,6 +399,71 @@ export async function runAiPrompt(
       ),
     );
   return result;
+}
+export type ReadingUpgradeQuote = {
+  available: boolean;
+  points: number;
+  campaignId: string;
+  pending?: boolean;
+  requiresLogin?: boolean;
+  result?: { choices?: { message?: { content?: string } }[]; configRevision?: number; languagePolicyVersion?: string };
+};
+async function requestReadingUpgrade(
+  serviceId: string,
+  promptDescriptor: unknown,
+  headers: Record<string, string>,
+  market?: 'VN' | 'US',
+  signal?: AbortSignal,
+): Promise<ReadingUpgradeQuote> {
+  const response = await fetch('/api/ai/upgrade', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ serviceId, promptDescriptor, ...(market ? { market } : {}) }),
+    signal,
+  });
+  if (response.status === 401)
+    return { available: false, points: 0, campaignId: READING_UPGRADE_CAMPAIGN, requiresLogin: true };
+  if (!response.ok)
+    throw new Error(
+      uiText(
+        'Chưa kiểm tra được lượt nâng cấp miễn phí. Vui lòng thử lại.',
+        'Your free upgrade could not be checked. Please try again.',
+      ),
+    );
+  const quote = await response.json();
+  return {
+    ...quote,
+    available: quote.available === true && quote.points === 0 && quote.campaignId === READING_UPGRADE_CAMPAIGN,
+  };
+}
+export async function fetchReadingUpgrade(
+  serviceId: string,
+  prompt: string,
+  signal?: AbortSignal,
+  onlyEntitled = false,
+): Promise<ReadingUpgradeQuote> {
+  const epoch = getAccountEpoch(),
+    locale = currentUiLocale();
+  const descriptor = readingPromptDescriptor(prompt, serviceId, locale);
+  if (!isVisualPrompt(descriptor)) return { available: false, points: 0, campaignId: READING_UPGRADE_CAMPAIGN };
+  const price = (await servicePrices(true))[serviceId];
+  if (!price || !['free', 'paid'].includes(price.status))
+    return { available: false, points: 0, campaignId: READING_UPGRADE_CAMPAIGN };
+  if (price.status === 'free') return { available: !onlyEntitled, points: 0, campaignId: READING_UPGRADE_CAMPAIGN };
+  const auth = await fetch(`${AUTH_API_BASE}/api/ai/session`, { method: 'POST', credentials: 'include', signal });
+  if (auth.status === 401)
+    return { available: false, points: 0, campaignId: READING_UPGRADE_CAMPAIGN, requiresLogin: !onlyEntitled };
+  if (!auth.ok) throw new Error(uiText('Chưa xác minh được phiên đăng nhập.', 'Your session could not be verified.'));
+  const ticket = await auth.json();
+  const quote = await requestReadingUpgrade(
+    serviceId,
+    descriptor,
+    { 'Content-Type': 'application/json', Authorization: `Bearer ${ticket.token}` },
+    (await currentMarket(ticket.userId)) ?? price.market,
+    signal,
+  );
+  if (epoch !== getAccountEpoch() || locale !== currentUiLocale()) throw new Error('account_changed');
+  return quote;
 }
 
 export async function fetchModuleAccessAstrox(): Promise<Record<string, boolean>> {

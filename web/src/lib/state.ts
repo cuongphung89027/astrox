@@ -288,11 +288,22 @@ export function readAiCache(group: CacheGroup, key: string, force = false): stri
   return repeatable ? (cacheEntryUsable(entry, force) ? cacheText(entry) : '') : cacheText(entry);
 }
 
+export function readAiReadingHistory(group: CacheGroup, key: string) {
+  const prefix = localeCacheKey(currentUiLocale(), key) + '::history::';
+  const bucket = resolveBucket(getActiveAiCache(), group);
+  return bucket
+    ? Object.entries(bucket)
+        .filter(([id, entry]) => id.startsWith(prefix) && typeof entry?.text === 'string')
+        .map(([id, entry]) => ({ id, ...entry }))
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, 20)
+    : [];
+}
 export function writeAiCache(
   group: CacheGroup,
   key: string,
   text: string,
-  meta: { module?: string; topic?: string; period?: string } = {},
+  meta: { module?: string; topic?: string; period?: string; formatUpgrade?: boolean } = {},
 ) {
   key = localeCacheKey(currentUiLocale(), key);
   const now = Date.now();
@@ -302,10 +313,16 @@ export function writeAiCache(
   const previous = bucket[key];
   if (
     previous &&
-    (previous.configRevision !== activePromptRevision ||
+    ((meta.formatUpgrade && previous.text !== text) ||
+      previous.configRevision !== activePromptRevision ||
       previous.languagePolicyVersion !== resultLanguagePolicies.get(text))
-  )
-    bucket[`${key}::history::${previous.configRevision ?? 'legacy'}::${previous.updatedAt}`] = previous;
+  ) {
+    const base = `${key}::history::${previous.configRevision ?? 'legacy'}::${previous.updatedAt}`;
+    let historyKey = base,
+      n = 1;
+    while (bucket[historyKey]) historyKey = `${base}::${++n}`;
+    bucket[historyKey] = previous;
+  }
   bucket[key] = {
     languagePolicyVersion: resultLanguagePolicies.get(text),
     configRevision: resultRevisions.get(text) ?? activePromptRevision ?? undefined,

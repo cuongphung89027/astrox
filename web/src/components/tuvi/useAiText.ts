@@ -1,19 +1,19 @@
-"use client";
-import { useFeatureResult } from "@/lib/use-feature-result";
-import { refreshPromptRevision } from "@/lib/state";
+'use client';
+import { useFeatureResult } from '@/lib/use-feature-result';
+import { refreshPromptRevision } from '@/lib/state';
 
 /**
  * useAiText — máy trạng thái chạy runAiPrompt + cache AI cho từng mục của
  * module Tử Vi (chủ đề: group "tuviTopics"; vận trình: group "tuviPeriod.*").
  * Force=true bỏ qua cache; huỷ request cũ khi đổi mục; lỗi → toast + hiện lại CTA.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { runAiPrompt } from "@/lib/api";
-import { readAiCache, writeAiCache } from "@/lib/state";
-import { useRequireProfile } from "@/components/profile/ProfileModal";
-import { useToast } from "@/components/motion";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { runAiPrompt } from '@/lib/api';
+import { readAiCache, writeAiCache } from '@/lib/state';
+import { useRequireProfile } from '@/components/profile/ProfileModal';
+import { useToast } from '@/components/motion';
 
-type TuviCacheGroup = "tuviTopics" | "tuviPeriod.today" | "tuviPeriod.week" | "tuviPeriod.month";
+type TuviCacheGroup = 'tuviTopics' | 'tuviPeriod.today' | 'tuviPeriod.week' | 'tuviPeriod.month';
 
 interface UseAiTextOptions {
   group: TuviCacheGroup;
@@ -30,21 +30,31 @@ export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayM
   const requireProfile = useRequireProfile();
   const { show } = useToast();
   const [text, setText] = useState<string>(() => readAiCache(group, cacheKey));
-  const markFresh = useFeatureResult(text, period ? `tuvi--period--${period}` : `tuvi--${cacheKey.replace("::", "--")}`);
+  const markFresh = useFeatureResult(
+    text,
+    period ? `tuvi--period--${period}` : `tuvi--${cacheKey.replace('::', '--')}`,
+  );
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const abortRef = useRef<AbortController | null>(null);
 
-  const scope=group+"::"+cacheKey,[previousScope,setPreviousScope]=useState(scope);
-  if(scope!==previousScope){
+  const scope = group + '::' + cacheKey,
+    [previousScope, setPreviousScope] = useState(scope);
+  if (scope !== previousScope) {
     setPreviousScope(scope);
     setCompleting(false);
     setLoading(false);
     setText(readAiCache(group, cacheKey));
-    setError("");
+    setError('');
   }
-  useEffect(()=>()=>{abortRef.current?.abort();abortRef.current=null;},[scope]);
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    },
+    [scope],
+  );
 
   // Huỷ request khi unmount.
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -57,47 +67,67 @@ export function useAiText({ group, cacheKey, prompt, topic, period, revealDelayM
       const cached = readAiCache(group, cacheKey, force);
       if (cached) {
         setText(cached);
-        setError("");
+        setError('');
         return;
       }
       const ctrl = new AbortController();
       abortRef.current = ctrl;
-      setError("");
+      setError('');
       setCompleting(false);
       setLoading(true);
       try {
-        const result = await runAiPrompt(prompt, { withChartImage: false, signal: ctrl.signal, serviceId: period ? `tuvi--period--${period}` : `tuvi--${cacheKey.replace("::", "--")}` });
+        const result = await runAiPrompt(prompt, {
+          withChartImage: false,
+          signal: ctrl.signal,
+          serviceId: period ? `tuvi--period--${period}` : `tuvi--${cacheKey.replace('::', '--')}`,
+        });
         if (abortRef.current !== ctrl) return; // đã có yêu cầu mới thay thế
-        writeAiCache(group, cacheKey, result, { module: "tuvi", topic: topic ?? "", period: period ?? "" });
+        writeAiCache(group, cacheKey, result, { module: 'tuvi', topic: topic ?? '', period: period ?? '' });
         if (revealDelayMs > 0) {
           setCompleting(true);
-          await new Promise<void>((resolve) => {
+          await new Promise<void>(resolve => {
             const done = () => {
               clearTimeout(timer);
-              ctrl.signal.removeEventListener("abort", done);
+              ctrl.signal.removeEventListener('abort', done);
               resolve();
             };
             const timer = setTimeout(done, revealDelayMs);
-            ctrl.signal.addEventListener("abort", done, { once: true });
+            ctrl.signal.addEventListener('abort', done, { once: true });
           });
           if (abortRef.current !== ctrl || ctrl.signal.aborted) return;
         }
-        markFresh(result); setText(result);
+        markFresh(result);
+        setText(result);
       } catch (e) {
         if (abortRef.current !== ctrl) return;
         const msg = ctrl.signal.aborted
-          ? "AstroX dừng yêu cầu — quá thời gian chờ, hãy thử lại."
+          ? 'AstroX dừng yêu cầu — quá thời gian chờ, hãy thử lại.'
           : e instanceof Error
             ? e.message
-            : "Không lấy được phân tích.";
+            : 'Không lấy được phân tích.';
         setError(msg);
-        show(msg, "error");
+        show(msg, 'error');
       } finally {
-        if (abortRef.current === ctrl) { setLoading(false); setCompleting(false); }
+        if (abortRef.current === ctrl) {
+          setLoading(false);
+          setCompleting(false);
+        }
       }
     },
     [markFresh, group, cacheKey, prompt, topic, period, requireProfile, show, revealDelayMs],
   );
 
-  return { text, loading, completing, error, run };
+  const acceptUpgrade = useCallback(
+    (next: string) => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+      markFresh(next);
+      setText(next);
+      setError('');
+      setLoading(false);
+      setCompleting(false);
+    },
+    [markFresh],
+  );
+  return { text, loading, completing, error, run, acceptUpgrade };
 }

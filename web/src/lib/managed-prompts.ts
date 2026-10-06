@@ -5,6 +5,18 @@ const pending = new Map<string, PromptNode>();
 export function managedPrompt(id: string, values: unknown[]): string {
   const node: PromptNode = {
     id,
+    ...(/^(?:tuvi\.tuviPeriodPromptText\.[123]|zodiac\.periodGuide\.(?:today|week|month))$/.test(id)
+      ? {
+          calculatedAt: (() => {
+            const now = new Date();
+            return [
+              now.getFullYear(),
+              String(now.getMonth() + 1).padStart(2, '0'),
+              String(now.getDate()).padStart(2, '0'),
+            ].join('-');
+          })(),
+        }
+      : {}),
     values: values.map(v => {
       const text = String(v ?? '');
       return pending.get(text) ?? text;

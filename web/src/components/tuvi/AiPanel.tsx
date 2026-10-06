@@ -1,4 +1,5 @@
 'use client';
+import { ReadingUpgrade, type ReadingUpgradeContext } from '@/components/kit/ReadingUpgrade';
 
 /**
  * AiPanel — vùng kết quả AI dùng chung cho "Chủ đề luận giải" và "Vận trình":
@@ -24,6 +25,7 @@ interface AiPanelProps {
   onRun: (force: boolean) => void;
   serviceId: string;
   prompt: string;
+  onUpgrade?: (text: string) => void;
 }
 
 export function AiPanel({
@@ -36,11 +38,26 @@ export function AiPanel({
   onRun,
   serviceId,
   prompt,
+  onUpgrade,
 }: AiPanelProps) {
   const t = useLocale();
   const en = t.locale === 'en';
   const effectiveRunLabel = runLabel ?? (en ? 'Interpret' : 'Luận giải');
   const price = usePaidPrice(serviceId, prompt);
+  const upgrade: ReadingUpgradeContext | undefined =
+    onUpgrade && prompt
+      ? {
+          serviceId,
+          prompt,
+          cache: {
+            group: 'tuviTopics',
+            key: serviceId.replace(/^tuvi--/, '').replace('--', '::'),
+            meta: { module: 'tuvi', topic: serviceId.split('--')[1] },
+          },
+          onComplete: onUpgrade,
+        }
+      : undefined;
+
   if (loading) {
     return <ReadingLoader kind="tuvi" label={loadingLabel} />;
   }
@@ -48,13 +65,14 @@ export function AiPanel({
   if (cached) {
     return (
       <PanelReveal open className="space-y-4">
-        <SavedReading text={cached} />
+        <SavedReading text={cached} upgrade={upgrade} />
       </PanelReveal>
     );
   }
 
   return (
     <div aria-live="polite" className="space-y-3">
+      {upgrade && <ReadingUpgrade context={upgrade} onlyEntitled />}
       {error ? (
         <p role="alert" className="text-sm font-semibold text-son-deep">
           {error}

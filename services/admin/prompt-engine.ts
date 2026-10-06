@@ -6,7 +6,7 @@ import { TUVI_BALANCED_GUIDANCE } from './tuvi-guidance.ts';
 import { isVisualPrompt, unwrapVisualPrompt, visualInput, visualContract } from './visual-reading.ts';
 
 export type PromptLocale = 'vi' | 'en';
-export type PromptNode = { id: string; values: (string | PromptNode)[] };
+export type PromptNode = { id: string; values: (string | PromptNode)[]; calculatedAt?: string };
 export const COMPAT_INCLUSION_GUIDANCE =
   'Tôn trọng mọi cặp đôi, bao gồm LGBTQ+. Nam–Nam, Nữ–Nữ và Nam–Nữ được đối xử bình đẳng. Không suy đoán xu hướng tính dục từ giới tính; không giảm mức độ tương hợp chỉ vì hai người cùng giới. Dùng ‘bạn’, ‘người ấy’, ‘hai bạn’; không tự gán vai vợ/chồng hoặc vai trò nam/nữ. Giữ đúng định dạng trả lời đã yêu cầu.';
 export const ORIGINAL_SYSTEM_PROMPT = originals.system;

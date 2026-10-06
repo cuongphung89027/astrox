@@ -50,3 +50,40 @@ test('element flow shows computed counts and does not draw a stream for a zero e
   for (const count of [0, 1, 2, 3]) assert.ok(html.includes(`>${count}</text>`));
   for (const label of ['Mộc', 'Hỏa', 'Thổ', 'Kim', 'Thủy']) assert.ok(html.includes(label));
 });
+test('period reader renders actual dated samples with accessible selection and retained calendar context', async () => {
+  const asOf = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+  const descriptor = {
+    id: 'tuvi.tuviPromptBody.0',
+    values: [
+      { id: 'tuvi.profileContextText.0', values: ['An', 'Nam', '08/03/2001', 'Tý', 'Hà Nội'] },
+      {
+        id: 'tuvi.ziweiContextText.0',
+        values: [JSON.stringify({ palaces: [{ name: 'Mệnh', majorStars: [{ name: 'Thiên Tướng' }] }] })],
+      },
+      {
+        id: 'tuvi.periodPresentation',
+        values: [
+          {
+            id: 'tuvi.tuviPeriodPromptText.2',
+            values: [
+              asOf,
+              'hôm nay: Lưu Nhật nhập Quan Lộc.\n+2 ngày: Lưu Nhật nhập Phúc Đức.\n+4 ngày: Lưu Nhật nhập Mệnh.\n+6 ngày: Lưu Nhật nhập Thiên Di.',
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const id = 'tuvi--period--week',
+    input = visualInput(wrapVisualPrompt(descriptor, id, 'vi'), id, 'vi');
+  const saved = readVisualReading(saveVisualReading(JSON.stringify(fixture(input)), input));
+  const { VisualReading } = await load('components/kit/VisualReading.tsx');
+  const html = renderToStaticMarkup(createElement(VisualReading, { saved }));
+  assert.match(html, /data-period-timeline/);
+  assert.match(html, /Mốc tính trong kỳ/);
+  assert.equal((html.match(/data-sample-date=/g) || []).length, 4);
+  assert.ok(html.includes(input.period.asOf));
+  assert.ok(html.includes('Lưu Nhật nhập Quan Lộc'));
+  assert.ok(!html.includes('phép đo tính cách'));
+  assert.doesNotMatch(html, /<img|<canvas|innerHTML/);
+});

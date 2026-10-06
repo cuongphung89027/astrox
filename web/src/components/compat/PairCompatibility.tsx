@@ -1,6 +1,6 @@
 'use client';
-import { readVisualReading } from '../../../../services/admin/visual-reading';
-import { VisualReading } from '@/components/kit/VisualReading';
+import { SavedReading } from '@/components/kit/SavedReading';
+import { ReadingUpgrade, type ReadingUpgradeContext } from '@/components/kit/ReadingUpgrade';
 import { useEffect, useRef, useState } from 'react';
 import { AiText } from '@/components/kit';
 import { ReadingLoader } from '@/components/kit/ReadingLoader';
@@ -150,7 +150,24 @@ export function PairCompatibility({ mode }: { mode: CoupleMode }) {
     serviceId = `compat--${mode}-pair`;
   const price = usePaidPrice(serviceId, reading ? couplePrompt(reading) : undefined);
   const markFresh = useFeatureResult(text, serviceId, !loading && !!profile);
-  const visual = readVisualReading(text);
+  const upgrade: ReadingUpgradeContext | undefined = reading
+    ? {
+        serviceId,
+        prompt: couplePrompt(reading),
+        cache: {
+          group: 'compatibility',
+          key: coupleCacheKey(mode, a, b, cacheFingerprint()),
+          meta: { module: 'compat', topic: `${mode}-pair` },
+        },
+        onComplete: next => {
+          request.current++;
+          markFresh(next);
+          setText(next);
+          setLoading(false);
+          setError('');
+        },
+      }
+    : undefined;
   // The previous feature used only the saved profile and partner date. Keep its
   // purchased text accessible separately from the new two-chart calculation.
   const oldProfileMatches =
@@ -303,7 +320,11 @@ export function PairCompatibility({ mode }: { mode: CoupleMode }) {
               'This saved reading used your profile and your partner’s birth date in the previous calculation. Reopening it does not make an AI request.',
             )}
           </p>
-          <AiText text={legacyText} />
+          <SavedReading
+            text={legacyText}
+            upgrade={!text ? upgrade : undefined}
+            renderLegacy={value => <AiText text={value} />}
+          />
         </details>
       )}
       {error && (
@@ -333,19 +354,18 @@ export function PairCompatibility({ mode }: { mode: CoupleMode }) {
             {loading ? (
               <ReadingLoader kind="compat" />
             ) : text ? (
-              visual ? (
-                <VisualReading key={visual.createdAt + visual.report.serviceId} saved={visual} />
-              ) : (
-                <AiText text={text} />
-              )
+              <SavedReading text={text} upgrade={upgrade} renderLegacy={value => <AiText text={value} />} />
             ) : (
-              <button type="button" className={styles.primary} disabled={price.pending} onClick={() => void run()}>
-                {error
-                  ? copy('Thử luận giải lại', 'Retry reading')
-                  : copy('Đọc luận giải hai bạn', 'Read your couple interpretation')}
-                <PaidPriceBadge price={price} />
-                <span aria-hidden="true">↗</span>
-              </button>
+              <>
+                <ReadingUpgrade context={upgrade!} onlyEntitled />
+                <button type="button" className={styles.primary} disabled={price.pending} onClick={() => void run()}>
+                  {error
+                    ? copy('Thử luận giải lại', 'Retry reading')
+                    : copy('Đọc luận giải hai bạn', 'Read your couple interpretation')}
+                  <PaidPriceBadge price={price} />
+                  <span aria-hidden="true">↗</span>
+                </button>
+              </>
             )}
           </section>
         </section>

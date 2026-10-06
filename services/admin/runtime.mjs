@@ -230,8 +230,15 @@ export async function executeProviderChain(
   const { service, parent } = context;
   const messages = visual
     ? [
-        ...context.messages.filter(m => m.role === 'system'),
-        { role: 'system', content: VISUAL_FORMAT_ADAPTER[visual.locale] },
+        {
+          role: 'system',
+          // Some compatible gateways retain only one system message. Keep every
+          // existing policy, then resolve the visual format within that message.
+          content: [
+            ...context.messages.filter(m => m.role === 'system').map(m => m.content),
+            VISUAL_FORMAT_ADAPTER[visual.locale],
+          ].join('\n\n'),
+        },
         ...context.messages.filter(m => m.role !== 'system'),
       ]
     : context.messages;

@@ -98,7 +98,10 @@ test('runtime puts format adapter after old system instructions and saves valida
         calls++;
         const b = JSON.parse(o.body);
         assert.equal(b.max_tokens, 8000);
-        assert.equal(b.messages.filter(m => m.role === 'system').at(-1).content, VISUAL_FORMAT_ADAPTER.vi);
+        const systems = b.messages.filter(m => m.role === 'system');
+        assert.equal(systems.length, 1);
+        assert.ok(systems[0].content.endsWith(VISUAL_FORMAT_ADAPTER.vi));
+        assert.ok(systems[0].content.includes('Use **bold** and 150 words.'));
         return Response.json({
           choices: [{ message: { content: JSON.stringify(fixture(input)) }, finish_reason: 'stop' }],
         });
@@ -168,11 +171,12 @@ for (const protocol of ['chat', 'responses', 'anthropic'])
           const body = JSON.parse(options.body);
           assert.equal(body.max_tokens ?? body.max_output_tokens, 8000);
           if (protocol === 'anthropic') assert.ok(body.system.endsWith(VISUAL_FORMAT_ADAPTER.en));
-          else
-            assert.equal(
-              (body.messages ?? body.input).filter(m => m.role === 'system').at(-1).content,
-              VISUAL_FORMAT_ADAPTER.en,
-            );
+          else {
+            const systems = (body.messages ?? body.input).filter(m => m.role === 'system');
+            assert.equal(systems.length, 1);
+            assert.ok(systems[0].content.endsWith(VISUAL_FORMAT_ADAPTER.en));
+            assert.ok(systems[0].content.includes('Use **bold**.'));
+          }
           const text = JSON.stringify(fixture(input));
           return Response.json(
             protocol === 'chat'

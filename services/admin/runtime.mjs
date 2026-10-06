@@ -422,9 +422,11 @@ export async function executeProviderChain(
         }
         if (visual) {
           try {
-            if (result.choices[0].finish_reason !== 'stop') throw new Error('truncated');
+            if (result.choices[0].finish_reason !== 'stop')
+              throw Object.assign(new Error('truncated'), { visualValidation: { reason: 'truncated' } });
             result.choices[0].message.content = saveVisualReading(result.choices[0].message.content, visual);
-          } catch {
+          } catch (error) {
+            attempt.visualValidation = error.visualValidation || { reason: 'shape' };
             fail('VISUAL_READING_INVALID', 502, attempts);
           }
         }

@@ -3,6 +3,7 @@ import originals from './original-prompts.ts';
 import { COMPAT_INCLUSION_GUIDANCE_EN } from './english-prompts.ts';
 import { PALM_READING_GUIDANCE, PALM_FOLLOWUP_GUIDANCE } from './palm-guidance.ts';
 import { TUVI_BALANCED_GUIDANCE } from './tuvi-guidance.ts';
+import { isVisualPrompt, unwrapVisualPrompt, visualInput, visualContract } from './visual-reading.ts';
 
 export type PromptLocale = 'vi' | 'en';
 export type PromptNode = { id: string; values: (string | PromptNode)[] };
@@ -71,6 +72,21 @@ export function renderServicePrompt(
 ): string {
   const locale = options.locale ?? 'vi';
   const module = serviceId.split('--')[0];
+  if (isVisualPrompt(node)) {
+    const input = visualInput(node, serviceId, locale)!;
+    const original = unwrapVisualPrompt(node);
+    if (isVisualPrompt(original)) throw new Error('INVALID_PROMPT');
+    const source = renderServicePrompt(original, serviceId, settings, options);
+    const rendered = renderPrompt(
+      { id: node.id, values: [JSON.stringify({ ...input, facts: undefined }), JSON.stringify(input.facts), source] },
+      settings.templates,
+      0,
+      locale,
+    );
+    const result = `${rendered}\n\n${visualContract(input)}`;
+    if (result.length > 100000) throw new Error('PROMPT_TOO_LARGE');
+    return result;
+  }
   const visit = (n: PromptNode, depth = 0): PromptNode => {
     if (depth > 12 || !n || typeof n.id !== 'string' || !Array.isArray(n.values)) throw new Error('INVALID_PROMPT');
     if (n.id === '$join')

@@ -1,4 +1,6 @@
+import { VISUAL_PROMPT_TEMPLATES } from './visual-prompts.ts';
 export default [
+  ...VISUAL_PROMPT_TEMPLATES,
   {
     id: 'palm.followup.v1',
     module: 'palm',

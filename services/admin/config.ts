@@ -812,10 +812,7 @@ export function hydrateConfig(c: AdminConfig): AdminConfig {
       : c.billing;
   return {
     ...c,
-    ai:
-      c.ai && Array.isArray(c.ai.providers)
-        ? { ...c.ai, providers: c.ai.providers.map(withEffort) }
-        : c.ai,
+    ai: c.ai && Array.isArray(c.ai.providers) ? { ...c.ai, providers: c.ai.providers.map(withEffort) } : c.ai,
     billing: hydratedBilling,
     rewardsUs: c.rewardsUs ?? defaultConfig().rewardsUs,
     contentUs: c.contentUs ?? defaultConfig().contentUs,

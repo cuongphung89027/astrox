@@ -9,7 +9,7 @@ import { aiParts, type AiPart } from './ai-parts';
 import { trackFeature } from './feature-telemetry';
 import { confirmReading } from './reading-consent';
 import { pendingAiOperation, finishAiOperation } from './ai-operation';
-import { promptDescriptor } from './managed-prompts';
+import { readingPromptDescriptor } from './managed-prompts';
 import { AI_BASE, AUTH_API_BASE, DEFAULT_MODEL } from './config';
 import {
   getState,
@@ -288,12 +288,13 @@ export async function callAiText(opts: {
   const maxTokens = opts.maxTokens ? Math.max(opts.maxTokens, AI_TOKEN_CEILING) : AI_TOKEN_CEILING;
   getState();
   const locale = opts.locale ?? currentUiLocale();
+  const serviceId = opts.serviceId || aiServiceIdForPath(window.location.pathname) || undefined;
   const body = {
     operationId: crypto.randomUUID(),
     locale,
-    promptDescriptor: promptDescriptor(opts.parts?.[0]?.text || ''),
+    promptDescriptor: readingPromptDescriptor(opts.parts?.[0]?.text || '', serviceId || '', locale),
     compact,
-    serviceId: opts.serviceId || aiServiceIdForPath(window.location.pathname) || undefined,
+    serviceId,
     messages: [
       {
         role: 'system',

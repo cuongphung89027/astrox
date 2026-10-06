@@ -1,0 +1,684 @@
+.reader {
+  color-scheme: light;
+  --rw-cream: #fbf6ec;
+  --rw-green: #244d40;
+  --rw-muted: #718467;
+  --rw-gold: #a0864b;
+  --rw-border: #d7ddc6;
+  font: 14px/1.6 var(--font-sans);
+  color: var(--rw-green);
+}
+.reader * {
+  box-sizing: border-box;
+}
+.reader [hidden] {
+  display: none !important;
+}
+.reader {
+  padding: 0 25px 26px;
+  border-radius: 26px;
+  background:
+    radial-gradient(38rem 26rem at 95% 0%, #f2a91212, transparent 60%),
+    radial-gradient(36rem 28rem at 80% 80%, #0ea7680b, transparent 65%), var(--rw-cream);
+}
+.reader .eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--rw-muted);
+  text-transform: uppercase;
+}
+.reader h2,
+.reader h3,
+.reader p {
+  margin: 0;
+}
+.reader h2 {
+  font:
+    400 34px/1.2 var(--font-display),
+    serif;
+}
+.reader .intro {
+  padding: 3px 3px 20px;
+}
+.reader .intro h2 {
+  margin: 8px 0 9px;
+}
+.reader .intro p {
+  font-size: 13px;
+  color: var(--rw-muted);
+  max-width: 570px;
+}
+.reader .primaryFact {
+  display: inline-flex;
+  margin-top: 12px;
+  border: 1px solid #d3c59e;
+  border-radius: 10px;
+  padding: 5px 10px;
+  background: #fff8e4;
+  font-size: 12px;
+  color: #817047;
+}
+.reader .contents {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.reader button {
+  font-family: var(--font-sans);
+}
+.reader .chapterTab {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+  padding: 15px 13px;
+  min-height: 106px;
+  background: #fffdf59e;
+  border: 1px solid #fffdf4;
+  border-radius: 18px;
+  color: var(--rw-green);
+}
+.reader .chapterTab .tabIndex {
+  color: #9eaa8d;
+  font:
+    400 25px/1 var(--font-display),
+    serif;
+}
+.reader .chapterTab .tabLabel {
+  font-size: 12px;
+  line-height: 1.45;
+}
+.reader .chapterTab[aria-selected='true'] {
+  background: linear-gradient(130deg, #3e674f, #214a3c);
+  border-color: #b8a976;
+  color: #f3e7c4;
+}
+.reader .chapterTab[aria-selected='true'] .tabIndex {
+  color: #e5d19a;
+}
+.reader .cover {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 105px;
+  align-items: center;
+  gap: 20px;
+  padding: 27px;
+  border: 1px solid #cdb77e80;
+  border-radius: 25px;
+  background: radial-gradient(ellipse at 0 0, #fff6df, transparent 68%), linear-gradient(125deg, #f2e6c4, #e9d7a8);
+  box-shadow: inset 0 1px 0 #fffaf0;
+}
+.reader .cover::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid #fff9e47d;
+  border-radius: 19px;
+  pointer-events: none;
+}
+.reader .cover h3 {
+  font:
+    400 34px/1.2 var(--font-display),
+    serif;
+  margin: 9px 0 10px;
+}
+.reader .cover p {
+  font-size: 13px;
+  color: #6b7359;
+  max-width: 490px;
+}
+.reader .cover .eyebrow {
+  color: #817047;
+}
+.reader .coverIndex {
+  font:
+    400 100px/1 var(--font-display),
+    serif;
+  color: #9e844b;
+  opacity: 0.45;
+  text-align: right;
+}
+.reader .body {
+  border: 1px solid #fffdf5;
+  border-radius: 24px;
+  background: #fffdf5a8;
+  padding: 25px;
+  margin-top: 19px;
+}
+.reader .figureLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.reader .figureLabel h3 {
+  font:
+    400 25px/1.2 var(--font-display),
+    serif;
+}
+.reader .figureLabel span {
+  font-size: 11px;
+  color: var(--rw-muted);
+  text-align: right;
+}
+.reader .plot {
+  position: relative;
+  width: 100%;
+  height: 340px;
+  border-radius: 24px;
+}
+.reader .plot svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.reader .plot[data-kind='trait-map'] {
+  background: radial-gradient(ellipse at 80% 0, #466f58, #1b4538 80%);
+  border: 1px solid #b8a976;
+}
+.reader .plot[data-kind='trait-map']::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid #d2bc7d26;
+  border-radius: 17px;
+  pointer-events: none;
+}
+.reader .plot[data-kind='trait-spectrum'] {
+  background: radial-gradient(ellipse at 80% 0, #466f58, #1b4538 80%);
+  border: 1px solid #b8a976;
+}
+.reader .plot[data-kind='trait-spectrum']::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid #d2bc7d26;
+  border-radius: 17px;
+  pointer-events: none;
+}
+.reader .choose {
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 13px;
+}
+.reader .insightButton {
+  padding: 11px 9px;
+  border: 1px solid #d6deca;
+  border-radius: 14px;
+  background: #e2e9d777;
+  color: #335c45;
+  font-size: 12px;
+  line-height: 1.4;
+  min-height: 48px;
+}
+.reader .insightButton[aria-pressed='true'] {
+  background: #244d40;
+  color: #e9d8a8;
+  border-color: #b7a471;
+}
+.reader .insightArea {
+  border-top: 1px solid #d9dfcf;
+  padding-top: 22px;
+  margin-top: 22px;
+}
+.reader .insightArea h3 {
+  font:
+    400 28px/1.2 var(--font-display),
+    serif;
+  margin: 6px 0 10px;
+}
+.reader .insightArea > p {
+  font-size: 14px;
+}
+.reader .details {
+  margin: 15px 0 0;
+  font-size: 12px;
+  color: var(--rw-muted);
+}
+.reader .details > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: #476c50;
+  font-size: 12px;
+}
+.reader .details > button svg {
+  width: 14px;
+  height: 14px;
+}
+.reader .detailCopy {
+  padding: 14px 0 2px;
+  display: grid;
+  gap: 14px;
+}
+.reader .detailCopy p {
+  font-size: 13px;
+  color: #62765a;
+}
+.reader .facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+.reader .fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 9px;
+  border: 1px solid #e1dbc5;
+  background: #fff8e4;
+  color: #817047;
+}
+.reader .action {
+  background: linear-gradient(120deg, #e3ebd8, #f7f3e4);
+  border: 1px solid #d7ddc6;
+  padding: 18px 20px;
+  border-radius: 18px;
+  margin-top: 19px;
+}
+.reader .action p {
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--rw-green);
+}
+.reader .overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+  margin-top: 21px;
+}
+.reader .overview section {
+  border: 1px solid #fffdf4;
+  border-radius: 21px;
+  padding: 19px;
+  background: #fffdf59e;
+}
+.reader .overview section:last-child {
+  background: linear-gradient(140deg, #f0e4c8, #faf5e8);
+}
+.reader .overview h3 {
+  font:
+    400 25px/1.2 var(--font-display),
+    serif;
+  margin: 7px 0 12px;
+}
+.reader .overview button {
+  display: flex;
+  align-items: start;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 6px 0;
+  color: #527047;
+  font-size: 12px;
+}
+.reader .overview button svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.reader .pageNav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 15px;
+  margin: 23px 0 0;
+}
+.reader .pageNav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border: 1px solid #d3dcc5;
+  border-radius: 13px;
+  background: #fffdf5;
+  color: var(--rw-green);
+  font-size: 12px;
+  min-height: 44px;
+}
+.reader .pageNav button:last-child {
+  background: #244d40;
+  color: #f5ebcf;
+  border-color: #244d40;
+}
+.reader .pageNav button:disabled {
+  opacity: 0.38;
+}
+.reader .pageNav svg {
+  width: 14px;
+  height: 14px;
+}
+.reader .pagePosition {
+  font-size: 12px;
+  color: var(--rw-muted);
+  font-variant-numeric: tabular-nums;
+}
+.reader .provenance {
+  font-size: 11px;
+  color: var(--rw-muted);
+  margin: 20px 4px 0;
+  line-height: 1.65;
+}
+@media (max-width: 560px) {
+  .reader {
+    padding: 0 16px 22px;
+  }
+  .reader h2 {
+    font-size: 29px;
+  }
+  .reader .contents {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .reader .chapterTab {
+    min-height: 83px;
+    padding: 12px 13px;
+    gap: 7px;
+  }
+  .reader .cover {
+    grid-template-columns: 1fr 54px;
+    gap: 10px;
+    padding: 22px 20px;
+  }
+  .reader .cover h3 {
+    font-size: 29px;
+  }
+  .reader .coverIndex {
+    font-size: 62px;
+  }
+  .reader .body {
+    padding: 21px 15px;
+  }
+  .reader .figureLabel h3 {
+    font-size: 24px;
+  }
+  .reader .choose {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .reader .insightButton {
+    min-height: 44px;
+  }
+  .reader .overview {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .reader .overview section {
+    padding: 18px;
+  }
+  .reader .pageNav {
+    gap: 10px;
+  }
+  .reader .pageNav button {
+    padding: 12px 6px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reader .insightButton {
+    transition:
+      background-color 240ms ease,
+      color 240ms ease;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+html[data-motion='reduced'] .reader * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.reader {
+  padding: 20px 0;
+  background: transparent;
+}
+.reader button {
+  cursor: pointer;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    border-color 220ms ease;
+}
+.reader button:focus-visible,
+.reader summary:focus-visible {
+  outline: 2px solid #a0864b;
+  outline-offset: 4px;
+}
+.reader button:disabled {
+  cursor: default;
+}
+.reader .plot {
+  height: auto;
+  aspect-ratio: 420/300;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 80% 0, #466f58, #1b4538 80%);
+  border: 1px solid #b8a976;
+}
+.reader .plot svg {
+  display: block;
+  aspect-ratio: 420/300;
+}
+.reader .figureLabel {
+  align-items: start;
+}
+.reader .insightArea p {
+  text-align: left;
+  line-height: 1.85;
+}
+.reader .detailCopy {
+  font-size: 14px;
+}
+.reader .detailCopy p {
+  font-size: 14px;
+  color: #46604b;
+  white-space: pre-line;
+}
+.reader .detailCopy h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a0864b;
+  margin: 0 0 8px;
+}
+.reader .detailCopy > section {
+  padding: 14px 0;
+  border-bottom: 1px solid #d9dfcf;
+}
+.reader .details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  cursor: pointer;
+  color: #476c50;
+  font-size: 13px;
+  list-style: none;
+}
+.reader .details > summary::-webkit-details-marker {
+  display: none;
+}
+.reader .fact {
+  display: block;
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.reader .fact strong {
+  display: block;
+  margin-bottom: 4px;
+}
+.reader .detailCopy dl {
+  display: grid;
+  gap: 9px;
+}
+.reader .detailCopy dt {
+  font-weight: 600;
+}
+.reader .detailCopy dd {
+  margin: 3px 0 0;
+}
+.reader .diagramNode {
+  cursor: pointer;
+}
+.reader .diagramNode .node {
+  transition:
+    fill 220ms ease,
+    stroke 220ms ease;
+}
+.reader .diagramNode[data-selected='true'] .node {
+  fill: #e9d8a8;
+  stroke: #f4e6c6;
+}
+.reader .diagramNode[data-selected='false'] .node {
+  fill: #365f4b;
+  stroke: #aaa880;
+}
+.reader .overview button {
+  min-height: 44px;
+}
+.reader .primaryFact {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+  .reader {
+    padding: 12px 0 18px;
+  }
+  .reader .cover h3 {
+    font-size: 27px;
+  }
+  .reader .cover {
+    padding: 21px 17px;
+  }
+  .reader .body {
+    padding: 19px 12px;
+  }
+  .reader .figureLabel span {
+    max-width: 100px;
+  }
+  .reader .figureLabel h3 {
+    font-size: 22px;
+  }
+}
+
+.reader .spectrum {
+  background: radial-gradient(ellipse at 80% 0, #466f58, #1b4538 80%);
+  border: 1px solid #b8a976;
+  border-radius: 24px;
+  padding: 26px 22px;
+  display: grid;
+  gap: 22px;
+}
+.reader .spectrumRow {
+  display: grid;
+  width: 100%;
+  gap: 13px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: #dddcc1;
+  padding: 0;
+  min-height: 68px;
+}
+.reader .spectrumRow:disabled {
+  opacity: 0.6;
+}
+.reader .axisLabels {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 13px;
+}
+.reader .axisLabels span {
+  max-width: 48%;
+}
+.reader .axisLabels span:last-child {
+  text-align: right;
+}
+.reader .axisTrack {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  padding: 4px 0;
+}
+.reader .axisTrack i {
+  height: 7px;
+  background: #e8d9a630;
+  border-radius: 6px;
+}
+.reader .axisTrack b {
+  position: absolute;
+  top: -1px;
+  left: calc(50% - 8px);
+  width: 17px;
+  height: 17px;
+  border: 3px solid #ead69f;
+  background: #244d40;
+  border-radius: 50%;
+  box-shadow: 0 0 16px #f2da9c55;
+  transition: left 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reader .axisTrack[data-lean='left'] b {
+  left: calc(10% - 8px);
+}
+.reader .axisTrack[data-lean='right'] b {
+  left: calc(90% - 8px);
+}
+.reader .axisTrack[data-lean='unknown'] b {
+  border-style: dashed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+.reader .spectrumRow small {
+  font-size: 11px;
+  color: #bfcaa4;
+}
+.reader .spectrumRow[aria-pressed='true'] small {
+  color: #eed9a2;
+}
+.reader .elementLabels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 5%;
+  padding: 0 8px;
+  color: #e9d8a8;
+  font-size: 12px;
+  text-align: center;
+}
+.reader[data-motion-suspended='true'] * {
+  transition: none !important;
+  animation: none !important;
+}
+@media (max-width: 560px) {
+  .reader .spectrum {
+    padding: 23px 17px;
+  }
+  .reader .axisLabels {
+    font-size: 12px;
+  }
+  .reader .spectrumRow {
+    gap: 12px;
+  }
+}

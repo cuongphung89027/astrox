@@ -1,4 +1,6 @@
 'use client';
+import { readVisualReading } from '../../../../services/admin/visual-reading';
+import { VisualReading } from '@/components/kit/VisualReading';
 import { useEffect, useRef, useState } from 'react';
 import { AiText } from '@/components/kit';
 import { ReadingLoader } from '@/components/kit/ReadingLoader';
@@ -148,6 +150,7 @@ export function PairCompatibility({ mode }: { mode: CoupleMode }) {
     serviceId = `compat--${mode}-pair`;
   const price = usePaidPrice(serviceId, reading ? couplePrompt(reading) : undefined);
   const markFresh = useFeatureResult(text, serviceId, !loading && !!profile);
+  const visual = readVisualReading(text);
   // The previous feature used only the saved profile and partner date. Keep its
   // purchased text accessible separately from the new two-chart calculation.
   const oldProfileMatches =
@@ -330,7 +333,11 @@ export function PairCompatibility({ mode }: { mode: CoupleMode }) {
             {loading ? (
               <ReadingLoader kind="compat" />
             ) : text ? (
-              <AiText text={text} />
+              visual ? (
+                <VisualReading key={visual.createdAt + visual.report.serviceId} saved={visual} />
+              ) : (
+                <AiText text={text} />
+              )
             ) : (
               <button type="button" className={styles.primary} disabled={price.pending} onClick={() => void run()}>
                 {error

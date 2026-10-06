@@ -2,11 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { graph } from './support/load.mjs';
 import { scopeForReading } from '../../services/backend/service-unlocks.mjs';
+import { visualInput, saveVisualReading, readVisualReading } from '../../services/admin/visual-reading.ts';
+import { fixture } from './support/visual-fixtures.mjs';
 import { SERVICE_CATALOG } from '../../services/admin/catalog.ts';
 
 test('real managed prompts for every persistent feature derive a server scope', async () => {
   const load = graph();
-  const { promptDescriptor } = await load('lib/managed-prompts.ts');
+  const { promptDescriptor, readingPromptDescriptor } = await load('lib/managed-prompts.ts');
   const p = {
     name: 'Kiểm thử',
     gender: 'Nam',
@@ -51,6 +53,19 @@ test('real managed prompts for every persistent feature derive a server scope', 
     try {
       const scoped = await scopeForReading(id, promptDescriptor(prompt));
       assert.equal(scoped.module, id.split('--')[0]);
+      for (const locale of ['vi', 'en']) {
+        const wrapped = readingPromptDescriptor(prompt, id, locale);
+        assert.deepEqual(await scopeForReading(id, wrapped), scoped, `${id} ${locale} purchase scope`);
+        const input = visualInput(wrapped, id, locale);
+        if (SERVICE_CATALOG.find(s => s.id === id).policy === 'profile') {
+          assert.ok(input, `${id} is integrated`);
+          assert.ok(input.facts.length > 0);
+          assert.equal(
+            readVisualReading(saveVisualReading(JSON.stringify(fixture(input)), input)).report.serviceId,
+            id,
+          );
+        } else assert.equal(input, null);
+      }
     } catch (e) {
       failures.push([id, e.message]);
     }

@@ -28,6 +28,8 @@ import {
 import { CompatWheel } from './CompatWheel';
 import styles from './Compat.module.css';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { readVisualReading } from '../../../../services/admin/visual-reading';
+import { VisualReading } from '@/components/kit/VisualReading';
 const elementLabel = (value: string, en: boolean) =>
   en ? ({ Hoả: 'Fire', Thổ: 'Earth', Khí: 'Air', Thuỷ: 'Water' } as Record<string, string>)[value] || value : value;
 const signById = (id: string) => ZODIAC_SIGNS.find(s => s.id === id);
@@ -87,6 +89,8 @@ function SignPicker({
 function Reading({ raw }: { raw: string }) {
   const en = useLocale().locale === 'en',
     copy = (vi: string, us: string) => (en ? us : vi);
+  const visual = readVisualReading(raw);
+  if (visual) return <VisualReading key={visual.createdAt + visual.report.serviceId} saved={visual} />;
   let parsed: CompatAiResult | null = null;
   try {
     const p = extractJson<CompatAiResult>(raw);
@@ -406,12 +410,14 @@ function WesternCompatClient() {
 export function CompatClient() {
   const { locale } = useLocale();
   return (
-    <Suspense fallback={
-      <>
-        <h1 className="sr-only">{locale === 'en' ? 'Compatibility' : 'Tương Hợp'}</h1>
-        <ReadingLoader kind="compat" />
-      </>
-    }>
+    <Suspense
+      fallback={
+        <>
+          <h1 className="sr-only">{locale === 'en' ? 'Compatibility' : 'Tương Hợp'}</h1>
+          <ReadingLoader kind="compat" />
+        </>
+      }
+    >
       <CompatModes />
     </Suspense>
   );

@@ -14,6 +14,7 @@ import {
 import { normalizeUsage, estimateCost } from './metrics.ts';
 import { providerRoutes } from './provider-models.ts';
 import { ENGLISH_SYSTEM_PROMPT as ENGLISH_SYSTEM_PROMPT_RUNTIME } from './english-prompts.ts';
+import { visualInput, saveVisualReading, VISUAL_FORMAT_ADAPTER } from './visual-reading.ts';
 /** Server-only adapters. No wallet mutations; callers own auth, rate limits and idempotency. */
 export class RuntimeError extends Error {
   constructor(code, status = 503, attempts = []) {
@@ -219,7 +220,21 @@ export async function executeProviderChain(
   { fetchImpl = fetch, now = Date.now, allowHosts = [], healthStore } = {},
 ) {
   if (!config.ai.enabled) fail('AI_DISABLED', 503);
-  const { messages, service, parent } = messagesFor(config, input);
+  let visual;
+  try {
+    visual = visualInput(input.promptDescriptor, input.serviceId, input.locale ?? 'vi');
+  } catch {
+    fail('INVALID_MESSAGES', 400);
+  }
+  const context = messagesFor(config, input);
+  const { service, parent } = context;
+  const messages = visual
+    ? [
+        ...context.messages.filter(m => m.role === 'system'),
+        { role: 'system', content: VISUAL_FORMAT_ADAPTER[visual.locale] },
+        ...context.messages.filter(m => m.role !== 'system'),
+      ]
+    : context.messages;
   const chain = service?.chain?.length ? service.chain : parent?.chain?.length ? parent.chain : config.ai.chain;
   const deadline = now() + Math.min(config.ai.totalTimeoutMs, 120000);
   const attempts = [];
@@ -404,6 +419,14 @@ export async function executeProviderChain(
           }
           result.languagePolicyVersion =
             input.locale === 'en' ? ENGLISH_LANGUAGE_POLICY_VERSION : LANGUAGE_POLICY_VERSION;
+        }
+        if (visual) {
+          try {
+            if (result.choices[0].finish_reason !== 'stop') throw new Error('truncated');
+            result.choices[0].message.content = saveVisualReading(result.choices[0].message.content, visual);
+          } catch {
+            fail('VISUAL_READING_INVALID', 502, attempts);
+          }
         }
         if (attempt.outcome !== 'language_detected') attempt.outcome = 'success';
         try {

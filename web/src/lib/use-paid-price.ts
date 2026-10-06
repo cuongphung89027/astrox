@@ -3,7 +3,7 @@
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useEffect, useState } from 'react';
 import { servicePrices, rememberDisplayedPrice } from './api';
-import { promptDescriptor } from './managed-prompts';
+import { readingPromptDescriptor } from './managed-prompts';
 import { AUTH_API_BASE } from './config';
 import { useAuth } from './auth';
 import { usePointsBalance } from './points';
@@ -56,7 +56,7 @@ export function usePaidPrice(serviceId: string, prompt?: string): PriceState {
         }
         const base = info.points;
         const unit = info.market ? (info.market === 'US' ? 'Credits' : 'Point') : en ? 'Credits' : 'Point';
-        const descriptor = prompt ? promptDescriptor(prompt) : undefined;
+        const descriptor = prompt ? readingPromptDescriptor(prompt, serviceId, locale) : undefined;
         if (!info.unlocks || info.policy === 'session' || !astroxUser || astroxUser.id === 'localhost-preview') {
           rememberDisplayedPrice(serviceId, descriptor, base);
           update({
@@ -107,6 +107,6 @@ export function usePaidPrice(serviceId: string, prompt?: string): PriceState {
       alive = false;
       clearTimeout(retryTimer);
     };
-  }, [serviceId, prompt, astroxUser, points, key, revision, en]);
+  }, [serviceId, prompt, astroxUser, points, key, revision, en, locale]);
   return price.key === key ? price : loading;
 }

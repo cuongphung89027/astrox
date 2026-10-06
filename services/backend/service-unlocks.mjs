@@ -4,6 +4,8 @@ import { SERVICE_CATALOG } from '../admin/catalog.ts';
 import { bundleDefinitions } from '../admin/service-tree.ts';
 import { upgradeQuote } from '../admin/service-pricing.ts';
 import { renderServicePrompt } from '../admin/prompt-engine.ts';
+import { isVisualPrompt, visualInput, unwrapVisualPrompt } from '../admin/visual-reading.ts';
+import { defaultEnglishPromptSettings } from '../admin/english-prompts.ts';
 import { encrypt, decrypt, b64 } from '../admin/crypto.mjs';
 import { reserveCredits, commitReserved, releaseReserved, ensureCreditAccount } from './credits.mjs';
 const LEASE_MS = 180000;
@@ -33,6 +35,14 @@ function findNode(node, id, depth = 0) {
 }
 /** Scope is bound to the same structured context rendered for AI, not a browser ownership flag. */
 export async function scopeForReading(serviceId, descriptor, now = Date.now()) {
+  if (isVisualPrompt(descriptor)) {
+    try {
+      visualInput(descriptor, serviceId, JSON.parse(descriptor.values[0]).locale);
+      descriptor = unwrapVisualPrompt(descriptor);
+    } catch {
+      fail('invalid_scope', 400);
+    }
+  }
   const service = SERVICE_CATALOG.find(s => s.id === serviceId);
   if (!service || service.policy === 'session') fail('invalid_scope', 400);
   const module = service.module;
@@ -133,7 +143,15 @@ export async function quoteUnlock(env, userId, c, revision, input, now = Date.no
   if (!supportsUnlock(c, input.serviceId) || !available(c, service) || service.status !== 'paid')
     fail('service_unavailable', 403);
   try {
-    renderServicePrompt(input.promptDescriptor, input.serviceId, c.prompts);
+    const locale = isVisualPrompt(input.promptDescriptor) ? JSON.parse(input.promptDescriptor.values[0]).locale : 'vi';
+    const defaults = locale === 'en' ? defaultEnglishPromptSettings() : null;
+    const settings = defaults
+      ? {
+          templates: { ...defaults.templates, ...c.promptsEn?.templates },
+          tasks: { ...defaults.tasks, ...c.promptsEn?.tasks },
+        }
+      : c.prompts;
+    renderServicePrompt(input.promptDescriptor, input.serviceId, settings, { locale });
   } catch {
     fail('invalid_scope', 400);
   }

@@ -108,14 +108,28 @@ test('reasoning effort hydrates onto stored providers and validates its enum', (
     ai: {
       ...stored.ai,
       providers: [
-        { ...provider, reasoningEffort: 'high', models: [(({ secretRef, models, ...child }) => (void secretRef, void models, child))({ ...provider, id: 'nano', name: 'Nano', reasoningEffort: 'low' })] },
+        {
+          ...provider,
+          reasoningEffort: 'high',
+          models: [
+            (({ secretRef, models, ...child }) => (void secretRef, void models, child))({
+              ...provider,
+              id: 'nano',
+              name: 'Nano',
+              reasoningEffort: 'low',
+            }),
+          ],
+        },
       ],
       chain: ['bai', 'bai:nano'],
     },
   });
   assert.equal(validateConfig(withEffort).length, 0);
 
-  const badValue = hydrateConfig({ ...stored, ai: { ...stored.ai, providers: [{ ...provider, reasoningEffort: 'ultra' }] } });
+  const badValue = hydrateConfig({
+    ...stored,
+    ai: { ...stored.ai, providers: [{ ...provider, reasoningEffort: 'ultra' }] },
+  });
   assert.ok(validateConfig(badValue).some(e => e.path === 'ai.providers.reasoningEffort'));
 
   const anthropic = hydrateConfig({

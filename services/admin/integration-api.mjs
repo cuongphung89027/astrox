@@ -135,6 +135,7 @@ export async function handleAdminRuntime(path, request, env, user) {
 function diagnostic(code) {
   return (
     {
+      VISUAL_READING_INVALID: 'Báo cáo chưa đủ dữ kiện hoặc đúng cấu trúc. Vui lòng thử lại.',
       READING_LANGUAGE_INVALID: 'Luận giải chưa đạt yêu cầu tiếng Việt. Vui lòng thử lại.',
       HOST_NOT_ALLOWED: 'Tên miền provider chưa nằm trong danh sách kết nối được phép của server.',
       SECRET_MISSING: 'Chưa lưu API key cho provider.',
@@ -329,7 +330,12 @@ export async function handleConfiguredAi(request, env) {
       try {
         const result = await executeProviderChain(
           c,
-          { messages: input.messages, serviceId: input.serviceId, locale: input.locale },
+          {
+            messages: input.messages,
+            serviceId: input.serviceId,
+            locale: input.locale,
+            promptDescriptor: input.promptDescriptor,
+          },
           ref => readSecret(env, ref),
           { allowHosts: hosts(env), healthStore: providerHealth(env) },
         );
@@ -375,7 +381,12 @@ export async function handleConfiguredAi(request, env) {
 
     const result = await executeProviderChain(
       c,
-      { messages: input.messages, serviceId: input.serviceId, locale: input.locale },
+      {
+        messages: input.messages,
+        serviceId: input.serviceId,
+        locale: input.locale,
+        promptDescriptor: input.promptDescriptor,
+      },
       ref => readSecret(env, ref),
       { allowHosts: hosts(env), healthStore: providerHealth(env) },
     );

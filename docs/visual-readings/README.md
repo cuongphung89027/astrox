@@ -1,6 +1,6 @@
 # Visual reading draft package
 
-Status: design and prompt draft only. No runtime template registration, Admin publication or production deployment is included.
+Status: the approved design is integrated locally on `codex/visual-reading-report`. Admin publication, real-provider conformance and production deployment are separate release checks. The files in this directory preserve the earlier design draft; they are not the production validator.
 
 The design spec is `../superpowers/specs/2026-10-06-visual-readings-design.md`.
 
@@ -32,4 +32,4 @@ ASTROX_DEPS_ROOT='/Users/Thsonjpg/Documents/PROJECT VUI VUI/astrox/web' node doc
 
 The fixture passes the JSON schema and a 430–650-word budget. Negative cases cover unknown visual types, AI chart percentages, numeric/foreign/repeated qualitative axes, foreign facts, another leaf service, wrong locale and markup.
 
-Before production integration, add real prompt round-trip, cached-reading retention, fact-snapshot provenance, locale and grant/quote/consent coverage. A valid fixture does not prove model output conformance; published revision and real requests need separate verification.
+The runtime contract is `services/admin/visual-reading.ts`, with registered versions in `services/admin/visual-prompts.ts`. New requests target 900–1500 substantive words and require detail, evidence rationale, hypothetical example, concrete action and plain-language terms. The saved envelope also includes an immutable evidence/chapter snapshot. Legacy reads stay readable without regeneration. Real prompt round-trip, scope/locale/snapshot/paid completion-refund and safe Markdown tests are included in the integration branch. A valid fixture does not prove model output conformance; published revision and real requests need separate verification.

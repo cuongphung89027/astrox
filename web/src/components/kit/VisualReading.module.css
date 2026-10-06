@@ -141,6 +141,7 @@
   text-align: right;
 }
 .reader .body {
+  overflow: hidden;
   border: 1px solid #fffdf5;
   border-radius: 24px;
   background: #fffdf5a8;

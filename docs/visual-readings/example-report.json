@@ -1,0 +1,203 @@
+{
+  "schemaVersion": "astrox.visual-reading.v1",
+  "module": "numerology",
+  "serviceId": "numerology--life-path",
+  "locale": "vi",
+  "title": "Số Chủ Đạo — Nhịp riêng",
+  "summary": "Hiểu điểm mạnh, giữ cân bằng và chọn việc có thể thử.",
+  "chapters": [
+    {
+      "id": "portrait",
+      "title": "Dấu ấn riêng",
+      "summary": "Tò mò mở ra hướng mới; một nhịp rõ ràng giúp bạn đi xa hơn.",
+      "visual": {
+        "kind": "trait-spectrum",
+        "factIds": [
+          "life-path"
+        ],
+        "signals": [
+          {
+            "axisId": "novelty",
+            "lean": "right",
+            "insightId": "curiosity"
+          },
+          {
+            "axisId": "approach",
+            "lean": "left",
+            "insightId": "adaptation"
+          },
+          {
+            "axisId": "autonomy",
+            "lean": "right",
+            "insightId": "autonomy"
+          }
+        ]
+      },
+      "insights": [
+        {
+          "id": "curiosity",
+          "role": "strength",
+          "label": "Tò mò về điều mới",
+          "summary": "Một trải nghiệm khác có thể khơi lại động lực và mở thêm cách nhìn.",
+          "detail": "Trải nghiệm mới có thể khơi lại cảm hứng. Thử nhỏ giúp bạn hiểu điều nào đáng tiếp tục.",
+          "rationale": "Diễn giải tham khảo từ chỉ số chủ đạo.",
+          "action": "Thử một điều mới rồi ghi lại điều học được.",
+          "sourceFactIds": [
+            "life-path"
+          ]
+        },
+        {
+          "id": "adaptation",
+          "role": "strength",
+          "label": "Linh hoạt khi thay đổi",
+          "summary": "Có thể đổi cách thực hiện khi phương án ban đầu không còn phù hợp.",
+          "detail": "Đổi phương pháp và đổi mục tiêu là hai quyết định khác nhau. Một mục tiêu rõ giúp linh hoạt có hướng.",
+          "rationale": "Diễn giải tham khảo từ chỉ số chủ đạo.",
+          "action": "Giữ mục tiêu, thử cách làm khác.",
+          "sourceFactIds": [
+            "life-path"
+          ]
+        },
+        {
+          "id": "autonomy",
+          "role": "context",
+          "label": "Cần khoảng tự chủ",
+          "summary": "Có không gian lựa chọn giúp bạn nhận trách nhiệm với việc mình làm.",
+          "detail": "Tự chủ có thể đi cùng phối hợp. Nói rõ phần muốn tự quyết giúp các kỳ vọng khớp nhau.",
+          "rationale": "Diễn giải tham khảo từ chỉ số chủ đạo.",
+          "action": "Nói rõ phần tự quyết và phần cần phối hợp.",
+          "sourceFactIds": [
+            "life-path"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "balance",
+      "title": "Điểm cần cân bằng",
+      "summary": "Tự do có ích hơn khi đi cùng một mức cam kết phù hợp.",
+      "visual": {
+        "kind": "balance-path",
+        "factIds": [
+          "life-path-raw",
+          "life-path-lesson"
+        ]
+      },
+      "insights": [
+        {
+          "id": "finish",
+          "role": "balance",
+          "label": "Giữ nhịp đến cùng",
+          "summary": "Điều mới dễ hấp dẫn hơn phần việc đang cần hoàn thiện.",
+          "detail": "Nếu mở nhiều việc cùng lúc, hãy thu nhỏ mục tiêu. Hoàn thành một phần giúp chọn hướng đáng tiếp tục.",
+          "rationale": "Diễn giải tham khảo từ bài học đã tính.",
+          "action": "Xong một mốc nhỏ trước khi mở thêm việc.",
+          "sourceFactIds": [
+            "life-path-lesson"
+          ]
+        },
+        {
+          "id": "commitment",
+          "role": "balance",
+          "label": "Chọn mức cam kết",
+          "summary": "Một giới hạn do bạn chọn có thể bảo vệ cả tự do và sự bền bỉ.",
+          "detail": "Một cam kết vừa sức có thể tạo nhịp mà vẫn giữ linh hoạt. Bạn chủ động chọn giới hạn phù hợp.",
+          "rationale": "Diễn giải tham khảo từ bài học đã tính.",
+          "action": "Chọn một cam kết vừa sức.",
+          "sourceFactIds": [
+            "life-path-raw",
+            "life-path-lesson"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drivers",
+      "title": "Động lực phát triển",
+      "summary": "Kết nối trải nghiệm mới với một mục tiêu bạn thực sự quan tâm.",
+      "visual": {
+        "kind": "factor-map",
+        "factIds": [
+          "life-path"
+        ]
+      },
+      "insights": [
+        {
+          "id": "feedback",
+          "role": "context",
+          "label": "Trải nghiệm có phản hồi",
+          "summary": "Một cuộc trao đổi sau khi thử giúp biến trải nghiệm thành điều học được.",
+          "detail": "Hỏi một điểm hiệu quả và một điểm cần sửa sau khi thử. Phản hồi cụ thể thường dễ áp dụng hơn.",
+          "rationale": "Diễn giải tham khảo từ chỉ số chủ đạo.",
+          "action": "Hỏi một câu cụ thể sau khi thử.",
+          "sourceFactIds": [
+            "life-path"
+          ]
+        },
+        {
+          "id": "direction",
+          "role": "context",
+          "label": "Một mục tiêu đủ rõ",
+          "summary": "Biết điều mình muốn giữ lại giúp chọn giữa nhiều hướng có thể đi.",
+          "detail": "Không cần chọn hướng cho cả cuộc đời ngay. Một mục tiêu hiện tại giúp đánh giá các cơ hội trước mắt.",
+          "rationale": "Diễn giải tham khảo từ chỉ số chủ đạo.",
+          "action": "Viết một điều bạn muốn tiến bộ.",
+          "sourceFactIds": [
+            "life-path"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "title": "Gợi ý áp dụng",
+      "summary": "Thử nhỏ, chọn rõ, giữ điều có ích.",
+      "visual": {
+        "kind": "action-path",
+        "factIds": [
+          "life-path",
+          "life-path-lesson"
+        ]
+      },
+      "insights": [
+        {
+          "id": "try-one",
+          "role": "action",
+          "label": "Chọn một điều đáng thử",
+          "summary": "Bắt đầu với điều đủ nhỏ để làm trong nhịp sống hiện tại.",
+          "detail": "Chọn trải nghiệm liên quan đến điều bạn quan tâm. Thử nhỏ giúp học mà không cần đổi mọi thứ.",
+          "rationale": "Diễn giải tham khảo từ bài học đã tính.",
+          "action": "Chọn một việc nhỏ và thời điểm thử.",
+          "sourceFactIds": [
+            "life-path",
+            "life-path-lesson"
+          ]
+        },
+        {
+          "id": "set-marker",
+          "role": "action",
+          "label": "Đặt mốc hoàn thành",
+          "summary": "Một mốc cụ thể giúp biết khi nào nên đánh giá điều đang làm.",
+          "detail": "Mốc có thể là sản phẩm nhỏ hoặc số lần thực hành. Chọn tiêu chí nằm trong khả năng kiểm soát.",
+          "rationale": "Diễn giải tham khảo từ bài học đã tính.",
+          "action": "Đặt tiêu chí hoàn thành vừa sức.",
+          "sourceFactIds": [
+            "life-path-lesson"
+          ]
+        },
+        {
+          "id": "keep-learning",
+          "role": "action",
+          "label": "Giữ lại điều đã học",
+          "summary": "Nhìn lại giúp phân biệt cảm giác mới lạ với giá trị thật sự.",
+          "detail": "Khi đạt mốc, ghi điều nên giữ và điều nên đổi. Bạn không cần giữ mọi cách làm cũ.",
+          "rationale": "Diễn giải tham khảo từ chỉ số chủ đạo.",
+          "action": "Ghi một điều giữ, một điều đổi.",
+          "sourceFactIds": [
+            "life-path"
+          ]
+        }
+      ]
+    }
+  ]
+}

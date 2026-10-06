@@ -1,0 +1,22 @@
+{
+  "tuvi": {
+    "templateId": "tuvi.visualReport.v1",
+    "guidance": "Dùng đúng các cung, bộ sao, trạng thái và quan hệ từ lá số đã tính. Mỗi nhận định nối với fact IDs của cung/sao liên quan. Không mượn dữ liệu từ ảnh tham chiếu, không tạo cấu trúc lá số khác. Chỉ luận phạm vi topic đã yêu cầu."
+  },
+  "zodiac": {
+    "templateId": "zodiac.visualReport.v1",
+    "guidance": "Dùng natal, houses, aspects và transit đã cấp. Phân biệt dữ kiện vị trí/góc chiếu với diễn giải. Không tạo phần trăm tính cách, không thêm hành tinh hoặc suy ra giờ sinh. Với báo cáo theo kỳ, chỉ dùng mốc thời gian đã có trong facts."
+  },
+  "batu": {
+    "templateId": "batu.visualReport.v1",
+    "guidance": "Dùng Tứ trụ, counts Ngũ hành, Thập thần và relations đã cấp. Dòng chảy/biểu đồ do UI tính từ dữ liệu này. Không đồng nhất số lượng một hành với vượng/suy hoặc tốt/xấu nếu facts không cung cấp căn cứ cần thiết."
+  },
+  "numerology": {
+    "templateId": "numerology.visualReport.v1",
+    "guidance": "Giữ nguyên các chỉ số, grid và khoảng tuổi calculator đã tính. Với life-path chỉ luận phạm vi Số Chủ Đạo; không biến thành báo cáo đầy đủ của các topic khác. Thuật ngữ nợ nghiệp cần có căn cứ và diễn đạt như bài học phát triển, không phán xét đạo đức."
+  },
+  "compat": {
+    "templateId": "compat.visualReport.v1",
+    "guidance": "Mỗi nhận định đối chiếu phải có căn cứ của cả A và B. Không tự tạo điểm hoặc phần trăm tương hợp. Tôn trọng cặp cùng giới/khác giới, dùng bạn/người ấy hoặc tên; không tự gán vai vợ/chồng. Không kết luận chắc chắn kết hôn/chia tay."
+  }
+}

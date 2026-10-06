@@ -1,0 +1,76 @@
+{
+  "request": {
+    "schemaVersion": "astrox.visual-reading.v1",
+    "module": "numerology",
+    "serviceId": "numerology--life-path",
+    "locale": "vi",
+    "lengthBudget": "430–650 từ cho toàn bộ nội dung; giữ mỗi phần ngắn"
+  },
+  "taskScope": "Ý nghĩa Số Chủ Đạo: bản chất cốt lõi, bài học và gợi ý áp dụng. Không thêm phân tích các topic khác.",
+  "chapterPlan": [
+    {
+      "id": "portrait",
+      "title": "Dấu ấn riêng",
+      "visualKind": "trait-spectrum",
+      "allowedAxes": [
+        {
+          "id": "novelty",
+          "left": "Ưa quen thuộc",
+          "right": "Thích khám phá"
+        },
+        {
+          "id": "approach",
+          "left": "Ứng biến",
+          "right": "Chuẩn bị"
+        },
+        {
+          "id": "autonomy",
+          "left": "Phối hợp",
+          "right": "Tự quyết"
+        }
+      ]
+    },
+    {
+      "id": "balance",
+      "title": "Điểm cần cân bằng",
+      "visualKind": "balance-path"
+    },
+    {
+      "id": "drivers",
+      "title": "Động lực phát triển",
+      "visualKind": "factor-map"
+    },
+    {
+      "id": "practice",
+      "title": "Gợi ý áp dụng",
+      "visualKind": "action-path"
+    }
+  ],
+  "trustedFacts": [
+    {
+      "id": "life-path",
+      "label": "Số chủ đạo",
+      "value": 5,
+      "source": "NumerologyChart.lifePath"
+    },
+    {
+      "id": "life-path-raw",
+      "label": "Tổng trước rút gọn",
+      "value": 14,
+      "source": "digitSumOnce(day)+digitSumOnce(month)+digitSumOnce(year)"
+    },
+    {
+      "id": "life-path-lesson",
+      "label": "Bài học theo cách tính hiện tại",
+      "value": [
+        14
+      ],
+      "source": "NumerologyChart.karmicDebts"
+    }
+  ],
+  "provenance": {
+    "profile": "Synthetic fixture; not a real user profile",
+    "sourceCommit": "2fd3c1b850cc1a9fc054d54d1897cf0eaa568596",
+    "calculationDate": "2026-10-06"
+  }
+}

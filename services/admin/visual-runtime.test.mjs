@@ -20,6 +20,15 @@ for (const locale of ['vi', 'en'])
     assert.match(prompt, /explanation/);
     assert.equal(renderServicePrompt(original, serviceId, settings, { locale }), old);
   });
+test('visual prompt gives eight fixed unique insight IDs and all spectrum signals explicitly', () => {
+  const descriptor = wrapVisualPrompt(original, serviceId, 'vi');
+  const prompt = renderServicePrompt(descriptor, serviceId, defaultPromptSettings());
+  for (const chapter of ['portrait', 'balance', 'drivers', 'practice'])
+    for (const n of [1, 2]) assert.ok(prompt.includes(`"id":"${chapter}-${n}"`));
+  for (const axis of ['novelty', 'approach', 'autonomy']) assert.ok(prompt.includes(`"axisId":"${axis}"`));
+  assert.ok(!prompt.includes('"role":"strength|balance|context|action"'));
+  assert.ok(!prompt.includes('"kind":"exact plan kind"'));
+});
 test('native compat wrapper preserves existing pair purchase scope', async () => {
   const n = {
     id: 'zodiac.compatPrompt.0',

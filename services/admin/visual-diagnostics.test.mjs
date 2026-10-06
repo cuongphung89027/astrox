@@ -8,15 +8,7 @@ import { fixture, original, serviceId } from '../../web/tests/support/visual-fix
 const privateText = 'private-customer-text-never-log-72641';
 const privateKey = 'provider-api-key-never-log-93752';
 const foreignKey = 'arbitrary-provider-property-never-log-31529';
-const allowedDiagnosticKeys = new Set([
-  'reason',
-  'format',
-  'min',
-  'max',
-  'length',
-  'missingKeys',
-  'extraKeysCount',
-]);
+const allowedDiagnosticKeys = new Set(['reason', 'format', 'min', 'max', 'length', 'missingKeys', 'extraKeysCount']);
 const knownSchemaKeys = new Set([
   'schemaVersion',
   'module',
@@ -101,7 +93,10 @@ function assertSafeDiagnostics(error, expectedReason) {
   const diagnostic = error.attempts[0].visualValidation;
   assert.ok(diagnostic && typeof diagnostic === 'object', 'the rejected provider attempt needs visual diagnostics');
   assert.equal(diagnostic.reason, expectedReason);
-  assert.ok(Object.keys(diagnostic).every(k => allowedDiagnosticKeys.has(k)), 'diagnostics use a bounded metadata shape');
+  assert.ok(
+    Object.keys(diagnostic).every(k => allowedDiagnosticKeys.has(k)),
+    'diagnostics use a bounded metadata shape',
+  );
   for (const key of diagnostic.missingKeys ?? [])
     assert.ok(knownSchemaKeys.has(key), 'missingKeys may contain only known schema names');
   const metadata = JSON.stringify({ code: error.code, attempts: error.attempts });

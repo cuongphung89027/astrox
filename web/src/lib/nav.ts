@@ -5,10 +5,12 @@
  */
 import { visibleModules, moduleRoute, type Locale, type RouteId } from '../../../services/admin/markets.ts';
 import { createT } from '../i18n/index.ts';
+import { isModuleInDevelopment } from '../../../services/admin/modules.ts';
 
-export type NavEntry = { id: RouteId; href: string; label: string; accent: string };
+type DevelopmentState = { disabled?: boolean; statusLabel?: string };
+export type NavEntry = { id: RouteId; href: string; label: string; accent: string } & DevelopmentState;
 
-export type NavSubLink = {
+export type NavSubLink = DevelopmentState & {
   id: RouteId;
   href: string;
   label: string;
@@ -34,6 +36,12 @@ export type NavGroup =
 
 const ACCENT = '#187650';
 
+function developmentState(id: RouteId, locale: Locale): DevelopmentState {
+  return isModuleInDevelopment(id)
+    ? { disabled: true, statusLabel: locale === 'en' ? 'Under development' : 'Đang phát triển' }
+    : {};
+}
+
 /**
  * 4 Structured groups for Desktop top navigation:
  * 1. Home (direct)
@@ -54,6 +62,7 @@ export function navGroups(locale: Locale): NavGroup[] {
       href: moduleRoute(id, locale),
       label: t.t(`nav.${id}`),
       hint: t.t(`desc.${id}`),
+      ...developmentState(id, locale),
       accent: ACCENT,
     }));
 
@@ -64,6 +73,7 @@ export function navGroups(locale: Locale): NavGroup[] {
       href: moduleRoute(id, locale),
       label: t.t(`nav.${id}`),
       hint: t.t(`desc.${id}`),
+      ...developmentState(id, locale),
       accent: ACCENT,
     }));
 
@@ -121,7 +131,13 @@ export function sheetLinks(locale: Locale): NavEntry[] {
   const t = createT(locale);
   return visibleModules(locale)
     .filter(m => m.id !== 'tuvi')
-    .map(m => ({ id: m.id as RouteId, href: moduleRoute(m.id, locale), label: t.t(`nav.${m.id}`), accent: ACCENT }));
+    .map(m => ({
+      id: m.id as RouteId,
+      href: moduleRoute(m.id, locale),
+      label: t.t(`nav.${m.id}`),
+      accent: ACCENT,
+      ...developmentState(m.id, locale),
+    }));
 }
 
 /** Dashboard quick-tools grid (experts drops out automatically in English). */
@@ -140,7 +156,13 @@ export function quickTools(locale: Locale): NavEntry[] {
   ];
   return ids
     .filter(id => locale === 'vi' || moduleRoute(id, locale) !== '')
-    .map(id => ({ id, href: moduleRoute(id, locale), label: t.t(`nav.${id}`), accent: ACCENT }));
+    .map(id => ({
+      id,
+      href: moduleRoute(id, locale),
+      label: t.t(`nav.${id}`),
+      accent: ACCENT,
+      ...developmentState(id, locale),
+    }));
 }
 
 /** Mobile top-bar title: matching nav label, falling back to compat/terms. */

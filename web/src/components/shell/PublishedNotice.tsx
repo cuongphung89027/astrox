@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { publicState } from '../../../../services/admin/public-state.mjs';
 import type { publicConfig } from '../../../../services/admin/config';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { DevelopmentNotice } from '@/components/kit/DevelopmentNotice';
 
 type PublishedConfig = ReturnType<typeof publicConfig>;
 
@@ -47,6 +48,7 @@ export function PublishedNotice({ children }: { children?: ReactNode }) {
     };
   }, [t.locale]);
   const state = publicState(config, pathname);
+  if (state.development) return <DevelopmentNotice />;
   const notice = state.notice && !dismissed.includes(state.notice.id) ? state.notice : null;
   if (!state.announcement && !state.blocked && !notice) return <Fragment>{children}</Fragment>;
   return (

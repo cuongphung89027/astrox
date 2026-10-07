@@ -13,6 +13,8 @@ export type ModuleDef = {
   policy: 'profile' | 'session' | 'period';
   gated: boolean;
   description: string;
+  /** Release-owned temporary lock, enforced after persisted market overrides. */
+  development?: boolean;
 };
 
 export const MODULES = [
@@ -90,6 +92,7 @@ export const MODULES = [
   },
   {
     id: 'palm',
+    development: true,
     name: 'Chỉ tay',
     route: '/chitay',
     legacyRoutes: [],
@@ -115,6 +118,11 @@ export const GATED_MODULE_IDS: readonly ModuleId[] = MODULES.filter(m => m.gated
 
 export function moduleById(id: string) {
   return MODULES.find(m => m.id === id);
+}
+
+export function isModuleInDevelopment(id: string): boolean {
+  const module = moduleById(id);
+  return Boolean(module && 'development' in module && module.development);
 }
 
 /** Maps a pathname (canonical or legacy) to its module id, or "" when it is not a module page. */

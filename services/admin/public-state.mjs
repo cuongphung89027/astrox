@@ -1,8 +1,10 @@
-import { routeModule } from './modules.ts';
+import { moduleById, isModuleInDevelopment } from './modules.ts';
+import { resolveRoute } from './markets.ts';
 /** Display-only state. Backend still authorizes every operation independently. */
 export function publicState(config, pathname, now = Date.now()) {
+  const module = moduleById(resolveRoute(pathname)?.id || '')?.id || '';
+  if (isModuleInDevelopment(module)) return { blocked: true, development: true, notice: null, announcement: '' };
   if (!config) return { blocked: false, notice: null, announcement: '' };
-  const module = routeModule(pathname);
   const service = config.billing?.services?.find(s => s.id === module);
   const blocked = Boolean(
     module &&

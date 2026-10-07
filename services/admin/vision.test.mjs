@@ -64,7 +64,7 @@ import { testEnv } from './test/sqlite.mjs';
 import { defaultConfig } from './config.ts';
 import { state, publish, saveSecret } from './store.mjs';
 import { handleConfiguredAi } from './integration-api.mjs';
-test('configured palm request carries image through managed template and protocol without logging image', async () => {
+test('configured palm request is rejected during development without provider calls or image logs', async () => {
   const env = testEnv();
   env.PROVIDER_ALLOWED_HOSTS = 'api.example.com';
   await state(env);
@@ -122,10 +122,8 @@ test('configured palm request carries image through managed template and protoco
       }),
       env,
     );
-    assert.equal(response.status, 200);
-    const user = sent.input.find(m => m.role === 'user');
-    assert.equal(user.content[1].image_url, image.image_url.url);
-    assert.ok(user.content[0].text.includes('Tay trái'));
+    assert.equal(response.status, 403);
+    assert.equal(sent, undefined);
     const logs = (await env.DB.prepare('SELECT * FROM admin_ai_requests').all()).results;
     assert.ok(!JSON.stringify(logs).includes('base64'));
     assert.ok(!JSON.stringify(logs).includes('Câu hỏi'));

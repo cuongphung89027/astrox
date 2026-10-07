@@ -116,12 +116,20 @@ export function Dashboard() {
         <h2 id="dashboard-tools">{t.t('dash.quickTools')}</h2>
       </div>
       <div className={styles.tools}>
-        {quickTools(t.locale).map(tool => (
-          <Link key={tool.href} href={tool.href}>
-            <FeatureIcon name={FEATURE_BY_ID[tool.id] ?? 'home'} size={28} />
-            {tool.label}
-          </Link>
-        ))}
+        {quickTools(t.locale).map(tool =>
+          tool.disabled ? (
+            <span key={tool.href} aria-disabled="true" className={styles.developmentTile}>
+              <FeatureIcon name={FEATURE_BY_ID[tool.id] ?? 'home'} size={28} />
+              {tool.label}
+              <small>{tool.statusLabel}</small>
+            </span>
+          ) : (
+            <Link key={tool.href} href={tool.href}>
+              <FeatureIcon name={FEATURE_BY_ID[tool.id] ?? 'home'} size={28} />
+              {tool.label}
+            </Link>
+          ),
+        )}
       </div>
     </section>
   );

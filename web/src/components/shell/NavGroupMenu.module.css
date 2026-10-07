@@ -156,6 +156,9 @@
   white-space: nowrap;
 }
 
+.item[aria-disabled="true"] { cursor: default; opacity: .72; pointer-events: none; }
+.item[aria-disabled="true"] .itemHint { color: var(--color-accent); }
+
 @media (prefers-reduced-motion: reduce) {
   .dropdown {
     transition: opacity 0.01ms !important;

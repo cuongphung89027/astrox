@@ -108,6 +108,19 @@ export function NavGroupMenu({ id, label, items }: NavGroupMenuProps) {
             item.href === '/' ? pathname === '/' : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const iconName = FEATURE_BY_ID[item.id] ?? 'home';
 
+          if (item.disabled)
+            return (
+              <span key={item.id} className={styles.item} aria-disabled="true">
+                <span className={styles.itemIcon}>
+                  <FeatureIcon name={iconName} size={18} />
+                </span>
+                <span className={styles.itemText}>
+                  <span className={styles.itemLabel}>{item.label}</span>
+                  <span className={styles.itemHint}>{item.statusLabel}</span>
+                </span>
+              </span>
+            );
+
           return (
             <Link
               key={item.id}

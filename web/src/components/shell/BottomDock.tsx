@@ -31,7 +31,7 @@ export function BottomDock() {
     accent: item.accent,
     icon: <FeatureIcon name={dockIcon(item.id) ?? 'home'} size={26} />,
   }));
-  const SHEET_LINKS = sheetLinks(t.locale).map(item => ({ id: item.id, href: item.href, label: item.label }));
+  const SHEET_LINKS = sheetLinks(t.locale);
   const dockRef = useRef<HTMLElement>(null);
   const [dockWidth, setDockWidth] = useState(366);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -144,25 +144,46 @@ export function BottomDock() {
             </g>
           </svg>
           <div className={styles.grid}>
-            {SHEET_LINKS.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={styles.tile}
-                style={
-                  {
-                    '--x': `${[-96, 0, 96][i % 3]}px`,
-                    '--y': `${-360 + Math.floor(i / 3) * 116}px`,
-                    '--delay': `${i * 28}ms`,
-                  } as CSSProperties
-                }
-                aria-current={isActive(item.href) ? 'page' : undefined}
-              >
-                <FeatureIcon name={dockIcon(item.id) ?? 'home'} className={styles.icon} />
-                <span className={styles.label}>{item.label}</span>
-              </Link>
-            ))}
+            {SHEET_LINKS.map((item, i) =>
+              item.disabled ? (
+                <span
+                  key={item.href}
+                  aria-disabled="true"
+                  className={styles.tile}
+                  style={
+                    {
+                      '--x': `${[-96, 0, 96][i % 3]}px`,
+                      '--y': `${-360 + Math.floor(i / 3) * 116}px`,
+                      '--delay': `${i * 28}ms`,
+                    } as CSSProperties
+                  }
+                >
+                  <FeatureIcon name={dockIcon(item.id) ?? 'home'} className={styles.icon} />
+                  <span className={styles.label}>
+                    {item.label}
+                    <small>{item.statusLabel}</small>
+                  </span>
+                </span>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={styles.tile}
+                  style={
+                    {
+                      '--x': `${[-96, 0, 96][i % 3]}px`,
+                      '--y': `${-360 + Math.floor(i / 3) * 116}px`,
+                      '--delay': `${i * 28}ms`,
+                    } as CSSProperties
+                  }
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                >
+                  <FeatureIcon name={dockIcon(item.id) ?? 'home'} className={styles.icon} />
+                  <span className={styles.label}>{item.label}</span>
+                </Link>
+              ),
+            )}
           </div>
         </div>
       </div>

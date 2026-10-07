@@ -4,7 +4,7 @@ import { bundleDefinitions } from './service-tree.ts';
 import { defaultPromptSettings, ORIGINAL_SYSTEM_PROMPT, PROMPT_TEMPLATES } from './prompt-engine.ts';
 import { providerRoutes } from './provider-models.ts';
 import { addMissingServices, addCouplesServices, SERVICE_CATALOG } from './catalog.ts';
-import { MODULES } from './modules.ts';
+import { MODULES, isModuleInDevelopment } from './modules.ts';
 import { defaultEnglishPromptSettings } from './english-prompts.ts';
 /** Shared, non-secret contract. Secrets are stored by reference only. */
 export type Provider = {
@@ -749,18 +749,29 @@ export function quotePackage(p: TopupPackage, rate: number) {
   return { base, bonus: p.bonus, total: base + p.bonus };
 }
 export function configForMarket(c: AdminConfig, market: 'VN' | 'US' = 'VN'): AdminConfig {
-  if (market !== 'US') return c;
+  const projected =
+    market !== 'US'
+      ? c
+      : {
+          ...c,
+          rewards: c.rewardsUs,
+          content: c.contentUs,
+          billing: {
+            ...c.billing,
+            promos: c.billing.usPromos,
+            unlocks: c.billing.usUnlocks,
+            services: c.billing.services
+              .filter(s => s.module !== 'experts')
+              .map(s => ({ ...s, name: englishServiceName(s.id), ...(c.billing.usServices?.[s.id] || {}) })),
+          },
+        };
   return {
-    ...c,
-    rewards: c.rewardsUs,
-    content: c.contentUs,
+    ...projected,
     billing: {
-      ...c.billing,
-      promos: c.billing.usPromos,
-      unlocks: c.billing.usUnlocks,
-      services: c.billing.services
-        .filter(s => s.module !== 'experts')
-        .map(s => ({ ...s, name: englishServiceName(s.id), ...(c.billing.usServices?.[s.id] || {}) })),
+      ...projected.billing,
+      services: projected.billing.services.map(s =>
+        isModuleInDevelopment(s.module) ? { ...s, status: 'draft' as const } : s,
+      ),
     },
   };
 }

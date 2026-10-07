@@ -1,6 +1,8 @@
 # Release 07/10/2026 — Nâng cấp UX bài đọc, từ điển thuật ngữ, chỉ dẫn lịch âm và nhóm thanh điều hướng
 
-- Branch `codex/reading-ux-upgrade` từ base `a04df36`.
+- Commit release: `f0e123a`, push cả 2 remotes (`origin/main`, `upstream/main`).
+- Worker `astrox-api`: version `de8e1f6e-61b3-4ef2-a3e8-2eb065df1127`.
+- Pages `theastrox`: deployment `b7d3c6ce-004c-439a-a1c5-3fff9d7a40a9` từ `f0e123a` (Production live tại `https://theastrox.space`).
 - Phạm vi thay đổi: hoàn toàn phía frontend `web/` (không có migration D1, không đổi backend services).
 
 ## 1. Nội dung nâng cấp
@@ -40,3 +42,17 @@
 - `git diff --check`: sạch sẽ.
 - `next build`: Static export thành công 35/35 routes trong 3.0s.
 - Song ngữ: Đảm bảo đối xứng 100% giữa Tiếng Việt và English US.
+- Production smoke:
+  - `https://theastrox.space/` & `https://theastrox.space/en` 200 OK.
+  - `https://theastrox.space/licham` & `https://theastrox.space/en/lunar-calendar` 200 OK.
+  - Top nav rendered: "Tìm hiểu bản thân", "Hỏi đáp", "Know Yourself", "Ask".
+  - Worker API preflight: 204 OK (access-control-allow-origin).
+
+## 3. Deployment record
+
+| Mục | Giá trị |
+|---|---|
+| Release SHA | `f0e123a` |
+| Worker version | `de8e1f6e-61b3-4ef2-a3e8-2eb065df1127` |
+| Pages deployment ID | `b7d3c6ce-004c-439a-a1c5-3fff9d7a40a9` |
+| Rollback target | `a04df36` |

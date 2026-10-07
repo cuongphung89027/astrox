@@ -11,6 +11,7 @@ import { moduleRoute } from '@/lib/locale';
 import { FeatureIcon } from '@/components/kit/FeatureIcon';
 import { PointCoin } from '@/components/points/PointCoin';
 import { useToast } from '@/components/motion';
+import { Term } from '@/components/kit/Term';
 import s from './DailyOverview.module.css';
 
 type Facts = ReturnType<typeof import('@/lib/almanac').dayFacts>;
@@ -134,6 +135,11 @@ export function DailyOverview({ now }: { now: Date | null }) {
             </svg>
           </div>
           <strong>{facts ? `${facts.lunar.day}/${facts.lunar.month}` : '—'}</strong>
+          {facts && (
+            <span style={{ fontSize: '11px', color: '#6d715b', marginTop: '2px' }}>
+              <Term termKey={facts.god}>{facts.god}</Term> · {facts.good ? text('Hoàng đạo', 'Auspicious') : text('Hắc đạo', 'Inauspicious')}
+            </span>
+          )}
           {facts?.lunar.leap && <span>{text('Tháng nhuận', 'Leap month')}</span>}
           {current?.error && <span>{text('Chưa tải được lịch', 'Calendar unavailable')}</span>}
         </div>

@@ -8,7 +8,90 @@ import { createT } from '../i18n/index.ts';
 
 export type NavEntry = { id: RouteId; href: string; label: string; accent: string };
 
+export type NavSubLink = {
+  id: RouteId;
+  href: string;
+  label: string;
+  hint: string;
+  accent: string;
+};
+
+export type NavGroup =
+  | {
+      type: 'link';
+      id: RouteId;
+      href: string;
+      label: string;
+      accent: string;
+    }
+  | {
+      type: 'group';
+      id: 'self' | 'qa';
+      label: string;
+      accent: string;
+      items: NavSubLink[];
+    };
+
 const ACCENT = '#187650';
+
+/**
+ * 4 Structured groups for Desktop top navigation:
+ * 1. Home (direct)
+ * 2. Tìm hiểu bản thân (dropdown: Tử Vi, Bát Tự, Thần Số Học, Cung Hoàng Đạo)
+ * 3. Hỏi đáp (dropdown: Tarot, Kinh Dịch, Chỉ tay)
+ * 4. Lịch âm (direct)
+ * 5. Chuyên gia (direct; Vietnamese only)
+ */
+export function navGroups(locale: Locale): NavGroup[] {
+  const t = createT(locale);
+  const selfIds: RouteId[] = ['tuvi', 'batu', 'numerology', 'zodiac'];
+  const qaIds: RouteId[] = ['tarot', 'kinhdich', 'palm'];
+
+  const selfItems: NavSubLink[] = selfIds
+    .filter(id => moduleRoute(id, locale) !== '')
+    .map(id => ({
+      id,
+      href: moduleRoute(id, locale),
+      label: t.t(`nav.${id}`),
+      hint: t.t(`desc.${id}`),
+      accent: ACCENT,
+    }));
+
+  const qaItems: NavSubLink[] = qaIds
+    .filter(id => moduleRoute(id, locale) !== '')
+    .map(id => ({
+      id,
+      href: moduleRoute(id, locale),
+      label: t.t(`nav.${id}`),
+      hint: t.t(`desc.${id}`),
+      accent: ACCENT,
+    }));
+
+  const groups: NavGroup[] = [
+    { type: 'link', id: 'home', href: moduleRoute('home', locale), label: t.t('nav.home'), accent: ACCENT },
+    { type: 'group', id: 'self', label: t.t('nav.group.self'), accent: ACCENT, items: selfItems },
+    { type: 'group', id: 'qa', label: t.t('nav.group.qa'), accent: ACCENT, items: qaItems },
+    {
+      type: 'link',
+      id: 'lunar-calendar',
+      href: moduleRoute('lunar-calendar', locale),
+      label: t.t('nav.lunar-calendar'),
+      accent: ACCENT,
+    },
+  ];
+
+  if (moduleRoute('experts', locale) !== '') {
+    groups.push({
+      type: 'link',
+      id: 'experts',
+      href: moduleRoute('experts', locale),
+      label: t.t('nav.experts'),
+      accent: ACCENT,
+    });
+  }
+
+  return groups;
+}
 
 /** Desktop top nav: home + all visible modules except compat + profile. */
 export function navItems(locale: Locale): NavEntry[] {

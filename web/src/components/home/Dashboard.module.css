@@ -13,8 +13,88 @@
 .today { position: relative; overflow: hidden; padding: 26px; border-radius: 20px; background: #224d40; color: #fff5dc; grid-row: auto; }
 .todayCopy { position: relative; z-index: 1; min-width: 0; }
 .eyebrow { font-size: 11px; letter-spacing: .12em; color: #b9bf9d; }
-.today h2 { font-family: var(--font-display); font-size: 35px; line-height: 1.2; margin: 18px 0; overflow-wrap: anywhere; }
+.today h2 { font-family: var(--font-display); font-size: 35px; line-height: 1.2; margin: 18px 0 12px; overflow-wrap: anywhere; }
 .today p { font-size: 15px; line-height: 1.85; color: #c3cfb8; overflow-wrap: anywhere; white-space: normal; }
+
+.dailyCosmic {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+.cosmicMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.cosmicBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: color-mix(in srgb, #f2a912 25%, rgba(255,255,255,0.08));
+  border: 1px solid color-mix(in srgb, #f2a912 35%, transparent);
+  color: #ffecc0;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-weight: 500;
+}
+.cosmicBadge[data-good="false"] {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+  color: #dfd8c8;
+}
+.cosmicGuide {
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  display: grid;
+  gap: 4px;
+}
+.cosmicGuide strong {
+  color: #e5d2a0;
+  font-weight: 500;
+  margin-right: 4px;
+}
+.cosmicRhythms {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+.rhythmItem {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.rhythmLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: #c0ceb7;
+  margin-bottom: 4px;
+}
+.rhythmTrack {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.rhythmFill {
+  height: 100%;
+  background: linear-gradient(90deg, #96b88b, #f2a912);
+  border-radius: 99px;
+}
+.cosmicHours {
+  font-size: 12px;
+  color: #b7c79e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
 .preview { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
 .today a { display: inline-flex; gap: 30px; font-size: 14px; margin-top: 24px; padding-bottom: 5px; border-bottom: 1px solid #b7c79e50; }
 .sun { position: absolute; right: -25px; bottom: -25px; color: #c8b57b; opacity: .13; }

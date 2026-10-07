@@ -16,6 +16,8 @@ export const en: Record<string, string> = {
   'nav.profile': 'Profile',
   'nav.pricing': 'Pricing',
   'nav.terms': 'Terms',
+  'nav.group.self': 'Know Yourself',
+  'nav.group.qa': 'Ask',
   'desc.tuvi': 'Chart & fortune',
   'desc.zodiac': 'Explore your star map',
   'desc.kinhdich': 'Cast & contemplate',

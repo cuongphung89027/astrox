@@ -19,6 +19,9 @@ import { useTarotHistoryCount } from '@/lib/use-tarot-history';
 import { quickTools } from '@/lib/nav';
 import { moduleRoute } from '@/lib/locale';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { dayFacts } from '@/lib/almanac';
+import { getDayGuideByName, formatDaySummary } from '@/lib/day-guide';
+import { Term } from '@/components/kit/Term';
 import { DailyOverview } from './DailyOverview';
 import styles from './Dashboard.module.css';
 
@@ -105,6 +108,60 @@ export function Dashboard() {
       </div>
     </section>
   );
+  const en = t.locale === 'en';
+  const todayIso = useMemo(() => {
+    const d = now ?? new Date();
+    return d.toISOString().slice(0, 10);
+  }, [now]);
+
+  const almanacFacts = useMemo(() => {
+    try {
+      return dayFacts(todayIso, t.locale);
+    } catch {
+      return null;
+    }
+  }, [todayIso, t.locale]);
+
+  const guide = useMemo(() => {
+    return almanacFacts ? getDayGuideByName(almanacFacts.god) : null;
+  }, [almanacFacts]);
+
+  const guideSummary = useMemo(() => {
+    return formatDaySummary(guide, t.locale);
+  }, [guide, t.locale]);
+
+  const nextGoodHour = useMemo(() => {
+    if (!almanacFacts || !almanacFacts.hours) return null;
+    let currentVnHour = 12;
+    try {
+      currentVnHour = Number(
+        new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Ho_Chi_Minh' }).format(
+          now ?? new Date(),
+        ),
+      );
+    } catch {
+      currentVnHour = (now ?? new Date()).getHours();
+    }
+    const currentBranchIndex = Math.floor(((currentVnHour + 1) % 24) / 2);
+    for (let offset = 0; offset < 12; offset++) {
+      const idx = (currentBranchIndex + offset) % 12;
+      const h = almanacFacts.hours[idx];
+      if (h && h.good) return h;
+    }
+    return null;
+  }, [almanacFacts, now]);
+
+  const rhythms = useMemo(() => {
+    if (!almanacFacts) return { work: 82, social: 85, energy: 80 };
+    const base = (almanacFacts.stem * 7 + almanacFacts.branch * 13) % 20;
+    const boost = almanacFacts.good ? 8 : 0;
+    return {
+      work: 72 + ((base * 3) % 18) + boost,
+      social: 70 + ((base * 7) % 20) + boost,
+      energy: 72 + ((base * 5) % 18) + boost,
+    };
+  }, [almanacFacts]);
+
   return (
     <div className={styles.page}>
       <header className={`${styles.header} ${!loggedIn ? styles.guestHeader : ''}`}>
@@ -166,12 +223,91 @@ export function Dashboard() {
                   </span>
                   <h2>{name}</h2>
                   {usableToday ? (
-                    <p className={styles.preview}>{excerpt(usableToday.text)}</p>
+                    <>
+                      {almanacFacts && (
+                        <div style={{ marginBottom: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <span className={styles.cosmicBadge} data-good={almanacFacts.good}>
+                            <Term termKey={almanacFacts.good ? 'hoang-dao' : 'hac-dao'}>
+                              {almanacFacts.good ? (en ? 'Auspicious' : 'Hoàng đạo') : (en ? 'Inauspicious' : 'Hắc đạo')}
+                            </Term>
+                            <span>·</span>
+                            <Term termKey={almanacFacts.god}>{almanacFacts.god}</Term>
+                          </span>
+                        </div>
+                      )}
+                      <p className={styles.preview}>{excerpt(usableToday.text)}</p>
+                    </>
                   ) : (
-                    <p>{t.t('dash.noReadingToday')}</p>
+                    <div className={styles.dailyCosmic}>
+                      {almanacFacts && (
+                        <>
+                          <div className={styles.cosmicMeta}>
+                            <span className={styles.cosmicBadge} data-good={almanacFacts.good}>
+                              <Term termKey={almanacFacts.good ? 'hoang-dao' : 'hac-dao'}>
+                                {almanacFacts.good ? (en ? 'Auspicious' : 'Hoàng đạo') : (en ? 'Inauspicious' : 'Hắc đạo')}
+                              </Term>
+                              <span>·</span>
+                              <Term termKey={almanacFacts.god}>{almanacFacts.god}</Term>
+                            </span>
+                            <span style={{ fontSize: '12.5px', color: '#c9d4be' }}>
+                              {almanacFacts.dayName} · {en ? 'Lunar' : 'Âm'} {almanacFacts.lunar.day}/{almanacFacts.lunar.month}
+                            </span>
+                          </div>
+
+                          {guideSummary.suitable && (
+                            <div className={styles.cosmicGuide}>
+                              <div>
+                                <strong>{en ? 'Good for:' : 'Hợp việc:'}</strong>
+                                <span>{guideSummary.suitable}</span>
+                              </div>
+                              {guideSummary.avoid && (
+                                <div style={{ color: '#d8cfbe' }}>
+                                  <strong>{en ? 'Caution:' : 'Nên tránh:'}</strong>
+                                  <span>{guideSummary.avoid}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {nextGoodHour && (
+                            <div className={styles.cosmicHours}>
+                              <span>✦</span>
+                              <span>
+                                {en ? 'Next auspicious hour:' : 'Giờ hoàng đạo sắp tới:'}{' '}
+                                <strong>{nextGoodHour.name}</strong> ({nextGoodHour.range})
+                              </span>
+                            </div>
+                          )}
+
+                          <div className={styles.cosmicRhythms}>
+                            <div className={styles.rhythmItem}>
+                              <div className={styles.rhythmLabel}>
+                                <span>{en ? 'Work' : 'Công việc'}</span>
+                                <span>{rhythms.work}%</span>
+                              </div>
+                              <div className={styles.rhythmTrack}><div className={styles.rhythmFill} style={{ width: `${rhythms.work}%` }} /></div>
+                            </div>
+                            <div className={styles.rhythmItem}>
+                              <div className={styles.rhythmLabel}>
+                                <span>{en ? 'Social' : 'Quan hệ'}</span>
+                                <span>{rhythms.social}%</span>
+                              </div>
+                              <div className={styles.rhythmTrack}><div className={styles.rhythmFill} style={{ width: `${rhythms.social}%` }} /></div>
+                            </div>
+                            <div className={styles.rhythmItem}>
+                              <div className={styles.rhythmLabel}>
+                                <span>{en ? 'Vitality' : 'Năng lượng'}</span>
+                                <span>{rhythms.energy}%</span>
+                              </div>
+                              <div className={styles.rhythmTrack}><div className={styles.rhythmFill} style={{ width: `${rhythms.energy}%` }} /></div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   )}
                   <Link href={`${moduleRoute('tuvi', t.locale)}?view=period`}>
-                    {usableToday ? t.t('dash.readMore') : t.t('dash.createToday')} <span>↗</span>
+                    {usableToday ? t.t('dash.readMore') : (en ? 'Personal reading with AI' : 'Tạo vận trình cá nhân')} <span>↗</span>
                   </Link>
                 </div>
                 <FeatureIcon name="tuvi" size={120} className={styles.sun} />
@@ -207,15 +343,28 @@ export function Dashboard() {
                     </div>
                     <div>
                       <dt>{t.t('dash.elementClass')}</dt>
-                      <dd>{chart.meta.fiveElementsClass}</dd>
+                      <dd>
+                        <Term termKey={chart.meta.fiveElementsClass}>{chart.meta.fiveElementsClass}</Term>
+                      </dd>
                     </div>
                     <div>
                       <dt>{t.t('dash.menhAt')}</dt>
-                      <dd>{menh?.earthlyBranch || '—'}</dd>
+                      <dd>
+                        <Term termKey="cung-menh">{menh?.earthlyBranch || '—'}</Term>
+                      </dd>
                     </div>
                     <div>
                       <dt>{t.t('dash.majorStars')}</dt>
-                      <dd>{menh?.majorStars.map(star => star.name).join(' · ') || t.t('dash.noMajorStar')}</dd>
+                      <dd>
+                        {menh?.majorStars && menh.majorStars.length > 0
+                          ? menh.majorStars.map((star, idx) => (
+                              <span key={star.name}>
+                                {idx > 0 ? ' · ' : ''}
+                                <Term termKey={star.name}>{star.name}</Term>
+                              </span>
+                            ))
+                          : t.t('dash.noMajorStar')}
+                      </dd>
                     </div>
                   </dl>
                 ) : (

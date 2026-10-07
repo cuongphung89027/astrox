@@ -16,6 +16,8 @@ export const vi: Record<string, string> = {
   'nav.profile': 'Hồ sơ',
   'nav.pricing': 'Bảng giá',
   'nav.terms': 'Điều khoản',
+  'nav.group.self': 'Tìm hiểu bản thân',
+  'nav.group.qa': 'Hỏi đáp',
   'desc.tuvi': 'Lá số & vận hạn',
   'desc.zodiac': 'Khám phá bản đồ sao',
   'desc.kinhdich': 'Gieo quẻ & chiêm nghiệm',

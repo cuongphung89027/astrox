@@ -27,6 +27,8 @@ import {
 } from '@/lib/almanac';
 import s from './LunarCalendar.module.css';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { Term } from '@/components/kit/Term';
+import { getDayGuideByName, formatDaySummary } from '@/lib/day-guide';
 const STORE = 'astrox-lunar-events-v1';
 // Select tháng/năm riêng thay cho input[type=month]: ô month native hiển thị
 // theo locale trình duyệt (vd. "September 2026") ngoài tầm kiểm soát của app.
@@ -487,11 +489,36 @@ export function LunarCalendar() {
                     <details className={s.disclosure}>
                       <summary>{copy('Tra cứu ngày', 'Day details')}</summary>
                       <p>
-                        {facts.god} ·{' '}
+                        <Term termKey={facts.god}>{facts.god}</Term>
+                        {facts.good ? ` (${copy('Hoàng đạo', 'Auspicious')})` : ` (${copy('Hắc đạo', 'Inauspicious')})`} ·{' '}
                         {facts.taboos.length
-                          ? facts.taboos.join(' · ')
+                          ? facts.taboos.map((t, idx) => (
+                              <span key={t}>
+                                {idx > 0 ? ' · ' : ''}
+                                <Term termKey={t}>{t}</Term>
+                              </span>
+                            ))
                           : copy('Không trùng Tam nương, Nguyệt kỵ', 'No traditional taboo date applies')}
                       </p>
+                      {(() => {
+                        const guide = getDayGuideByName(facts.god);
+                        const summary = formatDaySummary(guide, en ? 'en' : 'vi');
+                        if (!summary.suitable && !summary.avoid) return null;
+                        return (
+                          <p style={{ marginTop: '6px', fontSize: '13px', lineHeight: 1.5 }}>
+                            {summary.suitable && (
+                              <span style={{ color: 'var(--color-accent)', fontWeight: 500, marginRight: '10px' }}>
+                                <strong>{copy('Hợp: ', 'Good for: ')}</strong>{summary.suitable}
+                              </span>
+                            )}
+                            {summary.avoid && (
+                              <span style={{ color: 'var(--color-muc-2)' }}>
+                                <strong>{copy('Tránh: ', 'Avoid: ')}</strong>{summary.avoid}
+                              </span>
+                            )}
+                          </p>
+                        );
+                      })()}
                       <p className={s.muted}>
                         {copy(
                           'Theo lịch truyền thống, không phải bảo đảm kết quả công việc.',
@@ -532,28 +559,46 @@ export function LunarCalendar() {
                 </small>
               </div>
               <div className={s.results}>
-                {matching.map(d => (
-                  <button
-                    key={d.date}
-                    onClick={() => {
-                      choose(d.date);
-                      setTab('calendar');
-                    }}
-                  >
-                    <span className={s.resultDate}>
-                      {Number(d.date.slice(-2))}
-                      <small>{weekday(d.date, en)}</small>
-                    </span>
-                    <span>
-                      <strong>{d.dayName}</strong>
-                      <small>
-                        {copy('Âm', 'Lunar')} {d.lunar.day}/{d.lunar.month}
-                        {d.lunar.leap ? copy(' nhuận', ' leap') : ''} · {d.god}
-                      </small>
-                    </span>
-                    <span aria-hidden="true">↗</span>
-                  </button>
-                ))}
+                {matching.map(d => {
+                  const guide = getDayGuideByName(d.god);
+                  const summary = formatDaySummary(guide, en ? 'en' : 'vi');
+                  return (
+                    <div
+                      key={d.date}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        choose(d.date);
+                        setTab('calendar');
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          choose(d.date);
+                          setTab('calendar');
+                        }
+                      }}
+                    >
+                      <span className={s.resultDate}>
+                        {Number(d.date.slice(-2))}
+                        <small>{weekday(d.date, en)}</small>
+                      </span>
+                      <span>
+                        <strong>{d.dayName}</strong>
+                        <small>
+                          {copy('Âm', 'Lunar')} {d.lunar.day}/{d.lunar.month}
+                          {d.lunar.leap ? copy(' nhuận', ' leap') : ''} · <Term termKey={d.god}>{d.god}</Term>
+                        </small>
+                        {summary.suitable && (
+                          <span className={s.actionGuide}>
+                            <span>{copy('Hợp:', 'Good for:')}</span> {summary.suitable}
+                          </span>
+                        )}
+                      </span>
+                      <span aria-hidden="true">↗</span>
+                    </div>
+                  );
+                })}
               </div>
               {!matching.length && (
                 <p className={s.empty}>{copy('Không có ngày khớp bộ lọc.', 'No dates match your filters.')}</p>

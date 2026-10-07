@@ -28,14 +28,15 @@ import { LoginPrompt } from './LoginPrompt';
 import { MarketGuard } from './MarketGuard';
 import { PointsChip } from './PointsChip';
 import { PublishedNotice } from './PublishedNotice';
-import { navItems, mobileTitleFor } from '@/lib/nav';
+import { navGroups, mobileTitleFor } from '@/lib/nav';
+import { NavGroupMenu } from './NavGroupMenu';
 import { moduleRoute } from '@/lib/locale';
 import { useLocale } from '@/i18n/LocaleProvider';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const t = useLocale();
-  const NAV = useMemo(() => navItems(t.locale), [t.locale]);
+  const NAV_GROUPS = useMemo(() => navGroups(t.locale), [t.locale]);
   const homeHref = moduleRoute('home', t.locale);
   const isHome = pathname === homeHref;
   const mobileTitle = !isHome ? mobileTitleFor(pathname, t.locale) : '';
@@ -94,24 +95,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* Nav desktop: underline trượt màu theo module (chỉ ≥lg — dưới đó
                 là bottom dock, tránh nav vỡ dòng ở màn vừa) */}
             <nav aria-label={t.t('shell.navAria')} className="mx-auto hidden lg:block">
-              <ul className="flex items-center">
-                {NAV.map(item => {
-                  const active =
-                    item.href === homeHref
-                      ? pathname === homeHref
-                      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              <ul className="flex items-center gap-1">
+                {NAV_GROUPS.map(group => {
+                  if (group.type === 'link') {
+                    const active =
+                      group.href === homeHref
+                        ? pathname === homeHref
+                        : pathname === group.href || pathname.startsWith(`${group.href}/`);
+                    return (
+                      <li key={group.href}>
+                        <Link
+                          href={group.href}
+                          aria-current={active ? 'page' : undefined}
+                          className="ax-nav-link whitespace-nowrap"
+                          style={{ ['--nav-accent' as string]: group.accent }}
+                        >
+                          <FeatureIconSafe id={group.id} />
+                          <span className="ax-nav-label">{group.label}</span>
+                          <span aria-hidden="true" className="ax-nav-underline" />
+                        </Link>
+                      </li>
+                    );
+                  }
                   return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        aria-current={active ? 'page' : undefined}
-                        className="ax-nav-link whitespace-nowrap"
-                        style={{ ['--nav-accent' as string]: item.accent }}
-                      >
-                        <FeatureIconSafe id={item.id} />
-                        <span className="ax-nav-label">{item.label}</span>
-                        <span aria-hidden="true" className="ax-nav-underline" />
-                      </Link>
+                    <li key={group.id}>
+                      <NavGroupMenu id={group.id} label={group.label} items={group.items} />
                     </li>
                   );
                 })}

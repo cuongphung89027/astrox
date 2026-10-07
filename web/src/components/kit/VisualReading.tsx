@@ -1,4 +1,6 @@
 'use client';
+import { ReadingToolbar } from './ReadingToolbar';
+import { visualReadingText } from '@/lib/reading-text';
 import { PeriodTimeline } from './PeriodTimeline';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { Chapter, Insight, SavedVisualReading, VisualInput } from '../../../../services/admin/visual-reading';
@@ -419,6 +421,7 @@ export function VisualReading({ saved }: { saved: SavedVisualReading }) {
           )}
         </span>
       </header>
+      <ReadingToolbar text={visualReadingText(saved)} locale={report.locale} />
       <div role="tablist" aria-label={copy('Các chương luận giải', 'Reading chapters')} className={styles.contents}>
         {report.chapters.map((c, i) => (
           <button

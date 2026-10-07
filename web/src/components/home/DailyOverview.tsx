@@ -112,7 +112,7 @@ export function DailyOverview({ now }: { now: Date | null }) {
         <header className={s.cardTop}>
           <h2 id="home-calendar-title">
             <FeatureIcon name="calendar" size={17} />
-            {text('Lịch âm', 'Lunar date')}
+            {text('Lịch âm', 'Vietnam lunar')}
           </h2>
           {current?.error && (
             <button
@@ -137,7 +137,8 @@ export function DailyOverview({ now }: { now: Date | null }) {
           <strong>{facts ? `${facts.lunar.day}/${facts.lunar.month}` : '—'}</strong>
           {facts && (
             <span style={{ fontSize: '11px', color: '#6d715b', marginTop: '2px' }}>
-              <Term termKey={facts.god}>{facts.god}</Term> · {facts.good ? text('Hoàng đạo', 'Auspicious') : text('Hắc đạo', 'Inauspicious')}
+              <Term termKey={facts.god}>{facts.god}</Term> ·{' '}
+              {facts.good ? text('Hoàng đạo', 'Auspicious') : text('Hắc đạo', 'Inauspicious')}
             </span>
           )}
           {facts?.lunar.leap && <span>{text('Tháng nhuận', 'Leap month')}</span>}
@@ -148,7 +149,7 @@ export function DailyOverview({ now }: { now: Date | null }) {
           href={moduleRoute('lunar-calendar', locale)}
           aria-label={text('Mở lịch đầy đủ', 'Open full calendar')}
         >
-          <span>{date ? `${solarDate} · ${weekday}` : '—'}</span>
+          <span>{date ? `${solarDate} · ${weekday}${en ? ' · UTC+7' : ''}` : '—'}</span>
           <span aria-hidden="true">↗</span>
         </Link>
       </article>

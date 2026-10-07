@@ -111,8 +111,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           style={{ ['--nav-accent' as string]: group.accent }}
                         >
                           <FeatureIconSafe id={group.id} />
-                          <span className="ax-nav-label">{group.label}</span>
-                          <span aria-hidden="true" className="ax-nav-underline" />
+                          <span className="ax-nav-label">
+                            {group.label}
+                            <span aria-hidden="true" className="ax-nav-underline" />
+                          </span>
                         </Link>
                       </li>
                     );
@@ -138,7 +140,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {/* Trang chủ hero tràn từ mép trên (header đè lên video); trang khác
               chừa pt-16 đúng chiều cao header. pb-28 <lg = chừa bottom dock. */}
           <main className="flex-1 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-0 pt-16">
-            <PublishedNotice><div className="ax-route-scene" key={pathname}>{children}</div></PublishedNotice>
+            <PublishedNotice>
+              <div className="ax-route-scene" key={pathname}>
+                {children}
+              </div>
+            </PublishedNotice>
           </main>
         </ProfileModalProvider>
 

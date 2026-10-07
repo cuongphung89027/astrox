@@ -376,3 +376,7 @@
     opacity: 0;
   }
 }
+
+/* Keep inline glossary taps above the card-wide calendar link. */
+.calendarMain { z-index: 2; pointer-events: none; }
+.calendarMain button { pointer-events: auto; }

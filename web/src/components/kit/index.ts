@@ -7,4 +7,3 @@ export { SectionTitle } from "./SectionTitle";
 export { AiText } from "./AiText";
 export { TopicTabs } from "./TopicTabs";
 export type { TabItem } from "./TopicTabs";
-export { Term } from "./Term";

@@ -130,7 +130,9 @@ for (const renderer of ['AiText', 'StructuredReading']) {
       const text =
         '# <script>alert(1)</script>\n\n**<img src=x onerror=alert(2)>**\n\n- <svg onload=alert(3)>\n- [unsafe](javascript:alert(4))';
       const markup = await renderReading(renderer, locale, text);
-      assert.doesNotMatch(markup, /<(?:script|img|svg|iframe|object)\b/i);
+      // The shared toolbar has trusted decorative SVG icons; inspect the reading body.
+      const bodyMarkup = markup.replace(/<svg\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/svg>/g, '');
+      assert.doesNotMatch(bodyMarkup, /<(?:script|img|svg|iframe|object)\b/i);
       assert.doesNotMatch(markup, /\b(?:href|src)=["']javascript:/i);
       assert.ok(markup.includes('&lt;script&gt;alert(1)&lt;/script&gt;'), 'HTML text is escaped, not silently deleted');
       assert.ok(markup.includes('&lt;img src=x onerror=alert(2)&gt;'));

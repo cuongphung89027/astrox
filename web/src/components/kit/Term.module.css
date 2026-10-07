@@ -12,11 +12,13 @@
   text-underline-offset: 3px;
   cursor: help;
   border-radius: 3px;
-  transition: color 180ms var(--ease-viet), background-color 180ms var(--ease-viet);
+  transition:
+    color 180ms var(--ease-viet),
+    background-color 180ms var(--ease-viet);
 }
 
 .termTrigger:hover,
-.termTrigger[aria-expanded="true"] {
+.termTrigger[aria-expanded='true'] {
   color: var(--color-kim-deep);
   background-color: color-mix(in srgb, var(--color-kim) 12%, transparent);
 }
@@ -32,11 +34,9 @@
 }
 
 .popover {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%) translateY(4px) scale(0.98);
-  bottom: calc(100% + 8px);
-  z-index: 60;
+  position: fixed;
+  transform: translateY(4px) scale(0.98);
+  z-index: 1000;
   width: max-content;
   max-width: min(290px, calc(100vw - 32px));
   padding: 10px 14px;
@@ -63,18 +63,8 @@
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transform: translateX(-50%) translateY(0) scale(1);
+  transform: translateY(0) scale(1);
   filter: blur(0);
-}
-
-.popover.flipBottom {
-  bottom: auto;
-  top: calc(100% + 8px);
-  transform: translateX(-50%) translateY(-4px) scale(0.98);
-}
-
-.popover.isOpen.flipBottom {
-  transform: translateX(-50%) translateY(0) scale(1);
 }
 
 .header {
@@ -105,6 +95,7 @@
 }
 
 .body {
+  display: block;
   font-family: var(--font-sans);
   font-size: 12.5px;
   line-height: 1.5;
@@ -113,31 +104,10 @@
   text-align: left;
 }
 
-.closeButton {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 18px;
-  height: 18px;
-  border: none;
-  background: transparent;
-  color: var(--color-muc-2);
-  display: grid;
-  place-items: center;
-  font-size: 12px;
-  border-radius: 50%;
-  cursor: pointer;
-  padding: 0;
-}
-
-.closeButton:hover {
-  background: rgba(0, 0, 0, 0.06);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .popover {
     transition: opacity 0.01ms !important;
     filter: none !important;
-    transform: translateX(-50%) !important;
+    transform: none !important;
   }
 }

@@ -1115,3 +1115,26 @@ html[data-motion="reduced"] *, html[data-motion="reduced"] *::before, html[data-
 html[data-motion=reduced] .ax-route-scene { animation: none; }
 html[data-motion=reduced] .ax-action,html[data-motion=reduced] .ax-action-arrow { transform: none !important; }
 @media (prefers-reduced-motion:reduce) { .ax-route-scene { animation: none; } .ax-action,.ax-action-arrow { transform: none !important; } }
+
+/* A fine, tapered rule belongs to the label rather than the full nav pill. */
+@media (min-width: 1024px) {
+  .ax-top-inner .ax-nav-label { position: relative; display: inline-flex; }
+  .ax-top-inner .ax-nav-label > .ax-nav-underline {
+    left: 50%; right: auto; bottom: -5px; width: clamp(20px, 70%, 64px); height: 1.5px;
+    border-radius: 100%; opacity: 0;
+    background: linear-gradient(90deg, transparent, #3f6c54 25%, #3f6c54 58%, #af965d 78%, transparent);
+    transform: translateX(-50%) scaleX(.45); transform-origin: center;
+    transition: transform 300ms cubic-bezier(.22,1,.36,1), opacity 220ms ease;
+  }
+  .ax-top-inner .ax-nav-link:hover .ax-nav-label > .ax-nav-underline,
+  .ax-top-inner .ax-nav-trigger:hover .ax-nav-label > .ax-nav-underline,
+  .ax-top-inner .ax-nav-trigger[aria-expanded='true'] .ax-nav-label > .ax-nav-underline {
+    transform: translateX(-50%) scaleX(.8); opacity: .55;
+  }
+  .ax-top-inner .ax-nav-link[aria-current='page'] .ax-nav-label > .ax-nav-underline,
+  .ax-top-inner .ax-nav-trigger[data-active='true'] .ax-nav-label > .ax-nav-underline {
+    transform: translateX(-50%) scaleX(1); opacity: .9;
+  }
+}
+@media (prefers-reduced-motion: reduce) { .ax-top-inner .ax-nav-label > .ax-nav-underline { transition: none; } }
+html[data-motion='reduced'] .ax-top-inner .ax-nav-label > .ax-nav-underline { transition: none; }

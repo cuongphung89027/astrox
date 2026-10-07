@@ -23,9 +23,7 @@ export function NavGroupMenu({ id, label, items }: NavGroupMenuProps) {
 
   // Check if current route matches any child item
   const isGroupActive = items.some(item =>
-    item.href === '/'
-      ? pathname === '/'
-      : pathname === item.href || pathname.startsWith(`${item.href}/`),
+    item.href === '/' ? pathname === '/' : pathname === item.href || pathname.startsWith(`${item.href}/`),
   );
 
   const [prevPathname, setPrevPathname] = useState(pathname);
@@ -88,31 +86,26 @@ export function NavGroupMenu({ id, label, items }: NavGroupMenuProps) {
       <button
         ref={triggerRef}
         type="button"
-        className={styles.trigger}
+        className={`${styles.trigger} ax-nav-trigger`}
         data-active={isGroupActive}
         aria-expanded={open}
         aria-controls={menuId}
         onClick={handleTriggerClick}
       >
-        {groupIconName && (
-          <FeatureIcon name={groupIconName} size={18} className={styles.groupIcon} />
-        )}
-        <span>{label}</span>
-        <span className={styles.chevron} aria-hidden="true">▾</span>
-        <span className={styles.underline} aria-hidden="true" />
+        {groupIconName && <FeatureIcon name={groupIconName} size={18} className={styles.groupIcon} />}
+        <span className="ax-nav-label">
+          {label}
+          <span className="ax-nav-underline" aria-hidden="true" />
+        </span>
+        <span className={styles.chevron} aria-hidden="true">
+          ▾
+        </span>
       </button>
 
-      <div
-        id={menuId}
-        className={`${styles.dropdown} ${open ? styles.isOpen : ''}`}
-        role="region"
-        aria-label={label}
-      >
+      <div id={menuId} className={`${styles.dropdown} ${open ? styles.isOpen : ''}`} role="region" aria-label={label}>
         {items.map(item => {
           const isActive =
-            item.href === '/'
-              ? pathname === '/'
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            item.href === '/' ? pathname === '/' : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const iconName = FEATURE_BY_ID[item.id] ?? 'home';
 
           return (

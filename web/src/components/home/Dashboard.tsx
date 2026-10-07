@@ -20,12 +20,14 @@ import { quickTools } from '@/lib/nav';
 import { moduleRoute } from '@/lib/locale';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { dayFacts } from '@/lib/almanac';
-import { getDayGuideByName, formatDaySummary } from '@/lib/day-guide';
+import { almanacInsights, dashboardReadingPreview, nextReferenceHour } from '@/lib/dashboard-reading';
+import { readingDay, readingTimeZone, referenceAlmanacDay } from '@/lib/reading-day';
+import { readVisualReading } from '../../../../services/admin/visual-reading';
 import { Term } from '@/components/kit/Term';
 import { DailyOverview } from './DailyOverview';
 import styles from './Dashboard.module.css';
 
-const excerpt = (text: string) => text.replace(/[#*`]/g, '').replace(/\s+/g, ' ').trim();
+const excerpt = dashboardReadingPreview;
 
 export function Dashboard() {
   const t = useLocale();
@@ -56,11 +58,26 @@ export function Dashboard() {
       window.removeEventListener('focus', update);
     };
   }, []);
+  const personalDay = now ? readingDay(now, t.locale) : '';
+  const almanacDay = now ? referenceAlmanacDay(now) : '';
+  const clockZone = readingTimeZone(t.locale);
+  const localHour = now
+    ? Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: clockZone }).format(now))
+    : 12;
+  const dateLabel = personalDay
+    ? new Intl.DateTimeFormat(t.locale === 'vi' ? 'vi-VN' : 'en-US', {
+        day: 'numeric',
+        month: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }).format(new Date(personalDay + 'T12:00:00Z'))
+    : '';
   const cache = profile ? state.aiCache.profiles[cacheFingerprint()] : undefined;
-  const today =
-    now && engine ? cache?.tuviPeriod.today[localeCacheKey(t.locale, engine.periodCacheKey('today'))] : undefined;
+  const today = now && engine ? cache?.tuviPeriod.today[localeCacheKey(t.locale, personalDay)] : undefined;
+  const todayVisual = today ? readVisualReading(today.text) : null;
   const usableToday =
     today &&
+    (!todayVisual?.snapshot.period || todayVisual.snapshot.period.asOf === personalDay) &&
     (!today.promptVersion || today.promptVersion === PROMPT_VERSION) &&
     (!today.expiresAt || today.expiresAt > (now?.getTime() || 0))
       ? today
@@ -87,9 +104,9 @@ export function Dashboard() {
   // Tên gọi người dùng tự đặt ưu tiên trước tên từ kênh đăng nhập (Zalo).
   const name = loggedIn ? profile?.name || displayName : undefined;
   const greeting = now
-    ? now.getHours() < 11
+    ? localHour < 11
       ? t.t('dash.greetingMorning')
-      : now.getHours() < 18
+      : localHour < 18
         ? t.t('dash.greetingAfternoon')
         : t.t('dash.greetingEvening')
     : t.t('dash.greetingGeneric');
@@ -109,58 +126,17 @@ export function Dashboard() {
     </section>
   );
   const en = t.locale === 'en';
-  const todayIso = useMemo(() => {
-    const d = now ?? new Date();
-    return d.toISOString().slice(0, 10);
-  }, [now]);
-
   const almanacFacts = useMemo(() => {
+    if (!almanacDay) return null;
     try {
-      return dayFacts(todayIso, t.locale);
+      return dayFacts(almanacDay, t.locale);
     } catch {
       return null;
     }
-  }, [todayIso, t.locale]);
+  }, [almanacDay, t.locale]);
+  const insights = almanacFacts ? almanacInsights(almanacFacts, t.locale) : [];
 
-  const guide = useMemo(() => {
-    return almanacFacts ? getDayGuideByName(almanacFacts.god) : null;
-  }, [almanacFacts]);
-
-  const guideSummary = useMemo(() => {
-    return formatDaySummary(guide, t.locale);
-  }, [guide, t.locale]);
-
-  const nextGoodHour = useMemo(() => {
-    if (!almanacFacts || !almanacFacts.hours) return null;
-    let currentVnHour = 12;
-    try {
-      currentVnHour = Number(
-        new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Ho_Chi_Minh' }).format(
-          now ?? new Date(),
-        ),
-      );
-    } catch {
-      currentVnHour = (now ?? new Date()).getHours();
-    }
-    const currentBranchIndex = Math.floor(((currentVnHour + 1) % 24) / 2);
-    for (let offset = 0; offset < 12; offset++) {
-      const idx = (currentBranchIndex + offset) % 12;
-      const h = almanacFacts.hours[idx];
-      if (h && h.good) return h;
-    }
-    return null;
-  }, [almanacFacts, now]);
-
-  const rhythms = useMemo(() => {
-    if (!almanacFacts) return { work: 82, social: 85, energy: 80 };
-    const base = (almanacFacts.stem * 7 + almanacFacts.branch * 13) % 20;
-    const boost = almanacFacts.good ? 8 : 0;
-    return {
-      work: 72 + ((base * 3) % 18) + boost,
-      social: 70 + ((base * 7) % 20) + boost,
-      energy: 72 + ((base * 5) % 18) + boost,
-    };
-  }, [almanacFacts]);
+  const nextGoodHour = almanacFacts && now ? nextReferenceHour(almanacFacts.hours, now) : null;
 
   return (
     <div className={styles.page}>
@@ -168,6 +144,7 @@ export function Dashboard() {
         <div>
           <p>
             {now?.toLocaleDateString(t.locale === 'vi' ? 'vi-VN' : 'en-US', {
+              timeZone: clockZone,
               weekday: 'long',
               day: 'numeric',
               month: 'long',
@@ -219,7 +196,8 @@ export function Dashboard() {
               <section className={styles.today} aria-label={t.t('dash.yourToday')}>
                 <div className={styles.todayCopy}>
                   <span className={styles.eyebrow}>
-                    {t.formatDate(now ?? new Date())} · {t.t('dash.fortune')}
+                    {dateLabel || t.t('dash.today')} ·{' '}
+                    {usableToday ? t.t('dash.fortune') : en ? 'DAY GUIDE' : 'CHỈ DẪN NGÀY'}
                   </span>
                   <h2>{name}</h2>
                   {usableToday ? (
@@ -228,13 +206,14 @@ export function Dashboard() {
                         <div style={{ marginBottom: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                           <span className={styles.cosmicBadge} data-good={almanacFacts.good}>
                             <Term termKey={almanacFacts.good ? 'hoang-dao' : 'hac-dao'}>
-                              {almanacFacts.good ? (en ? 'Auspicious' : 'Hoàng đạo') : (en ? 'Inauspicious' : 'Hắc đạo')}
+                              {almanacFacts.good ? (en ? 'Auspicious' : 'Hoàng đạo') : en ? 'Inauspicious' : 'Hắc đạo'}
                             </Term>
                             <span>·</span>
                             <Term termKey={almanacFacts.god}>{almanacFacts.god}</Term>
                           </span>
                         </div>
                       )}
+                      {en && <small className={styles.referenceNote}>Vietnamese almanac · {almanacDay} · UTC+7</small>}
                       <p className={styles.preview}>{excerpt(usableToday.text)}</p>
                     </>
                   ) : (
@@ -244,70 +223,59 @@ export function Dashboard() {
                           <div className={styles.cosmicMeta}>
                             <span className={styles.cosmicBadge} data-good={almanacFacts.good}>
                               <Term termKey={almanacFacts.good ? 'hoang-dao' : 'hac-dao'}>
-                                {almanacFacts.good ? (en ? 'Auspicious' : 'Hoàng đạo') : (en ? 'Inauspicious' : 'Hắc đạo')}
+                                {almanacFacts.good
+                                  ? en
+                                    ? 'Auspicious'
+                                    : 'Hoàng đạo'
+                                  : en
+                                    ? 'Inauspicious'
+                                    : 'Hắc đạo'}
                               </Term>
                               <span>·</span>
                               <Term termKey={almanacFacts.god}>{almanacFacts.god}</Term>
                             </span>
                             <span style={{ fontSize: '12.5px', color: '#c9d4be' }}>
-                              {almanacFacts.dayName} · {en ? 'Lunar' : 'Âm'} {almanacFacts.lunar.day}/{almanacFacts.lunar.month}
+                              {almanacFacts.dayName} · {en ? 'Lunar' : 'Âm'} {almanacFacts.lunar.day}/
+                              {almanacFacts.lunar.month}
                             </span>
                           </div>
 
-                          {guideSummary.suitable && (
-                            <div className={styles.cosmicGuide}>
-                              <div>
-                                <strong>{en ? 'Good for:' : 'Hợp việc:'}</strong>
-                                <span>{guideSummary.suitable}</span>
+                          <div className={styles.dayInsights}>
+                            {insights.map(item => (
+                              <div key={item.id} className={styles.dayInsight}>
+                                <strong>{item.title}</strong>
+                                <span>{item.body}</span>
+                                <small>
+                                  {en ? 'Basis: ' : 'Căn cứ: '}
+                                  {item.basis}
+                                </small>
                               </div>
-                              {guideSummary.avoid && (
-                                <div style={{ color: '#d8cfbe' }}>
-                                  <strong>{en ? 'Caution:' : 'Nên tránh:'}</strong>
-                                  <span>{guideSummary.avoid}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                            ))}
+                          </div>
+                          <small className={styles.referenceNote}>
+                            {en
+                              ? `Vietnamese almanac · ${almanacDay} · UTC+7.`
+                              : `Lịch dân gian Việt Nam · ${almanacDay.split('-').reverse().join('/')} · UTC+7`}
+                          </small>
 
                           {nextGoodHour && (
                             <div className={styles.cosmicHours}>
                               <span>✦</span>
                               <span>
-                                {en ? 'Next auspicious hour:' : 'Giờ hoàng đạo sắp tới:'}{' '}
+                                {en
+                                  ? 'Current or next favorable window (UTC+7):'
+                                  : 'Khung giờ thuận hiện tại hoặc tiếp theo (UTC+7):'}{' '}
                                 <strong>{nextGoodHour.name}</strong> ({nextGoodHour.range})
                               </span>
                             </div>
                           )}
-
-                          <div className={styles.cosmicRhythms}>
-                            <div className={styles.rhythmItem}>
-                              <div className={styles.rhythmLabel}>
-                                <span>{en ? 'Work' : 'Công việc'}</span>
-                                <span>{rhythms.work}%</span>
-                              </div>
-                              <div className={styles.rhythmTrack}><div className={styles.rhythmFill} style={{ width: `${rhythms.work}%` }} /></div>
-                            </div>
-                            <div className={styles.rhythmItem}>
-                              <div className={styles.rhythmLabel}>
-                                <span>{en ? 'Social' : 'Quan hệ'}</span>
-                                <span>{rhythms.social}%</span>
-                              </div>
-                              <div className={styles.rhythmTrack}><div className={styles.rhythmFill} style={{ width: `${rhythms.social}%` }} /></div>
-                            </div>
-                            <div className={styles.rhythmItem}>
-                              <div className={styles.rhythmLabel}>
-                                <span>{en ? 'Vitality' : 'Năng lượng'}</span>
-                                <span>{rhythms.energy}%</span>
-                              </div>
-                              <div className={styles.rhythmTrack}><div className={styles.rhythmFill} style={{ width: `${rhythms.energy}%` }} /></div>
-                            </div>
-                          </div>
                         </>
                       )}
                     </div>
                   )}
                   <Link href={`${moduleRoute('tuvi', t.locale)}?view=period`}>
-                    {usableToday ? t.t('dash.readMore') : (en ? 'Personal reading with AI' : 'Tạo vận trình cá nhân')} <span>↗</span>
+                    {usableToday ? t.t('dash.readMore') : en ? 'Personal reading with AI' : 'Tạo vận trình cá nhân'}{' '}
+                    <span>↗</span>
                   </Link>
                 </div>
                 <FeatureIcon name="tuvi" size={120} className={styles.sun} />

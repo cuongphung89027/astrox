@@ -236,6 +236,7 @@ export function LunarCalendar() {
     <div className={s.page}>
       <header className={s.header}>
         <h1>{en ? 'Lunar Calendar' : 'Lịch âm'}</h1>
+        {en && <p className={s.muted}>Vietnamese calendar · UTC+7. Dates and auspicious hours follow Vietnam time.</p>}
         <label className={s.jump}>
           <span>{copy('Đến ngày', 'Go to date')}</span>
           <input
@@ -490,7 +491,10 @@ export function LunarCalendar() {
                       <summary>{copy('Tra cứu ngày', 'Day details')}</summary>
                       <p>
                         <Term termKey={facts.god}>{facts.god}</Term>
-                        {facts.good ? ` (${copy('Hoàng đạo', 'Auspicious')})` : ` (${copy('Hắc đạo', 'Inauspicious')})`} ·{' '}
+                        {facts.good
+                          ? ` (${copy('Hoàng đạo', 'Auspicious')})`
+                          : ` (${copy('Hắc đạo', 'Inauspicious')})`}{' '}
+                        ·{' '}
                         {facts.taboos.length
                           ? facts.taboos.map((t, idx) => (
                               <span key={t}>
@@ -508,12 +512,14 @@ export function LunarCalendar() {
                           <p style={{ marginTop: '6px', fontSize: '13px', lineHeight: 1.5 }}>
                             {summary.suitable && (
                               <span style={{ color: 'var(--color-accent)', fontWeight: 500, marginRight: '10px' }}>
-                                <strong>{copy('Hợp: ', 'Good for: ')}</strong>{summary.suitable}
+                                <strong>{copy('Hợp: ', 'Good for: ')}</strong>
+                                {summary.suitable}
                               </span>
                             )}
                             {summary.avoid && (
                               <span style={{ color: 'var(--color-muc-2)' }}>
-                                <strong>{copy('Tránh: ', 'Avoid: ')}</strong>{summary.avoid}
+                                <strong>{copy('Tránh: ', 'Avoid: ')}</strong>
+                                {summary.avoid}
                               </span>
                             )}
                           </p>
@@ -572,7 +578,7 @@ export function LunarCalendar() {
                         setTab('calendar');
                       }}
                       onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
                           e.preventDefault();
                           choose(d.date);
                           setTab('calendar');

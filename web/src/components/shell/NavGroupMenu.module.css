@@ -62,24 +62,6 @@
   color: var(--color-accent);
 }
 
-.underline {
-  position: absolute;
-  bottom: 4px;
-  left: 14px;
-  right: 14px;
-  height: 2.5px;
-  background-color: var(--color-accent);
-  border-radius: 99px;
-  opacity: 0;
-  transform: scaleX(0.4);
-  transition: opacity 220ms var(--ease-viet), transform 220ms var(--ease-viet);
-}
-
-.trigger[data-active="true"] .underline {
-  opacity: 1;
-  transform: scaleX(1);
-}
-
 .dropdown {
   position: absolute;
   top: calc(100% + 6px);

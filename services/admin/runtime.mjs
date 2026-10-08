@@ -245,6 +245,7 @@ export async function executeProviderChain(
   const chain = service?.chain?.length ? service.chain : parent?.chain?.length ? parent.chain : config.ai.chain;
   const deadline = now() + Math.min(config.ai.totalTimeoutMs, 120000);
   const attempts = [];
+  let lastResponseError;
   for (const id of chain) {
     const p = providerRoutes(config.ai.providers).find(p => p.id === id && p.enabled);
     if (!p) fail('PROVIDER_UNAVAILABLE', 503, attempts);
@@ -463,9 +464,16 @@ export async function executeProviderChain(
         }
         return result;
       } catch (error) {
-        // Transport failures may use the configured chain; malformed input and refusals never do.
+        // Invalid provider output can recover on a different route. Input errors,
+        // refusals and policy failures remain terminal and never bypass guards.
         if (error instanceof RuntimeError) {
           if (!error.attempts?.length) error.attempts = attempts;
+          if (['INVALID_PROVIDER_RESPONSE', 'VISUAL_READING_INVALID'].includes(error.code)) {
+            attempt.errorCode = error.code;
+            lastResponseError = error;
+            await healthStore?.recordFailure(p.id, now());
+            break;
+          }
           throw error;
         }
         attempt.outcome = controller.signal.aborted ? 'timeout' : 'network_error';
@@ -476,6 +484,7 @@ export async function executeProviderChain(
       }
     }
   }
+  if (lastResponseError) throw lastResponseError;
   fail('PROVIDERS_EXHAUSTED', 503, attempts);
 }
 export function validateIntegration(kind, config) {

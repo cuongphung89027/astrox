@@ -250,23 +250,81 @@ test('open circuit skips provider until cooldown expires', async () => {
   assert.equal(r.attempts[0].outcome, 'circuit_open');
   assert.equal(r.attempts[1].providerId, 'b');
 });
-test('malformed successful response never bypasses to another provider', async () => {
+test('malformed successful response skips same-model retries and uses the next provider', async () => {
   const c = setup();
   c.ai.providers[0].protocol = 'responses';
+  c.ai.providers[0].retries = 3;
   let calls = 0;
+  const r = await executeProviderChain(
+    c,
+    input,
+    async () => 'key',
+    options(async () => (++calls === 1 ? Response.json({ output: { bad: true } }) : good())),
+  );
+  assert.equal(r.choices[0].message.content, 'OK');
+  assert.deepEqual(
+    r.attempts.map(a => a.providerId),
+    ['a', 'b'],
+  );
+  assert.equal(r.attempts[0].errorCode, 'INVALID_PROVIDER_RESPONSE');
+});
+test('invalid JSON and empty content use fallback without logging provider payloads', async () => {
+  for (const bad of [
+    () => new Response('private upstream payload'),
+    () => Response.json({ choices: [{ message: { content: '' }, finish_reason: 'length' }] }),
+  ]) {
+    let calls = 0;
+    const failures = [];
+    const r = await executeProviderChain(setup(), input, async () => 'key', {
+      ...options(async () => (++calls === 1 ? bad() : good())),
+      healthStore: {
+        get: async () => null,
+        recordFailure: async id => failures.push(id),
+        recordSuccess: async () => {},
+      },
+    });
+    assert.equal(r.choices[0].message.content, 'OK');
+    assert.deepEqual(failures, ['a']);
+    assert.ok(!JSON.stringify(r).includes('private upstream payload'));
+  }
+});
+test('invalid responses retain the final diagnostic after all routes fail', async () => {
   await assert.rejects(
     executeProviderChain(
-      c,
+      setup(),
       input,
       async () => 'key',
-      options(async () => {
-        calls++;
-        return Response.json({ output: { bad: true } });
-      }),
+      options(async () => Response.json({})),
     ),
-    e => e.code === 'INVALID_PROVIDER_RESPONSE',
+    e => {
+      assert.equal(e.code, 'INVALID_PROVIDER_RESPONSE');
+      assert.deepEqual(
+        e.attempts.map(a => a.providerId),
+        ['a', 'b'],
+      );
+      return true;
+    },
   );
-  assert.equal(calls, 1);
+});
+test('invalid response fallback respects attempt and wall-clock budgets', async () => {
+  for (const limit of ['attempts', 'deadline']) {
+    const c = setup();
+    if (limit === 'attempts') c.ai.maxAttempts = 1;
+    let clock = 0,
+      calls = 0;
+    await assert.rejects(
+      executeProviderChain(c, input, async () => 'key', {
+        ...options(async () => {
+          calls++;
+          if (limit === 'deadline') clock = 120001;
+          return Response.json({});
+        }),
+        now: () => clock,
+      }),
+      e => e.code === 'AI_BUDGET_EXHAUSTED',
+    );
+    assert.equal(calls, 1);
+  }
 });
 test('invalid provider credentials mark unhealthy and skip retries to next provider', async () => {
   const c = setup();

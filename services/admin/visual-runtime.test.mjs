@@ -221,3 +221,62 @@ for (const protocol of ['chat', 'responses', 'anthropic'])
     assert.equal(calls, 2);
     assert.equal(readVisualReading(result.choices[0].message.content).report.locale, 'en');
   });
+
+for (const invalid of ['truncated', 'json_syntax', 'object_keys'])
+  test(`visual ${invalid} advances to fallback and only saves a validated report`, async () => {
+    const config = defaultConfig();
+    config.ai.enabled = true;
+    config.ai.chain = ['primary', 'fallback'];
+    config.ai.providers = config.ai.chain.map(id => ({
+      id,
+      enabled: true,
+      baseUrl: 'https://api.openai.com/v1',
+      protocol: 'chat',
+      model: id,
+      secretRef: id,
+      maxTokens: 8000,
+      temperature: 0.7,
+      retries: 2,
+      timeoutMs: 1000,
+    }));
+    const descriptor = wrapVisualPrompt(original, serviceId, 'vi');
+    const snapshot = visualInput(descriptor, serviceId, 'vi');
+    const valid = fixture(snapshot);
+    const bad = structuredClone(valid);
+    delete bad.chapters[0].insights[0].sourceFactIds;
+    let calls = 0;
+    const result = await executeProviderChain(
+      config,
+      { serviceId, locale: 'vi', promptDescriptor: descriptor, messages: [{ role: 'user', content: 'test' }] },
+      async () => 'key',
+      {
+        allowHosts: ['api.openai.com'],
+        fetchImpl: async () => {
+          calls++;
+          return Response.json({
+            choices: [
+              {
+                message: {
+                  content:
+                    calls > 1
+                      ? JSON.stringify(valid)
+                      : invalid === 'json_syntax'
+                        ? '{'
+                        : JSON.stringify(invalid === 'object_keys' ? bad : valid),
+                },
+                finish_reason: calls === 1 && invalid === 'truncated' ? 'length' : 'stop',
+              },
+            ],
+          });
+        },
+      },
+    );
+    assert.deepEqual(
+      result.attempts.map(a => a.providerId),
+      ['primary', 'fallback'],
+    );
+    assert.equal(result.attempts[0].errorCode, 'VISUAL_READING_INVALID');
+    assert.equal(result.attempts[0].visualValidation.reason, invalid);
+    assert.deepEqual(readVisualReading(result.choices[0].message.content).snapshot, snapshot);
+    assert.equal(result.attempts[1].outcome, 'success');
+  });

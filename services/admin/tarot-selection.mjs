@@ -231,7 +231,8 @@ export async function handleTarotSelection(request, env, { fetchImpl = fetch, ti
         method: 'POST',
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        redirect: 'error',
+        // workerd supports manual; the non-2xx guard below rejects every redirect.
+        redirect: 'manual',
         signal: controller.signal,
       });
       if (!response.ok) {

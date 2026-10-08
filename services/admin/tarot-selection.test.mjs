@@ -113,7 +113,8 @@ test('uses B.AI Decisions and returns only selection, without wallet or reading 
     fetchImpl: async (url, init) => {
       calls++;
       assert.equal(url, 'https://api.b.ai/v1/decisions');
-      assert.equal(init.redirect, 'error');
+      // workerd rejects redirect:error before sending a request; manual must reject 3xx below.
+      assert.equal(init.redirect, 'manual');
       assert.equal(init.headers.Authorization, 'Bearer test-key-not-a-real-credential');
       assert.equal(JSON.parse(init.body).model, 'jev-1.13.0');
       return Response.json(decision());
@@ -220,4 +221,18 @@ test('selection quota is bounded and independent from paid reading quota', async
     );
   assert.equal((await handleTarotSelection(request(), env)).status, 429);
   assert.equal(await limitAi(request(), env), null);
+});
+
+test('provider redirects are rejected without following the credential to another host', async () => {
+  const env = await setup();
+  let calls = 0;
+  const response = await handleTarotSelection(request(), env, {
+    fetchImpl: async (_url, init) => {
+      calls++;
+      assert.equal(init.redirect, 'manual');
+      return new Response(null, { status: 302, headers: { location: 'https://unexpected.example/decisions' } });
+    },
+  });
+  assert.equal(response.status, 502);
+  assert.equal(calls, 1);
 });

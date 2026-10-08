@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     ? {
         async rewrites() {
           return [
+            { source: "/api/tarot/select", destination: `http://127.0.0.1:${process.env.ASTROX_LOCAL_ADMIN_PORT || "8789"}/api/tarot/select` },
             { source: "/api/admin/:path*", destination: `http://127.0.0.1:${process.env.ASTROX_LOCAL_ADMIN_PORT || "8789"}/api/admin/:path*` },
             { source: "/api/site-config", destination: `http://127.0.0.1:${process.env.ASTROX_LOCAL_ADMIN_PORT || "8789"}/api/site-config` },
             { source: "/api/feature-events", destination: `http://127.0.0.1:${process.env.ASTROX_LOCAL_ADMIN_PORT || "8789"}/api/feature-events` },

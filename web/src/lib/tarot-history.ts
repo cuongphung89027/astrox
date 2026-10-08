@@ -31,6 +31,8 @@ export interface TarotHistoryEntry {
   spreadId: string;
   spreadName: string;
   frameLabel: string;
+  frameId?: string;
+  selectionSource?: 'jev' | 'general' | 'manual' | 'fallback';
   cards: TarotHistoryCard[];
   text: string;
 }

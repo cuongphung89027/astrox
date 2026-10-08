@@ -48,6 +48,7 @@ export function TarotCardSlot({
     if (
       !cardId ||
       !target ||
+      target.closest('[data-tarot-instant="true"]') ||
       matchMedia('(prefers-reduced-motion: reduce)').matches ||
       document.documentElement.dataset.motion === 'reduced'
     )

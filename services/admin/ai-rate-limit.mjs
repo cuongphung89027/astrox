@@ -7,16 +7,17 @@ const unavailable = () =>
     { status: 503, headers: { 'cache-control': 'no-store' } },
   );
 /** Shared D1 counters, not per-isolate memory. CF-Connecting-IP is set by the edge. */
-export async function limitAi(request, env, now = Date.now()) {
+export async function limitAi(request, env, now = Date.now(), scope = 'ai') {
   if (!env.DB) return unavailable();
   try {
     const day = Math.floor(now / 86400000),
       minute = Math.floor(now / 60000);
-    const identity = await sign(env, `ai-ip:${day}:${request.headers.get('cf-connecting-ip') || 'unknown'}`);
+    const identity = await sign(env, `${scope}-ip:${day}:${request.headers.get('cf-connecting-ip') || 'unknown'}`);
+    const prefix = scope === 'ai' ? '' : `${scope}:`;
     const windows = [
-      [`minute:${identity}:${minute}`, positive(env.AI_IP_PER_MINUTE, 6), (minute + 1) * 60000],
-      [`day:${identity}:${day}`, positive(env.AI_IP_PER_DAY, 60), (day + 1) * 86400000],
-      [`global:${day}`, positive(env.AI_GLOBAL_PER_DAY, 2000), (day + 1) * 86400000],
+      [`${prefix}minute:${identity}:${minute}`, positive(env.AI_IP_PER_MINUTE, 6), (minute + 1) * 60000],
+      [`${prefix}day:${identity}:${day}`, positive(env.AI_IP_PER_DAY, 60), (day + 1) * 86400000],
+      [`${prefix}global:${day}`, positive(env.AI_GLOBAL_PER_DAY, 2000), (day + 1) * 86400000],
     ];
     const rows = await env.DB.batch(
       windows.map(([bucket, max, expiry]) =>

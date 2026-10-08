@@ -37,6 +37,8 @@ import { TarotCardSlot, type DrawnSlot } from './TarotCardSlot';
 import { TarotFan } from './TarotFan';
 import styles from './Tarot.module.css';
 import { DeckPicker } from './DeckPicker';
+import { TarotAutoSelect } from './TarotAutoSelect';
+import { selectionReason, type TarotSelection } from '@/lib/tarot-selection';
 import { useTarotHistoryCount } from '@/lib/use-tarot-history';
 
 export function TarotClient() {
@@ -56,6 +58,17 @@ export function TarotClient() {
   const [spreadId, setSpreadId] = useState('three');
   const [frameId, setFrameId] = useState('ppf');
   const [question, setQuestion] = useState('');
+  const [auto, setAuto] = useState(true);
+  const [selecting, setSelecting] = useState(false);
+  const [selectionIssue, setSelectionIssue] = useState('');
+  const [light, setLight] = useState(-1);
+  const [selection, setSelection] = useState<TarotSelection | null>(null);
+  const [instantMotion, setInstantMotion] = useState(false);
+  const issueRef = useRef<HTMLDivElement>(null);
+  const startRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (selectionIssue) issueRef.current?.focus();
+  }, [selectionIssue]);
   const [cardsData, setCardsData] = useState<TarotCard[] | null>(peekTarotCards());
   const [cardsErr, setCardsErr] = useState(false);
 
@@ -131,7 +144,14 @@ export function TarotClient() {
       drawResultId.current = null;
     }
   }, [drawn, spread.count]);
-  const startDraw = () => {
+  const startDraw = (
+    selectedSpread = spreadId,
+    selectedFrame = frameId,
+    decision?: TarotSelection,
+    instant = false,
+  ) => {
+    const resolved = tarotSpreadById(selectedSpread);
+    if (!resolved) return;
     if (deck.status !== 'available') return;
     if (!cardsData || cardsData.length === 0) {
       fetchCards();
@@ -140,13 +160,22 @@ export function TarotClient() {
     timersRef.current.forEach(t => clearTimeout(t));
     timersRef.current = [];
     trackFeature('feature_start', 'tarot', 'calculation');
-    const nextPool = drawCards(cardsData, spread.count);
+    setSpreadId(resolved.id);
+    setFrameId(selectedFrame);
+    setSelection(decision || { status: 'selected', spreadId: resolved.id, frameId: selectedFrame, source: 'manual' });
+    setSelecting(false);
+    setLight(-1);
+    setSelectionIssue('');
+    setInstantMotion(instant);
+    const nextPool = drawCards(cardsData, resolved.count);
     drawResultId.current = crypto.randomUUID();
     setPool(nextPool);
     setDrawn([]);
     setPhase('shuffling');
     const reduced =
-      matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduced';
+      instant ||
+      matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      document.documentElement.dataset.motion === 'reduced';
     const shuffleMs = reduced ? 80 : 1050;
     later(() => setPhase('ritual'), shuffleMs);
     nextPool.forEach((entry, index) => {
@@ -163,25 +192,43 @@ export function TarotClient() {
     });
   };
 
+  const revealAll = () => {
+    timersRef.current.forEach(t => clearTimeout(t));
+    timersRef.current = [];
+    setInstantMotion(true);
+    boardRef.current?.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
+    setPhase('ritual');
+    setDrawn(pool.map(entry => ({ entry, flipped: true, revealed: true })));
+  };
+  const cancelSelection = () => {
+    setSelecting(false);
+    setLight(-1);
+    requestAnimationFrame(() => startRef.current?.focus());
+  };
   const resetToSetup = () => {
     drawResultId.current = null;
     timersRef.current.forEach(t => clearTimeout(t));
     timersRef.current = [];
     setPool([]);
     setDrawn([]);
+    setAuto(true);
+    setSelection(null);
+    setInstantMotion(false);
     setPhase('setup');
   };
 
   /* ------------------------------ Render ------------------------------ */
   return (
-    <section className={styles.page}>
+    <section className={styles.page} data-tarot-instant={instantMotion}>
       <h1 className="sr-only">Tarot</h1>
       {phase === 'setup' ? (
         inHistory ? (
           <TarotHistory onClose={() => router.push(en ? '/en/tarot' : '/tarot')} />
         ) : (
           <div className={styles.setup}>
-            <DeckPicker value={deckId} onChange={setDeckId} />
+            <div inert={selecting}>
+              <DeckPicker value={deckId} onChange={setDeckId} />
+            </div>
             <div className={styles.controls}>
               <label className={styles.question} htmlFor="tarot-question">
                 {copy('Điều bạn đang nghĩ tới', 'What’s on your mind')} <span>{copy('Tuỳ chọn', 'Optional')}</span>
@@ -189,24 +236,45 @@ export function TarotClient() {
               <textarea
                 id="tarot-question"
                 rows={2}
+                maxLength={2000}
+                disabled={selecting}
                 value={question}
-                onChange={e => setQuestion(e.target.value)}
+                onChange={e => {
+                  setQuestion(e.target.value);
+                  setSelectionIssue('');
+                }}
                 placeholder={copy('Viết câu hỏi của bạn…', 'Write your question…')}
                 className={styles.textarea}
               />
               <div className={styles.sectionLabel}>
                 {copy('Kiểu trải bài', 'Spread')}{' '}
                 <span>
-                  {spread.count} {en ? 'cards' : 'lá'}
+                  {auto ? copy('Theo câu hỏi', 'Based on your question') : `${spread.count} ${en ? 'cards' : 'lá'}`}
                 </span>
               </div>
+              <button
+                type="button"
+                className={styles.autoChoice}
+                aria-pressed={auto}
+                disabled={selecting}
+                onClick={() => {
+                  setAuto(true);
+                  setSelectionIssue('');
+                }}
+              >
+                <span aria-hidden>✦</span> {copy('Tự động', 'Automatic')}
+              </button>
               <div className={styles.spreadChoices} role="group" aria-label={copy('Kiểu trải bài', 'Spread')}>
-                {TAROT_SPREADS.map(s => (
+                {TAROT_SPREADS.map((s, index) => (
                   <button
                     type="button"
                     key={s.id}
-                    aria-pressed={spreadId === s.id}
+                    aria-pressed={!auto && spreadId === s.id}
+                    data-scanning={selecting && light === index}
+                    disabled={selecting}
                     onClick={() => {
+                      setAuto(false);
+                      setSelectionIssue('');
                       setSpreadId(s.id);
                       if (s.frames) setFrameId(s.frames[0].id);
                     }}
@@ -231,13 +299,11 @@ export function TarotClient() {
                   </button>
                 ))}
               </div>
-              <p className={styles.spreadDescription} aria-live="polite">
-                {en ? englishSpread?.desc : spread.desc}
-              </p>
-              {spread.frames && (
+              {!auto && <p className={styles.spreadDescription}>{en ? englishSpread?.desc : spread.desc}</p>}
+              {!auto && spread.frames && (
                 <label className={styles.frame}>
                   {copy('Góc nhìn', 'Perspective')}
-                  <select value={frameId} onChange={event => setFrameId(event.target.value)}>
+                  <select disabled={selecting} value={frameId} onChange={event => setFrameId(event.target.value)}>
                     {spread.frames.map(frame => (
                       <option key={frame.id} value={frame.id}>
                         {en ? englishSpread?.frames?.[frame.id]?.label : frame.label}
@@ -252,15 +318,99 @@ export function TarotClient() {
                   <button onClick={fetchCards}>{copy('Thử lại', 'Try again')}</button>
                 </div>
               )}
-              <button className={styles.start} onClick={startDraw} disabled={!cardsData || deck.status !== 'available'}>
-                {deck.status !== 'available'
-                  ? copy('Bộ bài đang được chuẩn bị', 'This deck is being prepared')
-                  : cardsData
-                    ? copy('Bắt đầu trải bài', 'Start your reading')
-                    : copy('Đang tải bộ bài…', 'Loading deck…')}
-                <span aria-hidden="true">↗</span>
-              </button>
-              <Link href={en ? '/en/tarot?history=1' : '/tarot?history=1'} className={styles.historyLink}>
+              {selectionIssue && (
+                <div ref={issueRef} tabIndex={-1} className={styles.autoError} role="alert">
+                  <p>
+                    {selectionIssue === 'needs_context'
+                      ? copy(
+                          'Bạn đang hỏi về việc gì? Thêm bối cảnh vào câu hỏi để chọn kiểu trải phù hợp.',
+                          'What situation do you mean? Add context to your question to help select a spread.',
+                        )
+                      : selectionIssue === 'unsupported_comparison'
+                        ? copy(
+                            'Chưa có khung so sánh A/B. Bạn có thể thêm điều cần cân nhắc hoặc dùng 3 lá lời khuyên.',
+                            'An A/B spread is not available. Add what you want to weigh up, or use three advice cards.',
+                          )
+                        : selectionIssue === 'rate_limited'
+                          ? copy(
+                              'Hãy chờ một chút hoặc tự chọn kiểu trải.',
+                              'Please pause or choose a spread yourself.',
+                            )
+                          : copy(
+                              'Chưa chọn được theo câu hỏi. Câu hỏi của bạn vẫn được giữ.',
+                              'We could not select a spread. Your question is kept.',
+                            )}
+                  </p>
+                  <div className={styles.autoActions}>
+                    <button
+                      type="button"
+                      disabled={!cardsData?.length}
+                      onClick={() =>
+                        startDraw('three', 'soa', {
+                          status: 'selected',
+                          spreadId: 'three',
+                          frameId: 'soa',
+                          source: 'fallback',
+                          reasonCode: 'fallback',
+                        })
+                      }
+                    >
+                      {copy('Dùng 3 lá', 'Use three cards')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuto(false);
+                        setSelectionIssue('');
+                      }}
+                    >
+                      {copy('Tự chọn', 'Choose myself')}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {selecting ? (
+                <TarotAutoSelect
+                  question={question}
+                  locale={t.locale}
+                  onLight={setLight}
+                  onResolved={(decision, instant) =>
+                    startDraw(decision.spreadId, decision.frameId || 'ppf', decision, instant)
+                  }
+                  onIssue={code => {
+                    setSelecting(false);
+                    setLight(-1);
+                    setSelectionIssue(code);
+                  }}
+                  onCancel={cancelSelection}
+                />
+              ) : (
+                <button
+                  ref={startRef}
+                  className={styles.start}
+                  onClick={() => {
+                    setSelectionIssue('');
+                    if (auto) setSelecting(true);
+                    else startDraw();
+                  }}
+                  disabled={!cardsData?.length || deck.status !== 'available'}
+                >
+                  {deck.status !== 'available'
+                    ? copy('Bộ bài đang được chuẩn bị', 'This deck is being prepared')
+                    : cardsData
+                      ? copy('Bắt đầu trải bài', 'Start your reading')
+                      : copy('Đang tải bộ bài…', 'Loading deck…')}
+                  <span aria-hidden="true">↗</span>
+                </button>
+              )}
+              <Link
+                href={en ? '/en/tarot?history=1' : '/tarot?history=1'}
+                onClick={() => {
+                  setSelecting(false);
+                  setLight(-1);
+                }}
+                className={styles.historyLink}
+              >
                 <span>{copy('Nhật ký trải bài', 'Reading journal')}</span>
                 <span>
                   {historyCount > 0
@@ -282,6 +432,9 @@ export function TarotClient() {
           <p>
             <LoadingWhisper kind="shuffle" />
           </p>
+          <button type="button" className={styles.revealAll} onClick={revealAll}>
+            {copy('Hiện tất cả', 'Reveal all')}
+          </button>
         </div>
       ) : (
         /* ============================ BÀN TRẢI ============================ */
@@ -291,7 +444,7 @@ export function TarotClient() {
               ←
             </button>
             <div>
-              <span>{deck.nameVi}</span>
+              <span>{en ? deck.name : deck.nameVi}</span>
               <h2>{spreadLabel(spread)}</h2>
             </div>
             <span className={styles.ritualCount}>
@@ -299,6 +452,14 @@ export function TarotClient() {
               <i> / {spread.count}</i>
             </span>
           </div>
+          {selection?.reasonCode && (
+            <p className={styles.selectionReason}>{selectionReason(selection.reasonCode, en)}</p>
+          )}
+          {!complete && (
+            <button type="button" className={styles.revealAll} onClick={revealAll}>
+              {copy('Hiện tất cả', 'Reveal all')}
+            </button>
+          )}
           <ReadingQuestion>{question}</ReadingQuestion>
           <div className={styles.readingTable} data-tarot-table>
             <div className={styles.tableHeading}>
@@ -448,7 +609,7 @@ export function TarotClient() {
                             <TarotCardSlot deck={deck} slot={drawn[1]} label={positionLabels[1]} index={1} overlay />
                             <p
                               aria-live="polite"
-                              className="mt-2 w-[var(--tarot-card-width,100px)] text-center text-[10.5px] font-semibold leading-snug text-muc-2 sm:w-[190px]"
+                              className="mt-2 w-[var(--tarot-card-width,100px)] text-center text-[10.5px] font-semibold leading-snug text-white/75 sm:w-[190px]"
                             >
                               {en ? 'Crossing card' : 'Lá cắt ngang'} — {positionLabels[1]}:{' '}
                               {labelCross(drawn[1].entry, en)}
@@ -511,6 +672,8 @@ export function TarotClient() {
                 {complete ? (
                   <InterpretationPanel
                     spread={spread}
+                    frameId={frameId}
+                    selectionSource={selection?.source}
                     frameLabel={spread.frames?.find(f => f.id === frameId)?.label}
                     deck={deck}
                     question={question.trim()}

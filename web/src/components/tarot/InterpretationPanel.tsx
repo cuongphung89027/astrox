@@ -35,10 +35,13 @@ import {
   type TarotSpread,
 } from '@/lib/tarot';
 import { pushTarotHistory } from '@/lib/tarot-history';
+import { tarotSelectionService, type TarotSelection } from '@/lib/tarot-selection';
 
 interface InterpretationPanelProps {
   spread: TarotSpread;
   frameLabel?: string;
+  frameId?: string;
+  selectionSource?: TarotSelection['source'];
   deck: TarotDeck;
   question: string;
   drawn: DrawnCard[];
@@ -57,10 +60,8 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
   const [text, setText] = useState('');
   const [state, setState] = useState<AiState>('idle');
   const [errMsg, setErrMsg] = useState('');
-  const serviceId =
-    spread.id === 'three'
-      ? `tarot--three--${spread.frames?.find(f => f.label === frameLabel)?.id || 'ppf'}`
-      : `tarot--${spread.id}`;
+  const frameId = props.frameId || spread.frames?.find(f => f.label === frameLabel)?.id || 'ppf';
+  const serviceId = tarotSelectionService(spread.id, frameId);
   const pricePrompt = profile
     ? buildTarotPrompt({
         spread,
@@ -100,6 +101,8 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
         deckId: deck.id,
         spreadId: spread.id,
         spreadName: en ? (TAROT_SPREADS_EN[spread.id]?.name ?? spread.name) : spread.name,
+        frameId,
+        selectionSource: props.selectionSource,
         frameLabel: en
           ? (TAROT_SPREADS_EN[spread.id]?.frames?.[spread.frames?.find(f => f.label === frameLabel)?.id ?? '']?.label ??
             frameLabel ??
@@ -141,10 +144,7 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
       });
       const result = await runAiPrompt(prompt, {
         temperature: 0.8,
-        serviceId:
-          spread.id === 'three'
-            ? `tarot--three--${spread.frames?.find(f => f.label === frameLabel)?.id || 'ppf'}`
-            : `tarot--${spread.id}`,
+        serviceId,
       });
       if (cacheFingerprint() === fingerprint)
         writeAiCache('tarot', cacheKey, result, { module: 'tarot', topic: spread.id });
@@ -165,6 +165,9 @@ export function InterpretationPanel(props: InterpretationPanelProps) {
     spread.count,
     spread.name,
     frameLabel,
+    frameId,
+    serviceId,
+    props.selectionSource,
     deck.id,
     deck.name,
     question,

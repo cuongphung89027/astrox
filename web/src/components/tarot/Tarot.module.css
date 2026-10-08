@@ -379,3 +379,26 @@ html[data-motion="reduced"] .deckArt > img, html[data-motion="reduced"] .deckVid
 html[data-motion="reduced"] .historyRow, html[data-motion="reduced"] .historyCard { animation: none; }
 
 .recoveredNote { margin: 14px 0; color: #596b59; font-size: 13px; line-height: 1.8; }
+
+/* Automatic selection enhances the original spread grid without replacing it. */
+.autoChoice { width:100%; min-height:46px; display:flex; justify-content:center; align-items:center; gap:9px; border:1px solid #bccbb0; border-radius:14px; margin-bottom:12px; color:#405b3d; background:#fffdf570; cursor:pointer; font-size:14px; }
+.autoChoice[aria-pressed=true] { background:#244d40; border-color:#244d40; color:#fff0cc; }
+.autoChoice:focus-visible,.autoActions button:focus-visible,.revealAll:focus-visible { outline:2px solid #96773c; outline-offset:4px; }
+.spreadChoices button[data-scanning=true] { border-color:#aa8640; box-shadow:0 0 0 2px #bd9d6040,0 0 24px #dec18655; }
+.spreadChoices button { transition:background 180ms,color 180ms,border-color 180ms,box-shadow 180ms; }
+.autoProgress { padding-top:16px; text-align:center; }
+.autoProgress > p { font-size:15px; font-weight:500; }
+.autoProgress small { display:block; font-size:13px; color:#536b4c; line-height:1.65; margin-top:6px; }
+.autoActions { display:flex; gap:8px 20px; justify-content:center; flex-wrap:wrap; margin-top:10px; }
+.autoActions button { min-height:44px; padding:8px 2px; cursor:pointer; font-size:13px; text-decoration:underline; text-underline-offset:4px; }
+.autoActions button:disabled { opacity:.55; cursor:default; }
+.autoError { margin-top:16px; padding:14px; border-radius:12px; background:#faf0e5; border:1px solid #caa78a; color:#713e28; font-size:14px; line-height:1.7; }
+.selectionReason { font-size:14px; color:#52694b; line-height:1.7; margin-bottom:14px; }
+.revealAll { min-height:44px; padding:10px 16px; border:1px solid #b8c9a8; border-radius:12px; background:#fffdf5; color:#244d40; margin-bottom:14px; cursor:pointer; font-size:14px; }
+.page[data-tarot-instant=true] *, :global(html[data-motion=reduced]) .page * { animation:none!important; transition:none!important; }
+@media(prefers-reduced-motion:reduce) { .page * { animation:none!important; transition:none!important; } }
+/* Reflow against available space as well as device width (including zoom). */
+.page { container-type: inline-size; }
+.spreadChoices svg.spreadDiagram { max-width: 100%; }
+.spreadChoices button:nth-child(-n+2) { flex-wrap: wrap; }
+@container (max-width: 600px) { .setup { grid-template-columns: minmax(0, 1fr); gap: 0; } }

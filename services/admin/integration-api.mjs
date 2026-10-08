@@ -1,4 +1,5 @@
 import { supportsUnlock } from '../backend/service-unlocks.mjs';
+import { handleTarotSelection } from './tarot-selection.mjs';
 import { READING_UPGRADE_CAMPAIGN } from '../backend/reading-upgrades.mjs';
 import { normalizeMessages, withManagedText } from './vision.mjs';
 import { limitAi } from './ai-rate-limit.mjs';
@@ -475,6 +476,7 @@ export async function siteConfig(env, market = 'VN') {
 
 export async function handlePublic(request, env) {
   const path = new URL(request.url).pathname;
+  if (path === '/api/tarot/select') return handleTarotSelection(request, env);
   if (path === '/api/site-config' && request.method === 'GET')
     return siteConfig(env, new URL(request.url).searchParams.get('market') === 'US' ? 'US' : 'VN');
   if (path === '/api/ai/quote' && request.method === 'POST') return handleAiQuote(request, env);

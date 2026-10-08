@@ -1,0 +1,121 @@
+{
+  "results": [
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 320,
+      "locale": "vi",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 390,
+      "locale": "vi",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 600,
+      "locale": "vi",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 768,
+      "locale": "vi",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 834,
+      "locale": "vi",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 1024,
+      "locale": "vi",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 1440,
+      "locale": "vi",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 320,
+      "locale": "en",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 390,
+      "locale": "en",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 600,
+      "locale": "en",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 768,
+      "locale": "en",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 834,
+      "locale": "en",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 1024,
+      "locale": "en",
+      "spreads": 5
+    },
+    {
+      "case": "responsive manual layouts + keyboard card details",
+      "width": 1440,
+      "locale": "en",
+      "spreads": 5
+    },
+    {
+      "case": "auto result, keyboard start, clarification, quota error focus, cancel late result, blank local selection",
+      "locale": "vi"
+    },
+    {
+      "case": "auto result, keyboard start, clarification, quota error focus, cancel late result, blank local selection",
+      "locale": "en"
+    },
+    {
+      "case": "travelling highlight and skip"
+    },
+    {
+      "case": "VI/EN discovery dock keyboard open, Escape and focus restoration"
+    },
+    {
+      "case": "reveal all stops animation without changing already drawn card"
+    },
+    {
+      "case": "actual local endpoint unavailable response keeps question and explicit fallback works"
+    },
+    {
+      "case": "VI/EN native tooltip title and equivalent accessible label; sound toggle by keyboard (native tooltip pixels not captured)"
+    },
+    {
+      "case": "card data error disables start and retry restores it"
+    },
+    {
+      "case": "CSS zoom 200/400%, plus true 320px reflow above (not browser chrome zoom)"
+    },
+    {
+      "case": "simulated keyboard viewport shrink hides/restores dock"
+    }
+  ],
+  "errors": []
+}

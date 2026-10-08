@@ -12,6 +12,7 @@ import { FeatureIcon, FEATURE_BY_ID } from '@/components/kit/FeatureIcon';
 import { dockItems, sheetLinks } from '@/lib/nav';
 import { moduleRoute } from '@/lib/locale';
 import { useLocale } from '@/i18n/LocaleProvider';
+import { keyboardOccludes } from '@/lib/keyboard-viewport';
 
 interface DockItem {
   href: string;
@@ -37,6 +38,43 @@ export function BottomDock() {
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    let baseline = window.innerHeight;
+    const editable = () =>
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement.matches(
+        'textarea, input:not([type=radio]):not([type=checkbox]):not([type=button]):not([type=submit]), [contenteditable=true]',
+      );
+    const update = () => {
+      if (!editable()) baseline = window.innerHeight;
+      setKeyboardOpen(
+        keyboardOccludes({
+          editable: editable(),
+          baseline,
+          visible: viewport.height + viewport.offsetTop,
+          scale: viewport.scale,
+        }),
+      );
+    };
+    const focus = () => {
+      baseline = Math.max(baseline, window.innerHeight);
+      update();
+    };
+    viewport.addEventListener('resize', update);
+    viewport.addEventListener('scroll', update);
+    document.addEventListener('focusin', focus);
+    document.addEventListener('focusout', update);
+    return () => {
+      viewport.removeEventListener('resize', update);
+      viewport.removeEventListener('scroll', update);
+      document.removeEventListener('focusin', focus);
+      document.removeEventListener('focusout', update);
+    };
+  }, []);
 
   useEffect(() => {
     const dock = dockRef.current;
@@ -191,6 +229,10 @@ export function BottomDock() {
       {/* Dock chính */}
       <nav
         ref={dockRef}
+        data-keyboard-open={keyboardOpen}
+        inert={keyboardOpen}
+        aria-hidden={keyboardOpen || undefined}
+        style={keyboardOpen ? { visibility: 'hidden' } : undefined}
         aria-label={t.t('shell.navAriaMobile')}
         className={`${styles.dock} fixed inset-x-3 bottom-[calc(12px+env(safe-area-inset-bottom))] z-[60] grid h-16 grid-cols-5 px-1 py-1.5 sm:px-1.5 lg:hidden`}
       >
@@ -202,7 +244,7 @@ export function BottomDock() {
           const active = isActive(item.href);
           return (
             <Fragment key={item.href}>
-              {item.href === '/tarot' && (
+              {item.href === moduleRoute('tarot', t.locale) && (
                 <div
                   className={styles.discoverySlot}
                   data-active={open || SHEET_LINKS.some(item => item.href !== '/tarot' && isActive(item.href))}

@@ -5,6 +5,7 @@ import { LocaleProvider } from '@/i18n/LocaleProvider';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://theastrox.space'),
+  other: { 'google-adsense-account': 'ca-pub-5916355239247970' },
   title: {
     default: 'AstroX — Tarot, Astrology & Numerology',
     template: '%s | AstroX',

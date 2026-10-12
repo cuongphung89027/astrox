@@ -38,8 +38,8 @@ function loadGpt(): Promise<Gpt> {
       reject(
         new Error(
           uiText(
-            'Không tải được quảng cáo. Vui lòng kiểm tra kết nối hoặc trình chặn quảng cáo.',
-            'The ad could not load. Check your connection or ad blocker.',
+            'Quảng cáo chưa tải được. Bạn có thể kiểm tra kết nối, cho phép quảng cáo rồi thử lại, hoặc nhận Point qua điểm danh.',
+            'The ad could not load. Check your connection, allow ads and retry, or earn Credits by checking in.',
           ),
         ),
       );
@@ -52,7 +52,10 @@ function loadGpt(): Promise<Gpt> {
       clearTimeout(timer);
       script.remove();
       loading = null;
-      reject(new Error(uiText('Không tải được mạng quảng cáo.', 'The ad network could not load.')));
+      reject(new Error(uiText(
+        'Quảng cáo chưa tải được. Bạn có thể kiểm tra kết nối, cho phép quảng cáo rồi thử lại, hoặc nhận Point qua điểm danh.',
+        'The ad could not load. Check your connection, allow ads and retry, or earn Credits by checking in.',
+      )));
     };
     document.head.appendChild(script);
   });

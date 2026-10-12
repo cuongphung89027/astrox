@@ -29,6 +29,7 @@ export function DisplayAd({ placement }: { placement: 'home' | 'calendar' }) {
   const allowed = displayAdPlacement(usePathname()) === placement;
   const element = useRef<HTMLModElement>(null);
   const [empty, setEmpty] = useState(false);
+  const [support, setSupport] = useState(false);
   useEffect(() => {
     if (!DISPLAY_ADS_ENABLED || !allowed || !element.current) return;
     const node = element.current;
@@ -47,12 +48,29 @@ export function DisplayAd({ placement }: { placement: 'home' | 'calendar' }) {
         const queue = host.adsbygoogle || ([] as object[]);
         host.adsbygoogle = queue;
         queue.push({});
-      }).catch(() => { if (active) setEmpty(true); });
+      }).catch(() => {
+        if (!active) return;
+        setEmpty(true);
+        try {
+          if (!sessionStorage.getItem('astrox-ad-support-seen')) {
+            sessionStorage.setItem('astrox-ad-support-seen', '1');
+            setSupport(true);
+          }
+        } catch { /* Storage unavailable: keep the failed ad collapsed without repeated prompts. */ }
+      });
     }, { rootMargin: '200px' });
     nearby.observe(node);
     return () => { active = false; nearby.disconnect(); status.disconnect(); };
   }, [allowed]);
-  if (!DISPLAY_ADS_ENABLED || !allowed || empty) return null;
+  if (!DISPLAY_ADS_ENABLED || !allowed) return null;
+  if (empty) return support ? (
+    <aside className={styles.support} data-ad-support>
+      <p>{locale.locale === 'en'
+        ? 'Ads could not load. Allowing ads on AstroX helps keep our free tools available.'
+        : 'Quảng cáo chưa tải được. Cho phép quảng cáo trên AstroX giúp duy trì các tiện ích miễn phí.'}</p>
+      <button type="button" onClick={() => setSupport(false)} aria-label={locale.locale === 'en' ? 'Dismiss message' : 'Đóng lời nhắc'}>×</button>
+    </aside>
+  ) : null;
   return (
     <aside className={styles.frame} aria-label={locale.locale === 'en' ? 'Advertisement' : 'Quảng cáo'} data-ad-placement={placement}>
       <span className={styles.label}>{locale.locale === 'en' ? 'Advertisement' : 'Quảng cáo'}</span>

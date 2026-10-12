@@ -27,7 +27,17 @@ try {
   const page = await browser.newPage();
   await page.route('**/pagead2.googlesyndication.com/**', r => mode==='blocked' ? r.abort() : r.fulfill({contentType:'application/javascript',body:"window.adsbygoogle={push(){document.querySelector('ins.adsbygoogle').dataset.adStatus='unfilled';}}"}));
   await page.goto('http://localhost:3338/'); await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await page.waitForFunction(() => !document.querySelector('[data-ad-placement]'));passed++;await page.close();
+  await page.waitForFunction(() => !document.querySelector('[data-ad-placement]'));
+  if (mode === 'blocked') {
+   const note = page.locator('[data-ad-support]');
+   await note.waitFor({timeout:3000});
+   await note.getByRole('button').click();
+   assert.equal(await note.count(), 0);
+   await page.reload(); await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+   await page.waitForTimeout(1200);
+   assert.equal(await note.count(), 0);
+  } else assert.equal(await page.locator('[data-ad-support]').count(), 0);
+  passed++;await page.close();
  }
  for (const path of ['/tarot', '/en/profile', '/admin']) {
   const page=await browser.newPage();let requests=0;

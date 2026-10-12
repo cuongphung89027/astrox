@@ -1,3 +1,4 @@
+import { DisplayAd } from '@/components/ads/DisplayAd';
 import { socialMetadata } from '@/lib/social-metadata';
 import { LunarCalendar } from '@/components/discovery/LunarCalendar';
 export const metadata = {
@@ -7,5 +8,5 @@ export const metadata = {
   ...socialMetadata('/licham'),
 };
 export default function Page() {
-  return <LunarCalendar />;
+  return <><LunarCalendar /><div className="mx-auto max-w-6xl px-5"><DisplayAd placement="calendar" /></div></>;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { DisplayAd } from '@/components/ads/DisplayAd';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth';
@@ -361,6 +362,7 @@ export function Dashboard() {
         {!profile && quickAccess}
       </div>
       {profile && quickAccess}
+      <DisplayAd placement="home" />
       {recent.length > 0 && (
         <section aria-labelledby="dashboard-recent">
           <div className={styles.sectionHeading}>
